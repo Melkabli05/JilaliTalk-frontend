@@ -1,0 +1,15 @@
+.dark {
+  --color-bg: var(--color-neutral-900);
+  --color-card: var(--color-neutral-800);
+  --color-text: var(--color-neutral-100);
+  --color-text-muted: var(--color-neutral-400);
+  --color-border: var(--color-neutral-700);
+
+  /* Darker shadows for depth on dark backgrounds */
+  --shadow-sm: 0 1px 2px hsl(0deg 0% 0% / 20%);
+  --shadow-md: 0 4px 6px hsl(0deg 0% 0% / 30%);
+  --shadow-lg: 0 10px 15px hsl(0deg 0% 0% / 40%);
+  --shadow-card-hover: 0 12px 32px hsl(0deg 0% 0% / 30%);
+  --shadow-modal: 0 25px 50px hsl(0deg 0% 0% / 40%);
+  --shadow-dropdown: 0 4px 16px hsl(0deg 0% 0% / 25%);
+}

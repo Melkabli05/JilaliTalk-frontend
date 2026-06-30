@@ -1,0 +1,32 @@
+/* Emoji picker customization variables */
+:root {
+  --ch-font-family: var(--font-sans);
+  --ch-color-primary: var(--color-primary-500);
+  --ch-background-color: var(--color-card);
+  --ch-text-color: var(--color-text);
+  --ch-border-color: var(--color-border);
+  --ch-hover-color: var(--color-neutral-100);
+  --ch-color-scroll: rgb(204 204 215 / 80%);
+  --ch-color-scroll-hover: rgb(201 201 210);
+  --ch-emoji-picker-background: var(--color-neutral-50);
+  --ch-emoji-picker-tab-bar-background: var(--color-card);
+  --ch-skintone-picker-background: var(--color-card);
+  --ch-emoji-variant-indicator-color: var(--color-neutral-300);
+  --ch-emoji-variant-indicator-color-hover: var(--color-neutral-500);
+}
+
+.dark {
+  --ch-font-family: var(--font-sans);
+  --ch-color-primary: var(--color-primary-400);
+  --ch-background-color: var(--color-card);
+  --ch-text-color: var(--color-text);
+  --ch-border-color: var(--color-border);
+  --ch-hover-color: var(--color-neutral-700);
+  --ch-color-scroll: hsl(0deg 0% 100% / 15%);
+  --ch-color-scroll-hover: rgb(217 217 227 / 50%);
+  --ch-emoji-picker-background: var(--color-neutral-800);
+  --ch-emoji-picker-tab-bar-background: var(--color-neutral-800);
+  --ch-skintone-picker-background: var(--color-neutral-700);
+  --ch-emoji-variant-indicator-color: var(--color-neutral-500);
+  --ch-emoji-variant-indicator-color-hover: var(--color-neutral-300);
+}

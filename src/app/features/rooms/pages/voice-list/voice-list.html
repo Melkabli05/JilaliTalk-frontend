@@ -1,0 +1,251 @@
+<div class="voice-list-page">
+  <header class="page-header">
+    <h1 class="page-title">All Voice Rooms</h1>
+    <p class="page-subtitle">{{ filteredRooms().length }} rooms available</p>
+  </header>
+
+  @if (recommendedRooms().length > 0) {
+    <section class="recommended-rooms" aria-labelledby="recommended-heading">
+      <div class="section-header">
+        <svg aria-hidden="true" lucideFlame [size]="14" class="flame-icon"></svg>
+        <h2 id="recommended-heading" class="section-title">Recommended Rooms</h2>
+        <div class="carousel-nav" role="group" aria-label="Carousel navigation">
+          <button
+            type="button"
+            class="carousel-btn"
+            aria-label="Previous rooms"
+            (click)="scrollCarousel('prev')"
+          >
+            <svg aria-hidden="true" lucideChevronLeft [size]="16"></svg>
+          </button>
+          <button
+            type="button"
+            class="carousel-btn"
+            aria-label="Next rooms"
+            (click)="scrollCarousel('next')"
+          >
+            <svg aria-hidden="true" lucideChevronRight [size]="16"></svg>
+          </button>
+        </div>
+      </div>
+      <div class="recommended-rooms-scroll" #carouselScroll>
+        @for (room of recommendedRooms().slice(0, 6); track room.channel.cname) {
+          <article
+            class="rec-card"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="
+              'Join ' + room.channel.name + ' hosted by ' + room.hostUser.nickname
+            "
+            (keydown.enter)="joinRoom(room, true)"
+            (keydown.space)="joinRoom(room, true, $event)"
+          >
+            <div class="rec-host">
+              <app-avatar
+                [src]="room.hostUser.headUrl || ''"
+                [initials]="room.hostUser.nickname.slice(0, 2)"
+                size="md"
+                [alt]="'Host ' + room.hostUser.nickname"
+                class="rec-host-avatar"
+              />
+              <div class="rec-host-info">
+                <div class="rec-host-name-row">
+                  <span class="rec-host-name">{{ room.hostUser.nickname }}</span>
+                  <svg aria-hidden="true" lucideTrendingUp [size]="8" class="rec-crown"></svg>
+                </div>
+                @if (room.hostUser.nationality) {
+                  <span class="rec-host-lang">
+                    <app-country-flag [code]="room.hostUser.nationality" />
+                  </span>
+                }
+              </div>
+            </div>
+
+            <h3 class="rec-title">{{ room.channel.name }}</h3>
+
+            @let tag = room.categoryTopicTag;
+            @if (tag?.topicName) {
+              <p class="rec-topic">{{ tag!.topicName }}</p>
+            }
+
+            <div class="rec-meta">
+              @if (room.channel.langId) {
+                <app-language-tag [langId]="room.channel.langId" />
+              }
+              <span class="rec-category">{{ tag?.categoryName || 'General' }}</span>
+              <span class="rec-members">
+                <svg aria-hidden="true" lucideEye [size]="10"></svg>
+                {{ room.channel.totalUserCount }}
+              </span>
+            </div>
+
+            @if (room.users; as users) {
+              @if (users.length > 0) {
+                <div class="rec-members-preview">
+                  <div class="rec-avatars">
+                    @for (user of users.slice(0, 4); track user.userId; let i = $index) {
+                      <app-avatar
+                        [src]="user.headUrl || ''"
+                        [initials]="user.nickname.slice(0, 2)"
+                        size="xs"
+                        class="rec-avatar"
+                        [style.z-index]="10 - i"
+                        [alt]="user.nickname"
+                      />
+                    }
+                  </div>
+                  @if (room.channel.totalUserCount > 4) {
+                    <span class="rec-members-more">+{{ room.channel.totalUserCount - 4 }}</span>
+                  }
+                </div>
+              }
+            }
+
+            @if (room.channel.heatValue && room.channel.heatValue > 50) {
+              <div class="rec-trending">
+                <svg aria-hidden="true" lucideTrendingUp [size]="10"></svg>
+                Popular now
+              </div>
+            }
+
+            <div class="rec-actions">
+              <app-button
+                variant="primary"
+                size="xs"
+                (click)="joinRoom(room, true, $event)"
+                [attr.aria-label]="'Join ' + room.channel.name + ' as visible'"
+              >
+                <svg aria-hidden="true" lucideEye [size]="10"></svg>
+                Visible
+              </app-button>
+              <app-button
+                variant="soft-warm"
+                size="xs"
+                (click)="joinRoom(room, false, $event)"
+                [attr.aria-label]="'Join ' + room.channel.name + ' as invisible'"
+              >
+                <svg aria-hidden="true" lucideEyeOff [size]="10"></svg>
+                Invisible
+              </app-button>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  } @else if (isLoadingRecommended()) {
+    <section class="recommended-rooms" aria-label="Loading recommendations">
+      <div class="recommended-rooms-scroll">
+        @for (item of recommendedSkeletons(); track $index) {
+          <app-room-skeleton />
+        }
+      </div>
+    </section>
+  }
+
+  <app-category-filter
+    [categories]="categories()"
+    [selectedId]="selectedCategoryId()"
+    (categoryChange)="onCategoryChange($event)"
+  />
+
+  <div class="filter-bar">
+    <app-language-filter
+      [selectedId]="selectedLanguageId()"
+      (languageChange)="onLanguageChange($event)"
+    />
+    <app-search-bar [value]="searchQuery()" (valueChange)="onSearchChange($event)" />
+    <div class="view-toggle" role="group" aria-label="View mode">
+      <button
+        type="button"
+        class="view-btn"
+        [class.active]="viewMode() === 'grid'"
+        (click)="setViewMode('grid')"
+        [attr.aria-pressed]="viewMode() === 'grid'"
+        aria-label="Grid view"
+      >
+        <svg aria-hidden="true" lucideLayoutGrid [size]="14"></svg>
+      </button>
+      <button
+        type="button"
+        class="view-btn"
+        [class.active]="viewMode() === 'list'"
+        (click)="setViewMode('list')"
+        [attr.aria-pressed]="viewMode() === 'list'"
+        aria-label="List view"
+      >
+        <svg aria-hidden="true" lucideList [size]="14"></svg>
+      </button>
+    </div>
+    <button
+      type="button"
+      class="refresh-btn"
+      (click)="refresh()"
+      [disabled]="isLoading()"
+      aria-label="Refresh rooms"
+    >
+      <svg aria-hidden="true" lucideRefreshCw [size]="12" [class.spinning]="isLoading()"></svg>
+    </button>
+    @if (hasActiveFilters()) {
+      <button type="button" class="clear-filters-btn" (click)="clearFilters()">
+        Clear ({{ activeFilterCount() }})
+      </button>
+    }
+  </div>
+
+  @if (isLoading() && filteredRooms().length === 0) {
+    <div class="room-grid" [class.list-view]="viewMode() === 'list'">
+      @for (item of skeletonItems(); track $index) {
+        <app-room-skeleton />
+      }
+    </div>
+  } @else if (filteredRooms().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        @if (isAutoSearching()) {
+          <svg aria-hidden="true" lucideRefreshCw [size]="28" class="animate-spin"></svg>
+        } @else {
+          <svg aria-hidden="true" lucideSearch [size]="28"></svg>
+        }
+      </div>
+      @if (isAutoSearching()) {
+        <p class="empty-title">Searching more rooms…</p>
+        <p class="empty-subtitle">
+          Looking through more results for "{{ searchQuery() }}"
+        </p>
+      } @else {
+        <p class="empty-title">No rooms found</p>
+        <p class="empty-subtitle">
+          Try adjusting your filters or search query to discover more rooms
+        </p>
+        <button type="button" class="empty-reset-btn" (click)="resetFilters()">
+          Reset Filters
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="room-grid" [class.list-view]="viewMode() === 'list'">
+      @for (room of filteredRooms(); track room.channel.cname; let i = $index) {
+        <app-room-card
+          [room]="room"
+          (joinRoom)="onJoinRoom($event)"
+          [style.animation-delay]="i * 30 + 'ms'"
+          class="room-item"
+        />
+      }
+    </div>
+    @if (hasMore()) {
+      <div
+        class="scroll-sentinel"
+        appInfiniteScroll
+        (scrolledTo)="loadMore()"
+        aria-hidden="true"
+      ></div>
+    } @else if (!isLoading() && filteredRooms().length > 0) {
+      <div class="end-of-list" aria-live="polite">
+        <span class="end-of-list-line"></span>
+        <span class="end-of-list-text">You're all caught up</span>
+        <span class="end-of-list-line"></span>
+      </div>
+    }
+  }
+</div>

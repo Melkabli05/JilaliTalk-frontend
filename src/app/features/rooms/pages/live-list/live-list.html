@@ -1,0 +1,132 @@
+<div class="voice-list-page">
+  <header class="page-header">
+    <h1 class="page-title">Live Rooms</h1>
+    <p class="page-subtitle">{{ filteredRooms().length }} rooms available</p>
+  </header>
+
+  @if (recommendedRooms().length > 0) {
+    <section class="recommended-rooms" aria-labelledby="recommended-heading">
+      <div class="section-header">
+        <svg aria-hidden="true" lucideFlame [size]="14" class="flame-icon"></svg>
+        <h2 id="recommended-heading" class="section-title">Recommended Lives</h2>
+              </div>
+      <div class="recommended-rooms-scroll">
+        @for (room of recommendedRooms().slice(0, 6); track room.channel.cname) {
+          <app-live-room-card
+            [room]="room"
+            (joinRoom)="onJoinRoom($event)"
+          />
+        }
+      </div>
+    </section>
+  } @else if (isLoadingRecommended()) {
+    <section class="recommended-rooms" aria-label="Loading recommendations">
+      <div class="recommended-rooms-scroll">
+        @for (item of recommendedSkeletons(); track $index) {
+          <app-room-skeleton />
+        }
+      </div>
+    </section>
+  }
+
+  <div class="filter-bar">
+    <app-language-filter
+      [selectedId]="selectedLanguageId()"
+      (languageChange)="onLanguageChange($event)"
+    />
+    <app-search-bar [value]="searchQuery()" (valueChange)="onSearchChange($event)" />
+    <div class="view-toggle" role="group" aria-label="View mode">
+      <button
+        type="button"
+        class="view-btn"
+        [class.active]="viewMode() === 'grid'"
+        (click)="setViewMode('grid')"
+        [attr.aria-pressed]="viewMode() === 'grid'"
+        aria-label="Grid view"
+      >
+        <svg aria-hidden="true" lucideLayoutGrid [size]="14"></svg>
+      </button>
+      <button
+        type="button"
+        class="view-btn"
+        [class.active]="viewMode() === 'list'"
+        (click)="setViewMode('list')"
+        [attr.aria-pressed]="viewMode() === 'list'"
+        aria-label="List view"
+      >
+        <svg aria-hidden="true" lucideList [size]="14"></svg>
+      </button>
+    </div>
+    <button
+      type="button"
+      class="refresh-btn"
+      (click)="refresh()"
+      [disabled]="isLoading()"
+      aria-label="Refresh rooms"
+    >
+      <svg aria-hidden="true" lucideRefreshCw [size]="12" [class.spinning]="isLoading()"></svg>
+    </button>
+    @if (hasActiveFilters()) {
+      <button type="button" class="clear-filters-btn" (click)="clearFilters()">
+        Clear ({{ activeFilterCount() }})
+      </button>
+    }
+  </div>
+
+  @if (isLoading() && filteredRooms().length === 0) {
+    <div class="room-grid" [class.list-view]="viewMode() === 'list'">
+      @for (item of skeletonItems(); track $index) {
+        <app-room-skeleton />
+      }
+    </div>
+  } @else if (filteredRooms().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        @if (isAutoSearching()) {
+          <svg aria-hidden="true" lucideRefreshCw [size]="28" class="animate-spin"></svg>
+        } @else {
+          <svg aria-hidden="true" lucideSearch [size]="28"></svg>
+        }
+      </div>
+      @if (isAutoSearching()) {
+        <p class="empty-title">Searching more rooms…</p>
+        <p class="empty-subtitle">
+          Looking through more results for "{{ searchQuery() }}"
+        </p>
+      } @else {
+        <p class="empty-title">No live rooms found</p>
+        <p class="empty-subtitle">
+          Try adjusting your filters or search query to discover more rooms
+        </p>
+        <button type="button" class="empty-reset-btn" (click)="resetFilters()">
+          Reset Filters
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="room-grid" [class.list-view]="viewMode() === 'list'">
+      @for (room of filteredRooms(); track room.channel.cname; let i = $index) {
+        <app-live-room-card
+          [room]="room"
+          (joinRoom)="onJoinRoom($event)"
+          [style.animation-delay]="i * 30 + 'ms'"
+          class="room-item"
+        />
+      }
+    </div>
+    @if (hasMore()) {
+      <div
+        class="scroll-sentinel"
+        appInfiniteScroll
+        (scrolledTo)="loadMore()"
+        aria-hidden="true"
+      ></div>
+    } @else if (!isLoading() && filteredRooms().length > 0) {
+      <div class="end-of-list" aria-live="polite">
+        <span class="end-of-list-line"></span>
+        <span class="end-of-list-text">You're all caught up</span>
+        <span class="end-of-list-line"></span>
+      </div>
+    }
+  }
+</div>

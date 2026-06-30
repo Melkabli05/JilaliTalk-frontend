@@ -1,0 +1,1 @@
+export { CommentsPanelComponent } from './comments-panel';

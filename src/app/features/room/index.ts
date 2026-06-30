@@ -1,0 +1,1 @@
+export { roomRoutes } from './room.routes';

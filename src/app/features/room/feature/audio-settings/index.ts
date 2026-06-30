@@ -1,0 +1,1 @@
+export { AvSettingsComponent } from './av-settings';

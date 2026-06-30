@@ -1,0 +1,1 @@
+export { RoomHeaderComponent } from './room-header';

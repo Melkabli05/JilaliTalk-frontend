@@ -1,0 +1,749 @@
+import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
+import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
+import { UserInfoService } from '@core/services/user-info.service';
+import { ModalComponent } from '@shared/ui/modal/modal.component';
+import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
+import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
+import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
+import { LucideX, LucideCrown } from '@lucide/angular';
+
+export interface UserInfoModalData {
+  readonly userId: number;
+  readonly nickname?: string | null;
+  readonly headUrl?: string | null;
+  readonly nationality?: string | null;
+}
+
+/**
+ * Read-only profile viewer: identity card, stats, and a detail list.
+ * Opens via CDK Dialog from anywhere in the app. Fetches enriched profile
+ * from UserInfoService. For moderation actions, see the room feature's
+ * UserActionModalComponent.
+ */
+@Component({
+  selector: 'app-user-info-modal',
+  imports: [
+    ModalComponent,
+    AvatarComponent,
+    CountryFlagComponent,
+    LanguageTagComponent,
+    LucideX,
+    LucideCrown,
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <app-modal [noPadding]="true">
+      <button type="button" class="close-btn" (click)="ref.close()" aria-label="Close">
+        <svg aria-hidden="true" lucideX [size]="14"></svg>
+      </button>
+
+      <div class="identity-card" [class.identity-card--vip]="vipType() === 100">
+        <app-avatar
+          [src]="avatarUrl()"
+          [initials]="initials()"
+          size="xl"
+          [alt]="displayName()"
+          [status]="onlineStatus() === 'Online' ? 'online' : null"
+          [ringColor]="vipType() === 100 ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
+        />
+
+        <div class="identity-main">
+          <div class="name-row">
+            <span class="user-name" id="user-info-title">{{ displayName() }}</span>
+            @if (sex() === 'male') {
+              <span class="sex-badge sex-male">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="14.5" r="5.5"/><path d="M19.5 8 12 15.5M19.5 8l-5.5 0"/></svg>
+              </span>
+            } @else if (sex() === 'female') {
+              <span class="sex-badge sex-female">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="14.5" r="5.5"/><path d="M14.5 8 12 5.5M14.5 8h-5M12 5.5v8"/></svg>
+              </span>
+            }
+          </div>
+          @if (username()) {
+            <span class="user-handle">&#64;{{ username() }}</span>
+          }
+          <div class="meta-row">
+            @if (vipType() === 100) {
+              <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+            } @else if (vipType() > 0 && vipType() < 100) {
+              <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+            }
+            @if (onlineStatus(); as status) {
+              <span class="chip" [class]="onlineChipClass()">{{ status }}</span>
+            }
+            @if (liveStatus()) {
+              <span class="chip chip-live">LIVE</span>
+            }
+            @if (streakDays(); as streak) {
+              <span class="chip chip-streak">{{ streak }}-day streak</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      @if (signature()) {
+        <p class="bio">{{ signature() }}</p>
+      }
+
+      @if (relationStats(); as stats) {
+        <div class="stats-row">
+          <div class="stat-item">
+            <span class="stat-val">{{ stats.followers }}</span>
+            <span class="stat-lbl">Followers</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-val">{{ stats.following }}</span>
+            <span class="stat-lbl">Following</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-val">{{ stats.moments }}</span>
+            <span class="stat-lbl">Moments</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-val">{{ stats.likes }}</span>
+            <span class="stat-lbl">Likes</span>
+          </div>
+        </div>
+      }
+
+      <div class="modal-body">
+        @if (isLoading()) {
+          <div class="loading-state">
+            <div class="skeleton-row">
+              <div class="skeleton-chip"></div>
+              <div class="skeleton-chip skeleton-chip--lg"></div>
+            </div>
+            <div class="skeleton-row">
+              <div class="skeleton-chip"></div>
+              <div class="skeleton-chip"></div>
+            </div>
+          </div>
+        } @else {
+          @if (hasLocationMeta() || nativeLang() || learnLangs().length) {
+            <div class="detail-group">
+              @if (hasLocationMeta()) {
+                <div class="detail-row">
+                  <div class="detail-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  </div>
+                  <div class="detail-content">
+                    @if (nationality()) {
+                      <app-country-flag [code]="nationality()" />
+                    }
+                    @if (location(); as loc) {
+                      <span class="detail-text">{{ loc }}</span>
+                    }
+                    @if (age(); as a) {
+                      <span class="detail-text muted">{{ a }} yrs old</span>
+                    }
+                    @if (regDays() != null) {
+                      <span class="detail-text muted">Member for {{ regDays() }}d</span>
+                    }
+                  </div>
+                </div>
+              }
+
+              @if (nativeLang() || learnLangs().length) {
+                <div class="detail-row">
+                  <div class="detail-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </div>
+                  <div class="detail-content">
+                    @if (nativeLang(); as lang) {
+                      <app-language-tag [langId]="lang" />
+                    }
+                    @if (learnLangs().length) {
+                      <span class="detail-text muted">also learning</span>
+                      @for (lang of learnLangs(); track lang.langId) {
+                        <app-language-tag [langId]="lang.langId" />
+                      }
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          @if (tagChips().length) {
+            <div class="tags-row">
+              @for (chip of tagChips(); track $index) {
+                <span class="tag">{{ chip }}</span>
+              }
+            </div>
+          }
+
+          @if (giftLevel() || pointsSummary()) {
+            <div class="detail-row">
+              <div class="detail-icon gold-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <div class="detail-content">
+                @if (giftLevel(); as level) {
+                  <span class="chip chip-gold">Gift {{ level }}</span>
+                }
+                @if (pointsSummary(); as pts) {
+                  <span class="detail-text muted">{{ pts }} points</span>
+                }
+              </div>
+            </div>
+          }
+
+          @if (remarkName() || profileUrl()) {
+            <div class="links-row">
+              @if (remarkName(); as remark) {
+                <span class="remark-chip">&#64;{{ remark }}</span>
+              }
+              @if (profileUrl(); as url) {
+                <a class="profile-link" [href]="url" target="_blank" rel="noopener">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  View profile
+                </a>
+              }
+            </div>
+          }
+
+          @if (
+            !hasLocationMeta() &&
+            !nativeLang() &&
+            !learnLangs().length &&
+            !tagChips().length &&
+            !giftLevel() &&
+            !pointsSummary() &&
+            !remarkName() &&
+            !profileUrl()
+          ) {
+            <div class="empty-state">
+              <p class="empty-text">No details yet</p>
+            </div>
+          }
+        }
+      </div>
+    </app-modal>
+  `,
+  styles: [
+    `
+      :host {
+        display: block;
+        width: 340px;
+        max-width: calc(100vw - var(--space-8));
+        --_modal-radius: var(--radius-xl);
+        box-shadow: var(--shadow-modal);
+        animation: slideUp 0.2s ease-out;
+      }
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(10px) scale(0.98); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        :host { animation: none; }
+      }
+
+      .close-btn {
+        position: absolute;
+        top: var(--space-3);
+        right: var(--space-3);
+        width: 26px;
+        height: 26px;
+        border-radius: var(--radius-full);
+        border: none;
+        background: var(--color-neutral-100);
+        color: var(--color-text-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s, transform 0.15s;
+        z-index: 1;
+      }
+      .close-btn:hover {
+        background: var(--color-neutral-200);
+        color: var(--color-text);
+        transform: rotate(90deg);
+      }
+      .close-btn:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: 2px;
+      }
+      :host-context(.dark) .close-btn {
+        background: var(--color-neutral-700);
+        color: var(--color-neutral-300);
+      }
+      :host-context(.dark) .close-btn:hover {
+        background: var(--color-neutral-600);
+        color: var(--color-neutral-100);
+      }
+
+      .identity-card {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: calc(var(--space-4) + 26px + var(--space-3)) var(--space-4) var(--space-4);
+        background: var(--color-card);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        animation: itemIn 0.25s ease-out backwards;
+      }
+      .identity-card--vip {
+        border-bottom: 2px solid var(--color-gold-400);
+      }
+      :host-context(.dark) .identity-card {
+        background: var(--color-neutral-800);
+      }
+
+      .identity-main {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .name-row {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .user-name {
+        font-size: var(--text-base);
+        font-weight: var(--font-bold);
+        color: var(--color-text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 140px;
+      }
+      :host-context(.dark) .user-name { color: var(--color-neutral-100); }
+
+      .sex-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        border-radius: var(--radius-full);
+        flex-shrink: 0;
+      }
+      .sex-male {
+        background: hsl(230deg 28% 90%);
+        color: hsl(230deg 28% 45%);
+      }
+      .sex-female {
+        background: hsl(10deg 32% 90%);
+        color: hsl(10deg 32% 45%);
+      }
+      :host-context(.dark) .sex-male {
+        background: hsl(230deg 20% 25%);
+        color: hsl(230deg 20% 60%);
+      }
+      :host-context(.dark) .sex-female {
+        background: hsl(10deg 20% 25%);
+        color: hsl(10deg 20% 60%);
+      }
+
+      .user-handle {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        display: block;
+      }
+      :host-context(.dark) .user-handle { color: var(--color-neutral-400); }
+
+      .meta-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+        margin-top: 2px;
+      }
+
+      .bio {
+        margin: var(--space-2) var(--space-4) 0;
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        line-height: 1.5;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        animation: itemIn 0.25s ease-out 0.05s backwards;
+      }
+      :host-context(.dark) .bio { color: var(--color-neutral-400); }
+
+      .stats-row {
+        display: flex;
+        align-items: center;
+        margin: var(--space-3) var(--space-4) 0;
+        padding-bottom: var(--space-2);
+        border-bottom: 1px solid var(--color-border);
+      }
+      :host-context(.dark) .stats-row {
+        border-bottom-color: var(--color-neutral-700);
+      }
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        gap: 1px;
+      }
+
+      .stat-val {
+        font-size: var(--text-sm);
+        font-weight: var(--font-bold);
+        color: var(--color-text);
+      }
+      :host-context(.dark) .stat-val { color: var(--color-neutral-100); }
+
+      .stat-lbl {
+        font-size: 10px;
+        color: var(--color-text-muted);
+      }
+      :host-context(.dark) .stat-lbl { color: var(--color-neutral-400); }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: var(--text-2xs);
+        font-weight: var(--font-semibold);
+        padding: 2px 6px;
+        border-radius: var(--radius-full);
+        white-space: nowrap;
+      }
+      .chip-neutral {
+        background: var(--color-neutral-100);
+        color: var(--color-text-secondary);
+      }
+      .chip-primary {
+        background: var(--color-primary-50);
+        color: var(--color-primary-600);
+      }
+      .chip-gold {
+        background: var(--color-gold-50);
+        color: var(--color-gold-600);
+      }
+      .chip-online {
+        background: var(--color-accent-50);
+        color: var(--color-accent-600);
+      }
+      .chip-offline {
+        background: var(--color-neutral-100);
+        color: var(--color-text-muted);
+      }
+      .chip-live {
+        background: var(--color-error-50);
+        color: var(--color-error-600);
+      }
+      .chip-streak {
+        background: var(--color-gold-50);
+        color: var(--color-gold-600);
+      }
+      :host-context(.dark) .chip-offline {
+        background: var(--color-neutral-700);
+        color: var(--color-neutral-300);
+      }
+      :host-context(.dark) .chip-live {
+        background: var(--color-error-900);
+        color: var(--color-error-300);
+      }
+      :host-context(.dark) .chip-neutral {
+        background: var(--color-neutral-700);
+        color: var(--color-neutral-200);
+      }
+      :host-context(.dark) .chip-primary {
+        background: var(--color-primary-900);
+        color: var(--color-primary-300);
+      }
+      :host-context(.dark) .chip-gold {
+        background: color-mix(in srgb, var(--color-gold-500) 20%, transparent);
+        color: var(--color-gold-300);
+      }
+      :host-context(.dark) .chip-streak {
+        background: color-mix(in srgb, var(--color-gold-500) 20%, transparent);
+        color: var(--color-gold-300);
+      }
+      :host-context(.dark) .chip-online {
+        background: var(--color-accent-900);
+        color: var(--color-accent-300);
+      }
+
+      .modal-body {
+        padding: var(--space-3) var(--space-4) var(--space-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+
+      .detail-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+
+      .detail-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        animation: itemIn 0.2s ease-out backwards;
+      }
+
+      .detail-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: var(--radius-md);
+        background: var(--color-neutral-100);
+        color: var(--color-neutral-500);
+        flex-shrink: 0;
+      }
+      .detail-icon.gold-icon {
+        background: var(--color-gold-50);
+        color: var(--color-gold-600);
+      }
+      :host-context(.dark) .detail-icon {
+        background: var(--color-neutral-700);
+        color: var(--color-neutral-400);
+      }
+      :host-context(.dark) .detail-icon.gold-icon {
+        background: color-mix(in srgb, var(--color-gold-800) 50%, transparent);
+        color: var(--color-gold-400);
+      }
+
+      .detail-content {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 5px;
+        font-size: var(--text-xs);
+      }
+
+      .detail-text {
+        color: var(--color-text);
+      }
+      .detail-text.muted {
+        color: var(--color-text-muted);
+        font-size: var(--text-2xs);
+      }
+      :host-context(.dark) .detail-text { color: var(--color-neutral-100); }
+      :host-context(.dark) .detail-text.muted { color: var(--color-neutral-400); }
+
+      .tags-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1);
+        animation: itemIn 0.2s ease-out 0.05s backwards;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        background: var(--color-neutral-100);
+        color: var(--color-text-secondary);
+        border: 1px solid var(--color-neutral-200);
+      }
+      :host-context(.dark) .tag {
+        background: var(--color-neutral-700);
+        color: var(--color-neutral-300);
+        border-color: var(--color-neutral-600);
+      }
+
+      .links-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding-top: var(--space-1);
+        animation: itemIn 0.2s ease-out 0.1s backwards;
+      }
+
+      .remark-chip {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        font-style: italic;
+      }
+
+      .profile-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: var(--text-xs);
+        color: var(--color-primary-600);
+        text-decoration: none;
+        font-weight: var(--font-medium);
+      }
+      .profile-link:hover {
+        color: var(--color-primary-700);
+        text-decoration: underline;
+      }
+      :host-context(.dark) .profile-link { color: var(--color-primary-300); }
+      :host-context(.dark) .profile-link:hover { color: var(--color-primary-200); }
+
+      .empty-state {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-4) 0;
+      }
+      .empty-text {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        margin: 0;
+        font-style: italic;
+      }
+      :host-context(.dark) .empty-text { color: var(--color-neutral-400); }
+
+      .loading-state {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .skeleton-row {
+        display: flex;
+        gap: var(--space-2);
+      }
+      .skeleton-chip {
+        height: 22px;
+        width: 64px;
+        border-radius: var(--radius-full);
+        background: linear-gradient(90deg, var(--color-neutral-200) 25%, var(--color-neutral-100) 50%, var(--color-neutral-200) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+      }
+      .skeleton-chip--lg { width: 100px; }
+      :host-context(.dark) .skeleton-chip {
+        background: linear-gradient(90deg, var(--color-neutral-700) 25%, var(--color-neutral-600) 50%, var(--color-neutral-700) 75%);
+        background-size: 200% 100%;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .skeleton-chip { animation: none; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .identity-card, .bio, .detail-row, .tags-row, .links-row { animation: none; }
+      }
+    `,
+  ],
+})
+export class UserInfoModalComponent {
+  readonly ref = inject<DialogRef<void>>(DialogRef);
+  private readonly data = inject<UserInfoModalData>(DIALOG_DATA);
+  private readonly userInfoService = inject(UserInfoService);
+
+  constructor() {
+    const uid = this.data.userId;
+    if (uid > 0 && !this.userInfoService.getUserInfo(uid)) {
+      void this.userInfoService.fetchUserInfo(uid);
+    }
+  }
+
+  private readonly info = computed(() => this.userInfoService.getUserInfo(this.data.userId));
+  private readonly details = computed(() => this.info()?.details ?? null);
+  private readonly profileBase = computed(() => this.details()?.base ?? null);
+  private readonly privileges = computed(() => this.details()?.privileges ?? null);
+
+  readonly isLoading = computed(() => this.userInfoService.loading() && !this.info());
+
+  readonly displayName = computed(() => this.info()?.nickname ?? this.data.nickname ?? 'User');
+  readonly avatarUrl = computed(() => this.profileBase()?.headUrl || this.data.headUrl || '');
+  readonly initials = computed(() => this.displayName().slice(0, 2));
+
+  readonly username = computed(() => this.info()?.username ?? null);
+  readonly signature = computed(() => this.profileBase()?.signature ?? null);
+  readonly nationality = computed(() => this.info()?.nationality ?? this.data.nationality ?? null);
+  readonly sex = computed(() => this.info()?.sex ?? null);
+  readonly nativeLang = computed(() => this.profileBase()?.nativeLang ?? null);
+  readonly learnLangs = computed(() => this.profileBase()?.learnLangs ?? []);
+  readonly vipType = computed(() => this.profileBase()?.vipType ?? 0);
+  readonly streakDays = computed(() => this.details()?.default?.consecutiveDays || null);
+
+  private readonly hideAge = computed(() => this.privileges()?.hideAge === 1);
+  private readonly hideCity = computed(() => this.privileges()?.hideCity === 1);
+  private readonly hideLocation = computed(() => this.privileges()?.hideLocation === 1);
+  private readonly hideOnline = computed(() => this.privileges()?.hideOnline === 1);
+  private readonly hideLiveStatus = computed(() => this.privileges()?.hideLiveStatus === 1);
+
+  readonly age = computed(() => (this.hideAge() ? null : this.info()?.age ?? null));
+  readonly regDays = computed(() => this.info()?.regDays ?? null);
+
+  readonly coverImageUrl = computed(() =>
+    this.hideLocation() ? null : this.details()?.location?.mapImageUrl || null,
+  );
+
+  readonly location = computed(() => {
+    if (this.hideCity() || this.hideLocation()) return null;
+    const loc = this.details()?.location;
+    const parts = [loc?.city, loc?.fullCountry].filter((p): p is string => !!p);
+    return parts.length ? parts.join(', ') : null;
+  });
+
+  readonly hasLocationMeta = computed(
+    () => !!(this.nationality() || this.location() || this.age() || this.regDays() != null),
+  );
+
+  readonly onlineStatus = computed(() => {
+    if (this.hideOnline()) return null;
+    const s = this.details()?.onlineState?.onlineState;
+    if (s == null) return null;
+    return s === 1 ? 'Online' : 'Offline';
+  });
+  readonly onlineChipClass = computed(() =>
+    this.onlineStatus() === 'Online' ? 'chip-online' : 'chip-offline',
+  );
+
+  readonly liveStatus = computed(() => {
+    if (this.hideLiveStatus()) return null;
+    const s = this.details()?.liveState?.statusType;
+    return s != null && s > 0;
+  });
+
+  readonly relationStats = computed(() => {
+    const relation = this.details()?.relation;
+    if (!relation) return null;
+    return {
+      followers: relation.followers ?? 0,
+      following: relation.following ?? 0,
+      moments: relation.moments ?? 0,
+      likes: relation.likes ?? 0,
+    };
+  });
+
+  readonly tagChips = computed<readonly string[]>(() => {
+    const tags = this.details()?.tags;
+    if (!tags) return [];
+    return [
+      ...(tags.hobby ?? []),
+      ...(tags.occupation ?? []),
+      ...(tags.hometown ?? []),
+      ...(tags.travelling ?? []),
+      ...(tags.mbti ?? []),
+      ...(tags.zodiacSign ?? []),
+      ...(tags.bloodType ?? []),
+    ]
+      .map((t) => t.tag ?? '')
+      .filter((tag) => tag.length > 0);
+  });
+
+  readonly giftLevel = computed(() => this.details()?.giftLevel ?? null);
+
+  readonly pointsSummary = computed(() => {
+    const p = this.details()?.points;
+    if (!p) return null;
+    const total =
+      (p.correct ?? 0) +
+      (p.translate ?? 0) +
+      (p.word ?? 0) +
+      (p.speechToText ?? 0) +
+      (p.textTranslate ?? 0) +
+      (p.transliterate ?? 0);
+    return total > 0 ? total.toLocaleString() : null;
+  });
+
+  readonly remarkName = computed(() => this.details()?.remark?.remarkName ?? null);
+  readonly profileUrl = computed(() => this.details()?.default?.profileShareUrl ?? null);
+}

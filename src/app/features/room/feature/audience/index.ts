@@ -1,0 +1,1 @@
+export { AudienceListComponent } from './audience-list';

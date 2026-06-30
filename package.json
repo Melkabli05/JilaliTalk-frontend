@@ -1,0 +1,46 @@
+{
+  "name": "jilali-talk",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "lint:styles": "stylelint \"src/**/*.scss\" --allow-empty-input"
+  },
+  "private": true,
+  "packageManager": "npm@11.6.2",
+  "dependencies": {
+    "@angular/aria": "^22.0.1",
+    "@angular/cdk": "^22.0.0",
+    "@angular/common": "^22.0.0",
+    "@angular/compiler": "^22.0.0",
+    "@angular/core": "^22.0.0",
+    "@angular/forms": "^22.0.0",
+    "@angular/platform-browser": "^22.0.0",
+    "@angular/router": "^22.0.0",
+    "@lucide/angular": "^1.17.0",
+    "agora-rtc-sdk-ng": "^4.24.4",
+    "agora-rtm-sdk": "^2.2.4",
+    "emoji-picker-element": "^1.29.1",
+    "postcss": "^8.5.15",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.0.0",
+    "@angular/cli": "^22.0.0",
+    "@angular/compiler-cli": "^22.0.0",
+    "@tailwindcss/postcss": "^4.3.1",
+    "jsdom": "^29.1.1",
+    "postcss-scss": "^4.0.9",
+    "prettier": "^3.8.1",
+    "sass": "^1.99.0",
+    "stylelint": "^16.10.0",
+    "stylelint-config-standard-scss": "^14.0.0",
+    "tailwindcss": "^4.3.1",
+    "typescript": "~6.0.2",
+    "vitest": "^4.0.8"
+  }
+}
