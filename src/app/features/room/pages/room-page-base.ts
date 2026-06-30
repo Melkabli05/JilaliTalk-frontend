@@ -131,6 +131,10 @@ export abstract class RoomPageBase {
       this.roomStore.isHost(),
       (uid) => this.resolveNickname(uid),
     );
+    if (event.type === 'room_kick' && Number(event.userId) === this.roomStore.userId()) {
+      this.toast.warning(`You were removed from the room by ${event.managerName}`);
+      void this.onLeave();
+    }
   });
 
 
@@ -380,6 +384,7 @@ export interface RoomStoreContract {
   setRtcInfo(v: unknown): void;
   setRoomLevelInfo(v: unknown): void;
   setHandRaised(v: boolean): void;
+  setVisibility(v: boolean): void;
   setCamOn(v: boolean): void;
   setMicOn(v: boolean): void;
   setCname(v: string): void;

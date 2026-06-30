@@ -1,4 +1,12 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  input,
+  output,
+  signal,
+  computed,
+  inject,
+} from '@angular/core';
 import { Tabs, TabList, Tab, TabPanel, TabContent } from '@angular/aria/tabs';
 import { CommentListComponent } from './comment-list';
 import { CommentInputComponent, ReplyTarget, SendEvent } from './comment-input';
@@ -29,7 +37,12 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
     <div class="comments-panel" ngTabs>
       <div class="panel-header">
         <div class="header-left">
-          <ul ngTabList class="tabs" [(selectedTab)]="activeTab" (selectedTabChange)="onTabChange($event)">
+          <ul
+            ngTabList
+            class="tabs"
+            [(selectedTab)]="activeTab"
+            (selectedTabChange)="onTabChange($event)"
+          >
             <li ngTab value="comments" class="tab-btn">
               <svg aria-hidden="true" lucideMessageCircle [size]="13" />
               <span>Comments</span>
@@ -41,7 +54,12 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
           </ul>
         </div>
         <div class="header-actions">
-          <button class="icon-btn" [disabled]="refreshing()" (click)="onRefresh()" aria-label="Refresh">
+          <button
+            class="icon-btn"
+            [disabled]="refreshing()"
+            (click)="onRefresh()"
+            aria-label="Refresh"
+          >
             <svg aria-hidden="true" lucideRefreshCw [size]="13" [class.spinning]="refreshing()" />
           </button>
           <button class="icon-btn" (click)="onClose()" aria-label="Close">
@@ -89,136 +107,176 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
       </div>
     </div>
   `,
-  styles: [`
-    :host { display: flex; flex-direction: column; height: 100%; }
+  styles: [
+    `
+      :host {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100% !important;
+      }
 
-    /* ─── Design tokens ─── */
-    :host {
-      --cp-bg:      var(--color-card);
-      --cp-border:  var(--color-border);
-      --cp-tab-bg:  var(--color-neutral-100);
-      --cp-tab-txt: var(--color-text-muted);
-      --cp-tab-active-bg: var(--color-card);
-      --cp-tab-active-txt: var(--color-primary-600);
-      --cp-icon:    var(--color-text-muted);
-    }
-    :host-context(.dark) {
-      --cp-bg:      var(--color-neutral-800);
-      --cp-border:  var(--color-neutral-700);
-      --cp-tab-bg:  var(--color-neutral-800);
-      --cp-tab-txt: var(--color-neutral-400);
-      --cp-tab-active-bg: var(--color-neutral-700);
-      --cp-tab-active-txt: var(--color-primary-300);
-      --cp-icon:    var(--color-neutral-400);
-    }
+      /* ─── Design tokens ─── */
+      :host {
+        --cp-bg: var(--color-card);
+        --cp-border: var(--color-border);
+        --cp-tab-bg: var(--color-neutral-100);
+        --cp-tab-txt: var(--color-text-muted);
+        --cp-tab-active-bg: var(--color-card);
+        --cp-tab-active-txt: var(--color-primary-600);
+        --cp-icon: var(--color-text-muted);
+      }
+      :host-context(.dark) {
+        --cp-bg: var(--color-neutral-800);
+        --cp-border: var(--color-neutral-700);
+        --cp-tab-bg: var(--color-neutral-800);
+        --cp-tab-txt: var(--color-neutral-400);
+        --cp-tab-active-bg: var(--color-neutral-700);
+        --cp-tab-active-txt: var(--color-primary-300);
+        --cp-icon: var(--color-neutral-400);
+      }
 
-    .comments-panel {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: var(--cp-bg);
-      border-left: 1px solid var(--cp-border);
-    }
+      .comments-panel {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100% !important;
+        background: var(--cp-bg);
+        border-left: 1px solid var(--cp-border);
+      }
 
-    .panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: var(--space-2) var(--space-3);
-      border-bottom: 1px solid var(--cp-border);
-      flex-shrink: 0;
-    }
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      min-width: 0;
-    }
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-2) var(--space-3);
+        border-bottom: 1px solid var(--cp-border);
+        flex-shrink: 0;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        min-width: 0;
+      }
 
-    .tabs {
-      display: flex;
-      gap: 2px;
-      padding: 2px;
-      margin: 0;
-      list-style: none;
-      border-radius: var(--radius-md);
-      background: var(--cp-tab-bg);
-    }
-    .tab-btn {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-      padding: 3px var(--space-2);
-      border: none;
-      border-radius: var(--radius-sm);
-      background: transparent;
-      color: var(--cp-tab-txt);
-      font-size: var(--text-xs);
-      font-weight: var(--font-medium);
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .tab-btn[aria-selected='true'] {
-      background: var(--cp-tab-active-bg);
-      color: var(--cp-tab-active-txt);
-    }
-    .tab-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+      .tabs {
+        display: flex;
+        gap: 2px;
+        padding: 2px;
+        margin: 0;
+        list-style: none;
+        border-radius: var(--radius-md);
+        background: var(--cp-tab-bg);
+      }
+      .tab-btn {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: 3px var(--space-2);
+        border: none;
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--cp-tab-txt);
+        font-size: var(--text-xs);
+        font-weight: var(--font-medium);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .tab-btn[aria-selected='true'] {
+        background: var(--cp-tab-active-bg);
+        color: var(--cp-tab-active-txt);
+      }
+      .tab-btn:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: var(--focus-ring-offset);
+      }
 
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-    }
-    .icon-btn {
-      width: 24px; height: 24px;
-      border-radius: var(--radius-sm);
-      display: flex; align-items: center; justify-content: center;
-      background: none; border: none; cursor: pointer;
-      color: var(--cp-icon);
-    }
-    .icon-btn:disabled { cursor: default; opacity: 0.6; }
-    .icon-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-    .spinning { animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { .spinning { animation: none; } }
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+      }
+      .icon-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--cp-icon);
+      }
+      .icon-btn:disabled {
+        cursor: default;
+        opacity: 0.6;
+      }
+      .icon-btn:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: var(--focus-ring-offset);
+      }
+      .spinning {
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .spinning {
+          animation: none;
+        }
+      }
 
-    .tab-panel {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      min-height: 0;
-      overflow: hidden;
-    }
-    .tab-panel[inert] {
-      display: none;
-    }
-    .comments-scroll {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-    }
-    app-comment-input {
-      flex-shrink: 0;
-    }
+      .tab-panel {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .tab-panel[inert] {
+        display: none;
+      }
+      .comments-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+      }
+      app-comment-input {
+        flex-shrink: 0;
+      }
 
-    /* ─── Typing indicator ─── */
-    .typing-indicator {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-      padding: 2px var(--space-3) var(--space-1);
-      font-size: var(--text-2xs);
-      color: var(--cp-icon);
-      flex-shrink: 0;
-    }
-    .typing-dots { display: inline-flex; gap: 2px; align-items: center; }
-    .typing-dot {
-      width: 4px; height: 4px; border-radius: 50%;
-      background: var(--color-primary-500);
-      opacity: 0.5;
-    }
-    :host-context(.dark) .typing-dot { background: var(--color-primary-300); }
-  `],
+      /* ─── Typing indicator ─── */
+      .typing-indicator {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: 2px var(--space-3) var(--space-1);
+        font-size: var(--text-2xs);
+        color: var(--cp-icon);
+        flex-shrink: 0;
+      }
+      .typing-dots {
+        display: inline-flex;
+        gap: 2px;
+        align-items: center;
+      }
+      .typing-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--color-primary-500);
+        opacity: 0.5;
+      }
+      :host-context(.dark) .typing-dot {
+        background: var(--color-primary-300);
+      }
+    `,
+  ],
 })
 export class CommentsPanelComponent {
   readonly commentsStore = inject(CommentsStore);
@@ -241,7 +299,12 @@ export class CommentsPanelComponent {
   readonly replyTo = computed<ReplyTarget | null>(() => {
     const comment = this.replyTarget();
     return comment
-      ? { msgId: comment._id, fromId: comment.userId, nickname: comment.nickname, text: comment.msg.text.text }
+      ? {
+          msgId: comment._id,
+          fromId: comment.userId,
+          nickname: comment.nickname,
+          text: comment.msg.text.text,
+        }
       : null;
   });
 

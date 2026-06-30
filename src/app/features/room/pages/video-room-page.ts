@@ -219,6 +219,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
   protected readonly leaveNavTarget = ['/rooms/live'];
 
   private entering = false;
+  private hasConnectedOnce = false;
 
   readonly remoteVideoTracks = computed<
     ReadonlyMap<number, import('../ui/video-stage-user').PlayableVideoTrack>
@@ -238,10 +239,11 @@ export class VideoRoomPageComponent extends RoomPageBase {
     effect(() => {
       if (this._destroying()) return;
       const status = this.bffWs.wsStatus();
-      if (status === 'disconnected') {
+      if (this.hasConnectedOnce && status === 'disconnected') {
         this.toast.error('Connection lost — refresh to rejoin');
         void this.router.navigate(['/rooms/live']);
       }
+      if (status === 'connected') this.hasConnectedOnce = true;
     });
 
     effect(() => {
@@ -311,23 +313,23 @@ export class VideoRoomPageComponent extends RoomPageBase {
     if (reqUser?.base?.headUrl) this.roomStore.setHeadUrl(reqUser.base.headUrl);
     if (reqUser?.base?.nationality) this.roomStore.setNationality(reqUser.base.nationality);
 
-    const heartbeatHostId = visible ? (liveInfo.hostInfo?.userId ?? 0) : 0;
+    const isVisible = this.roomStore.isVisible();
+    const heartbeatHostId = isVisible ? (liveInfo.hostInfo?.userId ?? 0) : 0;
     this.bffWs.connect(actualCname, heartbeatHostId, busiType);
     const uid = this.roomStore.userId();
 
-    if (visible) {
-      this.audienceStore.setCname(actualCname);
-      const { stage, audience, comments } = await firstValueFrom(
-        forkJoin({
-          stage: this.api.fetchStageUsers(actualCname, busiType),
-          audience: this.api.fetchAudienceUsers(actualCname, busiType),
-          comments: this.api.fetchComments(actualCname, busiType),
-        }),
-      );
-      this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
-      this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
-      this.commentsStore.updateComments([...(comments?.items ?? [])]);
-    }
+    if (isVisible) this.audienceStore.setCname(actualCname);
+    const { stage, audience, comments } = await firstValueFrom(
+      forkJoin({
+        stage: this.api.fetchStageUsers(actualCname, busiType),
+        audience: this.api.fetchAudienceUsers(actualCname, busiType),
+        comments: this.api.fetchComments(actualCname, busiType),
+      }),
+    );
+    this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
+    this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    this.commentsStore.updateComments([...(comments?.items ?? [])]);
+
 
     this.rtmStore.setCurrentUid(uid);
 
@@ -335,8 +337,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
       const rtcInfo = this.roomStore.rtcInfo();
       const rtcToken = rtcInfo?.token ?? null;
       const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : environment.agoraAppIdVideo;
-      const isGhostMode = !visible;
-      await this.rcs.connect(actualCname, uid, rtcToken, appId, isGhostMode);
+      await this.rcs.connect(actualCname, uid, rtcToken, appId, !isVisible);
     } catch {
       this.toast.error('Failed to connect to audio');
     }
@@ -346,6 +347,48 @@ export class VideoRoomPageComponent extends RoomPageBase {
       await this.rcs.subscribeRtmChannel(actualCname);
     } catch {
     }
+  }
+
+  override async onToggleInvisible(): Promise<void> {
+    const cname = this.roomStore.cname();
+    const busiType = this.busiType();
+    if (!cname) return;
+
+    if (this.roomStore.isVisible()) {
+      this.api.leaveRoom(cname, busiType).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ error: () => {} });
+      this.roomStore.setVisibility(false);
+      this.bffWs.connect(cname, 0, busiType);
+      this.toast.info('You are now invisible');
+      return;
+    }
+
+    let liveInfo: LiveRoomInfo;
+    try {
+      liveInfo = await firstValueFrom(this.api.fetchLiveRoomInfo(cname));
+    } catch {
+      this.toast.error('Failed to rejoin — room info unavailable');
+      return;
+    }
+    try {
+      await firstValueFrom(this.api.joinRoom(cname, busiType));
+    } catch {
+      this.toast.error('Failed to rejoin visibly');
+      return;
+    }
+    this.roomStore.setVisibility(true);
+    this.bffWs.connect(cname, liveInfo.hostInfo?.userId ?? 0, busiType);
+    this.audienceStore.setCname(cname);
+    try {
+      const { stage, audience } = await firstValueFrom(
+        forkJoin({
+          stage: this.api.fetchStageUsers(cname, busiType),
+          audience: this.api.fetchAudienceUsers(cname, busiType),
+        }),
+      );
+      this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
+      this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    } catch { /* 30s reconciliation will catch up */ }
+    this.toast.success('You are now visible');
   }
 
   protected commentsRefreshMode(): 'merge' | 'replace' { return 'replace'; }

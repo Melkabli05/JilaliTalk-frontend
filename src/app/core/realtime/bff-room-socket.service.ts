@@ -47,35 +47,6 @@ export class BffRoomSocketService extends ReconnectingSocketBase {
     this._lastEvent.set(null);
   }
 
-  override wireSocket(sock: WebSocket): void {
-    sock.onmessage = (event: MessageEvent) => {
-      if (this.sock !== sock) return;
-      try {
-        const parsed = JSON.parse(event.data as string) as RoomRealtimeEvent;
-        if (parsed.type === 'connection-state') {
-          this._wsStatus.set(parsed.state);
-        }
-        this._lastEvent.set(parsed);
-      } catch {
-        // malformed frame — drop it; the connection is still healthy
-      }
-    };
-
-    sock.onclose = () => {
-      if (this.sock !== sock) return;
-      this.connecting = false;
-      this.scheduleReconnect();
-    };
-
-    sock.onopen = () => {
-      this.connecting = false;
-    };
-
-    sock.onerror = () => {
-      this.connecting = false;
-    };
-  }
-
   protected override buildUrl(): string {
     const params = new URLSearchParams({
       hostId: String(this.reconnectHostId),

@@ -213,7 +213,7 @@ export class RoomPageComponent extends RoomPageBase {
       await this.roomStore.joinRoom(cname, busiType, visible);
     } catch (err) {
       if (err instanceof JoinCancelledError) {
-        await this.router.navigate(['/']);
+        await this.router.navigate(this.leaveNavTarget);
         await this.roomStore.leaveRoom();
         this.stageStore.reset();
         this.audienceStore.reset();
@@ -247,23 +247,23 @@ export class RoomPageComponent extends RoomPageBase {
     if (reqUser?.base?.headUrl) this.roomStore.setHeadUrl(reqUser.base.headUrl);
     if (reqUser?.base?.nationality) this.roomStore.setNationality(reqUser.base.nationality);
 
-    const heartbeatHostId = visible ? (voiceInfo.hostInfo?.userId ?? 0) : 0;
+    const isVisible = this.roomStore.isVisible();
+    const heartbeatHostId = isVisible ? (voiceInfo.hostInfo?.userId ?? 0) : 0;
     this.bffWs.connect(cname, heartbeatHostId, busiType, voiceInfo.configInfo?.heartbeatSecond ?? null);
     const uid = this.roomStore.userId();
 
-    if (visible) {
-      this.audienceStore.setCname(cname);
-      const { stage, audience, comments } = await firstValueFrom(
-        forkJoin({
-          stage: this.api.fetchStageUsers(cname, busiType),
-          audience: this.api.fetchAudienceUsers(cname, busiType),
-          comments: this.api.fetchComments(cname, busiType),
-        }),
-      );
-      this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
-      this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
-      this.commentsStore.updateComments([...(comments?.items ?? [])]);
-    }
+    if (isVisible) this.audienceStore.setCname(cname);
+    const { stage, audience, comments } = await firstValueFrom(
+      forkJoin({
+        stage: this.api.fetchStageUsers(cname, busiType),
+        audience: this.api.fetchAudienceUsers(cname, busiType),
+        comments: this.api.fetchComments(cname, busiType),
+      }),
+    );
+    this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
+    this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    this.commentsStore.updateComments([...(comments?.items ?? [])]);
+
 
     this.rtmStore.setCurrentUid(uid);
 
@@ -271,8 +271,7 @@ export class RoomPageComponent extends RoomPageBase {
       const rtcInfo = this.roomStore.rtcInfo();
       const rtcToken = rtcInfo?.token ?? null;
       const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : environment.agoraAppIdVoice;
-      const isGhostMode = !visible;
-      await this.rcs.connect(cname, uid, rtcToken, appId, isGhostMode);
+      await this.rcs.connect(cname, uid, rtcToken, appId, !isVisible);
     } catch {
       this.toast.error('Failed to connect to audio');
     }
@@ -282,6 +281,48 @@ export class RoomPageComponent extends RoomPageBase {
       await this.rcs.subscribeRtmChannel(cname);
     } catch {
     }
+  }
+
+  override async onToggleInvisible(): Promise<void> {
+    const cname = this.roomStore.cname();
+    const busiType = this.busiType();
+    if (!cname) return;
+
+    if (this.roomStore.isVisible()) {
+      this.api.leaveRoom(cname, busiType).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ error: () => {} });
+      this.roomStore.setVisibility(false);
+      this.bffWs.connect(cname, 0, busiType, null);
+      this.toast.info('You are now invisible');
+      return;
+    }
+
+    let voiceInfo: VoiceRoomInfo;
+    try {
+      voiceInfo = await firstValueFrom(this.api.fetchVoiceRoomInfo(cname));
+    } catch {
+      this.toast.error('Failed to rejoin — room info unavailable');
+      return;
+    }
+    try {
+      await firstValueFrom(this.api.joinRoom(cname, busiType));
+    } catch {
+      this.toast.error('Failed to rejoin visibly');
+      return;
+    }
+    this.roomStore.setVisibility(true);
+    this.bffWs.connect(cname, voiceInfo.hostInfo?.userId ?? 0, busiType, voiceInfo.configInfo?.heartbeatSecond ?? null);
+    this.audienceStore.setCname(cname);
+    try {
+      const { stage, audience } = await firstValueFrom(
+        forkJoin({
+          stage: this.api.fetchStageUsers(cname, busiType),
+          audience: this.api.fetchAudienceUsers(cname, busiType),
+        }),
+      );
+      this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
+      this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    } catch { /* 30s reconciliation will catch up */ }
+    this.toast.success('You are now visible');
   }
 
   protected commentsRefreshMode(): 'merge' | 'replace' { return 'merge'; }

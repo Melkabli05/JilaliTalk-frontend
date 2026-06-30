@@ -109,6 +109,9 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
         case 'stage_raisehand':
           this.setUserHandRaised(Number(event.userId), event.raisehandType === 1);
           break;
+        case 'stage_join':
+          this.removeAudienceUser(Number(event.stageUser.userId));
+          break;
         case 'stage_invite':
         case 'mod_invite':
           break;

@@ -9,8 +9,7 @@ import {
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RoomsApi } from '../data/rooms-api';
-import { ChannelListItem, Category, ChannelListResponse, RoomType } from '../data/rooms-model';
-import { createSearchMatcher } from '@shared/utils';
+import { ChannelListItem, Category, ChannelListResponse, RoomType, filterRooms } from '../data/rooms-model';
 
 const PAGE_SIZE = 20;
 const MAX_SEARCH_OFFSET = PAGE_SIZE * 10;
@@ -89,38 +88,9 @@ export class RoomsStore {
       this._offset() < MAX_SEARCH_OFFSET,
   );
 
-  readonly filteredRooms = computed(() => {
-    const categoryId = this._selectedCategoryId();
-    const langId = this._selectedLanguageId();
-    const query = this._debouncedSearchQuery();
-    let filtered = this._rooms();
-
-    if (categoryId !== null) {
-      filtered = filtered.filter((room) => room.categoryTopicTag?.categoryId === categoryId);
-    }
-    if (langId !== null) {
-      filtered = filtered.filter((room) => room.channel.langId === langId);
-    }
-    if (query.trim()) {
-      const matcher = createSearchMatcher(query);
-      filtered = filtered
-        .filter((room) =>
-          matcher.matches([
-            room.channel.name,
-            room.channel.cname,
-            room.channel.description,
-            room.hostUser.nickname,
-            room.categoryTopicTag?.categoryName,
-            room.categoryTopicTag?.topicName,
-            ...(room.users?.map((u) => u.nickname) ?? []),
-          ]),
-        )
-        .map((room) => ({ room, rank: matcher.rank([room.channel.name, room.hostUser.nickname]) }))
-        .sort((a, b) => a.rank - b.rank)
-        .map(({ room }) => room);
-    }
-    return filtered;
-  });
+  readonly filteredRooms = computed(() =>
+    filterRooms(this._rooms(), this._selectedCategoryId(), this._selectedLanguageId(), this._debouncedSearchQuery()),
+  );
 
   private readonly recommendedResource = rxResource({
     params: () => this._currentType(),
