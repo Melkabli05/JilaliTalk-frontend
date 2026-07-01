@@ -53,7 +53,8 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
   styles: [`
     .toast-container {
       position: fixed;
-      top: 72px;
+      /* 56px = app-header height; --space-3 = 12px breathing room */
+      top: calc(56px + var(--space-3));
       left: 50%;
       transform: translateX(-50%);
       z-index: 9999;
@@ -62,6 +63,15 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
       gap: 10px;
       width: calc(100% - 32px);
       max-width: 360px;
+    }
+
+    /* On desktop the fixed sidebar (var(--sidebar-width) = 84px) offsets the
+       content area, so centering in the viewport puts toasts over the sidebar.
+       Shift left anchor right by half the sidebar width to centre in the content area. */
+    @media (min-width: 1024px) {
+      .toast-container {
+        left: calc(50% + var(--sidebar-width) / 2);
+      }
     }
 
     .toast {

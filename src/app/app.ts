@@ -18,8 +18,8 @@ import { ToastContainerComponent } from '@shared/ui/toast/toast-container.compon
           <router-outlet />
         </main>
       </div>
-      <app-toast-container />
     </div>
+    <app-toast-container />
   `,
   styles: [
     `
