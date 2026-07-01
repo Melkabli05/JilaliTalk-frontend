@@ -72,6 +72,7 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
         <ng-template ngTabContent>
           <div class="comments-scroll">
             <app-comment-list
+              #commentListEl
               [items]="commentsStore.mergedItems()"
               [currentUserId]="currentUserId()"
               [translations]="commentsStore.translations()"
@@ -237,6 +238,7 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
         flex: 1;
         min-height: 0;
         overflow: hidden;
+        position: relative;
       }
       .tab-panel[inert] {
         display: none;

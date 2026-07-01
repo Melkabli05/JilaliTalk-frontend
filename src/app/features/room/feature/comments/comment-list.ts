@@ -9,7 +9,6 @@ import {
   DestroyRef,
   viewChild,
   ElementRef,
-  afterRenderEffect,
 } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { Clipboard } from '@angular/cdk/clipboard';
@@ -271,10 +270,6 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
                       class="bubble"
                       [class.own]="isSelfGroup(row.group)"
                       [class.skinned]="hasBubbleSkin(comment)"
-                      [style.background-image]="
-                        hasBubbleSkin(comment) ? 'url(' + comment.bubbleUrl + ')' : null
-                      "
-                      [style.background-color]="hasBubbleSkin(comment) ? comment.bubbleColor : null"
                     >
                       {{ comment.msg.text.text }}
                       @if (hasAnimalBadge(comment)) {
@@ -782,34 +777,11 @@ export class CommentListComponent {
   readonly rows = computed<readonly Row[]>(() => buildRows(this.items()));
   readonly rowKey = rowKey;
 
-  private lockedToBottom = true;
-  private scrollListenerAttached = false;
-
+  /** True when the user is near the bottom of the scroll container. */
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       if (this.copyResetTimer) clearTimeout(this.copyResetTimer);
       if (this.highlightTimer) clearTimeout(this.highlightTimer);
-    });
-
-    afterRenderEffect({
-      earlyRead: () => {
-        const el = this.scrollContainer()?.nativeElement;
-        if (el && !this.scrollListenerAttached) {
-          this.scrollListenerAttached = true;
-          el.addEventListener(
-            'scroll',
-            () => {
-              this.lockedToBottom = el.scrollHeight - el.clientHeight - el.scrollTop <= 80;
-            },
-            { passive: true },
-          );
-        }
-      },
-      write: () => {
-        this.rows();
-        const el = this.scrollContainer()?.nativeElement;
-        if (el && this.lockedToBottom) el.scrollTop = el.scrollHeight;
-      },
     });
   }
 
@@ -857,7 +829,6 @@ export class CommentListComponent {
     const target = container?.querySelector<HTMLElement>(`[data-comment-id="${id}"]`);
     if (!container || !target) return;
 
-    this.lockedToBottom = false;
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     if (this.highlightTimer) clearTimeout(this.highlightTimer);

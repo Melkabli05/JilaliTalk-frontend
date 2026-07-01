@@ -76,7 +76,7 @@ import { LucideUserCircle } from '@lucide/angular';
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(64px, 80px));
         justify-content: start;
-        gap: var(--space-2);
+        gap: var(--space-2) var(--space-7);
         padding: var(--space-3);
         align-content: start;
         background-color: var(--color-card);
