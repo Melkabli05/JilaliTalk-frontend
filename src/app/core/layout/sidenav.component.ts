@@ -172,7 +172,7 @@ interface NavGroup {
 
     :host-context(.dark) .nav-item:hover {
       background-color: var(--color-neutral-800);
-      color: var(--color-neutral-300);
+      color: var(--color-text);
     }
 
     .nav-item:focus-visible {

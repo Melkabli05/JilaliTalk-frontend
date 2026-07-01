@@ -223,7 +223,6 @@ import { AuthService } from '@core/auth/auth.service';
     :host-context(.dark) .coins-badge:hover {
       background: linear-gradient(135deg, var(--color-gold-800), var(--color-gold-700));
     }
-    :host-context(.dark) .status-text { color: var(--color-neutral-400); }
 
     /* Notification Bell Button */
     .notification-btn {
