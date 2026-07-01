@@ -1,4 +1,16 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject, DestroyRef, viewChild, ElementRef, afterRenderEffect } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  input,
+  output,
+  signal,
+  computed,
+  inject,
+  DestroyRef,
+  viewChild,
+  ElementRef,
+  afterRenderEffect,
+} from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
@@ -8,7 +20,12 @@ import { Comment, CommentOrEvent, EventCard } from '../../data/room-model';
 import { EventCardComponent } from '../../ui/event-card';
 import { formatClockTime } from '@shared/utils';
 import {
-  LucideCopy, LucideCheck, LucideCornerUpLeft, LucideGlobe, LucideCrown, LucideHeart,
+  LucideCopy,
+  LucideCheck,
+  LucideCornerUpLeft,
+  LucideGlobe,
+  LucideCrown,
+  LucideHeart,
 } from '@lucide/angular';
 
 interface CommentGroup {
@@ -65,7 +82,11 @@ function formatDateLabel(timestamp: number): string {
 
 type ReplyInfo = NonNullable<Comment['msg']['replyInfo']>;
 
-function findReplyTarget(comments: readonly Comment[], comment: Comment, ri: ReplyInfo): Comment | null {
+function findReplyTarget(
+  comments: readonly Comment[],
+  comment: Comment,
+  ri: ReplyInfo,
+): Comment | null {
   if (ri.msgId) {
     return comments.find((c) => c._id === ri.msgId) ?? null;
   }
@@ -84,7 +105,11 @@ function buildGroups(comments: readonly Comment[]): (CommentGroup & { dateLabel?
   for (const c of comments) {
     const dateLabel = formatDateLabel(c.createdAt);
     const last = out[out.length - 1];
-    const sameGroup = last && last.userId === c.userId && c.createdAt - last.createdAt <= GROUP_WINDOW_MS && dateLabel === lastDate;
+    const sameGroup =
+      last &&
+      last.userId === c.userId &&
+      c.createdAt - last.createdAt <= GROUP_WINDOW_MS &&
+      dateLabel === lastDate;
 
     if (!sameGroup) {
       const entry: CommentGroup & { dateLabel?: string } = {
@@ -113,7 +138,11 @@ function buildGroups(comments: readonly Comment[]): (CommentGroup & { dateLabel?
   return out;
 }
 
-type CommentRow = { readonly type: 'comments'; readonly group: CommentGroup & { dateLabel?: string }; readonly ts: number };
+type CommentRow = {
+  readonly type: 'comments';
+  readonly group: CommentGroup & { dateLabel?: string };
+  readonly ts: number;
+};
 type EventRow = { readonly type: 'event'; readonly card: EventCard; readonly ts: number };
 type Row = CommentRow | EventRow;
 
@@ -131,7 +160,11 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
     group,
     ts: group.createdAt,
   }));
-  const eventRows: readonly EventRow[] = events.map((card) => ({ type: 'event' as const, card, ts: card.ts }));
+  const eventRows: readonly EventRow[] = events.map((card) => ({
+    type: 'event' as const,
+    card,
+    ts: card.ts,
+  }));
 
   return [...commentRows, ...eventRows].sort((a, b) => a.ts - b.ts);
 }
@@ -139,15 +172,22 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
 @Component({
   selector: 'app-comment-list',
   imports: [
-    AvatarComponent, CountryFlagComponent, NgOptimizedImage, EventCardComponent,
-    LucideCopy, LucideCheck, LucideCornerUpLeft, LucideGlobe, LucideCrown, LucideHeart,
+    AvatarComponent,
+    CountryFlagComponent,
+    NgOptimizedImage,
+    EventCardComponent,
+    LucideCopy,
+    LucideCheck,
+    LucideCornerUpLeft,
+    LucideGlobe,
+    LucideCrown,
+    LucideHeart,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="comment-list" role="log" aria-live="polite" aria-label="Comments" #scrollContainer>
       @for (row of rows(); track rowKey(row)) {
         @switch (row.type) {
-
           @case ('comments') {
             @if (row.group.dateLabel; as label) {
               <div class="date-sep">
@@ -168,10 +208,9 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
 
               <div class="group-body">
                 <div class="group-meta">
-                  <span
-                    class="name"
-                    [style.--name-color]="nameColor(row.group)"
-                  >{{ row.group.nickname }}</span>
+                  <span class="name" [style.--name-color]="nameColor(row.group)">{{
+                    row.group.nickname
+                  }}</span>
 
                   @if (row.group.nationality) {
                     <app-country-flag [code]="row.group.nationality" [compact]="true" />
@@ -184,14 +223,19 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
                   }
 
                   @if (row.group.vipType === 100) {
-                    <span class="vip-chip vip-gold"><svg aria-hidden="true" lucideCrown [size]="9" />VIP</span>
+                    <span class="vip-chip vip-gold"
+                      ><svg aria-hidden="true" lucideCrown [size]="9" />VIP</span
+                    >
                   } @else if (row.group.vipType > 0) {
-                    <span class="vip-chip vip-primary"><svg aria-hidden="true" lucideCrown [size]="9" />VIP</span>
+                    <span class="vip-chip vip-primary"
+                      ><svg aria-hidden="true" lucideCrown [size]="9" />VIP</span
+                    >
                   }
 
                   @if (row.group.fgIsActive && row.group.fgName) {
                     <span class="fg-chip">
-                      <svg aria-hidden="true" lucideHeart [size]="9" />{{ row.group.fgName }} {{ row.group.fgLevel }}
+                      <svg aria-hidden="true" lucideHeart [size]="9" />{{ row.group.fgName }}
+                      {{ row.group.fgLevel }}
                     </span>
                   }
 
@@ -227,12 +271,21 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
                       class="bubble"
                       [class.own]="isSelfGroup(row.group)"
                       [class.skinned]="hasBubbleSkin(comment)"
-                      [style.background-image]="hasBubbleSkin(comment) ? 'url(' + comment.bubbleUrl + ')' : null"
+                      [style.background-image]="
+                        hasBubbleSkin(comment) ? 'url(' + comment.bubbleUrl + ')' : null
+                      "
                       [style.background-color]="hasBubbleSkin(comment) ? comment.bubbleColor : null"
                     >
                       {{ comment.msg.text.text }}
                       @if (hasAnimalBadge(comment)) {
-                        <img class="bubble-animal" [ngSrc]="comment.bubbleAnimalUrl!" width="18" height="18" alt="" aria-hidden="true" />
+                        <img
+                          class="bubble-animal"
+                          [ngSrc]="comment.bubbleAnimalUrl!"
+                          width="18"
+                          height="18"
+                          alt=""
+                          aria-hidden="true"
+                        />
                       }
                       @if (isTranslating(comment._id)) {
                         <span class="translating-label">Translating…</span>
@@ -286,7 +339,15 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
       @if (rows().length === 0) {
         <div class="empty-state">
           <div class="empty-icon">
-            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+              aria-hidden="true"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
           </div>
@@ -296,333 +357,407 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
       }
     </div>
   `,
-  styles: [`
-    :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  styles: [
+    `
+      :host {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+      }
 
-    /* ─── Design tokens ─── */
-    :host {
-      --cl-bg:      var(--color-neutral-50);
-      --cl-border:  var(--color-border);
-      --cl-text:    var(--color-text);
-      --cl-muted:   var(--color-text-muted);
-      --cl-name:    var(--color-text);
-      --cl-scroll:  var(--color-neutral-300);
-      --cl-msg-bg:  transparent;
-      --cl-sep-bg:  var(--color-neutral-50);
-      --cl-sep-txt: var(--color-text-muted);
-      --cl-sep-line:var(--color-border);
-      --cl-tag-bg:  var(--color-neutral-100);
-      --cl-tag-txt: var(--color-text-muted);
-      --cl-action-bg: transparent;
-    }
-    :host-context(.dark) {
-      --cl-bg:      var(--color-neutral-800);
-      --cl-border:  var(--color-neutral-700);
-      --cl-text:    var(--color-neutral-100);
-      --cl-muted:   var(--color-neutral-500);
-      --cl-name:    var(--color-neutral-200);
-      --cl-scroll:  var(--color-neutral-600);
-      --cl-msg-bg:  transparent;
-      --cl-sep-bg:  var(--color-neutral-800);
-      --cl-sep-txt: var(--color-neutral-400);
-      --cl-sep-line:var(--color-neutral-700);
-      --cl-tag-bg:  color-mix(in srgb, var(--color-neutral-700) 70%, transparent);
-      --cl-tag-txt: var(--color-neutral-400);
-      --cl-action-bg: transparent;
-    }
+      /* ─── Design tokens ─── */
+      :host {
+        --cl-bg: var(--color-neutral-50);
+        --cl-border: var(--color-border);
+        --cl-text: var(--color-text);
+        --cl-muted: var(--color-text-muted);
+        --cl-name: var(--color-text);
+        --cl-scroll: var(--color-neutral-300);
+        --cl-msg-bg: transparent;
+        --cl-sep-bg: var(--color-neutral-50);
+        --cl-sep-txt: var(--color-text-muted);
+        --cl-sep-line: var(--color-border);
+        --cl-tag-bg: var(--color-neutral-100);
+        --cl-tag-txt: var(--color-text-muted);
+        --cl-action-bg: transparent;
+      }
+      :host-context(.dark) {
+        --cl-bg: var(--color-neutral-800);
+        --cl-border: var(--color-neutral-700);
+        --cl-text: var(--color-neutral-100);
+        --cl-muted: var(--color-neutral-500);
+        --cl-name: var(--color-neutral-200);
+        --cl-scroll: var(--color-neutral-600);
+        --cl-msg-bg: transparent;
+        --cl-sep-bg: var(--color-neutral-800);
+        --cl-sep-txt: var(--color-neutral-400);
+        --cl-sep-line: var(--color-neutral-700);
+        --cl-tag-bg: color-mix(in srgb, var(--color-neutral-700) 70%, transparent);
+        --cl-tag-txt: var(--color-neutral-400);
+        --cl-action-bg: transparent;
+      }
 
-    .comment-list {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-      padding: var(--space-3) var(--space-2);
-      overflow-y: auto;
-      flex: 1;
-      scrollbar-width: thin;
-      scrollbar-color: var(--cl-scroll) transparent;
-    }
-    .comment-list::-webkit-scrollbar { width: 4px; }
-    .comment-list::-webkit-scrollbar-thumb { background: var(--cl-scroll); border-radius: 2px; }
+      .comment-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-2);
+        overflow-y: auto;
+        flex: 1;
+        scrollbar-width: thin;
+        scrollbar-color: var(--cl-scroll) transparent;
+      }
+      .comment-list::-webkit-scrollbar {
+        width: 4px;
+      }
+      .comment-list::-webkit-scrollbar-thumb {
+        background: var(--cl-scroll);
+        border-radius: 2px;
+      }
 
-    /* ─── Date separator ─── */
-    .date-sep {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-1) 0;
-    }
-    .date-sep__line {
-      flex: 1;
-      height: 1px;
-      background: var(--cl-sep-line);
-      opacity: 0.5;
-    }
-    .date-sep__label {
-      font-size: var(--text-2xs);
-      font-weight: var(--font-medium);
-      color: var(--cl-sep-txt);
-      padding: 1px 8px;
-      border-radius: var(--radius-full);
-      background: var(--cl-sep-bg);
-      white-space: nowrap;
-    }
+      /* ─── Date separator ─── */
+      .date-sep {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-1) 0;
+      }
+      .date-sep__line {
+        flex: 1;
+        height: 1px;
+        background: var(--cl-sep-line);
+        opacity: 0.5;
+      }
+      .date-sep__label {
+        font-size: var(--text-2xs);
+        font-weight: var(--font-medium);
+        color: var(--cl-sep-txt);
+        padding: 1px 8px;
+        border-radius: var(--radius-full);
+        background: var(--cl-sep-bg);
+        white-space: nowrap;
+      }
 
-    /* ─── Comment group ─── */
-    .group {
-      display: flex;
-      gap: var(--space-2);
-      align-items: flex-start;
-    }
-    .group-avatar { flex-shrink: 0; margin-top: 2px; }
-    .group-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+      /* ─── Comment group ─── */
+      .group {
+        display: flex;
+        gap: var(--space-2);
+        align-items: flex-start;
+      }
+      .group-avatar {
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .group-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
 
-    .group-meta {
-      display: flex;
-      align-items: baseline;
-      gap: var(--space-1);
-      margin-bottom: 2px;
-      flex-wrap: wrap;
-    }
-    .name {
-      font-size: var(--text-xs);
-      font-weight: var(--font-semibold);
-      color: var(--name-color, var(--cl-name));
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 50%;
-    }
-    .name.is-self { color: var(--color-primary-600); }
-    :host-context(.dark) .name.is-self { color: var(--color-primary-300); }
+      .group-meta {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-1);
+        margin-bottom: 2px;
+        flex-wrap: wrap;
+      }
+      .name {
+        font-size: var(--text-xs);
+        font-weight: var(--font-semibold);
+        color: var(--name-color, var(--cl-name));
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 50%;
+      }
+      .name.is-self {
+        color: var(--color-primary-600);
+      }
+      :host-context(.dark) .name.is-self {
+        color: var(--color-primary-300);
+      }
 
-    /* ─── Role / VIP / FG chips ─── */
-    .role-badge {
-      flex-shrink: 0;
-      font-size: var(--text-2xs);
-      font-weight: var(--font-bold);
-      letter-spacing: 0.3px;
-      text-transform: uppercase;
-      padding: 1px 6px;
-      border-radius: var(--radius-sm);
-      border: 1px solid transparent;
-    }
-    .role-badge.host {
-      background: color-mix(in srgb, var(--color-gold-500) 16%, transparent);
-      color: var(--color-gold-600);
-      border-color: color-mix(in srgb, var(--color-gold-500) 40%, transparent);
-    }
-    .role-badge.mod {
-      background: color-mix(in srgb, var(--color-primary-500) 14%, transparent);
-      color: var(--color-primary-600);
-      border-color: color-mix(in srgb, var(--color-primary-500) 40%, transparent);
-    }
-    :host-context(.dark) .role-badge.host {
-      background: color-mix(in srgb, var(--color-gold-500) 24%, transparent);
-      color: var(--color-gold-300);
-      border-color: color-mix(in srgb, var(--color-gold-500) 45%, transparent);
-    }
-    :host-context(.dark) .role-badge.mod {
-      background: color-mix(in srgb, var(--color-primary-500) 24%, transparent);
-      color: var(--color-primary-300);
-      border-color: color-mix(in srgb, var(--color-primary-500) 45%, transparent);
-    }
+      /* ─── Role / VIP / FG chips ─── */
+      .role-badge {
+        flex-shrink: 0;
+        font-size: var(--text-2xs);
+        font-weight: var(--font-bold);
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        padding: 1px 6px;
+        border-radius: var(--radius-sm);
+        border: 1px solid transparent;
+      }
+      .role-badge.host {
+        background: color-mix(in srgb, var(--color-gold-500) 16%, transparent);
+        color: var(--color-gold-600);
+        border-color: color-mix(in srgb, var(--color-gold-500) 40%, transparent);
+      }
+      .role-badge.mod {
+        background: color-mix(in srgb, var(--color-primary-500) 14%, transparent);
+        color: var(--color-primary-600);
+        border-color: color-mix(in srgb, var(--color-primary-500) 40%, transparent);
+      }
+      :host-context(.dark) .role-badge.host {
+        background: color-mix(in srgb, var(--color-gold-500) 24%, transparent);
+        color: var(--color-gold-300);
+        border-color: color-mix(in srgb, var(--color-gold-500) 45%, transparent);
+      }
+      :host-context(.dark) .role-badge.mod {
+        background: color-mix(in srgb, var(--color-primary-500) 24%, transparent);
+        color: var(--color-primary-300);
+        border-color: color-mix(in srgb, var(--color-primary-500) 45%, transparent);
+      }
 
-    .vip-chip, .fg-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 2px;
-      flex-shrink: 0;
-      font-size: var(--text-2xs);
-      font-weight: var(--font-bold);
-      letter-spacing: 0.2px;
-      padding: 1px 6px;
-      border-radius: var(--radius-sm);
-      white-space: nowrap;
-      border: 1px solid transparent;
-    }
-    .vip-chip.vip-gold {
-      background: color-mix(in srgb, var(--color-gold-200) 60%, transparent);
-      color: var(--color-gold-700);
-      border-color: color-mix(in srgb, var(--color-gold-500) 35%, transparent);
-    }
-    .vip-chip.vip-primary {
-      background: var(--color-primary-50);
-      color: var(--color-primary-600);
-      border-color: color-mix(in srgb, var(--color-primary-500) 30%, transparent);
-    }
-    :host-context(.dark) .vip-chip.vip-gold {
-      background: color-mix(in srgb, var(--color-gold-500) 25%, transparent);
-      color: var(--color-gold-300);
-      border-color: color-mix(in srgb, var(--color-gold-500) 45%, transparent);
-    }
-    :host-context(.dark) .vip-chip.vip-primary {
-      background: color-mix(in srgb, var(--color-primary-500) 20%, transparent);
-      color: var(--color-primary-300);
-      border-color: color-mix(in srgb, var(--color-primary-500) 45%, transparent);
-    }
+      .vip-chip,
+      .fg-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        flex-shrink: 0;
+        font-size: var(--text-2xs);
+        font-weight: var(--font-bold);
+        letter-spacing: 0.2px;
+        padding: 1px 6px;
+        border-radius: var(--radius-sm);
+        white-space: nowrap;
+        border: 1px solid transparent;
+      }
+      .vip-chip.vip-gold {
+        background: color-mix(in srgb, var(--color-gold-200) 60%, transparent);
+        color: var(--color-gold-700);
+        border-color: color-mix(in srgb, var(--color-gold-500) 35%, transparent);
+      }
+      .vip-chip.vip-primary {
+        background: var(--color-primary-50);
+        color: var(--color-primary-600);
+        border-color: color-mix(in srgb, var(--color-primary-500) 30%, transparent);
+      }
+      :host-context(.dark) .vip-chip.vip-gold {
+        background: color-mix(in srgb, var(--color-gold-500) 25%, transparent);
+        color: var(--color-gold-300);
+        border-color: color-mix(in srgb, var(--color-gold-500) 45%, transparent);
+      }
+      :host-context(.dark) .vip-chip.vip-primary {
+        background: color-mix(in srgb, var(--color-primary-500) 20%, transparent);
+        color: var(--color-primary-300);
+        border-color: color-mix(in srgb, var(--color-primary-500) 45%, transparent);
+      }
 
-    .fg-chip {
-      background: color-mix(in srgb, var(--color-accent-500) 12%, transparent);
-      color: var(--color-accent-600);
-      text-transform: none;
-      border-color: color-mix(in srgb, var(--color-accent-500) 30%, transparent);
-    }
-    :host-context(.dark) .fg-chip {
-      background: color-mix(in srgb, var(--color-accent-500) 22%, transparent);
-      color: var(--color-accent-300);
-      border-color: color-mix(in srgb, var(--color-accent-500) 40%, transparent);
-    }
+      .fg-chip {
+        background: color-mix(in srgb, var(--color-accent-500) 12%, transparent);
+        color: var(--color-accent-600);
+        text-transform: none;
+        border-color: color-mix(in srgb, var(--color-accent-500) 30%, transparent);
+      }
+      :host-context(.dark) .fg-chip {
+        background: color-mix(in srgb, var(--color-accent-500) 22%, transparent);
+        color: var(--color-accent-300);
+        border-color: color-mix(in srgb, var(--color-accent-500) 40%, transparent);
+      }
 
-    .time {
-      margin-left: auto;
-      font-size: var(--text-2xs);
-      color: var(--cl-muted);
-      flex-shrink: 0;
-    }
+      .time {
+        margin-left: auto;
+        font-size: var(--text-2xs);
+        color: var(--cl-muted);
+        flex-shrink: 0;
+      }
 
-    /* ─── Message + bubble ─── */
-    .message {
-      position: relative;
-      border-radius: var(--radius-md);
-      padding: 1px var(--space-1) 1px 0;
-      margin-right: calc(-1 * var(--space-1));
-    }
+      /* ─── Message + bubble ─── */
+      .message {
+        position: relative;
+        border-radius: var(--radius-md);
+        padding: 1px var(--space-1) 1px 0;
+        margin-right: calc(-1 * var(--space-1));
+      }
 
-    .bubble {
-      font-size: var(--text-sm);
-      color: var(--cl-text);
-      line-height: 1.5;
-      word-break: break-word;
-      padding: 3px var(--space-2);
-      border-radius: var(--radius-md);
-      background: var(--cl-bg);
-      display: inline-block;
-      max-width: 100%;
-    }
-    .bubble.own {
-      background: var(--color-primary-500);
-      color: var(--color-on-color);
-    }
-    :host-context(.dark) .bubble { background: var(--cl-bg); color: var(--cl-text); }
-    :host-context(.dark) .bubble.own { background: var(--color-primary-600); color: var(--color-on-color); }
+      .bubble {
+        font-size: var(--text-sm);
+        color: var(--cl-text);
+        line-height: 1.5;
+        word-break: break-word;
+        padding: 3px var(--space-2);
+        border-radius: var(--radius-md);
+        background: var(--cl-bg);
+        display: inline-block;
+        max-width: 100%;
+      }
+      .bubble.own {
+        background: var(--color-primary-500);
+        color: var(--color-on-color);
+      }
+      :host-context(.dark) .bubble {
+        background: var(--cl-bg);
+        color: var(--cl-text);
+      }
+      :host-context(.dark) .bubble.own {
+        background: var(--color-primary-600);
+        color: var(--color-on-color);
+      }
 
-    .bubble.skinned {
-      background-size: 100% 100%;
-      background-repeat: no-repeat;
-      background-position: center;
-      color: var(--cl-text);
-      padding-right: calc(var(--space-2) + 14px);
-    }
-    .bubble-animal {
-      position: absolute;
-      bottom: -4px;
-      right: -4px;
-      width: 18px;
-      height: 18px;
-      object-fit: contain;
-      pointer-events: none;
-    }
+      .bubble.skinned {
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+        color: var(--cl-text);
+        padding-right: calc(var(--space-2) + 14px);
+      }
+      .bubble-animal {
+        position: absolute;
+        bottom: -4px;
+        right: -4px;
+        width: 18px;
+        height: 18px;
+        object-fit: contain;
+        pointer-events: none;
+      }
 
-    /* ─── Reply quote ─── */
-    .reply-quote {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-      padding: 3px var(--space-2);
-      margin-bottom: 3px;
-      border-radius: var(--radius-sm) var(--radius-sm) 2px 2px;
-      border-left: 3px solid var(--color-primary-400);
-      background: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
-      max-width: 92%;
-      overflow: hidden;
-      cursor: pointer;
-    }
-    .reply-quote:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
-    .reply-quote.own {
-      border-left-color: color-mix(in srgb, var(--color-on-color) 70%, transparent);
-      background: color-mix(in srgb, var(--color-on-color) 18%, transparent);
-    }
-    .reply-quote__label {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-      font-size: var(--text-2xs);
-      font-weight: var(--font-medium);
-      color: var(--color-primary-600);
-    }
-    .reply-quote__label strong { font-weight: var(--font-bold); }
-    .reply-quote.own .reply-quote__label { color: var(--color-on-color); }
-    :host-context(.dark) .reply-quote__label { color: var(--color-primary-300); }
-    .reply-quote__text {
-      font-size: var(--text-2xs);
-      font-style: italic;
-      color: var(--cl-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .reply-quote.own .reply-quote__text { color: color-mix(in srgb, var(--color-on-color) 75%, transparent); }
-    :host-context(.dark) .reply-quote__text { color: var(--color-neutral-400); }
+      /* ─── Reply quote ─── */
+      .reply-quote {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding: 3px var(--space-2);
+        margin-bottom: 3px;
+        border-radius: var(--radius-sm) var(--radius-sm) 2px 2px;
+        border-left: 3px solid var(--color-primary-400);
+        background: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
+        max-width: 92%;
+        overflow: hidden;
+        cursor: pointer;
+      }
+      .reply-quote:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: 1px;
+      }
+      .reply-quote.own {
+        border-left-color: color-mix(in srgb, var(--color-on-color) 70%, transparent);
+        background: color-mix(in srgb, var(--color-on-color) 18%, transparent);
+      }
+      .reply-quote__label {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        font-size: var(--text-2xs);
+        font-weight: var(--font-medium);
+        color: var(--color-primary-600);
+      }
+      .reply-quote__label strong {
+        font-weight: var(--font-bold);
+      }
+      .reply-quote.own .reply-quote__label {
+        color: var(--color-on-color);
+      }
+      :host-context(.dark) .reply-quote__label {
+        color: var(--color-primary-300);
+      }
+      .reply-quote__text {
+        font-size: var(--text-2xs);
+        font-style: italic;
+        color: var(--cl-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .reply-quote.own .reply-quote__text {
+        color: color-mix(in srgb, var(--color-on-color) 75%, transparent);
+      }
+      :host-context(.dark) .reply-quote__text {
+        color: var(--color-neutral-400);
+      }
 
-    /* ─── Actions (always visible, inline inside bubble) ─── */
-    .actions {
-      display: inline-flex;
-      gap: 2px;
-      margin-left: var(--space-1);
-      vertical-align: middle;
-    }
+      /* ─── Actions (always visible, inline inside bubble) ─── */
+      .actions {
+        display: inline-flex;
+        gap: 2px;
+        margin-left: var(--space-1);
+        vertical-align: middle;
+      }
 
-    .action-btn {
-      width: 22px; height: 22px;
-      border-radius: var(--radius-sm);
-      display: flex; align-items: center; justify-content: center;
-      background: transparent; border: none;
-      cursor: pointer;
-      color: var(--cl-muted);
-    }
-    .action-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-    .action-btn-active { color: var(--color-primary-500); }
+      .action-btn {
+        width: 22px;
+        height: 22px;
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--cl-muted);
+      }
+      .action-btn:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: var(--focus-ring-offset);
+      }
+      .action-btn-active {
+        color: var(--color-primary-500);
+      }
 
-    /* ─── Translation display ─── */
-    .translation-label {
-      display: block;
-      font-size: var(--text-2xs);
-      color: var(--cl-muted);
-      font-style: italic;
-      margin-top: 2px;
-      padding: 2px var(--space-1);
-      border-radius: var(--radius-sm);
-      background: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
-      border-left: 2px solid var(--color-primary-400);
-    }
-    :host-context(.dark) .translation-label {
-      background: color-mix(in srgb, var(--color-primary-500) 16%, transparent);
-      color: var(--color-primary-300);
-    }
-    .translating-label {
-      display: block;
-      font-size: var(--text-2xs);
-      color: var(--cl-muted);
-      margin-top: 2px;
-      padding: 2px var(--space-1);
-    }
+      /* ─── Translation display ─── */
+      .translation-label {
+        display: block;
+        font-size: var(--text-2xs);
+        color: var(--cl-muted);
+        font-style: italic;
+        margin-top: 2px;
+        padding: 2px var(--space-1);
+        border-radius: var(--radius-sm);
+        background: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
+        border-left: 2px solid var(--color-primary-400);
+      }
+      :host-context(.dark) .translation-label {
+        background: color-mix(in srgb, var(--color-primary-500) 16%, transparent);
+        color: var(--color-primary-300);
+      }
+      .translating-label {
+        display: block;
+        font-size: var(--text-2xs);
+        color: var(--cl-muted);
+        margin-top: 2px;
+        padding: 2px var(--space-1);
+      }
 
-    /* ─── Empty state ─── */
-    .empty-state {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: var(--space-6) var(--space-4); text-align: center;
-    }
-    .empty-icon {
-      width: 40px; height: 40px; border-radius: var(--radius-xl);
-      background: var(--color-primary-50);
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: var(--space-2);
-      color: var(--color-primary-400);
-    }
-    :host-context(.dark) .empty-icon { background: var(--color-primary-900); color: var(--color-primary-300); }
-    .empty-title { font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--cl-text); margin: 0 0 var(--space-1); }
-    .empty-sub { font-size: var(--text-xs); color: var(--cl-muted); margin: 0; }
-  `],
+      /* ─── Empty state ─── */
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-6) var(--space-4);
+        text-align: center;
+      }
+      .empty-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-xl);
+        background: var(--color-primary-50);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: var(--space-2);
+        color: var(--color-primary-400);
+      }
+      :host-context(.dark) .empty-icon {
+        background: var(--color-primary-900);
+        color: var(--color-primary-300);
+      }
+      .empty-title {
+        font-size: var(--text-sm);
+        font-weight: var(--font-medium);
+        color: var(--cl-text);
+        margin: 0 0 var(--space-1);
+      }
+      .empty-sub {
+        font-size: var(--text-xs);
+        color: var(--cl-muted);
+        margin: 0;
+      }
+    `,
+  ],
 })
 export class CommentListComponent {
   readonly items = input<readonly CommentOrEvent[]>([]);
@@ -661,9 +796,13 @@ export class CommentListComponent {
         const el = this.scrollContainer()?.nativeElement;
         if (el && !this.scrollListenerAttached) {
           this.scrollListenerAttached = true;
-          el.addEventListener('scroll', () => {
-            this.lockedToBottom = el.scrollHeight - el.clientHeight - el.scrollTop <= 80;
-          }, { passive: true });
+          el.addEventListener(
+            'scroll',
+            () => {
+              this.lockedToBottom = el.scrollHeight - el.clientHeight - el.scrollTop <= 80;
+            },
+            { passive: true },
+          );
         }
       },
       write: () => {

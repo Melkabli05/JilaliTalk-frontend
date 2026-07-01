@@ -286,32 +286,62 @@ export class RoomPageComponent extends RoomPageBase {
   override async onToggleInvisible(): Promise<void> {
     const cname = this.roomStore.cname();
     const busiType = this.busiType();
-    if (!cname) return;
-
-    if (this.roomStore.isVisible()) {
-      this.api.leaveRoom(cname, busiType).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ error: () => {} });
-      this.roomStore.setVisibility(false);
-      this.bffWs.connect(cname, 0, busiType, null);
-      this.toast.info('You are now invisible');
-      return;
-    }
-
-    let voiceInfo: VoiceRoomInfo;
+    if (!cname || this.togglingVisibility()) return;
+    this.togglingVisibility.set(true);
     try {
-      voiceInfo = await firstValueFrom(this.api.fetchVoiceRoomInfo(cname));
-    } catch {
-      this.toast.error('Failed to rejoin — room info unavailable');
-      return;
+      if (this.roomStore.isVisible()) {
+        await this.makeInvisible(cname, busiType);
+      } else {
+        await this.makeVisible(cname, busiType);
+      }
+    } finally {
+      this.togglingVisibility.set(false);
     }
+  }
+
+  private async makeInvisible(cname: string, busiType: number): Promise<void> {
+    await firstValueFrom(this.api.leaveRoom(cname, busiType));
+    this.roomStore.setVisibility(false);
+    this.syncVisibilityToUrl(false);
+    this.stageStore.reset();
+    await this.rcs.stopAudio();
+    this.bffWs.connect(cname, 0, busiType, null);
+    this.toast.info('You are now invisible');
+  }
+
+  private async makeVisible(cname: string, busiType: number): Promise<void> {
+    const rtcInfo = this.roomStore.rtcInfo();
+    let voiceInfo: VoiceRoomInfo | undefined = rtcInfo
+      ? { channelInfo: {}, configInfo: { heartbeatSecond: null }, hostInfo: null } as unknown as VoiceRoomInfo
+      : undefined;
+
+    if (!voiceInfo) {
+      try {
+        const fetched = await firstValueFrom(this.api.fetchVoiceRoomInfo(cname));
+        voiceInfo = fetched;
+      } catch {
+        this.toast.error('Failed to rejoin — room info unavailable');
+        return;
+      }
+    }
+
     try {
       await firstValueFrom(this.api.joinRoom(cname, busiType));
     } catch {
       this.toast.error('Failed to rejoin visibly');
       return;
     }
+
     this.roomStore.setVisibility(true);
-    this.bffWs.connect(cname, voiceInfo.hostInfo?.userId ?? 0, busiType, voiceInfo.configInfo?.heartbeatSecond ?? null);
+    this.syncVisibilityToUrl(true);
+    this.bffWs.connect(
+      cname,
+      voiceInfo!.hostInfo?.userId ?? 0,
+      busiType,
+      voiceInfo!.configInfo?.heartbeatSecond ?? null,
+    );
     this.audienceStore.setCname(cname);
+    this.stageStore.reset();
     try {
       const { stage, audience } = await firstValueFrom(
         forkJoin({

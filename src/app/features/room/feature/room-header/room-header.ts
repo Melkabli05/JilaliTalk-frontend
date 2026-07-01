@@ -71,67 +71,71 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
       </div>
 
       <div class="header-center">
-        <app-mic-button
-          class="tip"
-          [appTooltip]="invisible() ? 'Invisible — cannot speak' : (isMicOn() ? 'Mute' : 'Speak')"
-          tooltipPosition="bottom"
-          [isOn]="isMicOn()"
-          [speaking]="micSpeaking()"
-          [busy]="micBusy()"
-          [disabled]="invisible()"
-          (toggled)="onToggleMic()"
-        />
+        <!-- Invisible: all media controls are hidden — mic, cam, screen are meaningless -->
+        @if (!invisible()) {
+          <div class="media-controls">
+            <app-mic-button
+              class="tip"
+              [appTooltip]="isMicOn() ? 'Mute' : 'Speak'"
+              tooltipPosition="bottom"
+              [isOn]="isMicOn()"
+              [speaking]="micSpeaking()"
+              [busy]="micBusy()"
+              (toggled)="onToggleMic()"
+            />
 
-        @if (isCamOn() !== false) {
-          <button
-            class="toolbar-btn c-cam hide-mobile"
-            [class.active]="isCamOn()"
-            [class.highlight]="isCamOn()"
-            [appTooltip]="invisible() ? 'Invisible — cannot use camera' : (isCamOn() ? 'Turn off camera' : 'Turn on camera')"
-            tooltipPosition="bottom"
-            [disabled]="invisible() || camBusy()"
-            (click)="onToggleCam()"
-            aria-label="Toggle camera"
-          >
-            <svg aria-hidden="true" lucideVideoOff [size]="16"></svg>
-          </button>
-          <button
-            class="toolbar-btn c-screen hide-mobile"
-            appTooltip="Screen share"
-            tooltipPosition="bottom"
-            (click)="onToggleCamOrShare()"
-            aria-label="Screen share"
-          >
-            <svg aria-hidden="true" lucideMonitorUp [size]="16"></svg>
-          </button>
-          <div class="toolbar-sep hide-mobile"></div>
+            @if (isCamOn() !== false) {
+              <button
+                class="toolbar-btn c-cam hide-mobile"
+                [class.active]="isCamOn()"
+                [class.highlight]="isCamOn()"
+                [appTooltip]="isCamOn() ? 'Turn off camera' : 'Turn on camera'"
+                tooltipPosition="bottom"
+                [disabled]="camBusy()"
+                (click)="onToggleCam()"
+                aria-label="Toggle camera"
+              >
+                <svg aria-hidden="true" lucideVideoOff [size]="16"></svg>
+              </button>
+              <button
+                class="toolbar-btn c-screen hide-mobile"
+                appTooltip="Screen share"
+                tooltipPosition="bottom"
+                (click)="onToggleCamOrShare()"
+                aria-label="Screen share"
+              >
+                <svg aria-hidden="true" lucideMonitorUp [size]="16"></svg>
+              </button>
+              <div class="toolbar-sep hide-mobile"></div>
+            }
+
+            <button
+              class="toolbar-btn c-hand"
+              [class.highlight]="handIcon() === 'lower-hand'"
+              [class.c-hand-leave]="handIcon() === 'leave-stage'"
+              [class.c-hand-join]="handIcon() === 'join-stage'"
+              [appTooltip]="handTooltip()"
+              tooltipPosition="bottom"
+              (click)="onToggleHand()"
+              [attr.aria-label]="handTooltip()"
+            >
+              @switch (handIcon()) {
+                @case ('leave-stage') {
+                  <svg aria-hidden="true" lucideArrowDownToLine [size]="16"></svg>
+                }
+                @case ('lower-hand') {
+                  <svg aria-hidden="true" lucideHandMetal [size]="16"></svg>
+                }
+                @case ('join-stage') {
+                  <svg aria-hidden="true" lucideLogIn [size]="16"></svg>
+                }
+                @default {
+                  <svg aria-hidden="true" lucideHand [size]="16"></svg>
+                }
+              }
+            </button>
+          </div>
         }
-
-        <button
-          class="toolbar-btn c-hand"
-          [class.highlight]="handIcon() === 'lower-hand'"
-          [class.c-hand-leave]="handIcon() === 'leave-stage'"
-          [class.c-hand-join]="handIcon() === 'join-stage'"
-          [appTooltip]="handTooltip()"
-          tooltipPosition="bottom"
-          (click)="onToggleHand()"
-          [attr.aria-label]="handTooltip()"
-        >
-          @switch (handIcon()) {
-            @case ('leave-stage') {
-              <svg aria-hidden="true" lucideArrowDownToLine [size]="16"></svg>
-            }
-            @case ('lower-hand') {
-              <svg aria-hidden="true" lucideHandMetal [size]="16"></svg>
-            }
-            @case ('join-stage') {
-              <svg aria-hidden="true" lucideLogIn [size]="16"></svg>
-            }
-            @default {
-              <svg aria-hidden="true" lucideHand [size]="16"></svg>
-            }
-          }
-        </button>
 
         <button
           class="toolbar-btn c-more"
@@ -146,6 +150,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
 
       <div class="header-right">
         <div class="secondary-actions hide-mobile">
+          <!-- Always visible: refresh, managers (identity-neutral) -->
           <button
             class="toolbar-btn c-refresh"
             [appTooltip]="refreshing() ? 'Refreshing…' : 'Refresh'"
@@ -156,46 +161,53 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           >
             <svg aria-hidden="true" lucideRefreshCw [size]="16" [class.spinning]="refreshing()"></svg>
           </button>
-          <button
-            class="toolbar-btn c-gift"
-            appTooltip="Send gift"
-            tooltipPosition="bottom"
-            (click)="onGift()"
-            aria-label="Send gift"
-          >
-            <svg aria-hidden="true" lucideGift [size]="16"></svg>
-          </button>
-          <button
-            class="toolbar-btn c-pitch"
-            appTooltip="Voice pitch"
-            tooltipPosition="bottom"
-            (click)="onPitch()"
-            aria-label="Pitch settings"
-          >
-            <svg aria-hidden="true" lucideMusic [size]="16"></svg>
-          </button>
-          <button
-            class="toolbar-btn c-reward"
-            appTooltip="Daily rewards"
-            tooltipPosition="bottom"
-            (click)="onReward()"
-            aria-label="Daily rewards"
-          >
-            <svg aria-hidden="true" lucideStar [size]="16"></svg>
-          </button>
-          <button
-            class="toolbar-btn c-settings"
-            [class.active]="showSettings()"
-            appTooltip="Noise suppression"
-            tooltipPosition="bottom"
-            (click)="showSettings.set(!showSettings())"
-            aria-label="Noise suppression settings"
-          >
-            <svg aria-hidden="true" lucideSettings [size]="16"></svg>
-          </button>
-          @if (showSettings()) {
-            <app-av-settings (onClose)="showSettings.set(false)" />
+
+          <!-- Engagement actions that reveal identity — hidden when invisible -->
+          @if (!invisible()) {
+            <div class="engagement-controls">
+              <button
+                class="toolbar-btn c-gift"
+                appTooltip="Send gift"
+                tooltipPosition="bottom"
+                (click)="onGift()"
+                aria-label="Send gift"
+              >
+                <svg aria-hidden="true" lucideGift [size]="16"></svg>
+              </button>
+              <button
+                class="toolbar-btn c-pitch"
+                appTooltip="Voice pitch"
+                tooltipPosition="bottom"
+                (click)="onPitch()"
+                aria-label="Pitch settings"
+              >
+                <svg aria-hidden="true" lucideMusic [size]="16"></svg>
+              </button>
+              <button
+                class="toolbar-btn c-reward"
+                appTooltip="Daily rewards"
+                tooltipPosition="bottom"
+                (click)="onReward()"
+                aria-label="Daily rewards"
+              >
+                <svg aria-hidden="true" lucideStar [size]="16"></svg>
+              </button>
+              <button
+                class="toolbar-btn c-settings"
+                [class.active]="showSettings()"
+                appTooltip="Noise suppression"
+                tooltipPosition="bottom"
+                (click)="showSettings.set(!showSettings())"
+                aria-label="Noise suppression settings"
+              >
+                <svg aria-hidden="true" lucideSettings [size]="16"></svg>
+              </button>
+              @if (showSettings()) {
+                <app-av-settings (onClose)="showSettings.set(false)" />
+              }
+            </div>
           }
+
           <button
             class="toolbar-btn c-managers"
             appTooltip="Managers"
@@ -205,22 +217,22 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           >
             <svg aria-hidden="true" lucideShield [size]="16"></svg>
           </button>
-          @if (!invisible()) {
-            <button
-              class="toolbar-btn c-captions"
-              [class.active]="captionEnabled()"
-              [appTooltip]="captionEnabled() ? 'Turn off captions' : 'Turn on captions'"
-              tooltipPosition="bottom"
-              (click)="onToggleCaption()"
-              [attr.aria-label]="captionEnabled() ? 'Turn off captions' : 'Turn on captions'"
-            >
-              @if (captionEnabled()) {
-                <svg aria-hidden="true" lucideCaptions [size]="16"></svg>
-              } @else {
-                <svg aria-hidden="true" lucideCaptionsOff [size]="16"></svg>
-              }
-            </button>
-          }
+
+          <!-- Captions: always visible — useful for watching in any mode -->
+          <button
+            class="toolbar-btn c-captions"
+            [class.active]="captionEnabled()"
+            [appTooltip]="captionEnabled() ? 'Turn off captions' : 'Turn on captions'"
+            tooltipPosition="bottom"
+            (click)="onToggleCaption()"
+            [attr.aria-label]="captionEnabled() ? 'Turn off captions' : 'Turn on captions'"
+          >
+            @if (captionEnabled()) {
+              <svg aria-hidden="true" lucideCaptions [size]="16"></svg>
+            } @else {
+              <svg aria-hidden="true" lucideCaptionsOff [size]="16"></svg>
+            }
+          </button>
         </div>
 
         <button
@@ -253,6 +265,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           </button>
         </div>
 
+        <!-- Section 1: Identity — always visible -->
         <div class="overflow-list">
           <button class="overflow-row" (click)="onToggleInvisible()">
             @if (invisible()) {
@@ -262,67 +275,82 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
             }
             <span class="row-label">{{ invisible() ? 'Go visible' : 'Go invisible' }}</span>
           </button>
-          <button class="overflow-row" (click)="onManagers()">
-            <svg aria-hidden="true" lucideShield [size]="20"></svg>
-            <span class="row-label">Managers</span>
-          </button>
-          <button class="overflow-row" (click)="onReward()">
-            <svg aria-hidden="true" lucideStar [size]="20"></svg>
-            <span class="row-label">Daily rewards</span>
-          </button>
           <button class="overflow-row" (click)="onRefresh()" [disabled]="refreshing()">
             <svg aria-hidden="true" lucideRefreshCw [size]="20" [class.spinning]="refreshing()"></svg>
             <span class="row-label">Refresh</span>
           </button>
+          <button class="overflow-row" (click)="onManagers()">
+            <svg aria-hidden="true" lucideShield [size]="20"></svg>
+            <span class="row-label">Managers</span>
+          </button>
         </div>
 
         <div class="overflow-divider"></div>
 
+        <!-- Section 2: Moderation (identity-neutral) -->
         <div class="overflow-list">
-          @if (isCamOn() !== false) {
-            <button class="overflow-row" (click)="onToggleCam()">
-              <svg aria-hidden="true" lucideVideoOff [size]="20"></svg>
-              <span class="row-label">{{ isCamOn() ? 'Stop camera' : 'Start camera' }}</span>
-            </button>
-            <button class="overflow-row" (click)="onToggleCamOrShare()">
-              <svg aria-hidden="true" lucideMonitorUp [size]="20"></svg>
-              <span class="row-label">Share screen</span>
-            </button>
-          }
-          <button class="overflow-row" (click)="onPitch()">
-            <svg aria-hidden="true" lucideMusic [size]="20"></svg>
-            <span class="row-label">Voice pitch</span>
+          <button class="overflow-row" (click)="onReward()">
+            <svg aria-hidden="true" lucideStar [size]="20"></svg>
+            <span class="row-label">Daily rewards</span>
           </button>
-          <button class="overflow-row" (click)="showSettings.set(!showSettings())">
-            <svg aria-hidden="true" lucideSettings [size]="20"></svg>
-            <span class="row-label">Mic settings</span>
-          </button>
-          @if (!invisible()) {
-            <button class="overflow-row" (click)="onToggleCaption()">
-              @if (captionEnabled()) {
-                <svg aria-hidden="true" lucideCaptions [size]="20"></svg>
-              } @else {
-                <svg aria-hidden="true" lucideCaptionsOff [size]="20"></svg>
-              }
-              <span class="row-label">{{ captionEnabled() ? 'Captions on' : 'Captions off' }}</span>
-              @if (captionEnabled()) {
-                <span class="row-badge active">On</span>
-              }
-            </button>
-          }
         </div>
-        @if (showSettings()) {
-          <app-av-settings (onClose)="showSettings.set(false)" />
+
+        <div class="overflow-divider"></div>
+
+        <!-- Section 3: Captions — always visible (useful for watching) -->
+        <div class="overflow-list">
+          <button class="overflow-row" (click)="onToggleCaption()">
+            @if (captionEnabled()) {
+              <svg aria-hidden="true" lucideCaptions [size]="20"></svg>
+            } @else {
+              <svg aria-hidden="true" lucideCaptionsOff [size]="20"></svg>
+            }
+            <span class="row-label">{{ captionEnabled() ? 'Captions on' : 'Captions off' }}</span>
+            @if (captionEnabled()) {
+              <span class="row-badge active">On</span>
+            }
+          </button>
+        </div>
+
+        <!-- Section 4: Media — hidden when invisible (mic/cam/pitch = broadcasting only) -->
+        @if (!invisible()) {
+          <div class="overflow-divider"></div>
+          <div class="overflow-list">
+            @if (isCamOn() !== false) {
+              <button class="overflow-row" (click)="onToggleCam()">
+                <svg aria-hidden="true" lucideVideoOff [size]="20"></svg>
+                <span class="row-label">{{ isCamOn() ? 'Stop camera' : 'Start camera' }}</span>
+              </button>
+              <button class="overflow-row" (click)="onToggleCamOrShare()">
+                <svg aria-hidden="true" lucideMonitorUp [size]="20"></svg>
+                <span class="row-label">Share screen</span>
+              </button>
+            }
+            <button class="overflow-row" (click)="onPitch()">
+              <svg aria-hidden="true" lucideMusic [size]="20"></svg>
+              <span class="row-label">Voice pitch</span>
+            </button>
+            <button class="overflow-row" (click)="showSettings.set(!showSettings())">
+              <svg aria-hidden="true" lucideSettings [size]="20"></svg>
+              <span class="row-label">Mic settings</span>
+            </button>
+          </div>
+          @if (showSettings()) {
+            <app-av-settings (onClose)="showSettings.set(false)" />
+          }
         }
 
         <div class="overflow-divider"></div>
 
-        <div class="overflow-list">
-          <button class="overflow-row overflow-row-primary" (click)="onGift()">
-            <svg aria-hidden="true" lucideGift [size]="20"></svg>
-            <span class="row-label">Send a gift</span>
-          </button>
-        </div>
+        <!-- Section 5: Engagement — hidden when invisible (reveals identity) -->
+        @if (!invisible()) {
+          <div class="overflow-list">
+            <button class="overflow-row overflow-row-primary" (click)="onGift()">
+              <svg aria-hidden="true" lucideGift [size]="20"></svg>
+              <span class="row-label">Send a gift</span>
+            </button>
+          </div>
+        }
       </div>
     }
   `,
@@ -361,6 +389,13 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
       scrollbar-width: none;
       -ms-overflow-style: none;
       position: relative;
+    }
+
+    .media-controls,
+    .engagement-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
     }
 
     .header-center::-webkit-scrollbar { display: none; }
@@ -899,6 +934,10 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
       .hide-mobile {
         display: none !important;
       }
+    }
+
+    .hide {
+      display: none !important;
     }
 
     /* Desktop: hide mobile-more button */

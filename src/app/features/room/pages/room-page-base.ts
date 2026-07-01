@@ -77,6 +77,8 @@ export abstract class RoomPageBase {
 
   readonly mediaToggleBusy = signal(false);
   readonly handToggleBusy = signal(false);
+  /** Prevents concurrent visibility toggle calls (double-click guard). */
+  readonly togglingVisibility = signal(false);
   readonly inviteBusy = signal<number | null>(null);
 
 
@@ -265,6 +267,18 @@ export abstract class RoomPageBase {
   }
 
   async onToggleInvisible(): Promise<void> {}
+
+  /**
+   * Keeps the URL ?visible= query param in sync with the actual visibility state
+   * after an in-app toggle, so that page refresh preserves the chosen state.
+   */
+  protected syncVisibilityToUrl(isVisible: boolean): void {
+    this.router.navigate([], {
+      queryParams: { visible: isVisible ? null : 'false' },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
 
   protected onSendComment(event: SendEvent): void {}
 

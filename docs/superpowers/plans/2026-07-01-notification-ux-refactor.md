@@ -2,16 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace blocking `confirm.ask()` modals with non-blocking actionable toasts for low-stakes room decisions (stage invite, mod invite, raise-hand approval), and eliminate confirmed duplicate toast/notification delivery for events HelloTalk's backend pushes on both the BFF room socket and the global IM socket.
+**Goal:** Replace blocking `confirm.ask()` modals with non-blocking actionable toasts for low-stakes room decisions (stage invite, mod invite, raise-hand approval), and eliminate confirmed duplicate toast/notification delivery for events HelloTalk's backend pushes on both the LiveHub/BFF room socket and the global IM socket.
 
-**Architecture:** Extend the existing `ToastService`/`Toast` model with an optional `actions` array (no new service, no new component) so callers attach Accept/Decline closures directly to a toast. Expose a new `activeCname` signal on `BffRoomSocketService` so `ImBootstrapService` can detect "is the BFF room socket already handling this room" and suppress its own duplicate toast/notification for the same event.
+**Architecture:** Extend the existing `ToastService`/`Toast` model with an optional `actions` array (no new service, no new component) so callers attach Accept/Decline closures directly to a toast. Per confirmed ground truth, the IM socket (not the BFF room socket) is the source of truth for `stage_invite`/`mod_invite`/`mod_accepted`/`mod_removed`/`mod_unmuted` — `ImBootstrapService` becomes their sole, unconditional handler, and `handle-realtime-event.util.ts` (BFF path) drops those five cases entirely. This requires promoting `RoomApi` to `providedIn: 'root'` and introducing a `ROOM_INVITE_GATEWAY` injection token (mirroring the existing `NOTIFICATION_REPORTER`/`ERROR_REPORTER` pattern) so the root-provided `ImBootstrapService` can call two of `RoomApi`'s methods without `core/` illegally importing `features/room/`.
 
 **Tech Stack:** Angular 22 signals, Vitest (via `@angular/build:unit-test`), RxJS (`firstValueFrom` for one-shot API calls), existing CDK-free toast container.
 
 ## Global Constraints
 
-- Scope is `features/room/**`, `core/realtime/**`, `core/services/toast.service.ts`, `shared/ui/toast/**` only — do not touch other toast usage sites (header, managers-modal, comments-panel).
-- No new files, no new service, no new component — extend `Toast`/`ToastService`/`ToastContainerComponent` in place per the approved design (see `docs/superpowers/specs/2026-07-01-notification-ux-design.md`).
+- Scope is `features/room/**`, `core/realtime/**`, `core/services/toast.service.ts`, `core/tokens/**`, `shared/ui/toast/**`, plus `app.config.ts` (composition root) only — do not touch other toast usage sites (header, managers-modal, comments-panel).
+- Dependency direction is `features → store → core → shared`; nothing in `core/` may import from `features/`. Where `core/` needs something a feature owns, define an abstraction in `core/tokens/` and bind it to the real implementation only in `app.config.ts` — this is this codebase's own established pattern (`NOTIFICATION_REPORTER`, `ERROR_REPORTER`), not a new one.
+- No new component, no new store — extend `Toast`/`ToastService`/`ToastContainerComponent` in place per the approved design (see `docs/superpowers/specs/2026-07-01-notification-ux-design.md`). One new file is expected: the `ROOM_INVITE_GATEWAY` token.
 - Every component stays `ChangeDetectionStrategy.OnPush`; no `standalone: true` (implicit default, per this codebase's CLAUDE.md).
 - No hardcoded colors in new CSS — use design tokens (`--radius-md`, `--text-xs`, `--color-on-color`, `--color-neutral-*`, `--color-border`, `--toast-accent`), verified present in `src/styles/tokens.scss`.
 - Dark mode: this file already uses a plain `.dark` ancestor selector (not `:host-context(.dark)`) for its dark overrides — follow that same local convention for any new dark-mode CSS in `toast-container.component.ts`.
@@ -387,112 +388,163 @@ git commit -m "feat(toast): render action buttons for actionable toasts"
 
 ---
 
-### Task 3: Expose `activeCname` on `BffRoomSocketService`
+### Task 3: Promote `RoomApi` to root and add the `ROOM_INVITE_GATEWAY` token
 
 **Files:**
-- Modify: `src/app/core/realtime/bff-room-socket.service.ts`
-- Test: `src/app/core/realtime/bff-room-socket.service.spec.ts` (existing — add cases)
+- Modify: `src/app/features/room/data/room-api.ts:13`
+- Modify: `src/app/features/room/pages/room-page.ts:18,46`
+- Modify: `src/app/features/room/pages/video-room-page.ts:18,45-56`
+- Create: `src/app/core/tokens/room-invite-gateway.token.ts`
+- Modify: `src/app/app.config.ts`
+- Test: `src/app/core/tokens/room-invite-gateway.token.spec.ts` (new)
 
 **Interfaces:**
-- Produces: `BffRoomSocketService.activeCname: Signal<string>` — `''` when disconnected, the connected room's `cname` otherwise.
+- Produces: `RoomApi` now resolvable at the root injector (still importable/injectable exactly as before everywhere else — no call-site changes).
+- Produces: `export interface RoomInviteGateway { approveStageInvite(cname: string, accepted: boolean): Observable<void>; approveModInvite(cname: string, userId: number): Observable<void>; }` and `export const ROOM_INVITE_GATEWAY: InjectionToken<RoomInviteGateway>`.
+- Consumes: nothing new from earlier tasks. Task 5 (`ImBootstrapService`) will consume `ROOM_INVITE_GATEWAY`.
+
+This task has no behavior of its own to unit-test in isolation beyond the token's default no-op factory (so injecting it never throws before `app.config.ts` binds the real one) — the real behavior (does accepting actually call the API) is covered by Task 5's tests against the bound factory. Verification here is the token's shape plus `npx tsc --noEmit` confirming the DI wiring resolves.
 
 - [ ] **Step 1: Write the failing test**
 
-Add to the existing `describe('BffRoomSocketService', ...)` block in `src/app/core/realtime/bff-room-socket.service.spec.ts` (after the last existing `it(...)`, before the closing `});`):
+Create `src/app/core/tokens/room-invite-gateway.token.spec.ts`:
 
 ```ts
-  it('activeCname reflects the connected room and clears on disconnect', async () => {
-    expect(service.activeCname()).toBe('');
+import { TestBed } from '@angular/core/testing';
+import { describe, expect, it } from 'vitest';
+import { ROOM_INVITE_GATEWAY } from './room-invite-gateway.token';
 
-    service.connect('VR_1_2');
-    expect(service.activeCname()).toBe('VR_1_2');
+describe('ROOM_INVITE_GATEWAY', () => {
+  it('has a default no-op factory so injecting it never throws before app.config.ts binds the real one', () => {
+    TestBed.configureTestingModule({});
+    const gateway = TestBed.inject(ROOM_INVITE_GATEWAY);
 
-    await service.disconnect();
-    expect(service.activeCname()).toBe('');
+    expect(() => gateway.approveStageInvite('VR_1_2', true).subscribe()).not.toThrow();
+    expect(() => gateway.approveModInvite('VR_1_2', 42).subscribe()).not.toThrow();
   });
+});
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx ng test --include='src/app/core/realtime/bff-room-socket.service.spec.ts' --watch=false`
-Expected: FAIL — `service.activeCname is not a function`.
+Run: `npx ng test --include='src/app/core/tokens/room-invite-gateway.token.spec.ts' --watch=false`
+Expected: FAIL — the file doesn't exist yet (`Cannot find module './room-invite-gateway.token'`).
 
-- [ ] **Step 3: Add the signal**
+- [ ] **Step 3: Create the token**
 
-In `src/app/core/realtime/bff-room-socket.service.ts`:
-
-1. Add a new private signal alongside the existing ones:
+Create `src/app/core/tokens/room-invite-gateway.token.ts`:
 
 ```ts
-  private readonly _lastEvent = signal<RoomRealtimeEvent | null>(null);
-  private readonly _wsStatus = signal<WsConnectionStatus>('disconnected');
-  private readonly _activeCname = signal<string>('');
-  readonly lastEvent = this._lastEvent.asReadonly();
-  readonly wsStatus = this._wsStatus.asReadonly();
-  readonly activeCname = this._activeCname.asReadonly();
-```
+import { InjectionToken } from '@angular/core';
+import { Observable, of } from 'rxjs';
 
-2. In `connect()`, set it right after `this.reconnectCname = cname;`:
+/** Abstraction so core/ can approve/decline a room invite without importing
+ *  features/room/'s RoomApi directly (see CLAUDE.md §2 — core/ may not import
+ *  features/). app.config.ts binds this to the real RoomApi-backed implementation,
+ *  the same pattern already used for NOTIFICATION_REPORTER. */
+export interface RoomInviteGateway {
+  approveStageInvite(cname: string, accepted: boolean): Observable<void>;
+  approveModInvite(cname: string, userId: number): Observable<void>;
+}
 
-```ts
-  connect(cname: string, hostId = 0, busiType = 2, heartbeatSeconds: number | null = null): void {
-    if (this.reconnectCname === cname && (this.sock || this.connecting)) return;
-    this.teardownSocket();
-    this.reconnectCname = cname;
-    this._activeCname.set(cname);
-    this.reconnectHostId = hostId;
-    this.reconnectBusiType = busiType;
-    this.reconnectHeartbeatSeconds = heartbeatSeconds;
-    this.reconnectAttempt = 0;
-    this.connecting = true;
-    this.open();
-  }
-```
-
-3. In `disconnect()`, clear it right after `this.reconnectCname = '';`:
-
-```ts
-  async disconnect(): Promise<void> {
-    this.reconnectCname = '';
-    this._activeCname.set('');
-    this.reconnectHostId = 0;
-    this.reconnectBusiType = 2;
-    this.reconnectHeartbeatSeconds = null;
-    this.reconnectAttempt = 0;
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    this.connecting = false;
-    this._wsStatus.set('disconnected');
-    this.teardownSocket();
-    this.sock = null;
-    this._lastEvent.set(null);
-  }
+export const ROOM_INVITE_GATEWAY = new InjectionToken<RoomInviteGateway>('ROOM_INVITE_GATEWAY', {
+  factory: () => ({
+    approveStageInvite: () => of(undefined), // no-op until app.config.ts binds the real RoomApi
+    approveModInvite: () => of(undefined),
+  }),
+});
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx ng test --include='src/app/core/realtime/bff-room-socket.service.spec.ts' --watch=false`
-Expected: PASS (all existing tests + the new one)
+Run: `npx ng test --include='src/app/core/tokens/room-invite-gateway.token.spec.ts' --watch=false`
+Expected: PASS (1 test)
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Promote `RoomApi` to root**
+
+In `src/app/features/room/data/room-api.ts`, change line 13 from:
+
+```ts
+@Injectable()
+export class RoomApi {
+```
+
+to:
+
+```ts
+@Injectable({ providedIn: 'root' })
+export class RoomApi {
+```
+
+- [ ] **Step 6: Remove `RoomApi` from the two page components' `providers:` arrays**
+
+In `src/app/features/room/pages/room-page.ts`:
+- Delete the import line: `import { RoomApi } from '../data/room-api';` (line 18) — nothing else in this file references `RoomApi` by name once it's gone from `providers:`.
+- Change `providers: [RoomApi, RoomStore, StageStore, AudienceStore, CommentsStore, ModStore, GiftsStore, InRoomRtmStore, GoodieStore, ManagersStore, RoomConnectionService],` to `providers: [RoomStore, StageStore, AudienceStore, CommentsStore, ModStore, GiftsStore, InRoomRtmStore, GoodieStore, ManagersStore, RoomConnectionService],`.
+
+In `src/app/features/room/pages/video-room-page.ts`:
+- Delete the import line: `import { RoomApi } from '../data/room-api';` (line 18).
+- Delete the `RoomApi,` line from inside the `providers: [ ... ]` array (it's currently the first entry, right after the opening bracket).
+
+- [ ] **Step 7: Bind the token in `app.config.ts`**
+
+In `src/app/app.config.ts`, add an import and a new provider entry, following the exact shape of the existing `NOTIFICATION_REPORTER` binding:
+
+```ts
+import { ROOM_INVITE_GATEWAY } from '@core/tokens/room-invite-gateway.token';
+import { RoomApi } from '@features/room/data/room-api';
+```
+
+then, inside the `providers: [...]` array, right after the closing `}` of the existing `NOTIFICATION_REPORTER` provider entry, add:
+
+```ts
+    // Binds the core/-owned ROOM_INVITE_GATEWAY abstraction to the real features/room/
+    // RoomApi implementation — core/ can't import features/ directly (see CLAUDE.md §2),
+    // so this is the one place allowed to wire them.
+    // Stage invites over the IM socket only carry cname, not busiType — every captured
+    // /livehub/stage/invite_approval request in websocket_realtime.md shows busi_type: 2
+    // (voice room); no video-room example has been observed.
+    {
+      provide: ROOM_INVITE_GATEWAY,
+      useFactory: () => {
+        const api = inject(RoomApi);
+        const STAGE_INVITE_BUSI_TYPE = 2;
+        return {
+          approveStageInvite: (cname: string, accepted: boolean) =>
+            api.stageInviteApproval(cname, STAGE_INVITE_BUSI_TYPE, 3, accepted ? 1 : 2),
+          approveModInvite: (cname: string, userId: number) => api.approveManager(cname, userId),
+        };
+      },
+    },
+```
+
+- [ ] **Step 8: Verify the whole project typechecks**
+
+Run: `npx tsc --noEmit`
+Expected: no errors.
+
+- [ ] **Step 9: Run the full test suite**
+
+Run: `npx ng test --watch=false`
+Expected: PASS — no existing test relied on `RoomApi` being page-scoped (confirmed: no spec file references `RoomApi` before this task).
+
+- [ ] **Step 10: Commit**
 
 ```bash
-git add src/app/core/realtime/bff-room-socket.service.ts src/app/core/realtime/bff-room-socket.service.spec.ts
-git commit -m "feat(realtime): expose activeCname on BffRoomSocketService"
+git add src/app/core/tokens/room-invite-gateway.token.ts src/app/core/tokens/room-invite-gateway.token.spec.ts src/app/features/room/data/room-api.ts src/app/features/room/pages/room-page.ts src/app/features/room/pages/video-room-page.ts src/app/app.config.ts
+git commit -m "feat(core): add ROOM_INVITE_GATEWAY token; promote RoomApi to root"
 ```
 
 ---
 
-### Task 4: Dedup and downgrade `ImBootstrapService`
+### Task 4: Rewrite `ImBootstrapService` as the sole handler for the five duplicated event types
 
 **Files:**
 - Modify: `src/app/core/realtime/im-bootstrap.service.ts`
 - Test: `src/app/core/realtime/im-bootstrap.service.spec.ts` (new)
 
 **Interfaces:**
-- Consumes: `BffRoomSocketService.activeCname` (Task 3), `ImSocketService.lastEvent`/`connect()` (existing), `NOTIFICATION_REPORTER.notify(type, title, message?)` (existing), `ToastService.error/warning` (existing).
+- Consumes: `ROOM_INVITE_GATEWAY` (Task 3), `ToastService.action()` (Task 1), `ToastService.error/warning/success/info` (existing), `NOTIFICATION_REPORTER.notify(type, title, message?)` (existing), `AuthStore.user()` (existing — `AuthUser.userId`).
 - Produces: no new public API — `ImBootstrapService` stays a root-provided side-effect-only service.
 
 - [ ] **Step 1: Write the failing tests**
@@ -500,14 +552,15 @@ git commit -m "feat(realtime): expose activeCname on BffRoomSocketService"
 Create `src/app/core/realtime/im-bootstrap.service.spec.ts`:
 
 ```ts
+import { of } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthStore } from '@core/auth/auth.store';
 import { ToastService } from '@core/services/toast.service';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
+import { ROOM_INVITE_GATEWAY, RoomInviteGateway } from '@core/tokens/room-invite-gateway.token';
 import { ImBootstrapService } from './im-bootstrap.service';
 import { ImSocketService } from './im-socket.service';
-import { BffRoomSocketService } from './bff-room-socket.service';
 import type { ImEvent } from './im-events';
 
 class FakeWebSocket {
@@ -530,9 +583,9 @@ class FakeWebSocket {
 
 describe('ImBootstrapService', () => {
   let imSocket: ImSocketService;
-  let bffWs: BffRoomSocketService;
   let toast: ToastService;
   let notify: ReturnType<typeof vi.fn>;
+  let gateway: { approveStageInvite: ReturnType<typeof vi.fn>; approveModInvite: ReturnType<typeof vi.fn> };
   let imSock: FakeWebSocket;
 
   function push(event: ImEvent): void {
@@ -544,11 +597,16 @@ describe('ImBootstrapService', () => {
     FakeWebSocket.instances = [];
     vi.stubGlobal('WebSocket', Object.assign(FakeWebSocket, { OPEN: 1, CLOSED: 3 }));
     notify = vi.fn();
+    gateway = {
+      approveStageInvite: vi.fn(() => of(undefined)),
+      approveModInvite: vi.fn(() => of(undefined)),
+    };
 
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthStore, useValue: { isAuthenticated: () => true } },
+        { provide: AuthStore, useValue: { isAuthenticated: () => true, user: () => ({ userId: 42 }) } },
         { provide: NOTIFICATION_REPORTER, useValue: { notify } },
+        { provide: ROOM_INVITE_GATEWAY, useValue: gateway satisfies RoomInviteGateway },
       ],
     });
 
@@ -556,47 +614,51 @@ describe('ImBootstrapService', () => {
     TestBed.flushEffects(); // auth effect runs once: isAuthenticated() true -> imSocket.connect()
 
     imSocket = TestBed.inject(ImSocketService);
-    bffWs = TestBed.inject(BffRoomSocketService);
     toast = TestBed.inject(ToastService);
     imSock = FakeWebSocket.instances[0]!;
   });
 
-  it('suppresses stage_invite entirely when already in that room', () => {
-    bffWs.connect('VR_1_2');
+  it('shows an actionable toast for stage_invite, unconditionally', () => {
     push({ type: 'stage_invite', userId: '9', cname: 'VR_1_2' });
 
+    const toasts = toast.toasts();
+    expect(toasts).toHaveLength(1);
+    expect(toasts[0]!.message).toBe('The host invited you to join the stage');
+    expect(toasts[0]!.actions).toHaveLength(2);
     expect(notify).not.toHaveBeenCalled();
-    expect(toast.toasts()).toHaveLength(0);
   });
 
-  it('notifies (no toast) for a stage_invite to a different room than the one currently joined', () => {
-    bffWs.connect('VR_OTHER');
+  it('accepting the stage_invite toast calls the gateway with accepted=true', () => {
     push({ type: 'stage_invite', userId: '9', cname: 'VR_1_2' });
 
-    expect(notify).toHaveBeenCalledWith('info', 'Stage invitation', 'The host invited you to join the stage');
-    expect(toast.toasts()).toHaveLength(0);
+    toast.toasts()[0]!.actions!.find((a) => a.label === 'Accept')!.run();
+
+    expect(gateway.approveStageInvite).toHaveBeenCalledWith('VR_1_2', true);
   });
 
-  it('notifies (no toast) for a stage_invite when not in any room', () => {
+  it('declining the stage_invite toast calls the gateway with accepted=false', () => {
     push({ type: 'stage_invite', userId: '9', cname: 'VR_1_2' });
 
-    expect(notify).toHaveBeenCalledWith('info', 'Stage invitation', 'The host invited you to join the stage');
-    expect(toast.toasts()).toHaveLength(0);
+    toast.toasts()[0]!.actions!.find((a) => a.label === 'Decline')!.run();
+
+    expect(gateway.approveStageInvite).toHaveBeenCalledWith('VR_1_2', false);
   });
 
-  it('suppresses mod_accepted entirely while in any room', () => {
-    bffWs.connect('VR_1_2');
+  it('shows an actionable toast for mod_invite and accepts using the current user id', () => {
+    push({ type: 'mod_invite', userId: '9', cname: 'VR_1_2' });
+
+    toast.toasts()[0]!.actions!.find((a) => a.label === 'Accept')!.run();
+
+    expect(gateway.approveModInvite).toHaveBeenCalledWith('VR_1_2', 42);
+  });
+
+  it('toasts mod_accepted/mod_removed/mod_unmuted unconditionally, without notifying', () => {
     push({ type: 'mod_accepted', userId: '9' });
+    push({ type: 'mod_removed', userId: '9' });
+    push({ type: 'mod_unmuted', userId: '9' });
 
+    expect(toast.toasts()).toHaveLength(3);
     expect(notify).not.toHaveBeenCalled();
-    expect(toast.toasts()).toHaveLength(0);
-  });
-
-  it('notifies mod_accepted (no toast) when not in a room', () => {
-    push({ type: 'mod_accepted', userId: '9' });
-
-    expect(notify).toHaveBeenCalledWith('info', 'Moderator', 'You are now a moderator');
-    expect(toast.toasts()).toHaveLength(0);
   });
 
   it('notifies passive social events (follow) without toasting', () => {
@@ -618,7 +680,7 @@ describe('ImBootstrapService', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx ng test --include='src/app/core/realtime/im-bootstrap.service.spec.ts' --watch=false`
-Expected: FAIL — several assertions fail because today's `handle()` always toasts+notifies for `stage_invite`/`mod_invite`/`mod_accepted`/`mod_removed`/`mod_unmuted` and toasts for the passive social events, with no room-awareness.
+Expected: FAIL — today's `handle()` still uses `toast.info`/`toast.success` directly for these events with no actions, and never injects `ROOM_INVITE_GATEWAY`.
 
 - [ ] **Step 3: Rewrite `im-bootstrap.service.ts`**
 
@@ -626,10 +688,11 @@ Replace the full contents of `src/app/core/realtime/im-bootstrap.service.ts` wit
 
 ```ts
 import { Injectable, effect, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '@core/auth/auth.store';
 import { ToastService } from '@core/services/toast.service';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
-import { BffRoomSocketService } from './bff-room-socket.service';
+import { ROOM_INVITE_GATEWAY } from '@core/tokens/room-invite-gateway.token';
 import { ImSocketService } from './im-socket.service';
 import type { ImEvent } from './im-events';
 
@@ -637,7 +700,7 @@ import type { ImEvent } from './im-events';
 export class ImBootstrapService {
   private readonly auth = inject(AuthStore);
   private readonly imSocket = inject(ImSocketService);
-  private readonly bffWs = inject(BffRoomSocketService);
+  private readonly gateway = inject(ROOM_INVITE_GATEWAY);
   private readonly toast = inject(ToastService);
   private readonly notifications = inject(NOTIFICATION_REPORTER);
 
@@ -656,34 +719,64 @@ export class ImBootstrapService {
     });
   }
 
-  /** HelloTalk pushes stage_invite/mod_invite/mod_accepted/mod_removed/mod_unmuted
-   *  on BOTH the LiveHub socket (BffRoomSocketService, room-scoped) and this global
-   *  IM socket whenever the user is in the target room. When BffRoomSocketService is
-   *  already handling the same room, this method must stay silent. */
+  /** stage_invite/mod_invite/mod_accepted/mod_removed/mod_unmuted are pushed by
+   *  HelloTalk on the LiveHub (room) socket too, but this IM socket is the source
+   *  of truth for them — handle-realtime-event.util.ts (BFF path) no longer
+   *  handles these five at all. */
   private handle(event: ImEvent): void {
     switch (event.type) {
       case 'profile_visit':
         this.notifications.notify('info', 'Profile visit', `${event.visitorUserId} visited your profile`);
         break;
-      case 'stage_invite':
-        if (event.cname === this.bffWs.activeCname()) break;
-        this.notifications.notify('info', 'Stage invitation', 'The host invited you to join the stage');
+      case 'stage_invite': {
+        const cname = event.cname;
+        this.toast.action('The host invited you to join the stage', [
+          {
+            label: 'Accept',
+            variant: 'primary',
+            run: () => {
+              void firstValueFrom(this.gateway.approveStageInvite(cname, true)).then(() =>
+                this.toast.success('You joined the stage'),
+              );
+            },
+          },
+          {
+            label: 'Decline',
+            run: () => {
+              void firstValueFrom(this.gateway.approveStageInvite(cname, false)).then(() =>
+                this.toast.info('Invite declined'),
+              );
+            },
+          },
+        ]);
         break;
-      case 'mod_invite':
-        if (event.cname === this.bffWs.activeCname()) break;
-        this.notifications.notify('info', 'Moderator invitation', 'You have been invited to become a moderator');
+      }
+      case 'mod_invite': {
+        const cname = event.cname;
+        const selfId = this.auth.user()?.userId;
+        if (selfId === undefined) break;
+        this.toast.action('You have been invited to become a moderator', [
+          {
+            label: 'Accept',
+            variant: 'primary',
+            run: () => {
+              void firstValueFrom(this.gateway.approveModInvite(cname, selfId)).then(() =>
+                this.toast.success('You are now a moderator'),
+              );
+            },
+          },
+          { label: 'Decline', run: () => {} },
+        ]);
         break;
+      }
       case 'mod_accepted':
-        if (this.bffWs.activeCname()) break;
-        this.notifications.notify('info', 'Moderator', 'You are now a moderator');
+        this.toast.success('You are now a moderator');
         break;
       case 'mod_removed':
-        if (this.bffWs.activeCname()) break;
-        this.notifications.notify('info', 'Moderator', 'You are no longer a moderator');
+        this.toast.warning('You are no longer a moderator');
         break;
       case 'mod_unmuted':
-        if (this.bffWs.activeCname()) break;
-        this.notifications.notify('info', 'Stage', 'You can speak now');
+        this.toast.success('You can speak now');
         break;
       case 'follow':
         this.notifications.notify('info', 'New follower', event.status === 2 ? `${event.nickname} followed you back` : `${event.nickname} followed you`);
@@ -737,20 +830,20 @@ Expected: PASS (7 tests)
 
 ```bash
 git add src/app/core/realtime/im-bootstrap.service.ts src/app/core/realtime/im-bootstrap.service.spec.ts
-git commit -m "fix(realtime): dedupe IM-socket events already handled by the BFF room socket"
+git commit -m "feat(realtime): ImBootstrapService becomes sole handler for the 5 duplicated invite/mod events"
 ```
 
 ---
 
-### Task 5: Replace `confirm.ask()` with actionable toasts in `handle-realtime-event.util.ts`
+### Task 5: Simplify `handle-realtime-event.util.ts` — drop the five reassigned event types
 
 **Files:**
 - Modify: `src/app/features/room/data/handle-realtime-event.util.ts`
 - Test: `src/app/features/room/data/handle-realtime-event.util.spec.ts` (new)
 
 **Interfaces:**
-- Produces: `handleRealtimeEvent(event, api, toast, cname, busiType, userId, isHost, getNickname): Promise<void>` — **signature changes**: the `confirm: ConfirmService` parameter is removed and `api`/`toast` move up to take its place. Task 6 updates the one call site to match.
-- Consumes: `ToastService.action()` (Task 1), `RoomApi.stageInviteApproval/approveManager/raiseHandApproval` (existing, unchanged).
+- Produces: `handleRealtimeEvent(event, api, toast, cname, busiType, userId, isHost, getNickname): Promise<void>` — **signature changes**: the `confirm: ConfirmService` parameter is removed and `api`/`toast` move up to take its place. Task 6 updates the one call site to match. `stage_invite`/`mod_invite`/`mod_accepted`/`mod_removed`/`mod_unmuted` are no longer handled here at all (Task 4 owns them).
+- Consumes: `ToastService.action()` (Task 1), `RoomApi.raiseHandApproval` (existing, unchanged).
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -772,85 +865,34 @@ function fakeApi(): RoomApi {
 }
 
 describe('handleRealtimeEvent', () => {
-  it('shows an actionable toast (not a blocking confirm) for a stage_invite addressed to me', async () => {
+  it('does nothing for stage_invite — ImBootstrapService (IM socket) is the sole handler', async () => {
     const toast = new ToastService();
     const api = fakeApi();
 
-    await handleRealtimeEvent(
-      { type: 'stage_invite', userId: '42' },
-      api,
-      toast,
-      'VR_1_2',
-      2,
-      42,
-      false,
-      () => 'Someone',
-    );
+    await handleRealtimeEvent({ type: 'stage_invite', userId: '42' }, api, toast, 'VR_1_2', 2, 42, false, () => 'Someone');
 
-    const toasts = toast.toasts();
-    expect(toasts).toHaveLength(1);
-    expect(toasts[0]!.message).toBe('The host invited you to join the stage');
-    expect(toasts[0]!.actions).toHaveLength(2);
+    expect(toast.toasts()).toHaveLength(0);
+    expect(api.stageInviteApproval).not.toHaveBeenCalled();
   });
 
-  it('ignores a stage_invite addressed to a different user', async () => {
+  it('does nothing for mod_invite — ImBootstrapService (IM socket) is the sole handler', async () => {
     const toast = new ToastService();
     const api = fakeApi();
 
-    await handleRealtimeEvent(
-      { type: 'stage_invite', userId: '999' },
-      api,
-      toast,
-      'VR_1_2',
-      2,
-      42,
-      false,
-      () => 'Someone',
-    );
+    await handleRealtimeEvent({ type: 'mod_invite', userId: '42' }, api, toast, 'VR_1_2', 2, 42, false, () => 'Someone');
 
     expect(toast.toasts()).toHaveLength(0);
   });
 
-  it('accepting the stage_invite toast calls the approval API with approvalType 1', async () => {
+  it('does nothing for mod_accepted/mod_removed/mod_unmuted — ImBootstrapService (IM socket) is the sole handler', async () => {
     const toast = new ToastService();
     const api = fakeApi();
 
-    await handleRealtimeEvent(
-      { type: 'stage_invite', userId: '42' },
-      api,
-      toast,
-      'VR_1_2',
-      2,
-      42,
-      false,
-      () => 'Someone',
-    );
+    await handleRealtimeEvent({ type: 'mod_accepted', userId: '42' }, api, toast, 'VR_1_2', 2, 42, false, () => 'Someone');
+    await handleRealtimeEvent({ type: 'mod_removed', userId: '42' }, api, toast, 'VR_1_2', 2, 42, false, () => 'Someone');
+    await handleRealtimeEvent({ type: 'mod_unmuted', userId: '42' }, api, toast, 'VR_1_2', 2, 42, false, () => 'Someone');
 
-    const acceptAction = toast.toasts()[0]!.actions!.find((a) => a.label === 'Accept')!;
-    acceptAction.run();
-
-    expect(api.stageInviteApproval).toHaveBeenCalledWith('VR_1_2', 2, 3, 1);
-  });
-
-  it('declining the stage_invite toast calls the approval API with approvalType 2', async () => {
-    const toast = new ToastService();
-    const api = fakeApi();
-
-    await handleRealtimeEvent(
-      { type: 'stage_invite', userId: '42' },
-      api,
-      toast,
-      'VR_1_2',
-      2,
-      42,
-      false,
-      () => 'Someone',
-    );
-
-    const declineAction = toast.toasts()[0]!.actions!.find((a) => a.label === 'Decline')!;
-    declineAction.run();
-
-    expect(api.stageInviteApproval).toHaveBeenCalledWith('VR_1_2', 2, 3, 2);
+    expect(toast.toasts()).toHaveLength(0);
   });
 
   it('shows an actionable toast for a host approving a raised hand', async () => {
@@ -859,16 +901,24 @@ describe('handleRealtimeEvent', () => {
 
     await handleRealtimeEvent(
       { type: 'stage_raisehand', userId: '7', raisehandType: 1 },
-      api,
-      toast,
-      'VR_1_2',
-      2,
-      1,
-      true,
-      (uid) => (uid === 7 ? 'Sam' : 'Someone'),
+      api, toast, 'VR_1_2', 2, 1, true, (uid) => (uid === 7 ? 'Sam' : 'Someone'),
     );
 
     expect(toast.toasts()[0]!.message).toBe('Sam wants to join the stage');
+  });
+
+  it('approving the raise-hand toast calls the approval API', async () => {
+    const toast = new ToastService();
+    const api = fakeApi();
+
+    await handleRealtimeEvent(
+      { type: 'stage_raisehand', userId: '7', raisehandType: 1 },
+      api, toast, 'VR_1_2', 2, 1, true, () => 'Sam',
+    );
+
+    toast.toasts()[0]!.actions!.find((a) => a.label === 'Approve')!.run();
+
+    expect(api.raiseHandApproval).toHaveBeenCalledWith('VR_1_2', 2, 7, 1);
   });
 
   it('ignores stage_raisehand when the current user is not the host', async () => {
@@ -877,13 +927,7 @@ describe('handleRealtimeEvent', () => {
 
     await handleRealtimeEvent(
       { type: 'stage_raisehand', userId: '7', raisehandType: 1 },
-      api,
-      toast,
-      'VR_1_2',
-      2,
-      1,
-      false,
-      () => 'Sam',
+      api, toast, 'VR_1_2', 2, 1, false, () => 'Sam',
     );
 
     expect(toast.toasts()).toHaveLength(0);
@@ -895,16 +939,22 @@ describe('handleRealtimeEvent', () => {
 
     await handleRealtimeEvent(
       { type: 'stage_kick', userId: '42', managerName: 'Alex', cname: 'VR_1_2' },
-      api,
-      toast,
-      'VR_1_2',
-      2,
-      42,
-      false,
-      () => 'Someone',
+      api, toast, 'VR_1_2', 2, 42, false, () => 'Someone',
     );
 
     expect(toast.toasts()[0]!.message).toBe('You were removed from the stage by Alex');
+  });
+
+  it('mutes self on stage_device_control', async () => {
+    const toast = new ToastService();
+    const api = fakeApi();
+
+    await handleRealtimeEvent(
+      { type: 'stage_device_control', userId: '42', deviceType: 1, switchType: 1 },
+      api, toast, 'VR_1_2', 2, 42, false, () => 'Someone',
+    );
+
+    expect(toast.toasts()[0]!.message).toBe('You were muted');
   });
 });
 ```
@@ -912,7 +962,7 @@ describe('handleRealtimeEvent', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx ng test --include='src/app/features/room/data/handle-realtime-event.util.spec.ts' --watch=false`
-Expected: FAIL — current signature still expects a `confirm: ConfirmService` first argument, and uses `confirm.ask()` instead of `toast.action()`.
+Expected: FAIL — the current file still handles `stage_invite`/`mod_invite`/`mod_accepted`/`mod_removed`/`mod_unmuted` via `confirm.ask()`/direct toasts, and its signature still takes a `confirm: ConfirmService` first parameter.
 
 - [ ] **Step 3: Rewrite `handle-realtime-event.util.ts`**
 
@@ -935,45 +985,9 @@ export async function handleRealtimeEvent(
   getNickname: (userId: number) => string,
 ): Promise<void> {
   switch (event?.type) {
-    case 'stage_invite': {
-      if (Number(event.userId) !== userId || !cname) break;
-      toast.action('The host invited you to join the stage', [
-        {
-          label: 'Accept',
-          variant: 'primary',
-          run: () => {
-            void firstValueFrom(api.stageInviteApproval(cname, busiType, 3, 1)).then(() =>
-              toast.success('You joined the stage'),
-            );
-          },
-        },
-        {
-          label: 'Decline',
-          run: () => {
-            void firstValueFrom(api.stageInviteApproval(cname, busiType, 3, 2)).then(() =>
-              toast.info('Invite declined'),
-            );
-          },
-        },
-      ]);
-      break;
-    }
-    case 'mod_invite': {
-      if (Number(event.userId) !== userId || !cname) break;
-      toast.action('You have been invited to become a moderator', [
-        {
-          label: 'Accept',
-          variant: 'primary',
-          run: () => {
-            void firstValueFrom(api.approveManager(cname, userId)).then(() =>
-              toast.success('You are now a moderator'),
-            );
-          },
-        },
-        { label: 'Decline', run: () => {} },
-      ]);
-      break;
-    }
+    // stage_invite, mod_invite, mod_accepted, mod_removed, and mod_unmuted are
+    // pushed on the IM socket too — ImBootstrapService is the sole handler for
+    // them (see docs/superpowers/specs/2026-07-01-notification-ux-design.md §2).
     case 'stage_raisehand': {
       if (!isHost || event.raisehandType !== 1 || !cname) break;
       const raiserId = Number(event.userId);
@@ -1002,21 +1016,6 @@ export async function handleRealtimeEvent(
         toast.warning('You were muted');
       }
       break;
-    case 'mod_unmuted':
-      if (Number(event.userId) === userId) {
-        toast.success('You can speak now');
-      }
-      break;
-    case 'mod_accepted':
-      if (Number(event.userId) === userId) {
-        toast.success('You are now a moderator');
-      }
-      break;
-    case 'mod_removed':
-      if (Number(event.userId) === userId) {
-        toast.warning('You are no longer a moderator');
-      }
-      break;
     default:
       break;
   }
@@ -1032,7 +1031,7 @@ Expected: PASS (7 tests)
 
 ```bash
 git add src/app/features/room/data/handle-realtime-event.util.ts src/app/features/room/data/handle-realtime-event.util.spec.ts
-git commit -m "feat(room): replace blocking confirm modals with actionable toasts"
+git commit -m "refactor(room): drop invite/mod-status handling now owned by ImBootstrapService"
 ```
 
 ---
@@ -1117,4 +1116,4 @@ git commit -m "refactor(room): drop unused ConfirmService now that invites use a
 
 - [ ] `npx tsc --noEmit` — clean
 - [ ] `npx ng test --watch=false` — all green
-- [ ] Manual smoke check per the `/verify` or `/run` skill: trigger a stage invite while in the target room and confirm exactly one actionable toast appears (no modal, no duplicate), and that tapping Accept/Decline calls the API and shows the expected follow-up toast.
+- [ ] Manual smoke check per the `/verify` or `/run` skill: trigger a stage invite and confirm exactly one actionable toast appears (no modal, no duplicate) regardless of which room is open, and that tapping Accept/Decline calls the gateway and shows the expected follow-up toast.
