@@ -121,9 +121,15 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     }
   `,
   styles: [`
+    :host {
+      display: block;
+      height: 100%;
+      overflow: hidden;
+    }
+
     .room-layout {
       display: grid;
-      height: calc(100dvh - 56px);
+      height: 100%;
       overflow: hidden;
     }
 
@@ -157,7 +163,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     }
 
     @media (max-width: 1023px) {
-      .room-layout { height: calc(100dvh - 56px - var(--bottom-nav-height)); }
       .comments-section {
         flex: 1;
         min-height: 0;
