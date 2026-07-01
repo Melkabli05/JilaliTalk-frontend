@@ -531,7 +531,7 @@ import { firstValueFrom } from 'rxjs';
     }
     .status-claimed {
       background: var(--color-gold-500);
-      color: white;
+      color: var(--color-on-color);
     }
     .status-locked {
       background: var(--color-neutral-300);
@@ -591,7 +591,7 @@ import { firstValueFrom } from 'rxjs';
       justify-content: center;
       border-radius: var(--radius-full);
       background: var(--color-primary-500);
-      color: white;
+      color: var(--color-on-color);
       font-size: var(--text-xs);
       font-weight: var(--font-bold);
     }
@@ -682,7 +682,7 @@ import { firstValueFrom } from 'rxjs';
       border-radius: var(--radius-md);
       border: none;
       background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
-      color: white;
+      color: var(--color-on-color);
       font-size: var(--text-xs);
       font-weight: var(--font-semibold);
       cursor: pointer;
@@ -710,7 +710,7 @@ import { firstValueFrom } from 'rxjs';
       padding: var(--space-1) var(--space-3);
       border-radius: var(--radius-md);
       background: var(--color-gold-500);
-      color: white;
+      color: var(--color-on-color);
       font-size: var(--text-xs);
       font-weight: var(--font-semibold);
       flex-shrink: 0;

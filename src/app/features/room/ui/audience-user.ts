@@ -162,7 +162,7 @@ export type AudienceUserDisplay = 'grid' | 'list';
     .invite-overlay-btn {
       position: absolute; top: 0; right: 0;
       width: 20px; height: 20px; border-radius: var(--radius-md);
-      background: var(--color-primary-500); color: white; border: none;
+      background: var(--color-primary-500); color: var(--color-on-color); border: none;
       display: flex; align-items: center; justify-content: center; cursor: pointer;
       opacity: 0; transition: opacity 0.15s;
     }
@@ -170,7 +170,7 @@ export type AudienceUserDisplay = 'grid' | 'list';
     .invite-overlay-btn:focus-visible { opacity: 1; }
     .invite-overlay-btn:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
     .invite-overlay-btn:disabled { cursor: not-allowed; opacity: 0.7; }
-    :host-context(.dark) .invite-overlay-btn { background: var(--color-primary-400); color: white; }
+    :host-context(.dark) .invite-overlay-btn { background: var(--color-primary-400); color: var(--color-on-color); }
 
     .spinning { animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -252,7 +252,7 @@ export type AudienceUserDisplay = 'grid' | 'list';
 
     .raise-hand-indicator {
       width: 24px; height: 24px; border-radius: 50%;
-      background: var(--color-warm-400); display: flex; align-items: center; justify-content: center; color: white;
+      background: var(--color-warm-400); display: flex; align-items: center; justify-content: center; color: var(--color-on-color);
       font-size: 11px;
     }
 

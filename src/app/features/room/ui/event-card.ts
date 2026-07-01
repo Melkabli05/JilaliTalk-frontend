@@ -280,7 +280,7 @@ import {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
+      color: var(--color-on-color);
       border: 1.5px solid var(--color-card);
     }
     :host-context(.dark) .icon-badge { border-color: var(--color-neutral-900); }
@@ -374,7 +374,7 @@ import {
       padding: 1px 6px;
       border-radius: var(--radius-full);
       background: var(--color-gold-500);
-      color: white;
+      color: var(--color-on-color);
     }
     :host-context(.dark) .gift {
       background: color-mix(in srgb, var(--color-gold-900) 40%, transparent);
@@ -416,7 +416,7 @@ import {
       right: -5px;
       font-size: 9px;
       font-weight: var(--font-bold);
-      color: white;
+      color: var(--color-on-color);
       background: var(--color-warm-500);
       padding: 0 4px;
       border-radius: var(--radius-full);

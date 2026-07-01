@@ -501,10 +501,10 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
     }
     .bubble.own {
       background: var(--color-primary-500);
-      color: white;
+      color: var(--color-on-color);
     }
     :host-context(.dark) .bubble { background: var(--cl-bg); color: var(--cl-text); }
-    :host-context(.dark) .bubble.own { background: var(--color-primary-600); }
+    :host-context(.dark) .bubble.own { background: var(--color-primary-600); color: var(--color-on-color); }
 
     .bubble.skinned {
       background-size: 100% 100%;
@@ -539,8 +539,8 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
     }
     .reply-quote:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
     .reply-quote.own {
-      border-left-color: rgba(255,255,255,0.7);
-      background: rgba(255,255,255,0.18);
+      border-left-color: color-mix(in srgb, var(--color-on-color) 70%, transparent);
+      background: color-mix(in srgb, var(--color-on-color) 18%, transparent);
     }
     .reply-quote__label {
       display: flex;
@@ -551,7 +551,7 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
       color: var(--color-primary-600);
     }
     .reply-quote__label strong { font-weight: var(--font-bold); }
-    .reply-quote.own .reply-quote__label { color: rgba(255,255,255,0.95); }
+    .reply-quote.own .reply-quote__label { color: var(--color-on-color); }
     :host-context(.dark) .reply-quote__label { color: var(--color-primary-300); }
     .reply-quote__text {
       font-size: var(--text-2xs);
@@ -561,7 +561,7 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .reply-quote.own .reply-quote__text { color: rgba(255,255,255,0.75); }
+    .reply-quote.own .reply-quote__text { color: color-mix(in srgb, var(--color-on-color) 75%, transparent); }
     :host-context(.dark) .reply-quote__text { color: var(--color-neutral-400); }
 
     /* ─── Actions (always visible, inline inside bubble) ─── */

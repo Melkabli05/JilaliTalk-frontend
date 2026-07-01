@@ -147,7 +147,7 @@ export interface SendEvent {
     .comment-input::placeholder { color: var(--ci-muted); }
     .send-btn {
       width: 32px; height: 32px; border-radius: 50%;
-      background: var(--color-primary-500); color: white; border: none;
+      background: var(--color-primary-500); color: var(--color-on-color); border: none;
       cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .send-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }

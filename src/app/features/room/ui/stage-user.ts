@@ -69,8 +69,8 @@ import { LucideMicOff, LucideMic } from '@lucide/angular';
       width: 20px; height: 20px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-card);
     }
-    .status-badge.muted { background: var(--color-warm-500); color: white; }
-    .status-badge.speaking { background: var(--color-accent-500); color: white; }
+    .status-badge.muted { background: var(--color-warm-500); color: var(--color-on-color); }
+    .status-badge.speaking { background: var(--color-accent-500); color: var(--color-on-color); }
 
     :host-context(.dark) .status-badge {
       border-color: var(--color-neutral-800);

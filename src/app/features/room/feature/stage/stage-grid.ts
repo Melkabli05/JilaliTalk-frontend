@@ -79,7 +79,7 @@ import { LucideUserCircle } from '@lucide/angular';
         gap: var(--space-2);
         padding: var(--space-3);
         align-content: start;
-        background-color: white;
+        background-color: var(--color-card);
       }
 
       .empty-slot {

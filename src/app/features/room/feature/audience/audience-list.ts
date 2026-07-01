@@ -237,6 +237,7 @@ type ViewMode = 'grid' | 'list';
       .tool-btn:hover, .tool-btn.active { background: var(--color-neutral-700); color: var(--color-neutral-100); }
       .view-toggle { background: var(--color-neutral-800); }
       .toggle-btn.active { background: var(--color-neutral-700); color: var(--color-primary-300); }
+      .audience-count { background: var(--color-neutral-700); color: var(--color-neutral-400); }
       .search-input { background: var(--color-neutral-800); color: var(--color-neutral-200); border-color: var(--color-neutral-700); }
       .search-input::placeholder { color: var(--color-neutral-500); }
       .search-clear-btn:hover { background: var(--color-neutral-700); color: var(--color-neutral-100); }

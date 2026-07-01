@@ -78,7 +78,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
             />
           </div>
 
-          <section class="stage-section bg-white">
+          <section class="stage-section">
             <app-stage-grid [users]="stageStore.stageUsers()" [speakingUids]="rcs.speakingUids()" (userClick)="onStageUserClick($event)" />
           </section>
 
@@ -149,7 +149,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     }
 
     .stage-section { flex-shrink: 0; min-height: 0; min-width: 0; }
-    :host-context(.dark) .stage-section.bg-white { background: var(--color-neutral-800); }
     .audience-section { flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
 
     @media (min-width: 1024px) {

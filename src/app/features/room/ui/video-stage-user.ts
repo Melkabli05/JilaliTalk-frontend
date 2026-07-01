@@ -161,7 +161,7 @@ export interface PlayableVideoTrack {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #fff;
+        color: var(--color-on-color);
         z-index: 3;
       }
       :host-context(.dark) .mic-badge {
@@ -176,7 +176,7 @@ export interface PlayableVideoTrack {
         right: 0;
         padding: 4px 8px;
         background: rgba(0, 0, 0, 0.5);
-        color: #fff;
+        color: var(--color-on-color);
         display: flex;
         align-items: center;
         gap: 4px;
@@ -202,7 +202,7 @@ export interface PlayableVideoTrack {
       }
       .role-badge.host {
         background: var(--color-primary-500);
-        color: #fff;
+        color: var(--color-on-color);
       }
       .role-badge.mod {
         background: var(--color-gold-400);
@@ -210,7 +210,7 @@ export interface PlayableVideoTrack {
       }
       .role-badge.speaker {
         background: rgba(255, 255, 255, 0.15);
-        color: #fff;
+        color: var(--color-on-color);
       }
       .role-badge.ai {
         background: color-mix(in srgb, var(--color-accent-400) 70%, #fff);

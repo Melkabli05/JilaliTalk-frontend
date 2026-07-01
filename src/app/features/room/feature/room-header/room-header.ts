@@ -403,10 +403,10 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
       cursor: default;
     }
 
-    .ws-connected    { background: var(--color-success, #22c55e); }
-    .ws-reconnecting { background: var(--color-warning, #f59e0b); animation: pulse 1.2s ease-in-out infinite; }
-    .ws-connecting   { background: var(--color-warning, #f59e0b); animation: pulse 0.8s ease-in-out infinite; }
-    .ws-disconnected { background: var(--color-danger, #ef4444); }
+    .ws-connected    { background: var(--color-accent-500); }
+    .ws-reconnecting { background: var(--color-gold-500); animation: pulse 1.2s ease-in-out infinite; }
+    .ws-connecting   { background: var(--color-gold-500); animation: pulse 0.8s ease-in-out infinite; }
+    .ws-disconnected { background: var(--color-warm-500); }
 
     @keyframes pulse {
       0%, 100% { opacity: 1; }
@@ -1069,10 +1069,10 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
       }
       .visible-badge:hover { background: var(--color-primary-800); border-color: var(--color-primary-600); }
 
-      .ws-connected    { background: #4ade80; }
-      .ws-reconnecting { background: #fbbf24; }
-      .ws-connecting   { background: #fbbf24; }
-      .ws-disconnected { background: #f87171; }
+      .ws-connected    { background: var(--color-accent-400); }
+      .ws-reconnecting { background: var(--color-gold-400); }
+      .ws-connecting   { background: var(--color-gold-400); }
+      .ws-disconnected { background: var(--color-warm-400); }
 
       .room-name {
         color: var(--color-neutral-100);
