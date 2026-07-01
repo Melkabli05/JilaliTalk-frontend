@@ -16,7 +16,6 @@ import { RoomApi } from '../data/room-api';
 import { AudienceUser, StageUser } from '../data/room-model';
 import { SendEvent } from '../feature/comments/comment-input';
 import { ToastService } from '@core/services/toast.service';
-import { ConfirmService } from '@core/services/confirm.service';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserInfoService } from '@core/services/user-info.service';
@@ -56,7 +55,6 @@ export abstract class RoomPageBase {
   readonly bffWs = inject(BffRoomSocketService);
   protected readonly userInfoService = inject(UserInfoService);
   protected readonly toast = inject(ToastService);
-  protected readonly confirm = inject(ConfirmService);
   protected readonly destroyRef = inject(DestroyRef);
   protected readonly dialog = inject(Dialog);
   protected readonly injector = inject(Injector);
@@ -135,7 +133,6 @@ export abstract class RoomPageBase {
 
     void handleRealtimeEvent(
       event,
-      this.confirm,
       this.api,
       this.toast,
       this.roomStore.cname() ?? '',
