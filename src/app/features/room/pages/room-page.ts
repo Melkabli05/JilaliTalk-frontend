@@ -240,6 +240,7 @@ export class RoomPageComponent extends RoomPageBase {
     if (reqUser?.userId) {
       this.reqUserId.set(reqUser.userId);
       this.roomStore.setUserId(reqUser.userId);
+      this.commentsStore.setCurrentUserId(reqUser.userId);
     }
     if (reqUser?.role) this.roomStore.setRole(reqUser.role);
     if (reqUser?.base?.nickname) this.roomStore.setNickname(reqUser.base.nickname);

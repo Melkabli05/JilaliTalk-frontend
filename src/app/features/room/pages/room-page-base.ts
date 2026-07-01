@@ -120,6 +120,17 @@ export abstract class RoomPageBase {
     if (this._destroying()) return;
     const event = this.bffWs.lastEvent();
     if (!event) return;
+
+    // connection-state fires many times/sec during reconnect — skip it
+    if (event.type === 'connection-state') return;
+
+    // room_kick: self-redirect only — card display is handled by CommentsStore
+    if (event.type === 'room_kick' && Number(event.userId) === this.roomStore.userId()) {
+      this.toast.warning(`You were removed from the room by ${event.managerName}`);
+      void this.onLeave();
+      return;
+    }
+
     void handleRealtimeEvent(
       event,
       this.confirm,
@@ -130,11 +141,7 @@ export abstract class RoomPageBase {
       this.roomStore.userId(),
       this.roomStore.isHost(),
       (uid) => this.resolveNickname(uid),
-    );
-    if (event.type === 'room_kick' && Number(event.userId) === this.roomStore.userId()) {
-      this.toast.warning(`You were removed from the room by ${event.managerName}`);
-      void this.onLeave();
-    }
+    ).catch((err) => console.warn('[bffEventEffect]', err));
   });
 
 

@@ -8,6 +8,8 @@ import { UserRole } from '@core/models/user-role';
 import type { GiftEvent } from '@core/realtime/room-realtime-events';
 import { RoomApi } from '../../data/room-api';
 
+const ACTIVE_USERS_TTL_MS = 5 * 60 * 1000; // 5 min — prune stale active user entries
+
 type MergedEntry = { readonly item: CommentOrEvent; readonly ts: number };
 
 const GIFT_COMBO_WINDOW_MS = 5_000;
@@ -21,6 +23,9 @@ export class CommentsStore extends CollectionStore<Comment> {
   private readonly api = inject(RoomApi);
 
   readonly comments = this.items;
+
+  private _currentUserId = 0;
+  setCurrentUserId(uid: number): void { this._currentUserId = uid; }
 
   private readonly _eventCards = signal<readonly EventCard[]>([]);
   readonly eventCards = this._eventCards.asReadonly();
@@ -36,8 +41,7 @@ export class CommentsStore extends CollectionStore<Comment> {
   private readonly _translatingIds = signal<ReadonlySet<string>>(new Set());
   readonly translatingIds = this._translatingIds.asReadonly();
 
-  private readonly activeJoinedUserIds = new Set<number>();
-
+  private readonly activeJoinedUserIds = new Map<number, number>(); // uid → lastSeen ts
   private readonly pendingQuitTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
   readonly mergedItems = computed<readonly CommentOrEvent[]>(() => {
@@ -48,6 +52,13 @@ export class CommentsStore extends CollectionStore<Comment> {
     }));
     return [...comments, ...cards].sort((a, b) => a.ts - b.ts).map((e) => e.item);
   });
+
+  private pruneActiveUsers(): void {
+    const cutoff = Date.now() - ACTIVE_USERS_TTL_MS;
+    for (const [uid, ts] of this.activeJoinedUserIds) {
+      if (ts < cutoff) this.activeJoinedUserIds.delete(uid);
+    }
+  }
 
   private pushUserEventCard(
     kind: EventCard['kind'],
@@ -199,18 +210,20 @@ export class CommentsStore extends CollectionStore<Comment> {
           break;
 
         case 'user_join': {
+          this.pruneActiveUsers();
           const userId = Number(event.userId);
           if (this.cancelPendingQuit(userId)) {
-            this.activeJoinedUserIds.add(userId);
+            this.activeJoinedUserIds.set(userId, Date.now());
             break;
           }
           if (this.activeJoinedUserIds.has(userId)) break;
-          this.activeJoinedUserIds.add(userId);
+          this.activeJoinedUserIds.set(userId, Date.now());
           this.pushUserEventCard('user_join', userId, 'join', { nickname: event.nickname });
           break;
         }
 
         case 'user_quit': {
+          this.pruneActiveUsers();
           const userId = Number(event.userId);
           this.activeJoinedUserIds.delete(userId);
           this.scheduleQuitCard(userId, event.userId);
@@ -269,10 +282,13 @@ export class CommentsStore extends CollectionStore<Comment> {
         case 'room_kick': {
           const userId = Number(event.userId);
           this.activeJoinedUserIds.delete(userId);
-          this.pushUserEventCard('room_kick', userId, 'roomkick', {
-            nickname: event.nickname,
-            managerName: event.managerName,
-          });
+          // Only show card for the kicked user — others see the toast + redirect from RoomPageBase
+          if (userId === this._currentUserId) {
+            this.pushUserEventCard('room_kick', userId, 'roomkick', {
+              nickname: event.nickname,
+              managerName: event.managerName,
+            });
+          }
           break;
         }
       }
@@ -359,5 +375,6 @@ export class CommentsStore extends CollectionStore<Comment> {
     this.activeJoinedUserIds.clear();
     for (const timer of this.pendingQuitTimers.values()) clearTimeout(timer);
     this.pendingQuitTimers.clear();
+    this._currentUserId = 0;
   }
 }
