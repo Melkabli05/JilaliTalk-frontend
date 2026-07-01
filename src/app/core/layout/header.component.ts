@@ -230,6 +230,8 @@ import { AuthService } from '@core/auth/auth.service';
     }
     :host-context(.dark) .coins-badge:hover {
       background: linear-gradient(135deg, var(--color-gold-800), var(--color-gold-700));
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--color-gold-500) 30%, transparent);
     }
 
     /* Notification Bell Button */
@@ -287,7 +289,7 @@ import { AuthService } from '@core/auth/auth.service';
 
     :host-context(.dark) .notification-btn:hover {
       background: var(--color-neutral-700);
-      color: var(--color-neutral-100);
+      color: var(--color-text);
     }
 
     :host-context(.dark) .notification-btn.has-unread {

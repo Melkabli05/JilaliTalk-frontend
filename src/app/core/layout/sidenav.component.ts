@@ -145,12 +145,12 @@ interface NavGroup {
       transition: background 0.15s ease, color 0.15s ease;
     }
     .nav-item:hover {
-      background-color: var(--color-neutral-100);
-      color: var(--color-text);
+      background-color: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
+      color: var(--color-primary-600);
     }
     .nav-item:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
     .nav-item.active {
-      background-color: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
+      background-color: color-mix(in srgb, var(--color-primary-500) 12%, transparent);
       color: var(--color-primary-600);
     }
 
@@ -197,8 +197,8 @@ interface NavGroup {
       transition: background 0.15s ease, color 0.15s ease;
     }
     .mobile-nav-item:hover {
-      background-color: var(--color-neutral-100);
-      color: var(--color-text);
+      background-color: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
+      color: var(--color-primary-600);
     }
     .mobile-nav-item:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
     .mobile-nav-item.active {
@@ -214,8 +214,14 @@ interface NavGroup {
       .sidebar-desktop { background-color: var(--color-neutral-900); border-color: var(--color-neutral-700); }
       .nav-separator { background-color: var(--color-neutral-700); }
       .nav-item { color: var(--color-neutral-500); }
-      .nav-item:hover { background-color: var(--color-neutral-800); color: var(--color-text); }
-      .nav-item.active { background-color: color-mix(in srgb, var(--color-primary-400) 15%, transparent); color: var(--color-primary-300); }
+      .nav-item:hover {
+        background-color: color-mix(in srgb, var(--color-primary-400) 10%, transparent);
+        color: var(--color-primary-300);
+      }
+      .nav-item.active {
+        background-color: color-mix(in srgb, var(--color-primary-400) 18%, transparent);
+        color: var(--color-primary-300);
+      }
       .nav-badge { background-color: var(--color-warm-400); }
       .sidebar-footer { border-color: var(--color-neutral-700); }
 
@@ -225,7 +231,10 @@ interface NavGroup {
         border-color: var(--color-neutral-700);
       }
       .mobile-nav-item { color: var(--color-neutral-500); }
-      .mobile-nav-item:hover { background-color: var(--color-neutral-800); color: var(--color-text); }
+      .mobile-nav-item:hover {
+        background-color: color-mix(in srgb, var(--color-primary-400) 10%, transparent);
+        color: var(--color-primary-300);
+      }
       .mobile-nav-item.active { color: var(--color-primary-300); }
       .safe-area-spacer { background-color: var(--color-neutral-900); }
     }
