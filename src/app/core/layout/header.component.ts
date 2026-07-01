@@ -251,8 +251,8 @@ import { AuthService } from '@core/auth/auth.service';
     }
 
     .notification-btn:hover {
-      background: var(--color-neutral-100);
-      color: var(--color-text);
+      background: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
+      color: var(--color-primary-600);
     }
 
     .notification-btn:focus-visible {
@@ -288,8 +288,8 @@ import { AuthService } from '@core/auth/auth.service';
     }
 
     :host-context(.dark) .notification-btn:hover {
-      background: var(--color-neutral-700);
-      color: var(--color-text);
+      background: color-mix(in srgb, var(--color-primary-400) 10%, transparent);
+      color: var(--color-primary-300);
     }
 
     :host-context(.dark) .notification-btn.has-unread {
