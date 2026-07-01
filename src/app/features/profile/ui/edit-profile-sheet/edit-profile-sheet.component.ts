@@ -65,7 +65,7 @@ import { DialogRef } from '@angular/cdk/dialog';
     .error { color: var(--color-danger); font-size: var(--text-xs); margin: 0; }
     .actions { display: flex; gap: var(--space-3); justify-content: flex-end; }
     .btn-cancel { padding: 8px 16px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: transparent; cursor: pointer; font-size: var(--text-sm); }
-    .btn-save { padding: 8px 16px; border-radius: var(--radius-md); border: none; background: var(--color-primary-500); color: white; cursor: pointer; font-size: var(--text-sm); }
+    .btn-save { padding: 8px 16px; border-radius: var(--radius-md); border: none; background: var(--color-primary-500); color: var(--color-on-color); cursor: pointer; font-size: var(--text-sm); }
     .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
   `],
 })

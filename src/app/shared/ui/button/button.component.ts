@@ -74,11 +74,11 @@ type IconPosition = 'start' | 'end';
     /* Spinner */
     .btn-spinner { animation: spin 1s linear infinite; }
 
-    .btn-primary   { --btn-bg: var(--color-primary-500); --btn-color: white; --btn-hover-bg: var(--color-primary-600); }
+    .btn-primary   { --btn-bg: var(--color-primary-500); --btn-color: var(--color-on-color); --btn-hover-bg: var(--color-primary-600); }
     .btn-secondary { --btn-bg: var(--color-neutral-100); --btn-color: var(--color-text); --btn-border: var(--color-border); --btn-hover-bg: var(--color-neutral-200); }
     .btn-ghost     { --btn-bg: transparent; --btn-color: var(--color-text); --btn-border: transparent; --btn-hover-bg: var(--color-neutral-100); }
     .btn-muted     { --btn-bg: var(--color-neutral-100); --btn-color: var(--color-text-secondary); --btn-border: var(--color-border); --btn-hover-bg: var(--color-neutral-200); }
-    .btn-destructive { --btn-bg: var(--color-warm-500); --btn-color: white; --btn-hover-bg: var(--color-warm-600); }
+    .btn-destructive { --btn-bg: var(--color-warm-500); --btn-color: var(--color-on-color); --btn-hover-bg: var(--color-warm-600); }
     .btn-gold      { --btn-bg: var(--color-gold-500); --btn-color: var(--color-neutral-800); --btn-hover-bg: var(--color-gold-600); }
     .btn-soft-primary { --btn-bg: var(--color-primary-50); --btn-color: var(--color-primary-700); --btn-hover-bg: var(--color-primary-100); }
     .btn-soft-accent  { --btn-bg: var(--color-accent-50); --btn-color: var(--color-accent-700); --btn-hover-bg: var(--color-accent-100); }

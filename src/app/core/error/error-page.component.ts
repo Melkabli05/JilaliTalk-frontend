@@ -77,7 +77,7 @@ const ERROR_CONFIG: Record<number, { title: string; message: string }> = {
 
     .btn-primary {
       background: var(--color-primary-500);
-      color: white;
+      color: var(--color-on-color);
     }
 
     .btn-ghost {

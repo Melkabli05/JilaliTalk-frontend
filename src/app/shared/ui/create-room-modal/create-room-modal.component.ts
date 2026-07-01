@@ -296,14 +296,13 @@ function trimmedMaxLengthError(value: string, max: number) {
       }
       .visibility-option[aria-selected='true'] .option-icon-wrap {
         background: var(--color-primary-500);
-        color: white;
+        color: var(--color-on-color);
       }
       :host-context(.dark) .option-icon-wrap {
         background: var(--color-neutral-700);
       }
       :host-context(.dark) .visibility-option[aria-selected='true'] .option-icon-wrap {
-        background: var(--color-primary-500);
-        color: white;
+        background: var(--color-primary-400);
       }
 
       .option-text {
@@ -341,7 +340,7 @@ function trimmedMaxLengthError(value: string, max: number) {
         height: 18px;
         border-radius: var(--radius-full);
         background: var(--color-primary-500);
-        color: white;
+        color: var(--color-on-color);
         opacity: 0;
         transform: scale(0.6);
       }

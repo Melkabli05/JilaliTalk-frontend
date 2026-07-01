@@ -264,7 +264,7 @@ import { AuthService } from '@core/auth/auth.service';
       padding: 0 5px;
       border-radius: var(--radius-full);
       background: var(--color-warm-500);
-      color: white;
+      color: var(--color-on-color);
       font-size: 10px;
       font-weight: var(--font-bold);
       display: flex;
@@ -288,7 +288,7 @@ import { AuthService } from '@core/auth/auth.service';
     }
 
     :host-context(.dark) .notification-badge {
-      background: var(--color-warm-500);
+      background: var(--color-warm-400);
     }
 
     /* Responsive Auth Buttons */

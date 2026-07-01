@@ -403,11 +403,13 @@ const CODE_INVALID = 'Code must be 6 digits';
     }
     :host-context(.dark) .step-circle { border-color: var(--color-neutral-600); }
     .step-circle--active {
-      border-color: var(--color-warm-500); background: var(--color-warm-500); color: white;
+      border-color: var(--color-warm-500); background: var(--color-warm-500); color: var(--color-on-color);
     }
     .step-item--done .step-circle {
-      border-color: var(--color-accent-500); background: var(--color-accent-500); color: white;
+      border-color: var(--color-accent-500); background: var(--color-accent-500); color: var(--color-on-color);
     }
+    :host-context(.dark) .step-circle--active { background: var(--color-warm-400); }
+    :host-context(.dark) .step-item--done .step-circle { background: var(--color-accent-400); }
     .step-line {
       width: 32px; height: 2px; background: var(--color-neutral-200); margin: 0 4px; transition: background 0.2s;
     }
@@ -482,7 +484,7 @@ const CODE_INVALID = 'Code must be 6 digits';
 
     .btn-primary-full {
       width: 100%; padding: var(--space-3) var(--space-4); border: none;
-      border-radius: var(--radius-md); background: var(--color-warm-500); color: white;
+      border-radius: var(--radius-md); background: var(--color-warm-500); color: var(--color-on-color);
       font-size: var(--text-sm); font-weight: var(--font-semibold); cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: var(--space-2);
       transition: background 0.15s, transform 0.1s; margin-top: var(--space-1);
@@ -502,7 +504,7 @@ const CODE_INVALID = 'Code must be 6 digits';
 
     .spinner {
       width: 14px; height: 14px; flex-shrink: 0;
-      border: 2px solid hsl(0deg 0% 100% / 25%); border-top-color: white;
+      border: 2px solid hsl(0deg 0% 100% / 25%); border-top-color: var(--color-on-color);
       border-radius: 50%; animation: spin 0.7s linear infinite;
     }
 
@@ -515,7 +517,7 @@ const CODE_INVALID = 'Code must be 6 digits';
       width: 72px; height: 72px; border-radius: 50%;
       background: linear-gradient(135deg, var(--color-warm-400), var(--color-warm-500));
       display: flex; align-items: center; justify-content: center;
-      font-size: 24px; font-weight: var(--font-bold); color: white;
+      font-size: 24px; font-weight: var(--font-bold); color: var(--color-on-color);
       box-shadow: 0 0 28px var(--color-warm-500 / 40%);
       margin-bottom: var(--space-4);
     }

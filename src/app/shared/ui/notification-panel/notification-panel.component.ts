@@ -180,7 +180,7 @@ import { NotificationStore, AppNotification } from '@store/notification.store';
       padding: 0 6px;
       border-radius: var(--radius-full);
       background: var(--color-warm-500);
-      color: white;
+      color: var(--color-on-color);
       font-size: 11px;
       font-weight: var(--font-bold);
       line-height: 1;

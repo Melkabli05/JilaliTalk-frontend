@@ -84,7 +84,7 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
         justify-content: center;
         border-radius: var(--radius-full);
         background-color: var(--color-primary-500);
-        color: white;
+        color: var(--color-on-color);
         font-weight: var(--font-medium);
         overflow: visible;
         flex-shrink: 0;
@@ -208,8 +208,9 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
         object-fit: cover;
       }
 
-      :host-context(.dark) .avatar-flag {
-        border-color: var(--color-neutral-700);
+      :host-context(.dark) {
+        background-color: var(--color-primary-400);
+        .avatar-flag { border-color: var(--color-neutral-700); }
       }
 
       :host(.avatar-xs) .avatar-flag { width: 10px; height: 7px; }

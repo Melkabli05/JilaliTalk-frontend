@@ -39,10 +39,16 @@ import {
       color: var(--color-neutral-200);
     }
 
-    :host(.badge-primary) { background-color: var(--color-primary-500); color: white; }
-    :host(.badge-accent)  { background-color: var(--color-accent-500);  color: white; }
-    :host(.badge-warm)    { background-color: var(--color-warm-500);    color: white; }
-    :host(.badge-gold)    { background-color: var(--color-gold-500);    color: white; }
+    :host(.badge-primary) { background-color: var(--color-primary-500); color: var(--color-on-color); }
+    :host(.badge-accent)  { background-color: var(--color-accent-500);  color: var(--color-on-color); }
+    :host(.badge-warm)    { background-color: var(--color-warm-500);    color: var(--color-on-color); }
+    :host(.badge-gold)    { background-color: var(--color-gold-500);    color: var(--color-on-color); }
+    :host-context(.dark) {
+      :host(.badge-primary) { background-color: var(--color-primary-400); }
+      :host(.badge-accent)  { background-color: var(--color-accent-400);  }
+      :host(.badge-warm)     { background-color: var(--color-warm-400);     }
+      :host(.badge-gold)    { background-color: var(--color-gold-400);    }
+    }
   `],
 })
 export class BadgeComponent {
