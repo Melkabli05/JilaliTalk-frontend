@@ -19,20 +19,37 @@ Two concrete, backend-verified problems, plus one design mismatch:
 
 Everything else audited (self-state toasts like "You were muted", error toasts, direct-action success toasts like "You are now visible") is already single-channel and correct; not touched.
 
-## 2. Dedup architecture
+## 2. Ownership split (revised — IM socket is the source of truth)
 
-`BffRoomSocketService` already privately tracks which room it's connected to (`reconnectCname`). Expose it:
+**Correction from the original draft of this spec:** the fix is not cname-based suppression between two competing sources. Per direct confirmation, the IM socket is authoritative for `stage_invite`, `mod_invite`, `mod_accepted`, `mod_removed`, and `mod_unmuted`. The LiveHub/BFF room-socket copies of these five event types are dropped **unconditionally** — `handle-realtime-event.util.ts` no longer has cases for them at all. `ImBootstrapService` becomes their sole handler, always (not gated by which room is currently open), since it's a global, session-wide connection regardless of room context.
+
+`stage_raisehand` is confirmed **not** duplicated — `HtImNotifyMapper` (IM) has no case for it, only `HtNotifyMapper` (LiveHub/BFF) does — so it stays exactly where it is today: handled by `handle-realtime-event.util.ts`, converted from `confirm.ask()` to an actionable toast per §3.
+
+### 2.1 The `busiType` gap
+
+`RoomApi.stageInviteApproval(cname, busiType, inviteType, approvalType)` needs a `busiType`, but the IM socket's `stage_invite` payload carries only `cname` (confirmed in `HtImNotifyMapper.mapNotify` and `im-events.ts`). `ImBootstrapService` is a global service with no per-room context to source it from otherwise.
+
+Resolution: hardcode `busiType = 2` (voice room) for this one call, backed by evidence rather than a guess — every captured `/livehub/stage/invite_approval` request in `websocket_realtime.md` (real mitmproxy traffic) shows `"busi_type": 2`; no video-room stage-invite has been observed. Document this as `STAGE_INVITE_BUSI_TYPE = 2` with a comment citing this evidence.
+
+`approveManager(cname, hostId)` needs no `busiType` — confirmed by its signature and request body (`{ operation_type, cname, host_id }`). The IM socket's `mod_invite` is about the current authenticated user by construction (`HtImNotifyMapper` defaults `user_id` to the session's own ID when absent), so the id it needs is the current user's own `userId`, available via `AuthStore.user()?.userId` (already injectable at root).
+
+### 2.2 The layering violation this uncovers, and its fix
+
+`ImBootstrapService` (root-provided, `core/realtime/`) needs to call `stageInviteApproval`/`approveManager`, which live on `RoomApi` (`features/room/data/room-api.ts`, currently page-scoped — provided only in `room-page.ts`/`video-room-page.ts`). Two separate problems, both must be fixed:
+
+1. **DI-scope problem:** a root-provided service can't `inject()` something that's only provided at a page's component injector — this throws `NullInjectorError` at app bootstrap. Fix: promote `RoomApi` to `providedIn: 'root'`. It's already stateless (only injects the already-root `HttpClient` and `API_BASE_URL`), so this is safe, and it lets `room-page.ts`/`video-room-page.ts` drop their now-redundant `RoomApi` provider entries.
+2. **Layering problem:** even root-provided, `RoomApi` still physically lives under `features/room/`. `core/` importing anything from `features/` is the exact upward/sideways edge this codebase's CLAUDE.md forbids (`features → store → core → shared`; "nothing imports a feature except the router"). This codebase already has an established fix for exactly this shape of problem: `core/tokens/notification-reporter.token.ts` (`NOTIFICATION_REPORTER`) and `core/error/` (`ERROR_REPORTER`) — an abstraction owned by `core/`, bound to its real implementation only in `app.config.ts` (the one composition-root file allowed to wire cross-layer). Apply the same pattern here:
 
 ```ts
-// core/realtime/bff-room-socket.service.ts
-readonly activeCname = signal<string>('');
-// set in connect(), cleared in disconnect() — alongside the existing reconnectCname assignment
+// core/tokens/room-invite-gateway.token.ts
+export interface RoomInviteGateway {
+  approveStageInvite(cname: string, accepted: boolean): Observable<void>;
+  approveModInvite(cname: string, userId: number): Observable<void>;
+}
+export const ROOM_INVITE_GATEWAY = new InjectionToken<RoomInviteGateway>('ROOM_INVITE_GATEWAY', { factory: () => ({ ... no-op ... }) });
 ```
 
-`ImBootstrapService` injects `BffRoomSocketService` (an established core/realtime → core/realtime sibling import — the same pattern `ImBootstrapService` already uses for `ImSocketService`) and applies this rule before handling `stage_invite` / `mod_invite` / `mod_accepted` / `mod_removed` / `mod_unmuted`:
-
-- **Room-scoped events with a `cname`** (`stage_invite`, `mod_invite` — the IM-side payload carries `cname`): if `event.cname === bffWs.activeCname()`, suppress entirely (the BFF-socket path owns it). Otherwise, the user isn't looking at that room's UI right now — surface as a **notification-panel entry only**, never a toast.
-- **Room-scoped events without a `cname`** (`mod_accepted`, `mod_removed`, `mod_unmuted` — the IM-side payload has no `cname`, but a user can only be promoted/demoted/unmuted in a room they're actively in): if `bffWs.activeCname()` is non-empty (any room connected), suppress entirely. Otherwise, notification-panel only.
+`ImBootstrapService` injects `ROOM_INVITE_GATEWAY`, never `RoomApi` directly. `app.config.ts` binds the token via `useFactory: () => { const api = inject(RoomApi); return { approveStageInvite: ..., approveModInvite: ... }; }` — mirroring the exact shape of the existing `NOTIFICATION_REPORTER` binding in that same file.
 
 ## 3. Actionable toast (replaces blocking modal)
 
@@ -74,35 +91,36 @@ toast.action(`${nickname} wants to join the stage`, [
 
 ## 4. Final per-event-type behavior
 
-| Event | Today | After |
-|---|---|---|
-| `stage_invite` (user currently in that room) | Blocking modal (BFF) **+** toast+notification (IM) | **Actionable toast only** (BFF path); IM copy suppressed |
-| `stage_invite` (different/no room) | toast+notification (IM) | **Notification-panel entry only** |
-| `mod_invite` | same duplication as above | same fix as above |
-| `stage_raisehand` (host approving a raised hand) | Blocking modal | **Actionable toast** |
-| `mod_accepted` / `mod_removed` / `mod_unmuted` (in a room) | Toast **×2** (BFF + IM) | **Toast ×1** (BFF path only; IM suppressed) |
-| `stage_kick`, `stage_device_control` (mute), self-affecting | Toast, self-only — already correct | Unchanged |
-| `account_status` (ban / logged in elsewhere) | Toast — already correct, critical + global | Unchanged |
-| `profile_visit`, `follow`, `voice_room_shared`, `live_room_shared`, `gift_message`, `introduction_message` | Toast **+** notification (duplicate content) | **Notification panel only** |
-| `text_message`, `image_message`, `group_message` | Notification only — already correct | Unchanged |
+| Event | Today | After | Owner |
+|---|---|---|---|
+| `stage_invite` | Blocking modal (BFF) **+** toast+notification (IM) | **Actionable toast** | IM socket, unconditionally |
+| `mod_invite` | same duplication as above | **Actionable toast** | IM socket, unconditionally |
+| `mod_accepted` / `mod_removed` / `mod_unmuted` | Toast **×2** (BFF + IM) | **Toast ×1** | IM socket, unconditionally; BFF path drops these cases entirely |
+| `stage_raisehand` (host approving a raised hand) | Blocking modal | **Actionable toast** | BFF/room socket (unaffected — no IM duplicate) |
+| `stage_kick`, `stage_device_control` (mute), self-affecting | Toast, self-only — already correct | Unchanged | BFF/room socket |
+| `account_status` (ban / logged in elsewhere) | Toast — already correct, critical + global | Unchanged | IM socket |
+| `profile_visit`, `follow`, `voice_room_shared`, `live_room_shared`, `gift_message`, `introduction_message` | Toast **+** notification (duplicate content) | **Notification panel only** | IM socket |
+| `text_message`, `image_message`, `group_message` | Notification only — already correct | Unchanged | IM socket |
 
 ## 5. Files touched
 
-- `core/realtime/bff-room-socket.service.ts` — expose `activeCname` signal
-- `core/realtime/im-bootstrap.service.ts` — inject `BffRoomSocketService`, add dedup checks per §2, drop toast for passive social events (notification-only per §4)
+- `core/tokens/room-invite-gateway.token.ts` — **new** `ROOM_INVITE_GATEWAY` abstraction (§2.2)
+- `src/app/app.config.ts` — bind `ROOM_INVITE_GATEWAY` to a `RoomApi`-backed factory, mirroring the existing `NOTIFICATION_REPORTER` binding
+- `features/room/data/room-api.ts` — `@Injectable()` → `@Injectable({ providedIn: 'root' })`
+- `features/room/pages/room-page.ts`, `features/room/pages/video-room-page.ts` — remove now-redundant `RoomApi` from their `providers:` arrays
+- `core/realtime/im-bootstrap.service.ts` — becomes the sole handler for `stage_invite`/`mod_invite`/`mod_accepted`/`mod_removed`/`mod_unmuted` (§2, §2.1); drops toast for passive social events (notification-only per §4)
 - `core/services/toast.service.ts` — add `ToastAction` interface, `action()` method
 - `shared/ui/toast/toast-container.component.ts` — render action button row when present, dark-mode-aware (reuse existing token patterns already in this file)
-- `features/room/data/handle-realtime-event.util.ts` — replace `confirm.ask()` calls with `toast.action()` for `stage_invite`, `mod_invite`, `stage_raisehand`; `ConfirmService` import/param dropped from this call chain
+- `features/room/data/handle-realtime-event.util.ts` — drop the five reassigned event types entirely; convert `stage_raisehand` from `confirm.ask()` to `toast.action()`; `ConfirmService` import/param dropped from this call chain
 - `features/room/pages/room-page-base.ts` — drop now-unused `ConfirmService` injection (confirmed via grep: not used anywhere else in the room feature)
 
-No new files. No new service. No new component beyond an additional conditional row in the existing toast container template.
+One new file (the gateway token, following the exact precedent of `notification-reporter.token.ts`). No new component; no new store.
 
 ## 6. Out of scope / deferred
 
-- Clicking a demoted (notification-panel-only) `stage_invite`/`mod_invite` notification does not navigate to that room. The IM payload for these carries `cname` but not `busiType`, and the room route requires both (`/room/:cname/:busiType` or `/room/video/:cname/:busiType`); guessing `busiType` would be unreliable. Left as a follow-up if needed later, not built now.
-- `ConfirmService` / `ConfirmDialogComponent` are not deleted — they remain generic, reusable infrastructure in `shared/ui/` for any future destructive/severe confirmation need; only their one current room-feature call site changes.
+- `ConfirmService` / `ConfirmDialogComponent` are not deleted — they remain generic, reusable infrastructure in `shared/ui/` for any future destructive/severe confirmation need; only the room feature's two call sites (`stage_invite`/`mod_invite` via IM, `stage_raisehand` via BFF) change, and all three land on actionable toasts instead.
 
 ## 7. Testing / verification
 
 - `npx tsc --noEmit` clean.
-- Manual verification (per `/verify` or `/run` skill) in the browser: trigger a stage invite while in the target room (single actionable toast, no modal, no duplicate) and, if feasible to simulate, while viewing a different route (notification-panel entry only, no toast).
+- Manual verification (per `/verify` or `/run` skill) in the browser: trigger a stage invite while in a room and confirm exactly one actionable toast appears (no modal, no duplicate), regardless of which room is open.
