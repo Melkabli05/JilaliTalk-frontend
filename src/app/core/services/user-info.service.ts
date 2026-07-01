@@ -227,6 +227,7 @@ export class UserInfoService {
   }
 
   async fetchUserInfo(userId: number): Promise<UserInfo | null> {
+    if (!(userId > 0) || !Number.isFinite(userId)) return null;
     if (this._cache().has(userId)) {
       return this._cache().get(userId)!;
     }
