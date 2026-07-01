@@ -185,11 +185,19 @@ import { AuthService } from '@core/auth/auth.service';
       background: var(--color-accent-500);
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-500) 25%, transparent);
     }
+    :host-context(.dark) .status-dot {
+      background: var(--color-neutral-600);
+    }
+    :host-context(.dark) .status-dot.online {
+      background: var(--color-accent-400);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-400) 25%, transparent);
+    }
     .status-text {
       font-size: var(--text-xs);
       font-weight: var(--font-medium);
       color: var(--color-text-muted);
     }
+    :host-context(.dark) .status-text { color: var(--color-neutral-400); }
     /* Coins Badge */
     .coins-badge {
       display: inline-flex;
@@ -274,7 +282,7 @@ import { AuthService } from '@core/auth/auth.service';
     }
 
     :host-context(.dark) .notification-btn {
-      color: var(--color-neutral-400);
+      color: var(--color-neutral-500);
     }
 
     :host-context(.dark) .notification-btn:hover {
