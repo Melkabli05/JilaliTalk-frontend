@@ -15,7 +15,6 @@ import { SigninPanelComponent } from '../feature/signin/signin-panel';
 import { GiftsStore } from '../feature/gifts/gifts-store';
 import { InRoomRtmStore } from '../feature/in-room-rtm/in-room-rtm-store';
 import { GoodieStore } from '../feature/goodie-bag/goodie-store';
-import { RoomApi } from '../data/room-api';
 import { StageUser, AudienceUser, SendCommentPayload, LiveRoomInfo } from '../data/room-model';
 import { SendEvent } from '../feature/comments/comment-input';
 import { environment } from '@env/environment';
@@ -43,7 +42,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    RoomApi,
     VideoRoomStore,
     StageStore,
     AudienceStore,

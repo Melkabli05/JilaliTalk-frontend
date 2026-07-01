@@ -10,7 +10,7 @@ export interface TranslatePayload {
   targetLang: string;
 }
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class RoomApi {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);

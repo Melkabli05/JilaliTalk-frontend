@@ -9,7 +9,9 @@ import { AppErrorHandler } from '@core/error/error-handler';
 import { AuthStore } from '@core/auth/auth.store';
 import { AuthService } from '@core/auth/auth.service';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
+import { ROOM_INVITE_GATEWAY } from '@core/tokens/room-invite-gateway.token';
 import { NotificationStore } from '@store/notification.store';
+import { RoomApi } from '@features/room/data/room-api';
 
 import { environment } from '@env/environment';
 import { routes } from './app.routes';
@@ -44,6 +46,24 @@ export const appConfig: ApplicationConfig = {
         return {
           notify: (type: 'info' | 'success' | 'warning' | 'error', title: string, message?: string) =>
             store.add(message === undefined ? { type, title } : { type, title, message }),
+        };
+      },
+    },
+    // Binds the core/-owned ROOM_INVITE_GATEWAY abstraction to the real features/room/
+    // RoomApi implementation — core/ can't import features/ directly (see CLAUDE.md §2),
+    // so this is the one place allowed to wire them.
+    // Stage invites over the IM socket only carry cname, not busiType — every captured
+    // /livehub/stage/invite_approval request in websocket_realtime.md shows busi_type: 2
+    // (voice room); no video-room example has been observed.
+    {
+      provide: ROOM_INVITE_GATEWAY,
+      useFactory: () => {
+        const api = inject(RoomApi);
+        const STAGE_INVITE_BUSI_TYPE = 2;
+        return {
+          approveStageInvite: (cname: string, accepted: boolean) =>
+            api.stageInviteApproval(cname, STAGE_INVITE_BUSI_TYPE, 3, accepted ? 1 : 2),
+          approveModInvite: (cname: string, userId: number) => api.approveManager(cname, userId),
         };
       },
     },
