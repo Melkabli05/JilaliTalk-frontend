@@ -35,15 +35,15 @@ describe('BffRoomSocketService', () => {
     service = TestBed.inject(BffRoomSocketService);
   });
 
-  it('opens a WebSocket to /ws/ht/{cname} with default hostId/busiType', () => {
+  it('opens a WebSocket to {WS_BASE_URL}/ht/{cname} with default hostId/busiType', () => {
     service.connect('VR_1_2');
     expect(FakeWebSocket.instances).toHaveLength(1);
-    expect(FakeWebSocket.instances[0]!.url).toBe('/ws/ht/VR_1_2?hostId=0&busiType=2');
+    expect(FakeWebSocket.instances[0]!.url).toBe('ws://localhost:8080/ws/ht/VR_1_2?hostId=0&busiType=2');
   });
 
   it('carries hostId/busiType/heartbeatSeconds so jilalibff can drive the room heartbeat', () => {
     service.connect('VR_1_2', 555, 1, 30);
-    expect(FakeWebSocket.instances[0]!.url).toBe('/ws/ht/VR_1_2?hostId=555&busiType=1&heartbeatSeconds=30');
+    expect(FakeWebSocket.instances[0]!.url).toBe('ws://localhost:8080/ws/ht/VR_1_2?hostId=555&busiType=1&heartbeatSeconds=30');
   });
 
   it('carries the same hostId/busiType across a reconnect', () => {
@@ -52,7 +52,7 @@ describe('BffRoomSocketService', () => {
     vi.advanceTimersByTime(1000);
 
     expect(FakeWebSocket.instances).toHaveLength(2);
-    expect(FakeWebSocket.instances[1]!.url).toBe('/ws/ht/VR_1_2?hostId=555&busiType=1');
+    expect(FakeWebSocket.instances[1]!.url).toBe('ws://localhost:8080/ws/ht/VR_1_2?hostId=555&busiType=1');
   });
 
   it('parses an incoming frame as-is — jilalibff already sends camelCase keys', () => {
