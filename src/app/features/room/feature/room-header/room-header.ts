@@ -137,6 +137,18 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           </div>
         }
 
+        <!-- Always visible on every screen size: refresh, next to the more-actions button -->
+        <button
+          class="toolbar-btn c-refresh"
+          [appTooltip]="refreshing() ? 'Refreshing…' : 'Refresh'"
+          tooltipPosition="bottom"
+          [disabled]="refreshing()"
+          (click)="onRefresh()"
+          aria-label="Refresh room info"
+        >
+          <svg aria-hidden="true" lucideRefreshCw [size]="16" [class.spinning]="refreshing()"></svg>
+        </button>
+
         <button
           class="toolbar-btn c-more"
           appTooltip="More actions"
@@ -150,18 +162,6 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
 
       <div class="header-right">
         <div class="secondary-actions hide-mobile">
-          <!-- Always visible: refresh, managers (identity-neutral) -->
-          <button
-            class="toolbar-btn c-refresh"
-            [appTooltip]="refreshing() ? 'Refreshing…' : 'Refresh'"
-            tooltipPosition="bottom"
-            [disabled]="refreshing()"
-            (click)="onRefresh()"
-            aria-label="Refresh room info"
-          >
-            <svg aria-hidden="true" lucideRefreshCw [size]="16" [class.spinning]="refreshing()"></svg>
-          </button>
-
           <!-- Engagement actions that reveal identity — hidden when invisible -->
           @if (!invisible()) {
             <div class="engagement-controls">
@@ -274,10 +274,6 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
               <svg aria-hidden="true" lucideEyeOff [size]="20"></svg>
             }
             <span class="row-label">{{ invisible() ? 'Go visible' : 'Go invisible' }}</span>
-          </button>
-          <button class="overflow-row" (click)="onRefresh()" [disabled]="refreshing()">
-            <svg aria-hidden="true" lucideRefreshCw [size]="20" [class.spinning]="refreshing()"></svg>
-            <span class="row-label">Refresh</span>
           </button>
           <button class="overflow-row" (click)="onManagers()">
             <svg aria-hidden="true" lucideShield [size]="20"></svg>
