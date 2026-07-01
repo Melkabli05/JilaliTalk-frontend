@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, ViewEncapsulation } from '@angular/core';
-import { ToastService } from '@core/services/toast.service';
+import { ToastService, Toast, ToastAction } from '@core/services/toast.service';
 import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@lucide/angular';
 
 @Component({
@@ -35,7 +35,23 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
               }
             }
           </div>
-          <span class="toast-message">{{ toast.message }}</span>
+          <div class="toast-body">
+            <span class="toast-message">{{ toast.message }}</span>
+            @if (toast.actions?.length) {
+              <div class="toast-actions">
+                @for (action of toast.actions; track action.label) {
+                  <button
+                    type="button"
+                    class="toast-action"
+                    [class.toast-action-primary]="action.variant === 'primary'"
+                    (click)="onAction(toast, action)"
+                  >
+                    {{ action.label }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
           <button
             class="toast-close"
             (click)="toastService.dismiss(toast.id)"
@@ -152,11 +168,53 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
       color: var(--toast-accent);
     }
 
-    .toast-message {
+    .toast-body {
       flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast-message {
       font-size: var(--text-sm);
       font-weight: 500;
       color: var(--color-text);
+    }
+
+    .toast-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .toast-action {
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      background: transparent;
+      color: var(--color-text);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .toast-action:hover {
+      background-color: var(--color-neutral-100);
+    }
+
+    .dark .toast-action:hover {
+      background-color: var(--color-neutral-700);
+    }
+
+    .toast-action-primary {
+      border-color: transparent;
+      background: var(--toast-accent);
+      color: var(--color-on-color);
+    }
+
+    .toast-action-primary:hover {
+      filter: brightness(0.92);
     }
 
     .toast-close {
@@ -214,4 +272,9 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
 })
 export class ToastContainerComponent {
   readonly toastService = inject(ToastService);
+
+  onAction(toast: Toast, action: ToastAction): void {
+    action.run();
+    this.toastService.dismiss(toast.id);
+  }
 }
