@@ -18,13 +18,15 @@ import {
 } from '@lucide/angular';
 import { ImSocketService } from '@core/realtime/im-socket.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
-import { RtmStore } from '../store/rtm.store';
-import type { DmConversation, DmMessage } from '../models/rtm.model';
+import { MessagesStore } from '../store/messages.store';
+import type { DmConversation, DmMessage } from '../models/dm.model';
+
+const GROUP_GAP_MS = 5 * 60 * 1000; // 5 min — messages further apart break the group
 
 @Component({
-  selector: 'app-rtm-page',
+  selector: 'app-messages',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [RtmStore],
+  providers: [MessagesStore],
   imports: [AvatarComponent, LucideChevronLeft, LucideSearch, LucideX, LucideInbox, LucideMessageSquare, LucideGift],
   template: `
     <div class="shell">
@@ -63,45 +65,45 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
         @if (filteredConversations().length === 0) {
           <div class="empty">
             <div class="empty-icon">
-              <svg aria-hidden="true" lucideInbox [size]="26"></svg>
+              <svg aria-hidden="true" lucideInbox [size]="28"></svg>
             </div>
-            <div class="empty-text">
+            <h3 class="empty-title">
+              @if (searchQuery()) { No results } @else { No messages yet }
+            </h3>
+            <p class="empty-body">
               @if (searchQuery()) {
-                <h3>No results</h3>
-                <p>No conversations match "{{ searchQuery() }}"</p>
+                No conversations match "{{ searchQuery() }}"
               } @else {
-                <h3>No messages yet</h3>
-                <p>Direct messages will appear here as they arrive.</p>
+                Direct messages will appear here as they arrive.
               }
-            </div>
+            </p>
           </div>
         } @else {
-          <ul>
+          <ul role="listbox" aria-label="Conversations">
             @for (conv of filteredConversations(); track conv.userId) {
               <li
+                role="option"
+                [attr.aria-selected]="store.selectedId() === conv.userId"
                 [class.active]="store.selectedId() === conv.userId"
                 (click)="store.select(conv.userId)"
                 tabindex="0"
-                role="button"
                 (keydown.enter)="store.select(conv.userId)"
               >
                 <app-avatar [alt]="conv.nickname" size="md" />
                 <div class="row-body">
                   <span class="row-name">{{ conv.nickname }}</span>
-                  <time class="row-ts">{{ fmtTime(conv.lastTs) }}</time>
+                  <time class="row-ts" [attr.datetime]="conv.lastTs">{{ relativeTime(conv.lastTs) }}</time>
                   @if (conv.isTyping) {
                     <span class="row-preview" aria-label="typing">
                       <span class="typing-dots" aria-hidden="true">
-                        <span class="dot"></span>
-                        <span class="dot"></span>
-                        <span class="dot"></span>
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
                       </span>
                     </span>
                   } @else {
                     <span class="row-preview">{{ preview(conv) }}</span>
                   }
                   @if (conv.unread > 0) {
-                    <span class="badge" [attr.aria-label]="conv.unread + ' unread'">
+                    <span class="unread-badge" [attr.aria-label]="conv.unread + ' unread messages'">
                       {{ conv.unread > 99 ? '99+' : conv.unread }}
                     </span>
                   }
@@ -117,27 +119,34 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
 
         @if (store.selected(); as conv) {
 
-          <!-- mobile-only back bar -->
           <div class="mobile-bar">
             <button class="back-btn" (click)="store.back()" aria-label="Back to conversations">
               <svg aria-hidden="true" lucideChevronLeft [size]="18"></svg>
             </button>
-            <span class="mobile-bar-name">{{ conv.nickname }}</span>
+            <div class="mobile-bar-identity">
+              <app-avatar [alt]="conv.nickname" size="xs" />
+              <span class="mobile-bar-name">{{ conv.nickname }}</span>
+            </div>
             @if (conv.isTyping) {
-              <span class="typing-dots mobile-typing" aria-label="typing" aria-hidden="true">
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
+              <span class="typing-dots" aria-label="typing" aria-hidden="true">
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
               </span>
             }
           </div>
 
           <div class="feed" #feed>
             @for (msg of conv.messages; track msg.id; let i = $index) {
-              <div class="msg" [class.tail]="isLastInGroup(conv.messages, i)">
+              @if (dateLabel(conv.messages, i); as label) {
+                <div class="date-sep" role="separator">
+                  <span>{{ label }}</span>
+                </div>
+              }
+              <div class="msg" [class.tail]="isGroupEnd(conv.messages, i)">
                 <div class="bubble">
                   @switch (msg.type) {
-                    @case ('text') { <p>{{ msg.text }}</p> }
+                    @case ('text') {
+                      <p>{{ msg.text }}</p>
+                    }
                     @case ('image') {
                       <img [src]="msg.imageUrl" alt="Photo" loading="lazy" />
                     }
@@ -154,15 +163,18 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
                       </span>
                     }
                   }
-                  <time>{{ fmtTime(msg.ts) }}</time>
+                  @if (isGroupEnd(conv.messages, i)) {
+                    <time>{{ fmtTime(msg.ts) }}</time>
+                  }
                 </div>
               </div>
             }
           </div>
 
           <div class="compose">
-            <div class="compose-hint">
-              <span>Replies coming soon</span>
+            <div class="compose-hint" role="note" aria-label="Replies coming soon">
+              <svg aria-hidden="true" lucideMessageSquare [size]="14" class="compose-icon"></svg>
+              <span>Replies coming soon…</span>
             </div>
           </div>
 
@@ -170,12 +182,10 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
 
           <div class="no-selection">
             <div class="no-selection-icon">
-              <svg aria-hidden="true" lucideMessageSquare [size]="32"></svg>
+              <svg aria-hidden="true" lucideMessageSquare [size]="34"></svg>
             </div>
-            <div class="no-selection-text">
-              <p>Select a conversation</p>
-              <span>Choose from the list on the left</span>
-            </div>
+            <p class="no-selection-title">Your messages</p>
+            <span class="no-selection-body">Select a conversation to read messages</span>
           </div>
 
         }
@@ -184,13 +194,12 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
     </div>
   `,
   styles: [`
-    /* ─── shell ─────────────────────────────────────── */
     :host { display: block; }
 
+    /* ─── Layout shell ───────────────────────────────── */
     .shell {
       display: flex;
       height: calc(100dvh - 56px);
-      position: relative;
       overflow: hidden;
     }
 
@@ -198,7 +207,7 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
       .shell { height: calc(100dvh - 56px - var(--bottom-nav-height)); }
     }
 
-    /* ─── sidebar ────────────────────────────────────── */
+    /* ─── Sidebar ────────────────────────────────────── */
     .sidebar {
       width: 320px;
       flex-shrink: 0;
@@ -213,8 +222,7 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: var(--space-4);
-      border-bottom: 1px solid var(--color-border);
+      padding: var(--space-4) var(--space-4) var(--space-3);
       flex-shrink: 0;
     }
 
@@ -223,8 +231,10 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
       font-size: var(--text-xl);
       font-weight: var(--font-bold);
       color: var(--color-text);
+      letter-spacing: -0.01em;
     }
 
+    /* Connection dot */
     .conn-dot {
       width: 8px;
       height: 8px;
@@ -238,40 +248,40 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
     .conn-dot.connecting   { background: var(--color-gold-400); animation: var(--animate-pulse-live); }
     .conn-dot.disconnected { background: var(--color-neutral-400); }
 
-    /* ─── search bar ─────────────────────────────────── */
+    /* ─── Search ─────────────────────────────────────── */
     .search-bar {
       position: relative;
-      display: flex;
-      align-items: center;
-      padding: var(--space-2) var(--space-3);
-      border-bottom: 1px solid var(--color-border);
+      padding: 0 var(--space-3) var(--space-3);
       flex-shrink: 0;
     }
 
     .search-icon {
       position: absolute;
-      left: calc(var(--space-3) + var(--space-2));
+      left: calc(var(--space-3) + var(--space-3));
+      top: 50%;
+      transform: translateY(-50%) translateY(-1.5px);
       color: var(--color-text-muted);
       pointer-events: none;
     }
 
     .search-input {
       width: 100%;
-      height: 34px;
-      padding: 0 var(--space-8) 0 calc(var(--space-3) + 22px);
-      border: none;
-      border-radius: var(--radius-lg);
+      height: 36px;
+      padding: 0 var(--space-8) 0 calc(var(--space-3) + 24px);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
       background: var(--color-neutral-100);
       color: var(--color-text);
       font-size: var(--text-sm);
-      transition: box-shadow 0.15s ease;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .search-input::placeholder { color: var(--color-text-muted); }
 
     .search-input:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 2px var(--color-primary-400);
+      border-color: var(--color-primary-400);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 15%, transparent);
     }
 
     .search-input::-webkit-search-cancel-button,
@@ -280,39 +290,43 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
     .search-clear {
       position: absolute;
       right: calc(var(--space-3) + var(--space-2));
+      top: 50%;
+      transform: translateY(-50%) translateY(-1.5px);
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       padding: 0;
       border: none;
       border-radius: var(--radius-full);
-      background: var(--color-neutral-200);
-      color: var(--color-text-muted);
+      background: var(--color-neutral-300);
+      color: var(--color-card);
       cursor: pointer;
-      transition: background-color 0.15s ease, color 0.15s ease;
+      transition: background-color 0.15s ease;
     }
 
-    .search-clear:hover { background: var(--color-neutral-300); color: var(--color-text); }
+    .search-clear:hover { background: var(--color-neutral-400); }
     .search-clear:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 
     :host-context(.dark) {
       .search-input { background: var(--color-neutral-800); }
-      .search-input:focus-visible { box-shadow: 0 0 0 2px var(--color-primary-300); }
-      .search-clear { background: var(--color-neutral-700); color: var(--color-neutral-400); }
-      .search-clear:hover { background: var(--color-neutral-600); color: var(--color-neutral-100); }
+      .search-input:focus-visible {
+        border-color: var(--color-primary-400);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 20%, transparent);
+      }
+      .search-clear { background: var(--color-neutral-600); }
+      .search-clear:hover { background: var(--color-neutral-500); }
     }
 
-    /* ─── conversation list ──────────────────────────── */
+    /* ─── Conversation list ──────────────────────────── */
     ul {
       flex: 1;
       overflow-y: auto;
       list-style: none;
       margin: 0;
-      padding: var(--space-1) var(--space-2);
+      padding: 0 var(--space-2) var(--space-2);
       scrollbar-width: thin;
-      /* --color-border is neutral-200 light / neutral-700 dark — no override needed */
       scrollbar-color: var(--color-border) transparent;
     }
 
@@ -321,18 +335,38 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
       align-items: center;
       gap: var(--space-3);
       padding: var(--space-2) var(--space-3);
-      cursor: pointer;
       border-radius: var(--radius-lg);
+      cursor: pointer;
       transition: background-color 0.15s ease;
+      position: relative;
       margin-bottom: 1px;
+      user-select: none;
     }
 
-    li:hover  { background: var(--color-neutral-100); }
-    li.active { background: color-mix(in srgb, var(--color-primary-500) 10%, transparent); }
+    li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      bottom: 20%;
+      width: 3px;
+      border-radius: var(--radius-full);
+      background: var(--color-primary-500);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
 
-    :host-context(.dark) li:hover { background: var(--color-neutral-700); }
+    li:hover   { background: var(--color-neutral-100); }
+    li.active  { background: color-mix(in srgb, var(--color-primary-500) 8%, transparent); }
+    li.active::before { opacity: 1; }
 
-    li:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
+    :host-context(.dark) li:hover  { background: var(--color-neutral-700); }
+    :host-context(.dark) li.active { background: color-mix(in srgb, var(--color-primary-500) 14%, transparent); }
+
+    li:focus-visible {
+      outline: var(--focus-ring);
+      outline-offset: -2px;
+    }
 
     .row-body {
       flex: 1;
@@ -346,54 +380,61 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
     }
 
     .row-name {
+      grid-column: 1;
+      grid-row: 1;
       font-size: var(--text-sm);
       font-weight: var(--font-semibold);
       color: var(--color-text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      grid-column: 1;
-      grid-row: 1;
     }
 
     .row-ts {
+      grid-column: 2;
+      grid-row: 1;
       font-size: var(--text-2xs);
       color: var(--color-text-muted);
       white-space: nowrap;
-      grid-column: 2;
-      grid-row: 1;
     }
 
     .row-preview {
+      grid-column: 1;
+      grid-row: 2;
       font-size: var(--text-xs);
       color: var(--color-text-muted);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      grid-column: 1;
-      grid-row: 2;
       display: flex;
       align-items: center;
     }
 
-    .badge {
+    .unread-badge {
       grid-column: 2;
       grid-row: 2;
+      align-self: center;
       min-width: 18px;
       height: 18px;
       padding: 0 var(--space-1);
       border-radius: var(--radius-full);
-      background: var(--color-accent-500);
+      background: var(--color-primary-500);
       color: var(--color-on-color);
       font-size: var(--text-2xs);
       font-weight: var(--font-bold);
       display: flex;
       align-items: center;
       justify-content: center;
-      align-self: center;
+      animation: badge-pop 0.2s ease;
     }
 
-    /* ─── typing dots ────────────────────────────────── */
+    @keyframes badge-pop {
+      0% { transform: scale(0.6); opacity: 0; }
+      80% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ─── Typing dots ────────────────────────────────── */
     .typing-dots {
       display: inline-flex;
       align-items: center;
@@ -404,7 +445,7 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
       width: 4px;
       height: 4px;
       border-radius: var(--radius-full);
-      background: var(--color-primary-500);
+      background: var(--color-primary-400);
       animation: typing-bounce 1.1s ease-in-out infinite;
     }
 
@@ -412,53 +453,58 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
     .dot:nth-child(3) { animation-delay: 0.3s; }
 
     @keyframes typing-bounce {
-      0%, 100% { transform: translateY(0); opacity: 0.5; }
-      50%       { transform: translateY(-3px); opacity: 1; }
+      0%, 100% { transform: translateY(0); opacity: 0.45; }
+      50%       { transform: translateY(-4px); opacity: 1; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .dot { animation: none; opacity: 0.7; }
+      .dot { animation: none; opacity: 0.6; }
     }
 
-    /* ─── empty state ────────────────────────────────── */
+    /* ─── Empty state ────────────────────────────────── */
     .empty {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: var(--space-3);
+      gap: var(--space-2);
       padding: var(--space-8);
       text-align: center;
     }
 
     .empty-icon {
-      width: 56px;
-      height: 56px;
+      width: 60px;
+      height: 60px;
+      margin-bottom: var(--space-1);
       border-radius: var(--radius-xl);
-      background: var(--color-neutral-100);
+      background: color-mix(in srgb, var(--color-primary-500) 12%, transparent);
+      color: var(--color-primary-500);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--color-text-muted);
     }
 
-    :host-context(.dark) .empty-icon { background: var(--color-neutral-800); }
+    :host-context(.dark) .empty-icon {
+      background: color-mix(in srgb, var(--color-primary-500) 18%, transparent);
+    }
 
-    .empty-text h3 {
-      margin: 0 0 var(--space-1);
+    .empty-title {
+      margin: 0;
       font-size: var(--text-sm);
       font-weight: var(--font-semibold);
-      color: var(--color-text-secondary);
+      color: var(--color-text);
     }
 
-    .empty-text p {
+    .empty-body {
       margin: 0;
       font-size: var(--text-xs);
       color: var(--color-text-muted);
+      max-width: 200px;
+      line-height: var(--leading-normal);
     }
 
-    /* ─── thread ─────────────────────────────────────── */
+    /* ─── Thread pane ────────────────────────────────── */
     .thread {
       flex: 1;
       display: flex;
@@ -467,7 +513,7 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
       background: var(--color-bg);
     }
 
-    /* mobile-only; hidden on desktop */
+    /* Mobile-only back bar */
     .mobile-bar {
       display: none;
       align-items: center;
@@ -490,8 +536,8 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
       background: transparent;
       color: var(--color-primary-500);
       cursor: pointer;
-      transition: background-color 0.15s ease;
       flex-shrink: 0;
+      transition: background-color 0.15s ease;
     }
 
     .back-btn:hover { background: var(--color-neutral-100); }
@@ -499,9 +545,15 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
 
     :host-context(.dark) .back-btn:hover { background: var(--color-neutral-700); }
 
-    .mobile-bar-name {
+    .mobile-bar-identity {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
       flex: 1;
       min-width: 0;
+    }
+
+    .mobile-bar-name {
       font-size: var(--text-sm);
       font-weight: var(--font-semibold);
       color: var(--color-text);
@@ -510,9 +562,7 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
       text-overflow: ellipsis;
     }
 
-    .mobile-typing { margin-left: var(--space-1); }
-
-    /* ─── feed ───────────────────────────────────────── */
+    /* ─── Message feed ───────────────────────────────── */
     .feed {
       flex: 1;
       overflow-y: auto;
@@ -524,22 +574,54 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
       scrollbar-color: var(--color-border) transparent;
     }
 
-    .msg      { display: flex; margin-bottom: 1px; }
+    /* Date separator */
+    .date-sep {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin: var(--space-3) 0 var(--space-2);
+      color: var(--color-text-muted);
+      font-size: var(--text-2xs);
+    }
+
+    .date-sep::before,
+    .date-sep::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--color-border);
+    }
+
+    .date-sep span {
+      white-space: nowrap;
+      font-weight: var(--font-medium);
+      text-transform: uppercase;
+      letter-spacing: var(--letter-spacing-wide);
+    }
+
+    /* Message row */
+    .msg      { display: flex; }
     .msg.tail { margin-bottom: var(--space-2); }
 
     .bubble {
-      max-width: 65%;
+      max-width: 68%;
       background: var(--color-neutral-100);
-      border-radius: var(--radius-xl);
+      border-radius: var(--radius-xl) var(--radius-xl) var(--radius-xl) var(--radius-sm);
       padding: var(--space-2) var(--space-3);
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
+      transition: box-shadow 0.15s ease;
     }
+
+    .bubble:hover { box-shadow: var(--shadow-sm); }
 
     :host-context(.dark) .bubble { background: var(--color-neutral-700); }
 
-    .msg:not(.tail) .bubble { border-bottom-left-radius: var(--radius-xs); }
+    /* First bubble in a group: flat bottom-left corner */
+    .msg:not(.tail) .bubble {
+      border-bottom-left-radius: var(--radius-xs);
+    }
 
     .bubble p {
       margin: 0;
@@ -571,9 +653,10 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
       font-size: var(--text-2xs);
       color: var(--color-text-muted);
       align-self: flex-end;
+      margin-top: 1px;
     }
 
-    /* ─── compose ────────────────────────────────────── */
+    /* ─── Compose area ───────────────────────────────── */
     .compose {
       padding: var(--space-3) var(--space-4);
       border-top: 1px solid var(--color-border);
@@ -582,63 +665,68 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
     }
 
     .compose-hint {
-      height: 40px;
+      height: 42px;
       padding: 0 var(--space-4);
-      background: var(--color-neutral-100);
+      border: 1px solid var(--color-border);
       border-radius: var(--radius-full);
       display: flex;
       align-items: center;
+      gap: var(--space-2);
       cursor: not-allowed;
+      opacity: 0.65;
     }
 
-    :host-context(.dark) .compose-hint { background: var(--color-neutral-700); }
+    .compose-icon { color: var(--color-text-muted); flex-shrink: 0; }
 
     .compose-hint span {
       font-size: var(--text-sm);
       color: var(--color-text-muted);
     }
 
-    /* ─── no-selection ───────────────────────────────── */
+    /* ─── No-selection placeholder ───────────────────── */
     .no-selection {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: var(--space-4);
+      gap: var(--space-2);
+      padding: var(--space-8);
+      text-align: center;
     }
 
     .no-selection-icon {
-      width: 72px;
-      height: 72px;
+      width: 76px;
+      height: 76px;
+      margin-bottom: var(--space-2);
       border-radius: var(--radius-2xl);
-      background: var(--color-neutral-100);
+      background: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
+      color: var(--color-primary-400);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--color-neutral-300);
     }
 
     :host-context(.dark) .no-selection-icon {
-      background: var(--color-neutral-800);
-      color: var(--color-neutral-600);
+      background: color-mix(in srgb, var(--color-primary-500) 16%, transparent);
+      color: var(--color-primary-300);
     }
 
-    .no-selection-text { text-align: center; }
+    .no-selection-title {
+      margin: 0;
+      font-size: var(--text-base);
+      font-weight: var(--font-semibold);
+      color: var(--color-text);
+    }
 
-    .no-selection-text p {
-      margin: 0 0 var(--space-1);
+    .no-selection-body {
       font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      color: var(--color-text-secondary);
-    }
-
-    .no-selection-text span {
-      font-size: var(--text-xs);
       color: var(--color-text-muted);
+      max-width: 220px;
+      line-height: var(--leading-normal);
     }
 
-    /* ─── mobile ─────────────────────────────────────── */
+    /* ─── Mobile ─────────────────────────────────────── */
     @media (max-width: 640px) {
       .sidebar {
         position: absolute;
@@ -646,11 +734,12 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
         width: 100%;
         z-index: 1;
         border-right: none;
-        transition: opacity 0.15s ease, visibility 0.15s ease;
+        transform: translateX(0);
+        transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.22s;
       }
 
       .sidebar.hidden {
-        opacity: 0;
+        transform: translateX(-100%);
         visibility: hidden;
         pointer-events: none;
       }
@@ -658,14 +747,14 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
       .thread {
         position: absolute;
         inset: 0;
-        opacity: 0;
+        transform: translateX(100%);
         visibility: hidden;
         pointer-events: none;
-        transition: opacity 0.15s ease, visibility 0.15s ease;
+        transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.22s;
       }
 
       .thread.open {
-        opacity: 1;
+        transform: translateX(0);
         visibility: visible;
         pointer-events: auto;
       }
@@ -674,8 +763,8 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
     }
   `],
 })
-export class RtmPageComponent {
-  protected readonly store    = inject(RtmStore);
+export class MessagesPageComponent {
+  protected readonly store    = inject(MessagesStore);
   protected readonly imSocket = inject(ImSocketService);
 
   protected readonly searchQuery = signal('');
@@ -701,10 +790,29 @@ export class RtmPageComponent {
     });
   }
 
-  protected isLastInGroup(messages: readonly DmMessage[], i: number): boolean {
-    const next = messages[i + 1];
+  protected isGroupEnd(messages: readonly DmMessage[], i: number): boolean {
     const cur  = messages[i];
-    return !next || next.type !== cur?.type;
+    const next = messages[i + 1];
+    if (!next || !cur) return true;
+    return next.ts - cur.ts > GROUP_GAP_MS;
+  }
+
+  protected dateLabel(messages: readonly DmMessage[], i: number): string | null {
+    const msg = messages[i];
+    if (!msg) return null;
+    const prev = messages[i - 1];
+    const d = new Date(msg.ts);
+    if (prev && new Date(prev.ts).toDateString() === d.toDateString()) return null;
+    return this.dayLabel(d);
+  }
+
+  private dayLabel(d: Date): string {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
   }
 
   protected preview(conv: DmConversation): string {
@@ -718,15 +826,24 @@ export class RtmPageComponent {
     }
   }
 
-  protected fmtTime(ts: number): string {
-    const d   = new Date(ts);
+  protected relativeTime(ts: number): string {
+    const diff = Date.now() - ts;
+    const secs = Math.floor(diff / 1000);
+    if (secs < 60)   return 'now';
+    const mins = Math.floor(secs / 60);
+    if (mins < 60)   return `${mins}m`;
+    const hrs  = Math.floor(mins / 60);
+    if (hrs  < 24)   return `${hrs}h`;
+    if (hrs  < 48)   return 'Yesterday';
+    const d = new Date(ts);
     const now = new Date();
-    const today =
-      d.getDate()     === now.getDate()  &&
-      d.getMonth()    === now.getMonth() &&
-      d.getFullYear() === now.getFullYear();
-    return today
-      ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    if (d.getFullYear() === now.getFullYear()) {
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' });
+  }
+
+  protected fmtTime(ts: number): string {
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 }

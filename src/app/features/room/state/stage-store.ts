@@ -34,6 +34,22 @@ export class StageStore extends CollectionStore<StageUser> {
       const event = this.bffWs.lastEvent();
       if (!event) return;
       switch (event.type) {
+        case 'user_quit':
+          // User left while still on stage (host coffee-break) — keep slot, mark as away
+          if (this.isOnStage(Number(event.userId))) {
+            this.collection.update((list) =>
+              list.map((u) => u.userId === Number(event.userId) ? { ...u, isAway: true } : u),
+            );
+          }
+          break;
+        case 'user_join':
+          // User returned — clear away state if they're still on stage
+          if (this.isOnStage(Number(event.userId))) {
+            this.collection.update((list) =>
+              list.map((u) => u.userId === Number(event.userId) ? { ...u, isAway: false } : u),
+            );
+          }
+          break;
         case 'stage_join':
           this.addStageUser({
             userId: Number(event.stageUser.userId),

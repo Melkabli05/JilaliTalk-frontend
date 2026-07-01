@@ -25,6 +25,7 @@ export interface StageUser {
   readonly rippleAnimalType: number;
   readonly rippleAnimalUrl: string | null;
   readonly isAiUser: boolean;
+  readonly isAway?: boolean;
 }
 
 export interface RoomUser {

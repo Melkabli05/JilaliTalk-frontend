@@ -40,7 +40,9 @@ import { LucideMicOff, LucideMic } from '@lucide/angular';
 
       <span class="user-name">{{ user().nickname }}</span>
 
-      @if (roleLabel()) {
+      @if (user().isAway) {
+        <span class="role-badge away">AWAY</span>
+      } @else if (roleLabel()) {
         <span class="role-badge" [class]="roleBadgeClass()">
           {{ roleLabel() }}
         </span>
@@ -93,8 +95,10 @@ import { LucideMicOff, LucideMic } from '@lucide/angular';
     }
     .role-badge.host { background: var(--color-gold-100); color: var(--color-gold-600); }
     .role-badge.mod { background: var(--color-primary-50); color: var(--color-primary-600); }
+    .role-badge.away { background: var(--color-neutral-100); color: var(--color-text-muted); }
     :host-context(.dark) .role-badge.host { background: var(--color-gold-900); color: var(--color-gold-300); }
     :host-context(.dark) .role-badge.mod { background: var(--color-primary-900); color: var(--color-primary-300); }
+    :host-context(.dark) .role-badge.away { background: var(--color-neutral-800); color: var(--color-text-muted); }
   `],
 })
 export class StageUserComponent {
@@ -106,6 +110,7 @@ export class StageUserComponent {
   readonly isSpeaking = computed(() => this.speaking());
 
   readonly avatarStatus = computed(() => {
+    if (this.user().isAway) return 'offline' as const;
     if (!this.user().isTurnOnMic) return 'offline' as const;
     if (this.isSpeaking()) return 'speaking' as const;
     return 'online' as const;
@@ -132,7 +137,8 @@ export class StageUserComponent {
   ariaLabel(): string {
     const u = this.user();
     const parts = [u.nickname ?? 'User'];
-    if (this.roleLabel()) parts.push(this.roleLabel());
+    if (u.isAway) parts.push('away');
+    else if (this.roleLabel()) parts.push(this.roleLabel());
     if (!u.isTurnOnMic) parts.push('muted');
     if (this.isSpeaking()) parts.push('speaking');
     return parts.join(', ');

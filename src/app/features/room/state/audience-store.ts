@@ -82,6 +82,7 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
       if (!event) return;
       switch (event.type) {
         case 'user_join':
+          if (event.isBannedComment) break;
           if (this.stageStore.isOnStage(Number(event.userId))) break;
           this.addAudienceUser({
             userId: Number(event.userId),

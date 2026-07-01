@@ -33,6 +33,27 @@ export class ImBootstrapService {
         this.toast.info(`${event.visitorUserId} visited your profile`);
         this.notifications.notify('info', 'Profile visit', `${event.visitorUserId} visited your profile`);
         break;
+      case 'stage_invite':
+        this.toast.info('The host invited you to join the stage');
+        this.notifications.notify('info', 'Stage invitation', 'The host invited you to join the stage');
+        break;
+      case 'mod_invite':
+        this.toast.info('You have been invited to become a moderator');
+        this.notifications.notify('info', 'Moderator invitation', 'You have been invited to become a moderator');
+        break;
+      case 'mod_accepted':
+        this.toast.success('You are now a moderator');
+        break;
+      case 'mod_removed':
+        this.toast.warning('You are no longer a moderator');
+        break;
+      case 'mod_unmuted':
+        this.toast.success('You can speak now');
+        break;
+      case 'follow':
+        this.toast.info(event.status === 2 ? `${event.nickname} followed you back` : `${event.nickname} followed you`);
+        this.notifications.notify('info', 'New follower', `${event.nickname} followed you`);
+        break;
       case 'voice_room_shared':
         this.toast.info(`${event.fromNickname} sent you a voice room`);
         this.notifications.notify('info', 'Voice room shared', `${event.fromNickname} sent you a voice room`);
@@ -46,6 +67,20 @@ export class ImBootstrapService {
         break;
       case 'image_message':
         this.notifications.notify('info', 'New message', 'Sent you a photo');
+        break;
+      case 'gift_message':
+        this.toast.info(`${event.fromNickname} sent you a gift`);
+        this.notifications.notify('info', 'Gift received', `${event.fromNickname} sent you a gift`);
+        break;
+      case 'introduction_message':
+        this.toast.info(`${event.fromNickname} sent you an introduction`);
+        this.notifications.notify('info', 'Introduction', `${event.fromNickname} sent you an introduction`);
+        break;
+      case 'group_message':
+        this.notifications.notify('info', `${event.roomName}`, `${event.senderName}: ${event.text}`);
+        break;
+      case 'typing_indicator':
+      case 'read_receipt':
         break;
       case 'account_status':
         if (event.status === 'banned') {

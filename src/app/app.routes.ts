@@ -12,11 +12,12 @@ export const routes: Routes = [
     loadChildren: () => import('./features/rooms').then((m) => m.roomsRoutes),
   },
   {
-    path: 'rtm',
+    path: 'messages',
     title: 'Messages',
     loadComponent: () =>
-      import('./features/rtm').then((m) => m.RtmPageComponent),
+      import('./features/messages').then((m) => m.MessagesPageComponent),
   },
+  { path: 'rtm', redirectTo: 'messages', pathMatch: 'full' },
   {
     path: 'profile',
     title: 'Profile',
