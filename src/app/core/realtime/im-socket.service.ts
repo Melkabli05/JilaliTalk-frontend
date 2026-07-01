@@ -1,12 +1,14 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { ReconnectingSocketBase } from './reconnecting-socket-base';
 import type { ConnectionStatus } from './reconnecting-socket-base';
 import type { ImEvent } from './im-events';
+import { WS_BASE_URL } from '@core/tokens/ws-base-url.token';
 
 export type ImConnectionStatus = ConnectionStatus;
 
 @Injectable({ providedIn: 'root' })
 export class ImSocketService extends ReconnectingSocketBase {
+  private readonly wsBaseUrl = inject(WS_BASE_URL);
   private readonly _lastEvent = signal<ImEvent | null>(null);
   private readonly _status = signal<ImConnectionStatus>('disconnected');
   private wantsConnection = false;
@@ -47,7 +49,7 @@ export class ImSocketService extends ReconnectingSocketBase {
   }
 
   protected override buildUrl(): string {
-    return '/ws/im';
+    return `${this.wsBaseUrl}/im`;
   }
 
   protected override onMessage(data: unknown): void {

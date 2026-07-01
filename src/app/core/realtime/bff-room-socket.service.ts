@@ -1,11 +1,13 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { ReconnectingSocketBase } from './reconnecting-socket-base';
 import type { RoomRealtimeEvent } from './room-realtime-events';
+import { WS_BASE_URL } from '@core/tokens/ws-base-url.token';
 
 export type WsConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
 
 @Injectable({ providedIn: 'root' })
 export class BffRoomSocketService extends ReconnectingSocketBase {
+  private readonly wsBaseUrl = inject(WS_BASE_URL);
   private reconnectCname = '';
   private reconnectHostId = 0;
   private reconnectBusiType = 2;
@@ -55,7 +57,7 @@ export class BffRoomSocketService extends ReconnectingSocketBase {
     if (this.reconnectHeartbeatSeconds) {
       params.set('heartbeatSeconds', String(this.reconnectHeartbeatSeconds));
     }
-    return `/ws/ht/${encodeURIComponent(this.reconnectCname)}?${params}`;
+    return `${this.wsBaseUrl}/ht/${encodeURIComponent(this.reconnectCname)}?${params}`;
   }
 
   protected override shouldRetry(): boolean {

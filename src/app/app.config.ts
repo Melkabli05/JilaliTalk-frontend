@@ -15,6 +15,8 @@ import { RoomApi } from '@features/room/data/room-api';
 
 import { environment } from '@env/environment';
 import { routes } from './app.routes';
+import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { WS_BASE_URL } from '@core/tokens/ws-base-url.token';
 
 function restoreSession() {
   return () => {
@@ -37,6 +39,8 @@ export const appConfig: ApplicationConfig = {
     // Avatars are served from CDN at fixed sizes — the intrinsic image warning is not actionable
     { provide: IMAGE_CONFIG, useValue: { disableImageSizeWarning: true } },
     { provide: APP_INITIALIZER, useFactory: restoreSession, multi: true },
+    { provide: API_BASE_URL, useValue: environment.apiUrl },
+    { provide: WS_BASE_URL, useValue: environment.wsUrl },
     // Binds the core/-owned NOTIFICATION_REPORTER abstraction to the real store/ implementation —
     // core/ can't import store/ directly (see CLAUDE.md §2), so this is the one place allowed to wire them.
     {
