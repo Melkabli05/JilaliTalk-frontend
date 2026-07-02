@@ -210,11 +210,16 @@ export interface UserInfo {
 }
 
 /**
- * Two caching layers work together here: this service caches per browser session (never
- * expires, cleared on reload) to skip the network round-trip entirely on a hit; the BFF's
- * `/api/users/info` additionally caches server-side for 24h of inactivity (Caffeine,
- * time-to-idle) to skip the expensive Curve25519 handshake on its own misses. A miss here is
- * therefore usually still cheap — this cache exists to avoid the request, not the upstream cost.
+ * Caching lives on the backend only: the BFF's `/api/users/info` caches server-side for 24h
+ * of inactivity (Caffeine, time-to-idle) to skip the expensive Curve25519 handshake, so a call
+ * from here is cheap even on the BFF's own miss. `fetchUserInfo()` therefore never skips the
+ * HTTP call for a uid it's already seen — every call reaches the BFF.
+ * <p>
+ * The `_cache` map below is not a cache in that sense: it's the single shared store of "the
+ * most recently fetched value per uid", read synchronously via {@link getUserInfo} inside
+ * `computed()` signals (the user-info modal, event-card enrichment, ghost-audience roster) so
+ * the UI can reactively update once an async fetch resolves — signals can't `await`, so
+ * something has to hold the latest value for them to read.
  */
 @Injectable({ providedIn: 'root' })
 export class UserInfoService {
@@ -235,9 +240,6 @@ export class UserInfoService {
 
   async fetchUserInfo(userId: number): Promise<UserInfo | null> {
     if (!(userId > 0) || !Number.isFinite(userId)) return null;
-    if (this._cache().has(userId)) {
-      return this._cache().get(userId)!;
-    }
     // Deduplicate: if a fetch for this uid is already in flight, await it instead of
     // firing a second HTTP request.
     const existing = this._pendingFetches.get(userId);
