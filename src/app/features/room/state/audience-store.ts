@@ -21,6 +21,8 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
 
   private readonly busiType = signal(2);
   private readonly _cname = signal<string | null>(null);
+  /** Last audience revision seen — initialised to -1 so the first poll always refetches. */
+  private lastAudienceRevision = -1;
 
   readonly cname = this._cname.asReadonly();
   readonly audienceUsers = this.items;
@@ -54,6 +56,7 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
   }
 
   setCname(cname: string): void {
+    this.lastAudienceRevision = -1;
     this._cname.set(cname);
   }
 
@@ -68,6 +71,9 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
     const busiType = this.busiType();
     if (!cname) return;
     try {
+      const { revision } = await firstValueFrom(this.api.fetchAudienceRevision(cname));
+      if (revision <= this.lastAudienceRevision) return;
+      this.lastAudienceRevision = revision;
       const audience = await firstValueFrom(this.api.fetchAudienceUsers(cname, busiType));
       this.updateAudienceUsers([...(audience?.list ?? [])]);
     } catch {
@@ -177,5 +183,6 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
   override reset(): void {
     super.reset();
     this._cname.set(null);
+    this.lastAudienceRevision = -1;
   }
 }

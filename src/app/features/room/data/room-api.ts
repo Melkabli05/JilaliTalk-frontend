@@ -38,6 +38,11 @@ export class RoomApi {
     );
   }
 
+  /** Returns the current audience roster revision — poll this to decide whether to refetch. */
+  fetchAudienceRevision(cname: string): Observable<{ revision: number }> {
+    return this.http.get<{ revision: number }>(`${this.baseUrl}/rooms/${cname}/audience-revision`);
+  }
+
   fetchComments(cname: string, busiType: number): Observable<CommentsResponse> {
     const params = new HttpParams()
       .set('cname', cname)

@@ -732,15 +732,8 @@ export class UserInfoModalComponent {
   readonly giftLevel = computed(() => this.details()?.giftLevel ?? null);
 
   readonly pointsSummary = computed(() => {
-    const p = this.details()?.points;
-    if (!p) return null;
-    const total =
-      (p.correct ?? 0) +
-      (p.translate ?? 0) +
-      (p.word ?? 0) +
-      (p.speechToText ?? 0) +
-      (p.textTranslate ?? 0) +
-      (p.transliterate ?? 0);
+    const total = this.info()?.pointsTotal;
+    if (!total) return null;
     return total > 0 ? total.toLocaleString() : null;
   });
 

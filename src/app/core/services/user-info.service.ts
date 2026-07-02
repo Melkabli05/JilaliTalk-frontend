@@ -205,6 +205,8 @@ export interface UserInfo {
   readonly areaCode: string | null;
   readonly regDays: number | null;
   readonly liveStateCname: string | null;
+  /** Pre-computed sum of the six contribution point categories, from the BFF. */
+  readonly pointsTotal: number;
   /** Full upstream profile — avatars, languages, tags, vip status, etc. */
   readonly details: UserProfileDetails | null;
 }
