@@ -50,20 +50,21 @@ import { toSignal } from '@angular/core/rxjs-interop';
       }
 
       .main-wrapper {
-        display: flex;
-        flex-direction: column;
-        min-height: 0; /* critical: lets the flex child shrink so its child can scroll */
+        display: block; /* hosts the absolutely-positioned header; pages render below */
+        position: relative;
+        min-height: 0;
         overflow: hidden;
       }
 
-      /* The ONLY scroll container. */
+      /* The ONLY scroll container. Fills the slot — header floats above. */
       .app-main {
-        flex: 1;
+        height: 100%;
         min-height: 0;
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: thin;
+        scrollbar-gutter: stable;
         scrollbar-color: var(--color-neutral-300) transparent;
         /* room for the fixed mobile bottom nav */
         padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));

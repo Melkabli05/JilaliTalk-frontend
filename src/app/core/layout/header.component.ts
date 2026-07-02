@@ -113,21 +113,23 @@ import { AuthService } from '@core/auth/auth.service';
   `,
   styles: [`
     .app-header {
-      position: sticky;
+      position: fixed;
       top: 0;
+      left: 0;
+      right: 0;
       z-index: var(--z-shell-header);
       height: var(--app-header-height);
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 var(--space-4);
-      background: color-mix(in srgb, var(--color-card) 88%, transparent);
+      background: color-mix(in srgb, var(--color-card) 80%, transparent);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-bottom: 1px solid var(--color-border);
+      border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
     }
     @media (min-width: 1024px) {
-      .app-header { padding: 0 var(--space-6); }
+      .app-header { padding: 0 var(--space-6); left: var(--sidebar-width); }
     }
     /* Brand */
     .brand {

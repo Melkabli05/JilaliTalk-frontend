@@ -255,12 +255,8 @@ const GROUP_GAP_MS = 5 * 60 * 1000;
     /* ─── Shell ──────────────────────────────────────── */
     .shell {
       display: flex;
-      height: calc(100dvh - 56px);
+      height: 100%;
       overflow: hidden;
-    }
-
-    @media (max-width: 1023px) {
-      .shell { height: calc(100dvh - 56px - var(--bottom-nav-height)); }
     }
 
     /* ─── Sidebar ────────────────────────────────────── */

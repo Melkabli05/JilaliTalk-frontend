@@ -276,7 +276,7 @@ import { getCountryByCode } from '@shared/data/countries';
     }
   `,
   styles: [`
-    .profile-page { max-width: 480px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+    .profile-page { max-width: 480px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; }
 
     /* Skeleton */
     .page-loading { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-4); }

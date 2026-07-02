@@ -189,13 +189,9 @@ import type { DmConversation, DmMessage } from '../models/rtm.model';
 
     .shell {
       display: flex;
-      height: calc(100dvh - 56px);
+      height: 100%;
       position: relative;
       overflow: hidden;
-    }
-
-    @media (max-width: 1023px) {
-      .shell { height: calc(100dvh - 56px - var(--bottom-nav-height)); }
     }
 
     /* ─── sidebar ────────────────────────────────────── */
