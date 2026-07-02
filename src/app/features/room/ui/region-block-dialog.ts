@@ -50,6 +50,23 @@ const CODE_LABELS: Record<number, string> = {
       display: block;
       width: 340px;
       max-width: calc(100vw - var(--space-6));
+
+      --rbd-banner-bg:    color-mix(in srgb, var(--color-warm-50) 60%, var(--color-neutral-50));
+      --rbd-border:       var(--color-border);
+      --rbd-icon-bg:      color-mix(in srgb, var(--color-warm-100) 50%, transparent);
+      --rbd-icon-fg:      var(--color-warm-600);
+      --rbd-label-fg:     var(--color-warm-600);
+      --rbd-message-fg:   var(--color-text-secondary);
+      --rbd-lead-fg:      var(--color-text-secondary);
+    }
+    :host-context(.dark) {
+      --rbd-banner-bg:    color-mix(in srgb, var(--color-warm-900) 40%, var(--color-neutral-800));
+      --rbd-border:       var(--color-neutral-700);
+      --rbd-icon-bg:      color-mix(in srgb, var(--color-warm-800) 60%, transparent);
+      --rbd-icon-fg:      var(--color-warm-400);
+      --rbd-label-fg:     var(--color-warm-400);
+      --rbd-message-fg:   var(--color-neutral-300);
+      --rbd-lead-fg:      var(--color-neutral-300);
     }
 
     .banner {
@@ -57,12 +74,8 @@ const CODE_LABELS: Record<number, string> = {
       align-items: flex-start;
       gap: var(--space-3);
       padding: var(--space-4) var(--space-5);
-      background: color-mix(in srgb, var(--color-warm-50) 60%, var(--color-neutral-50));
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    :host-context(.dark) .banner {
-      background: color-mix(in srgb, var(--color-warm-900) 40%, var(--color-neutral-800));
+      background: var(--rbd-banner-bg);
+      border-bottom: 1px solid var(--rbd-border);
     }
 
     .banner-icon {
@@ -72,14 +85,9 @@ const CODE_LABELS: Record<number, string> = {
       width: 44px;
       height: 44px;
       border-radius: var(--radius-lg);
-      background: color-mix(in srgb, var(--color-warm-100) 50%, transparent);
-      color: var(--color-warm-600);
+      background: var(--rbd-icon-bg);
+      color: var(--rbd-icon-fg);
       flex-shrink: 0;
-    }
-
-    :host-context(.dark) .banner-icon {
-      background: color-mix(in srgb, var(--color-warm-800) 60%, transparent);
-      color: var(--color-warm-400);
     }
 
     .banner-label {
@@ -88,18 +96,14 @@ const CODE_LABELS: Record<number, string> = {
       font-weight: var(--font-semibold);
       letter-spacing: var(--letter-spacing-wide);
       text-transform: uppercase;
-      color: var(--color-warm-600);
+      color: var(--rbd-label-fg);
       margin-bottom: 2px;
-    }
-
-    :host-context(.dark) .banner-label {
-      color: var(--color-warm-400);
     }
 
     .banner-message {
       margin: 0;
       font-size: var(--text-xs);
-      color: var(--color-text-secondary);
+      color: var(--rbd-message-fg);
       line-height: 1.4;
     }
 
@@ -110,7 +114,7 @@ const CODE_LABELS: Record<number, string> = {
     .lead {
       margin: 0 0 var(--space-4);
       font-size: var(--text-sm);
-      color: var(--color-text-secondary);
+      color: var(--rbd-lead-fg);
       line-height: 1.6;
     }
   `],

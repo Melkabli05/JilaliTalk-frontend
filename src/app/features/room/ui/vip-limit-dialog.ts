@@ -40,6 +40,29 @@ export type VipLimitChoice = 'leave' | 'continue' | 'claim';
       display: block;
       width: 360px;
       max-width: calc(100vw - var(--space-6));
+
+      --vld-banner-bg:    linear-gradient(135deg,
+                            color-mix(in srgb, var(--color-gold-100) 60%, var(--color-neutral-50)),
+                            var(--color-neutral-50));
+      --vld-border:       var(--color-border);
+      --vld-icon-bg:      color-mix(in srgb, var(--color-gold-400) 20%, transparent);
+      --vld-icon-fg:      var(--color-gold-600);
+      --vld-label-fg:     var(--color-gold-600);
+      --vld-title-fg:     var(--color-text);
+      --vld-lead-fg:      var(--color-text-secondary);
+      --vld-lead-strong:  var(--color-text);
+    }
+    :host-context(.dark) {
+      --vld-banner-bg:    linear-gradient(135deg,
+                            color-mix(in srgb, var(--color-gold-900) 40%, var(--color-neutral-800)),
+                            var(--color-neutral-800));
+      --vld-border:       var(--color-neutral-700);
+      --vld-icon-bg:      color-mix(in srgb, var(--color-gold-700) 30%, transparent);
+      --vld-icon-fg:      var(--color-gold-400);
+      --vld-label-fg:     var(--color-gold-400);
+      --vld-title-fg:     var(--color-neutral-100);
+      --vld-lead-fg:      var(--color-neutral-300);
+      --vld-lead-strong:  var(--color-neutral-100);
     }
 
     .banner {
@@ -47,12 +70,8 @@ export type VipLimitChoice = 'leave' | 'continue' | 'claim';
       align-items: center;
       gap: var(--space-3);
       padding: var(--space-4) var(--space-5);
-      background: linear-gradient(135deg, color-mix(in srgb, var(--color-gold-100) 60%, var(--color-neutral-50)), var(--color-neutral-50));
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    :host-context(.dark) .banner {
-      background: linear-gradient(135deg, color-mix(in srgb, var(--color-gold-900) 40%, var(--color-neutral-800)), var(--color-neutral-800));
+      background: var(--vld-banner-bg);
+      border-bottom: 1px solid var(--vld-border);
     }
 
     .banner-icon {
@@ -62,8 +81,8 @@ export type VipLimitChoice = 'leave' | 'continue' | 'claim';
       width: 48px;
       height: 48px;
       border-radius: var(--radius-lg);
-      background: color-mix(in srgb, var(--color-gold-400) 20%, transparent);
-      color: var(--color-gold-600);
+      background: var(--vld-icon-bg);
+      color: var(--vld-icon-fg);
       flex-shrink: 0;
     }
 
@@ -73,18 +92,14 @@ export type VipLimitChoice = 'leave' | 'continue' | 'claim';
       font-weight: var(--font-semibold);
       letter-spacing: var(--letter-spacing-wide);
       text-transform: uppercase;
-      color: var(--color-gold-600);
+      color: var(--vld-label-fg);
       margin-bottom: 2px;
-    }
-
-    :host-context(.dark) .banner-label {
-      color: var(--color-gold-400);
     }
 
     .banner-title {
       font-size: var(--text-sm);
       font-weight: var(--font-semibold);
-      color: var(--color-text);
+      color: var(--vld-title-fg);
       margin: 0;
       line-height: 1.3;
     }
@@ -96,12 +111,12 @@ export type VipLimitChoice = 'leave' | 'continue' | 'claim';
     .lead {
       margin: 0 0 var(--space-4);
       font-size: var(--text-sm);
-      color: var(--color-text-secondary);
+      color: var(--vld-lead-fg);
       line-height: 1.6;
     }
 
     .lead strong {
-      color: var(--color-text);
+      color: var(--vld-lead-strong);
       font-weight: var(--font-semibold);
     }
   `],
