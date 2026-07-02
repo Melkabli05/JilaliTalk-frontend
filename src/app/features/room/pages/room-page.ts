@@ -163,7 +163,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       z-index: var(--z-overlay);
     }
 
-    .stage-section { flex-shrink: 0; min-height: 0; min-width: 0; }
+    .stage-section { flex-shrink: 1; min-height: 0; min-width: 0; max-height: 32vh; overflow: hidden; }
     .audience-section { flex: 1 1 0; min-height: 0; min-width: 0; overflow: hidden; }
     .comments-section {
       display: flex;
@@ -174,6 +174,11 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       max-height: 50%;
     }
 
+    /* Tablet-sized mobile: a touch more stage room. */
+    @container room-page (min-width: 480px) {
+      .stage-section { max-height: 38vh; }
+    }
+
     /* Desktop: two-column grid, comments becomes a sidebar. */
     @container room-page (min-width: 1024px) {
       .room-body {
@@ -182,6 +187,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
         overflow: hidden;
       }
       .left-column { height: 100%; flex: none; }
+      .stage-section { max-height: none; height: auto; flex: none; }
       .comments-section { display: flex; height: 100%; max-height: none; flex: none; }
     }
   `]

@@ -316,6 +316,103 @@ export interface UserActionModalData {
         --_modal-radius: var(--radius-2xl);
         animation: slideUp 0.2s ease-out;
         box-shadow: var(--shadow-modal);
+
+        --uam-text:           var(--color-text);
+        --uam-muted:          var(--color-text-muted);
+        --uam-text-secondary: var(--color-text-secondary);
+        --uam-border:         var(--color-border);
+        --uam-card:           var(--color-card);
+        --uam-header-bg:      var(--color-neutral-50);
+        --uam-stats-bg:       var(--color-neutral-50);
+
+        --uam-close-bg:        var(--color-neutral-100);
+        --uam-close-bg-hover:  var(--color-neutral-200);
+        --uam-close-fg:        var(--color-text-muted);
+
+        --uam-chip-neutral-bg: var(--color-neutral-100);
+        --uam-chip-neutral-fg: var(--color-text-secondary);
+        --uam-chip-primary-bg: var(--color-primary-50);
+        --uam-chip-primary-fg: var(--color-primary-600);
+        --uam-chip-gold-bg:    var(--color-gold-50);
+        --uam-chip-gold-fg:    var(--color-gold-600);
+        --uam-chip-ghost-bg:   var(--color-neutral-700);
+        --uam-chip-ghost-fg:   var(--color-neutral-100);
+        --uam-chip-online-bg:  var(--color-accent-50);
+        --uam-chip-online-fg:  var(--color-accent-600);
+        --uam-chip-live-bg:    var(--color-error-50);
+        --uam-chip-live-fg:    var(--color-error-600);
+        --uam-chip-link-bg:       var(--color-primary-50);
+        --uam-chip-link-bg-hover: var(--color-primary-100);
+        --uam-chip-link-fg:       var(--color-primary-600);
+
+        --uam-divider:         var(--color-border);
+        --uam-card-hover-bg:   var(--color-neutral-50);
+        --uam-card-hover-bd:   var(--color-neutral-300);
+
+        --uam-danger-card-bg:        color-mix(in srgb, var(--color-error-50) 40%, var(--color-card));
+        --uam-danger-card-bg-hover:  var(--color-error-50);
+        --uam-danger-card-border:    color-mix(in srgb, var(--color-error-300) 40%, transparent);
+
+        --uam-action-icon-muted-bg:   var(--color-warm-100);
+        --uam-action-icon-muted-fg:   var(--color-warm-600);
+        --uam-action-icon-neutral-bg: var(--color-primary-50);
+        --uam-action-icon-neutral-fg: var(--color-primary-600);
+        --uam-action-icon-danger-bg:  var(--color-error-50);
+        --uam-action-icon-danger-fg:  var(--color-error-600);
+
+        --uam-info-icon-bg:      var(--color-primary-50);
+        --uam-info-icon-fg:      var(--color-primary-600);
+        --uam-info-icon-gold-bg: var(--color-gold-50);
+        --uam-info-icon-gold-fg: var(--color-gold-600);
+      }
+      :host-context(.dark) {
+        --uam-text:           var(--color-neutral-100);
+        --uam-muted:          var(--color-neutral-400);
+        --uam-text-secondary: var(--color-neutral-200);
+        --uam-border:         var(--color-neutral-700);
+        --uam-card:           var(--color-neutral-800);
+        --uam-header-bg:      var(--color-neutral-800);
+        --uam-stats-bg:       var(--color-neutral-800);
+
+        --uam-close-bg:        var(--color-neutral-700);
+        --uam-close-bg-hover:  var(--color-neutral-600);
+        --uam-close-fg:        var(--color-neutral-300);
+
+        --uam-chip-neutral-bg: var(--color-neutral-700);
+        --uam-chip-neutral-fg: var(--color-neutral-200);
+        --uam-chip-primary-bg: var(--color-primary-900);
+        --uam-chip-primary-fg: var(--color-primary-300);
+        --uam-chip-gold-bg:    var(--color-gold-900);
+        --uam-chip-gold-fg:    var(--color-gold-300);
+        --uam-chip-ghost-bg:   var(--color-neutral-800);
+        --uam-chip-ghost-fg:   var(--color-neutral-100);
+        --uam-chip-online-bg:  var(--color-accent-900);
+        --uam-chip-online-fg:  var(--color-accent-300);
+        --uam-chip-live-bg:    var(--color-error-900);
+        --uam-chip-live-fg:    var(--color-error-300);
+        --uam-chip-link-bg:       var(--color-primary-900);
+        --uam-chip-link-bg-hover: var(--color-primary-800);
+        --uam-chip-link-fg:       var(--color-primary-300);
+
+        --uam-divider:        var(--color-neutral-700);
+        --uam-card-hover-bg:  var(--color-neutral-700);
+        --uam-card-hover-bd:  var(--color-neutral-600);
+
+        --uam-danger-card-bg:        color-mix(in srgb, var(--color-error-900) 30%, var(--color-card));
+        --uam-danger-card-bg-hover:  color-mix(in srgb, var(--color-error-900) 50%, var(--color-card));
+        --uam-danger-card-border:    var(--color-error-700);
+
+        --uam-action-icon-muted-bg:   var(--color-warm-900);
+        --uam-action-icon-muted-fg:   var(--color-warm-300);
+        --uam-action-icon-neutral-bg: var(--color-primary-900);
+        --uam-action-icon-neutral-fg: var(--color-primary-300);
+        --uam-action-icon-danger-bg:  var(--color-error-900);
+        --uam-action-icon-danger-fg:  var(--color-error-300);
+
+        --uam-info-icon-bg:      var(--color-primary-900);
+        --uam-info-icon-fg:      var(--color-primary-300);
+        --uam-info-icon-gold-bg: var(--color-gold-900);
+        --uam-info-icon-gold-fg: var(--color-gold-300);
       }
       @keyframes slideUp {
         from { opacity: 0; transform: translateY(10px) scale(0.98); }
@@ -328,12 +425,8 @@ export interface UserActionModalData {
       .modal-header {
         position: relative;
         padding: var(--space-5) var(--space-4) var(--space-4);
-        background: var(--color-neutral-50);
-        border-bottom: 1px solid var(--color-border);
-      }
-      :host-context(.dark) .modal-header {
-        background: var(--color-neutral-800);
-        border-color: var(--color-neutral-700);
+        background: var(--uam-header-bg);
+        border-bottom: 1px solid var(--uam-border);
       }
 
       .close-btn {
@@ -344,8 +437,8 @@ export interface UserActionModalData {
         height: 28px;
         border-radius: var(--radius-full);
         border: none;
-        background: var(--color-neutral-100);
-        color: var(--color-text-muted);
+        background: var(--uam-close-bg);
+        color: var(--uam-close-fg);
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -353,21 +446,13 @@ export interface UserActionModalData {
         transition: background 0.15s, color 0.15s, transform 0.15s;
       }
       .close-btn:hover {
-        background: var(--color-neutral-200);
-        color: var(--color-text);
+        background: var(--uam-close-bg-hover);
+        color: var(--uam-text);
         transform: rotate(90deg);
       }
       .close-btn:focus-visible {
         outline: var(--focus-ring);
         outline-offset: 2px;
-      }
-      :host-context(.dark) .close-btn {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-300);
-      }
-      :host-context(.dark) .close-btn:hover {
-        background: var(--color-neutral-600);
-        color: var(--color-neutral-100);
       }
 
       .profile-row {
@@ -380,7 +465,7 @@ export interface UserActionModalData {
       .profile-info {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: var(--space-1);
         min-width: 0;
       }
 
@@ -394,30 +479,27 @@ export interface UserActionModalData {
       .user-name {
         font-size: var(--text-base);
         font-weight: var(--font-semibold);
-        color: var(--color-text);
+        color: var(--uam-text);
       }
-      :host-context(.dark) .user-name { color: var(--color-neutral-100); }
 
       .user-handle {
         font-size: var(--text-xs);
-        color: var(--color-text-muted);
+        color: var(--uam-muted);
       }
-      :host-context(.dark) .user-handle { color: var(--color-neutral-400); }
 
       .meta-row {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: var(--space-1);
         flex-wrap: wrap;
       }
 
       .bio {
         margin: 0;
         font-size: var(--text-xs);
-        color: var(--color-text-muted);
+        color: var(--uam-muted);
         line-height: 1.5;
       }
-      :host-context(.dark) .bio { color: var(--color-neutral-400); }
 
       .chip {
         display: inline-flex;
@@ -430,91 +512,43 @@ export interface UserActionModalData {
         white-space: nowrap;
       }
       .chip-neutral {
-        background: var(--color-neutral-100);
-        color: var(--color-text-secondary);
+        background: var(--uam-chip-neutral-bg);
+        color: var(--uam-chip-neutral-fg);
       }
-      .chip-primary {
-        background: var(--color-primary-50);
-        color: var(--color-primary-600);
+      .chip-primary,
+      .chip-mod {
+        background: var(--uam-chip-primary-bg);
+        color: var(--uam-chip-primary-fg);
       }
-      .chip-gold {
-        background: var(--color-gold-50);
-        color: var(--color-gold-600);
+      .chip-gold,
+      .chip-host {
+        background: var(--uam-chip-gold-bg);
+        color: var(--uam-chip-gold-fg);
       }
       .chip-ghost {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-100);
-      }
-      .chip-host {
-        background: var(--color-gold-50);
-        color: var(--color-gold-600);
-      }
-      .chip-mod {
-        background: var(--color-primary-50);
-        color: var(--color-primary-600);
+        background: var(--uam-chip-ghost-bg);
+        color: var(--uam-chip-ghost-fg);
       }
       .chip-online {
-        background: var(--color-accent-50);
-        color: var(--color-accent-600);
+        background: var(--uam-chip-online-bg);
+        color: var(--uam-chip-online-fg);
       }
       .chip-offline {
-        background: var(--color-neutral-100);
-        color: var(--color-text-muted);
+        background: var(--uam-chip-neutral-bg);
+        color: var(--uam-muted);
       }
       .chip-live {
-        background: var(--color-error-50);
-        color: var(--color-error-600);
+        background: var(--uam-chip-live-bg);
+        color: var(--uam-chip-live-fg);
       }
       .chip-link {
-        background: var(--color-primary-50);
-        color: var(--color-primary-600);
+        background: var(--uam-chip-link-bg);
+        color: var(--uam-chip-link-fg);
         text-decoration: none;
         cursor: pointer;
+        transition: background 0.15s;
       }
-      .chip-link:hover { background: var(--color-primary-100); }
-      :host-context(.dark) .chip-offline {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-300);
-      }
-      :host-context(.dark) .chip-live {
-        background: var(--color-error-900);
-        color: var(--color-error-300);
-      }
-      :host-context(.dark) .chip-neutral {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-200);
-      }
-      :host-context(.dark) .chip-primary {
-        background: var(--color-primary-900);
-        color: var(--color-primary-300);
-      }
-      :host-context(.dark) .chip-gold {
-        background: var(--color-gold-900);
-        color: var(--color-gold-300);
-      }
-      :host-context(.dark) .chip-ghost {
-        background: var(--color-neutral-800);
-        color: var(--color-neutral-100);
-      }
-      :host-context(.dark) .chip-host {
-        background: var(--color-gold-900);
-        color: var(--color-gold-300);
-      }
-      :host-context(.dark) .chip-mod {
-        background: var(--color-primary-900);
-        color: var(--color-primary-300);
-      }
-      :host-context(.dark) .chip-online {
-        background: var(--color-accent-900);
-        color: var(--color-accent-300);
-      }
-      :host-context(.dark) .chip-link {
-        background: var(--color-primary-900);
-        color: var(--color-primary-300);
-      }
-      :host-context(.dark) .chip-link:hover {
-        background: var(--color-primary-800);
-      }
+      .chip-link:hover { background: var(--uam-chip-link-bg-hover); }
 
       .modal-body {
         padding: var(--space-3) var(--space-4);
@@ -526,14 +560,10 @@ export interface UserActionModalData {
       .stats-bar {
         display: flex;
         align-items: center;
-        background: var(--color-neutral-50);
-        border: 1px solid var(--color-border);
+        background: var(--uam-stats-bg);
+        border: 1px solid var(--uam-border);
         border-radius: var(--radius-lg);
         padding: var(--space-3) var(--space-2);
-      }
-      :host-context(.dark) .stats-bar {
-        background: var(--color-neutral-800);
-        border-color: var(--color-neutral-700);
       }
 
       .stat-block {
@@ -547,23 +577,20 @@ export interface UserActionModalData {
       .stat-divider {
         width: 1px;
         height: 28px;
-        background: var(--color-border);
+        background: var(--uam-divider);
         flex-shrink: 0;
       }
-      :host-context(.dark) .stat-divider { background: var(--color-neutral-700); }
 
       .stat-val {
         font-size: var(--text-base);
         font-weight: var(--font-bold);
-        color: var(--color-text);
+        color: var(--uam-text);
       }
-      :host-context(.dark) .stat-val { color: var(--color-neutral-100); }
 
       .stat-lbl {
         font-size: var(--text-2xs);
-        color: var(--color-text-muted);
+        color: var(--uam-muted);
       }
-      :host-context(.dark) .stat-lbl { color: var(--color-neutral-400); }
 
       .info-cards {
         display: grid;
@@ -576,13 +603,9 @@ export interface UserActionModalData {
         align-items: flex-start;
         gap: var(--space-2);
         padding: var(--space-2) var(--space-3);
-        background: var(--color-card);
-        border: 1px solid var(--color-border);
+        background: var(--uam-card);
+        border: 1px solid var(--uam-border);
         border-radius: var(--radius-lg);
-      }
-      :host-context(.dark) .info-card {
-        background: var(--color-neutral-800);
-        border-color: var(--color-neutral-700);
       }
 
       .info-card-icon {
@@ -592,22 +615,14 @@ export interface UserActionModalData {
         width: 28px;
         height: 28px;
         border-radius: var(--radius-md);
-        background: var(--color-primary-50);
-        color: var(--color-primary-600);
+        background: var(--uam-info-icon-bg);
+        color: var(--uam-info-icon-fg);
         flex-shrink: 0;
         margin-top: 1px;
       }
       .info-card-icon.gold-icon {
-        background: var(--color-gold-50);
-        color: var(--color-gold-600);
-      }
-      :host-context(.dark) .info-card-icon {
-        background: var(--color-primary-900);
-        color: var(--color-primary-300);
-      }
-      :host-context(.dark) .info-card-icon.gold-icon {
-        background: var(--color-gold-900);
-        color: var(--color-gold-300);
+        background: var(--uam-info-icon-gold-bg);
+        color: var(--uam-info-icon-gold-fg);
       }
 
       .info-card-content {
@@ -620,11 +635,10 @@ export interface UserActionModalData {
       .info-card-label {
         font-size: var(--text-2xs);
         font-weight: var(--font-semibold);
-        color: var(--color-text-muted);
+        color: var(--uam-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
-      :host-context(.dark) .info-card-label { color: var(--color-neutral-400); }
 
       .info-card-value {
         display: flex;
@@ -632,9 +646,8 @@ export interface UserActionModalData {
         align-items: center;
         gap: 3px;
         font-size: var(--text-xs);
-        color: var(--color-text);
+        color: var(--uam-text);
       }
-      :host-context(.dark) .info-card-value { color: var(--color-neutral-200); }
 
       .lang-tags {
         display: flex;
@@ -645,20 +658,20 @@ export interface UserActionModalData {
 
       .lang-sep {
         font-size: var(--text-2xs);
-        color: var(--color-text-muted);
+        color: var(--uam-muted);
         font-style: italic;
       }
 
       .extras-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 4px;
+        gap: var(--space-1);
         padding-top: var(--space-1);
       }
 
       .modal-actions {
         padding: var(--space-3) var(--space-4);
-        border-top: 1px solid var(--color-border);
+        border-top: 1px solid var(--uam-border);
         display: flex;
         flex-direction: column;
         gap: var(--space-3);
@@ -673,7 +686,7 @@ export interface UserActionModalData {
       .group-label {
         font-size: var(--text-xs);
         font-weight: var(--font-semibold);
-        color: var(--color-text-muted);
+        color: var(--uam-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         padding: 0 var(--space-1);
@@ -682,7 +695,6 @@ export interface UserActionModalData {
       .danger-label {
         color: var(--color-error-500);
       }
-      :host-context(.dark) .group-label { color: var(--color-neutral-400); }
       :host-context(.dark) .danger-label { color: var(--color-error-400); }
 
       .action-list {
@@ -698,8 +710,8 @@ export interface UserActionModalData {
         width: 100%;
         padding: var(--space-3);
         border-radius: var(--radius-lg);
-        border: 1px solid var(--color-border);
-        background: var(--color-card);
+        border: 1px solid var(--uam-border);
+        background: var(--uam-card);
         cursor: pointer;
         text-align: left;
         transition:
@@ -708,8 +720,8 @@ export interface UserActionModalData {
           transform 0.1s;
       }
       .action-card:hover {
-        background: var(--color-neutral-50);
-        border-color: var(--color-neutral-300);
+        background: var(--uam-card-hover-bg);
+        border-color: var(--uam-card-hover-bd);
         transform: translateX(2px);
       }
       .action-card:active { transform: translateX(0); }
@@ -717,28 +729,14 @@ export interface UserActionModalData {
         outline: var(--focus-ring);
         outline-offset: var(--focus-ring-offset);
       }
-      :host-context(.dark) .action-card {
-        background: var(--color-neutral-800);
-      }
-      :host-context(.dark) .action-card:hover {
-        background: var(--color-neutral-700);
-        border-color: var(--color-neutral-600);
-      }
 
       .action-card--danger {
-        border-color: color-mix(in srgb, var(--color-error-300) 40%, transparent);
-        background: color-mix(in srgb, var(--color-error-50) 40%, var(--color-card));
+        border-color: var(--uam-danger-card-border);
+        background: var(--uam-danger-card-bg);
       }
       .action-card--danger:hover {
-        background: var(--color-error-50);
+        background: var(--uam-danger-card-bg-hover);
         border-color: var(--color-error-300);
-      }
-      :host-context(.dark) .action-card--danger {
-        background: color-mix(in srgb, var(--color-error-900) 30%, var(--color-card));
-      }
-      :host-context(.dark) .action-card--danger:hover {
-        background: color-mix(in srgb, var(--color-error-900) 50%, var(--color-card));
-        border-color: var(--color-error-700);
       }
 
       .action-icon {
@@ -751,28 +749,16 @@ export interface UserActionModalData {
         flex-shrink: 0;
       }
       .action-icon.muted {
-        background: var(--color-warm-100);
-        color: var(--color-warm-600);
+        background: var(--uam-action-icon-muted-bg);
+        color: var(--uam-action-icon-muted-fg);
       }
       .action-icon.neutral {
-        background: var(--color-primary-50);
-        color: var(--color-primary-600);
+        background: var(--uam-action-icon-neutral-bg);
+        color: var(--uam-action-icon-neutral-fg);
       }
       .action-icon.danger {
-        background: var(--color-error-50);
-        color: var(--color-error-600);
-      }
-      :host-context(.dark) .action-icon.muted {
-        background: var(--color-warm-900);
-        color: var(--color-warm-300);
-      }
-      :host-context(.dark) .action-icon.neutral {
-        background: var(--color-primary-900);
-        color: var(--color-primary-300);
-      }
-      :host-context(.dark) .action-icon.danger {
-        background: var(--color-error-900);
-        color: var(--color-error-300);
+        background: var(--uam-action-icon-danger-bg);
+        color: var(--uam-action-icon-danger-fg);
       }
 
       .action-text {
@@ -786,15 +772,13 @@ export interface UserActionModalData {
       .action-title {
         font-size: var(--text-sm);
         font-weight: var(--font-medium);
-        color: var(--color-text);
+        color: var(--uam-text);
       }
       .action-desc {
         font-size: var(--text-xs);
-        color: var(--color-text-muted);
+        color: var(--uam-muted);
         line-height: 1.4;
       }
-      :host-context(.dark) .action-title { color: var(--color-neutral-100); }
-      :host-context(.dark) .action-desc { color: var(--color-neutral-400); }
       .action-card--danger .action-title { color: var(--color-error-600); }
       :host-context(.dark) .action-card--danger .action-title { color: var(--color-error-400); }
     `,

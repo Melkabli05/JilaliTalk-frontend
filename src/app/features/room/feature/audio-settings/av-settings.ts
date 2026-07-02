@@ -51,14 +51,41 @@ const NOISE_LEVELS: { value: AudioNoiseSuppressionLevel; label: string; descript
       position: absolute;
       top: calc(100% + 6px);
       right: 0;
-      z-index: 50;
+      z-index: var(--z-overlay);
       display: block;
+
+      --avs-bg:           var(--color-card);
+      --avs-border:       var(--color-border);
+      --avs-header-bg:    var(--color-neutral-50);
+      --avs-header-fg:    var(--color-text-secondary);
+      --avs-header-bd:    var(--color-border);
+      --avs-text:         var(--color-text);
+      --avs-muted:        var(--color-text-muted);
+      --avs-hover-bg:     var(--color-neutral-100);
+      --avs-selected-bg:  var(--color-primary-50);
+      --avs-selected-bg-hover: var(--color-primary-100);
+      --avs-selected-fg:  var(--color-primary-700);
+      --avs-check-fg:     var(--color-primary-600);
+    }
+    :host-context(.dark) {
+      --avs-bg:           var(--color-neutral-800);
+      --avs-border:       var(--color-neutral-700);
+      --avs-header-bg:    var(--color-neutral-700);
+      --avs-header-fg:    var(--color-neutral-300);
+      --avs-header-bd:    var(--color-neutral-700);
+      --avs-text:         var(--color-neutral-100);
+      --avs-muted:        var(--color-neutral-400);
+      --avs-hover-bg:     var(--color-neutral-700);
+      --avs-selected-bg:  color-mix(in srgb, var(--color-primary-900) 40%, transparent);
+      --avs-selected-bg-hover: color-mix(in srgb, var(--color-primary-900) 60%, transparent);
+      --avs-selected-fg:  var(--color-primary-300);
+      --avs-check-fg:     var(--color-primary-400);
     }
 
     .dropdown-panel {
       width: 240px;
-      background: var(--color-card);
-      border: 1px solid var(--color-border);
+      background: var(--avs-bg);
+      border: 1px solid var(--avs-border);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-elevation-2);
       overflow: hidden;
@@ -75,6 +102,9 @@ const NOISE_LEVELS: { value: AudioNoiseSuppressionLevel; label: string; descript
         transform: translateY(0);
       }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .dropdown-panel { animation: none; }
+    }
 
     .dropdown-panel::before {
       content: '';
@@ -83,9 +113,9 @@ const NOISE_LEVELS: { value: AudioNoiseSuppressionLevel; label: string; descript
       right: 12px;
       width: 10px;
       height: 10px;
-      background: var(--color-card);
-      border-left: 1px solid var(--color-border);
-      border-top: 1px solid var(--color-border);
+      background: var(--avs-bg);
+      border-left: 1px solid var(--avs-border);
+      border-top: 1px solid var(--avs-border);
       transform: rotate(45deg);
     }
 
@@ -96,9 +126,9 @@ const NOISE_LEVELS: { value: AudioNoiseSuppressionLevel; label: string; descript
       padding: var(--space-2) var(--space-3);
       font-size: var(--text-xs);
       font-weight: var(--font-semibold);
-      color: var(--color-text-secondary);
-      border-bottom: 1px solid var(--color-border);
-      background: var(--color-neutral-50);
+      color: var(--avs-header-fg);
+      border-bottom: 1px solid var(--avs-header-bd);
+      background: var(--avs-header-bg);
     }
 
     .dropdown-options {
@@ -120,7 +150,7 @@ const NOISE_LEVELS: { value: AudioNoiseSuppressionLevel; label: string; descript
     }
 
     .dropdown-option:hover {
-      background: var(--color-neutral-100);
+      background: var(--avs-hover-bg);
     }
 
     .dropdown-option:focus-visible {
@@ -129,11 +159,11 @@ const NOISE_LEVELS: { value: AudioNoiseSuppressionLevel; label: string; descript
     }
 
     .dropdown-option.selected {
-      background: var(--color-primary-50);
+      background: var(--avs-selected-bg);
     }
 
     .dropdown-option.selected:hover {
-      background: var(--color-primary-100);
+      background: var(--avs-selected-bg-hover);
     }
 
     .option-content {
@@ -145,67 +175,23 @@ const NOISE_LEVELS: { value: AudioNoiseSuppressionLevel; label: string; descript
     .option-label {
       font-size: var(--text-sm);
       font-weight: var(--font-medium);
-      color: var(--color-text);
+      color: var(--avs-text);
     }
 
     .option-desc {
       font-size: var(--text-xs);
-      color: var(--color-text-muted);
+      color: var(--avs-muted);
     }
 
     .dropdown-option.selected .option-label {
-      color: var(--color-primary-700);
+      color: var(--avs-selected-fg);
     }
 
     .check-icon {
       width: 16px;
       height: 16px;
-      color: var(--color-primary-600);
+      color: var(--avs-check-fg);
       flex-shrink: 0;
-    }
-
-    :host-context(.dark) .dropdown-panel {
-      background: var(--color-neutral-800);
-      border-color: var(--color-neutral-700);
-    }
-
-    :host-context(.dark) .dropdown-panel::before {
-      background: var(--color-neutral-800);
-      border-color: var(--color-neutral-700);
-    }
-
-    :host-context(.dark) .dropdown-header {
-      background: var(--color-neutral-700);
-      color: var(--color-neutral-300);
-      border-color: var(--color-neutral-700);
-    }
-
-    :host-context(.dark) .dropdown-option:hover {
-      background: var(--color-neutral-700);
-    }
-
-    :host-context(.dark) .dropdown-option.selected {
-      background: color-mix(in srgb, var(--color-primary-900) 40%, transparent);
-    }
-
-    :host-context(.dark) .dropdown-option.selected:hover {
-      background: color-mix(in srgb, var(--color-primary-900) 60%, transparent);
-    }
-
-    :host-context(.dark) .option-label {
-      color: var(--color-neutral-100);
-    }
-
-    :host-context(.dark) .option-desc {
-      color: var(--color-neutral-400);
-    }
-
-    :host-context(.dark) .dropdown-option.selected .option-label {
-      color: var(--color-primary-300);
-    }
-
-    :host-context(.dark) .check-icon {
-      color: var(--color-primary-400);
     }
   `],
 })

@@ -14,9 +14,22 @@ import { GoodieStore } from './goodie-store';
     }
   `,
   styles: [`
-    .countdown { display: flex; flex-direction: column; align-items: center; padding: var(--space-2); }
-    .countdown-num { font-size: var(--text-2xl); font-weight: var(--font-bold); color: var(--color-primary-500); }
-    .countdown-label { font-size: var(--text-xs); color: var(--color-text-secondary); }
+    :host { display: contents; }
+    .countdown {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-2);
+    }
+    .countdown-num {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-bold);
+      color: var(--color-primary-500);
+    }
+    .countdown-label {
+      font-size: var(--text-xs);
+      color: var(--color-text-secondary);
+    }
   `]
 })
 export class CountdownComponent {
