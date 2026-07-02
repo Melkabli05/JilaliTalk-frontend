@@ -88,10 +88,12 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           [attr.aria-label]="wsStatus() === 'disconnected' ? 'Disconnected — tap to refresh' : 'WebSocket connection status'"
           (click)="onStatusClick()"
           (keydown.enter)="onStatusClick()"
+          (keydown.space)="$event.preventDefault(); onStatusClick()"
         ></div>
         <span class="visually-hidden" aria-live="polite">{{ wsTooltip() }}</span>
         <div class="room-meta">
           <button
+            #roomNameBtn
             type="button"
             class="room-name-btn"
             [attr.aria-expanded]="showRoomInfo()"
@@ -103,7 +105,14 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           </button>
           @if (showRoomInfo()) {
             <div class="info-backdrop" (click)="closeRoomInfo()"></div>
-            <div class="room-info-panel" role="dialog" aria-label="Room info">
+            <div
+              #roomInfoPanel
+              class="room-info-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Room info"
+              tabindex="-1"
+            >
               <div class="room-info-row">
                 <span class="room-info-label">Topic</span>
                 <span class="room-info-value">{{ topic() || 'No topic set' }}</span>
@@ -119,7 +128,11 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
                   }
                 </button>
               </div>
-              <button type="button" class="room-info-visibility" (click)="onToggleInvisible()">
+              <button
+                type="button"
+                class="room-info-visibility"
+                (click)="onToggleInvisible(); closeRoomInfo()"
+              >
                 @if (invisible()) {
                   <svg aria-hidden="true" lucideEyeOff [size]="18"></svg>
                 } @else {
@@ -845,6 +858,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         box-shadow: var(--shadow-dropdown);
         animation: panel-fade-in 0.15s ease-out;
       }
+      .room-info-panel:focus { outline: none; }
       @keyframes panel-fade-in {
         from { opacity: 0; transform: translateY(-4px); }
         to { opacity: 1; transform: translateY(0); }
@@ -1228,11 +1242,22 @@ export class RoomHeaderComponent {
       queueMicrotask(() => this.moreBtn()?.nativeElement.focus());
     }
   }
+  private readonly roomNameBtn = viewChild<ElementRef<HTMLButtonElement>>('roomNameBtn');
+  private readonly roomInfoPanel = viewChild<ElementRef<HTMLElement>>('roomInfoPanel');
+
   toggleRoomInfo(): void {
-    this.showRoomInfo.update((v) => !v);
+    const opening = !this.showRoomInfo();
+    this.showRoomInfo.set(opening);
+    if (opening) {
+      queueMicrotask(() => this.roomInfoPanel()?.nativeElement.focus());
+    }
   }
   closeRoomInfo(): void {
+    const wasOpen = this.showRoomInfo();
     this.showRoomInfo.set(false);
+    if (wasOpen) {
+      queueMicrotask(() => this.roomNameBtn()?.nativeElement.focus());
+    }
   }
 
   private touchStartY = 0;

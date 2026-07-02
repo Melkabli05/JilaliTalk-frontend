@@ -56,6 +56,18 @@ describe('RoomHeaderComponent', () => {
 
       expect(refreshed).toBe(false);
     });
+
+    it('pressing Space on the status dot while disconnected emits refresh', () => {
+      fixture.componentRef.setInput('wsStatus', 'disconnected');
+      fixture.detectChanges();
+      let refreshed = false;
+      fixture.componentInstance.refresh.subscribe(() => (refreshed = true));
+
+      const dot = fixture.nativeElement.querySelector('.ws-status') as HTMLElement;
+      dot.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+
+      expect(refreshed).toBe(true);
+    });
   });
 
   describe('room info panel', () => {
@@ -135,6 +147,60 @@ describe('RoomHeaderComponent', () => {
       visBtn.click();
 
       expect(toggled).toBe(true);
+    });
+
+    it('closes the panel when the visibility row is tapped', () => {
+      const nameBtn = fixture.nativeElement.querySelector('.room-name-btn') as HTMLElement;
+      nameBtn.click();
+      fixture.detectChanges();
+
+      const visBtn = fixture.nativeElement.querySelector('.room-info-visibility') as HTMLElement;
+      visBtn.click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.room-info-panel')).toBeNull();
+    });
+  });
+
+  describe('room info panel accessibility', () => {
+    beforeEach(() => {
+      fixture.componentRef.setInput('name', 'Friday Night Talk');
+      fixture.componentRef.setInput('topic', 'Chill vibes only');
+      fixture.componentRef.setInput('cname', 'VR_1_42');
+      fixture.detectChanges();
+    });
+
+    it('has dialog semantics', () => {
+      const nameBtn = fixture.nativeElement.querySelector('.room-name-btn') as HTMLElement;
+      nameBtn.click();
+      fixture.detectChanges();
+
+      const panel = fixture.nativeElement.querySelector('.room-info-panel') as HTMLElement;
+      expect(panel.getAttribute('role')).toBe('dialog');
+      expect(panel.getAttribute('aria-modal')).toBe('true');
+    });
+
+    it('moves focus into the panel on open', async () => {
+      const nameBtn = fixture.nativeElement.querySelector('.room-name-btn') as HTMLElement;
+      nameBtn.click();
+      fixture.detectChanges();
+      await new Promise((resolve) => queueMicrotask(() => resolve(undefined)));
+
+      const panel = fixture.nativeElement.querySelector('.room-info-panel') as HTMLElement;
+      expect(document.activeElement).toBe(panel);
+    });
+
+    it('returns focus to the room-name button on close', async () => {
+      const nameBtn = fixture.nativeElement.querySelector('.room-name-btn') as HTMLElement;
+      nameBtn.click();
+      fixture.detectChanges();
+      await new Promise((resolve) => queueMicrotask(() => resolve(undefined)));
+
+      fixture.componentInstance.closeRoomInfo();
+      fixture.detectChanges();
+      await new Promise((resolve) => queueMicrotask(() => resolve(undefined)));
+
+      expect(document.activeElement).toBe(nameBtn);
     });
   });
 
