@@ -76,10 +76,6 @@ export class AgoraRtcService implements RealtimeLifecycle {
 
     await client.join(appId, channel, token, uid === 0 ? null : uid);
     this._state.set('connected');
-
-    if (isGhostMode) {
-      await this.startGhostTrack();
-    }
   }
 
   private async startGhostTrack(): Promise<void> {
