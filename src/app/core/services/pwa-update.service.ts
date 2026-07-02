@@ -1,10 +1,12 @@
-import { Injectable, inject, computed, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { SwUpdate, VersionReadyEvent, VersionDetectedEvent, NoNewVersionDetectedEvent, VersionInstallationFailedEvent } from '@angular/service-worker';
-import { filter, take } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class PwaUpdateService {
-  private readonly swUpdate = inject(SwUpdate);
+  // SwUpdate is only provided when provideServiceWorker() runs — i.e. production builds.
+  // Use { optional: true } so this service is safe to construct in dev mode too.
+  private readonly swUpdate = inject(SwUpdate, { optional: true });
 
   /** Whether a new app version is available and ready to activate. */
   readonly updateAvailable = signal(false);
@@ -12,11 +14,11 @@ export class PwaUpdateService {
   /** The hash of the new version that is pending activation. */
   readonly pendingVersionHash = signal<string | null>(null);
 
-  /** Whether the service worker is supported in this browser. */
-  readonly isSupported = this.swUpdate.isEnabled;
+  /** Whether the service worker is supported and active in this browser. */
+  readonly isSupported = this.swUpdate?.isEnabled ?? false;
 
   constructor() {
-    if (!this.swUpdate.isEnabled) return;
+    if (!this.swUpdate?.isEnabled) return;
 
     // A new version was detected and downloaded — prompt the user to reload.
     this.swUpdate.versionUpdates.pipe(
@@ -37,7 +39,7 @@ export class PwaUpdateService {
 
   /** Check for updates now (call after user interaction, e.g. a "Check for updates" button). */
   async checkForUpdate(): Promise<boolean> {
-    if (!this.swUpdate.isEnabled) return false;
+    if (!this.swUpdate?.isEnabled) return false;
     try {
       const updateFound = await this.swUpdate.checkForUpdate();
       return updateFound ?? false;
@@ -48,7 +50,7 @@ export class PwaUpdateService {
 
   /** Activate the pending version and reload the page. */
   async activateUpdate(): Promise<void> {
-    if (!this.swUpdate.isEnabled) return;
+    if (!this.swUpdate?.isEnabled) return;
     await this.swUpdate.activateUpdate();
     window.location.reload();
   }
@@ -58,3 +60,4 @@ export class PwaUpdateService {
     this.updateAvailable.set(false);
   }
 }
+
