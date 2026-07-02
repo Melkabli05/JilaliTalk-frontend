@@ -1,13 +1,13 @@
 import { Component, ChangeDetectionStrategy, inject, ViewEncapsulation } from '@angular/core';
 import { ToastService, Toast, ToastAction } from '@core/services/toast.service';
-import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@lucide/angular';
+import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, LucideInfo } from '@lucide/angular';
 
 @Component({
   selector: 'app-toast-container',
 
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo],
+  imports: [LucideX, LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, LucideInfo],
   template: `
     <div class="toast-container" role="region" aria-label="Notifications">
       @for (toast of toastService.toasts(); track toast.id) {
@@ -22,16 +22,16 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
           <div class="toast-icon-badge" aria-hidden="true">
             @switch (toast.type) {
               @case ('success') {
-                <svg lucideCheckCircle [size]="20"></svg>
+                <svg lucideCheckCircle [size]="18"></svg>
               }
               @case ('error') {
-                <svg lucideAlertCircle [size]="20"></svg>
+                <svg lucideAlertCircle [size]="18"></svg>
               }
               @case ('warning') {
-                <svg lucideAlertCircle [size]="20"></svg>
+                <svg lucideAlertTriangle [size]="18"></svg>
               }
               @default {
-                <svg lucideInfo [size]="20"></svg>
+                <svg lucideInfo [size]="18"></svg>
               }
             }
           </div>
@@ -79,6 +79,7 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
       gap: 10px;
       width: calc(100% - 32px);
       max-width: 360px;
+      pointer-events: none;
     }
 
     /* On desktop the fixed sidebar (var(--sidebar-width) = 84px) offsets the
@@ -94,22 +95,24 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
       position: relative;
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 14px 18px 16px 22px;
+      gap: 12px;
+      padding: 12px 16px 14px 18px;
       border-radius: var(--radius-xl);
       background-color: var(--color-card);
       box-shadow: var(--shadow-xl);
       border: 1px solid var(--color-border);
       overflow: hidden;
       animation: toast-enter 280ms cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: auto;
     }
 
     .toast::before {
       content: '';
       position: absolute;
       inset: 0 auto 0 0;
-      width: 4px;
+      width: 3px;
       background: var(--toast-accent);
+      border-radius: var(--radius-xl) 0 0 var(--radius-xl);
     }
 
     /* Exit animation must finish in TOAST_EXIT_MS (toast.service.ts) before removal. */
@@ -140,12 +143,13 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
       }
     }
 
+    /* ── Toast type variants ── */
     .toast-success {
       --toast-accent: var(--color-accent-500);
     }
 
     .toast-error {
-      --toast-accent: var(--color-warm-500);
+      --toast-accent: var(--color-error-500);
     }
 
     .toast-warning {
@@ -156,67 +160,72 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
       --toast-accent: var(--color-primary-500);
     }
 
+    /* ── Icon badge — tinted surface using --color-surface as blend base ── */
     .toast-icon-badge {
       flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius-full);
-      background: color-mix(in srgb, var(--toast-accent) 15%, transparent);
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      background-color: color-mix(in srgb, var(--toast-accent) 14%, var(--color-surface));
       color: var(--toast-accent);
     }
 
+    /* ── Message ── */
     .toast-body {
       flex: 1;
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
 
     .toast-message {
       font-size: var(--text-sm);
       font-weight: 500;
+      line-height: var(--leading-normal);
       color: var(--color-text);
     }
 
+    /* ── Action buttons ── */
     .toast-actions {
       display: flex;
-      gap: 8px;
+      gap: 6px;
     }
 
     .toast-action {
-      padding: 6px 12px;
-      border-radius: var(--radius-md);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--color-border);
       background: transparent;
-      color: var(--color-text);
+      color: var(--color-text-secondary);
       font-size: var(--text-xs);
       font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.15s ease;
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
 
     .toast-action:hover {
       background-color: var(--color-neutral-100);
-    }
-
-    .dark .toast-action:hover {
-      background-color: var(--color-neutral-700);
+      color: var(--color-text);
+      border-color: var(--color-neutral-300);
     }
 
     .toast-action-primary {
       border-color: transparent;
-      background: var(--toast-accent);
+      background-color: var(--toast-accent);
       color: var(--color-on-color);
     }
 
     .toast-action-primary:hover {
-      filter: brightness(0.92);
+      filter: brightness(0.9);
+      border-color: transparent;
+      color: var(--color-on-color);
     }
 
+    /* ── Close button ── */
     .toast-close {
       flex-shrink: 0;
       display: flex;
@@ -229,7 +238,7 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
       background: transparent;
       color: var(--color-text-muted);
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: background-color 0.15s ease, color 0.15s ease;
     }
 
     .toast-close:hover {
@@ -237,23 +246,20 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
       color: var(--color-text);
     }
 
-    .dark .toast-close:hover {
-      background-color: var(--color-neutral-700);
-    }
-
     .toast-close:focus-visible {
       outline: var(--focus-ring);
       outline-offset: var(--focus-ring-offset);
     }
 
+    /* ── Progress bar ── */
     .toast-progress {
       position: absolute;
-      left: 4px;
+      left: 0;
       right: 0;
       bottom: 0;
-      height: 3px;
+      height: 2.5px;
       background: var(--toast-accent);
-      opacity: 0.6;
+      opacity: 0.5;
       transform-origin: left;
       animation-name: toast-progress;
       animation-timing-function: linear;
@@ -261,12 +267,8 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideInfo } from '@luci
     }
 
     @keyframes toast-progress {
-      from {
-        transform: scaleX(1);
-      }
-      to {
-        transform: scaleX(0);
-      }
+      from { transform: scaleX(1); }
+      to   { transform: scaleX(0); }
     }
   `]
 })

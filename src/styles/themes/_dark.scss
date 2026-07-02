@@ -1,8 +1,10 @@
 .dark {
   --color-bg: var(--color-neutral-900);
+  --color-surface: var(--color-neutral-800);
   --color-card: var(--color-neutral-800);
   --color-text: var(--color-neutral-100);
   --color-text-muted: var(--color-neutral-400);
+  --color-text-secondary: var(--color-neutral-400);
   --color-border: var(--color-neutral-700);
 
   /* Darker shadows for depth on dark backgrounds */
