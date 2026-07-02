@@ -43,6 +43,23 @@ export class RoomApi {
     return this.http.get<{ revision: number }>(`${this.baseUrl}/rooms/${cname}/audience-revision`);
   }
 
+  /**
+   * Bundled room-info + stage + audience in one round-trip — the BFF fans the three upstream
+   * calls out concurrently server-side instead of the browser making three sequential ones.
+   * `T` is `VoiceRoomInfo` or `LiveRoomInfo` at the call site: both wrap the same backend
+   * `VoiceRoomInfoResponse` JSON shape, dispatched server-side by `busiType`.
+   */
+  fetchJoinBundle<T = VoiceRoomInfo>(
+    cname: string,
+    busiType: number,
+  ): Observable<{ voiceRoomInfo: T; stageUsers: StageUsersResponse; audienceUsers: AudienceUsersResponse }> {
+    const params = new HttpParams().set('busiType', busiType);
+    return this.http.get<{ voiceRoomInfo: T; stageUsers: StageUsersResponse; audienceUsers: AudienceUsersResponse }>(
+      `${this.baseUrl}/rooms/${cname}/join-bundle`,
+      { params },
+    );
+  }
+
   fetchComments(cname: string, busiType: number): Observable<CommentsResponse> {
     const params = new HttpParams()
       .set('cname', cname)

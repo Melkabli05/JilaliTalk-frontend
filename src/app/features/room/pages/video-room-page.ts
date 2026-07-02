@@ -429,12 +429,8 @@ export class VideoRoomPageComponent extends RoomPageBase {
   protected commentsRefreshMode(): 'merge' | 'replace' { return 'replace'; }
 
   protected async doRefreshRoomCore(cname: string): Promise<void> {
-    const { liveInfo, stage, audience } = await firstValueFrom(
-      forkJoin({
-        liveInfo: this.api.fetchLiveRoomInfo(cname),
-        stage: this.api.fetchStageUsers(cname, this.busiType()),
-        audience: this.api.fetchAudienceUsers(cname, this.busiType()),
-      }),
+    const { voiceRoomInfo: liveInfo, stageUsers: stage, audienceUsers: audience } = await firstValueFrom(
+      this.api.fetchJoinBundle<LiveRoomInfo>(cname, this.busiType()),
     );
     const ch = liveInfo.channelInfo;
     this.roomStore.setRoomName(ch?.name?.trim() ?? '');
