@@ -30,8 +30,11 @@ import { ToastContainerComponent } from '@shared/ui/toast/toast-container.compon
       .app-shell {
         display: grid;
         grid-template-columns: 1fr;
-        /* Fixed to the dynamic viewport — handles mobile browser chrome. */
-        height: 100dvh;
+        /* Small viewport height — the guaranteed-visible area even with the
+           browser's address/tab bars fully expanded. dvh recalculates as
+           those bars animate, which can transiently exceed what's actually
+           visible and make the page scroll; svh never does. */
+        height: 100svh;
         overflow: hidden;
       }
       @media (min-width: 1024px) {
