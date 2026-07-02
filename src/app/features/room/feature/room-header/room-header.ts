@@ -553,6 +553,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         padding: var(--space-2) var(--space-3);
         background: var(--rh-bg);
         border-bottom: 1px solid var(--rh-border);
+        box-shadow: var(--shadow-xs);
         gap: var(--space-2);
         height: var(--room-header-height);
         box-sizing: border-box;
