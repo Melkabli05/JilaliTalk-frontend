@@ -66,7 +66,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
     LucideX,
   ],
   host: {
-    '(document:keydown.escape)': 'closeOverflow()',
+    '(document:keydown.escape)': 'closeOverflow(); closeRoomInfo();',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -89,42 +89,45 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         ></div>
         <span class="visually-hidden" aria-live="polite">{{ wsTooltip() }}</span>
         <div class="room-meta">
-          <div class="room-title-row">
-            <div class="name-wrapper">
-              <h1 class="room-name">{{ name() }}</h1>
+          <button
+            type="button"
+            class="room-name-btn"
+            [attr.aria-expanded]="showRoomInfo()"
+            aria-haspopup="dialog"
+            aria-label="Room info"
+            (click)="toggleRoomInfo()"
+          >
+            <h1 class="room-name">{{ name() }}</h1>
+          </button>
+          @if (showRoomInfo()) {
+            <div class="info-backdrop" (click)="closeRoomInfo()"></div>
+            <div class="room-info-panel" role="dialog" aria-label="Room info">
+              <div class="room-info-row">
+                <span class="room-info-label">Topic</span>
+                <span class="room-info-value">{{ topic() || 'No topic set' }}</span>
+              </div>
+              <div class="room-info-row">
+                <span class="room-info-label">Room ID</span>
+                <button type="button" class="room-info-copy" (click)="copyCname()">
+                  <span class="cname-text">{{ cname() }}</span>
+                  @if (cnameCopied()) {
+                    <svg aria-hidden="true" lucideCheck [size]="16"></svg>
+                  } @else {
+                    <svg aria-hidden="true" lucideCopy [size]="16"></svg>
+                  }
+                </button>
+              </div>
+              <button type="button" class="room-info-visibility" (click)="onToggleInvisible()">
+                @if (invisible()) {
+                  <svg aria-hidden="true" lucideEyeOff [size]="18"></svg>
+                } @else {
+                  <svg aria-hidden="true" lucideEye [size]="18"></svg>
+                }
+                <span>{{ visibilityTooltip() }}</span>
+              </button>
             </div>
-          </div>
-          <div class="room-subtitle">
-            <span class="room-topic">{{ topic() }}</span>
-            <span class="separator">·</span>
-            <span
-              class="room-cname"
-              (click)="copyCname()"
-              [attr.aria-label]="'Copy room ID ' + cname()"
-            >
-              @if (cnameCopied()) {
-                <svg aria-hidden="true" lucideCheck [size]="9"></svg>
-              } @else {
-                <svg aria-hidden="true" lucideCopy [size]="9"></svg>
-              }
-              <span class="cname-text">{{ shortCname() }}</span>
-            </span>
-          </div>
-        </div>
-        <button
-          [class]="invisible() ? 'invisible-badge' : 'visible-badge'"
-          class="hide-mobile"
-          [appTooltip]="visibilityTooltip()"
-          tooltipPosition="bottom"
-          [attr.aria-label]="visibilityTooltip()"
-          (click)="onToggleInvisible()"
-        >
-          @if (invisible()) {
-            <svg aria-hidden="true" lucideEyeOff [size]="18"></svg>
-          } @else {
-            <svg aria-hidden="true" lucideEye [size]="18"></svg>
           }
-        </button>
+        </div>
       </div>
 
       <div class="header-center">
@@ -769,72 +772,36 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
 
       app-mic-button.tip { display: inline-flex; }
 
-      /* ─── Room meta (name + topic + cname) ─────────────────────────── */
+      /* ─── Room identity (name + tap-to-open info panel) ─────────────── */
       .room-meta {
+        position: relative;
         display: flex;
-        flex-direction: column;
-        gap: 1px;
         min-width: 0;
         flex: 1;
       }
-      .room-title-row {
+      .room-name-btn {
         display: flex;
         align-items: center;
-        gap: var(--space-1);
-      }
-      .invisible-badge,
-      .visible-badge {
-        position: relative;
-        width: var(--toolbar-btn-size);
-        height: var(--toolbar-btn-size);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--radius-lg);
-        border: 1px solid;
+        min-width: 0;
+        max-width: 100%;
+        padding: var(--space-1) var(--space-2);
+        margin: 0 calc(var(--space-2) * -1);
+        border: none;
+        border-radius: var(--radius-md);
+        background: none;
         cursor: pointer;
-        transition:
-          background 0.15s,
-          color 0.15s,
-          border-color 0.15s,
-          box-shadow 0.15s,
-          transform 0.12s;
-        flex-shrink: 0;
+        transition: background 0.15s;
         -webkit-user-select: none;
         user-select: none;
       }
-      .invisible-badge:hover,
-      .visible-badge:hover { box-shadow: var(--shadow-sm); }
-      .invisible-badge:active,
-      .visible-badge:active { transform: scale(0.92); }
-
-      .invisible-badge {
-        color: var(--rh-btn-warm-fg);
-        background: var(--rh-btn-warm-bg);
-        border-color: var(--rh-btn-warm-hover-border);
+      .room-name-btn:hover,
+      .room-name-btn[aria-expanded='true'] {
+        background: var(--color-neutral-100);
       }
-      .invisible-badge:hover {
-        background: var(--rh-btn-warm-hover-bg);
-        border-color: var(--color-warm-300);
+      :host-context(.dark) .room-name-btn:hover,
+      :host-context(.dark) .room-name-btn[aria-expanded='true'] {
+        background: var(--color-neutral-700);
       }
-      :host-context(.dark) .invisible-badge:hover {
-        border-color: var(--color-warm-600);
-      }
-
-      .visible-badge {
-        color: var(--rh-btn-primary-fg);
-        background: var(--rh-btn-primary-bg);
-        border-color: var(--rh-btn-primary-hover-border);
-      }
-      .visible-badge:hover {
-        background: var(--rh-btn-primary-hover-bg);
-        border-color: var(--color-primary-300);
-      }
-      :host-context(.dark) .visible-badge:hover {
-        border-color: var(--color-primary-600);
-      }
-
-      .name-wrapper { overflow: hidden; flex: 1; }
       .room-name {
         font-size: var(--text-sm);
         font-weight: var(--font-semibold);
@@ -844,46 +811,99 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      .room-subtitle {
+
+      .info-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: var(--z-overlay);
+        background: transparent;
+      }
+      .room-info-panel {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        z-index: calc(var(--z-overlay) + 1);
+        width: max-content;
+        min-width: 220px;
+        max-width: min(320px, 90vw);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-3);
+        background: var(--rh-bg);
+        border: 1px solid var(--rh-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-dropdown);
+        animation: panel-fade-in 0.15s ease-out;
+      }
+      @keyframes panel-fade-in {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .room-info-row {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .room-info-label {
+        font-size: var(--text-2xs);
+        font-weight: var(--font-medium);
+        color: var(--rh-text-muted);
+        text-transform: uppercase;
+        letter-spacing: var(--letter-spacing-wide);
+      }
+      .room-info-value {
+        font-size: var(--text-sm);
+        color: var(--rh-text);
+        word-break: break-word;
+      }
+      .room-info-copy {
         display: flex;
         align-items: center;
-        gap: var(--space-1);
-      }
-      .room-topic {
-        font-size: var(--text-xs);
-        color: var(--rh-text-secondary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 120px;
-      }
-      .separator {
-        font-size: var(--text-xs);
-        color: var(--rh-text-muted);
-      }
-      .room-cname {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-        font-size: var(--text-xs);
-        color: var(--rh-text-muted);
+        justify-content: space-between;
+        gap: var(--space-2);
+        min-height: var(--touch-target-min);
+        padding: 0 var(--space-2);
+        margin: 0 calc(var(--space-2) * -1);
+        border: none;
+        border-radius: var(--radius-md);
+        background: none;
         cursor: pointer;
+        color: var(--rh-text);
         font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
-        padding: 1px 4px;
-        border-radius: var(--radius-sm);
+        font-size: var(--text-sm);
         transition: background 0.15s, color 0.15s;
-        -webkit-user-select: none;
-        user-select: none;
       }
-      .room-cname:hover {
+      .room-info-copy:hover {
         background: var(--color-neutral-100);
         color: var(--color-primary-500);
       }
-      :host-context(.dark) .room-cname:hover {
+      :host-context(.dark) .room-info-copy:hover {
         background: var(--color-neutral-700);
         color: var(--color-primary-400);
       }
-      .cname-text { font-size: var(--text-xs); }
+      .cname-text { flex: 1; text-align: left; overflow-wrap: anywhere; }
+
+      .room-info-visibility {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        min-height: var(--touch-target-min);
+        padding: 0 var(--space-2);
+        margin: 0 calc(var(--space-2) * -1);
+        border: none;
+        border-top: 1px solid var(--rh-border);
+        border-radius: var(--radius-md);
+        background: none;
+        cursor: pointer;
+        color: var(--rh-btn-warm-fg);
+        font-size: var(--text-sm);
+        font-weight: var(--font-medium);
+        transition: background 0.15s;
+      }
+      .room-info-visibility:hover {
+        background: var(--rh-btn-warm-bg);
+      }
       .secondary-actions {
         display: flex;
         align-items: center;
@@ -1048,9 +1068,6 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
       @container room-header (max-width: 699.98px) {
         .header-left { gap: var(--space-1); }
       }
-      @container room-header (max-width: 479.98px) {
-        .room-subtitle { display: none; }
-      }
     `,
   ],
 })
@@ -1090,6 +1107,7 @@ export class RoomHeaderComponent {
   readonly cnameCopied = signal(false);
   readonly showSettings = signal(false);
   readonly showOverflow = signal(false);
+  readonly showRoomInfo = signal(false);
 
   private copyResetTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly clipboard = inject(Clipboard);
@@ -1099,11 +1117,6 @@ export class RoomHeaderComponent {
       if (this.copyResetTimer) clearTimeout(this.copyResetTimer);
     });
   }
-
-  readonly shortCname = computed<string>(() => {
-    const c = this.cname();
-    return c.length > 8 ? c.slice(0, 8) + '…' : c;
-  });
 
   readonly wsTooltip = computed<string>(() => {
     switch (this.wsStatus()) {
@@ -1191,6 +1204,12 @@ export class RoomHeaderComponent {
   }
   closeOverflow(): void {
     this.showOverflow.set(false);
+  }
+  toggleRoomInfo(): void {
+    this.showRoomInfo.update((v) => !v);
+  }
+  closeRoomInfo(): void {
+    this.showRoomInfo.set(false);
   }
 
   private touchStartY = 0;

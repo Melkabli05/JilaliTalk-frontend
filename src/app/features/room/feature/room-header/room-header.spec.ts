@@ -57,4 +57,84 @@ describe('RoomHeaderComponent', () => {
       expect(refreshed).toBe(false);
     });
   });
+
+  describe('room info panel', () => {
+    beforeEach(() => {
+      fixture.componentRef.setInput('name', 'Friday Night Talk');
+      fixture.componentRef.setInput('topic', 'Chill vibes only');
+      fixture.componentRef.setInput('cname', 'VR_1_42');
+      fixture.detectChanges();
+    });
+
+    it('is closed by default', () => {
+      expect(fixture.nativeElement.querySelector('.room-info-panel')).toBeNull();
+    });
+
+    it('opens when the room name is tapped, showing the full topic', () => {
+      const nameBtn = fixture.nativeElement.querySelector('.room-name-btn') as HTMLElement;
+      nameBtn.click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.room-info-panel')).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('.room-info-value')?.textContent.trim()).toBe(
+        'Chill vibes only',
+      );
+    });
+
+    it('shows the full room id, not truncated', () => {
+      const nameBtn = fixture.nativeElement.querySelector('.room-name-btn') as HTMLElement;
+      nameBtn.click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.cname-text')?.textContent.trim()).toBe('VR_1_42');
+    });
+
+    it('copies the room id when the copy row is tapped', () => {
+      const clipboard = TestBed.inject(Clipboard);
+      const nameBtn = fixture.nativeElement.querySelector('.room-name-btn') as HTMLElement;
+      nameBtn.click();
+      fixture.detectChanges();
+
+      const copyBtn = fixture.nativeElement.querySelector('.room-info-copy') as HTMLElement;
+      copyBtn.click();
+
+      expect(clipboard.copy).toHaveBeenCalledWith('VR_1_42');
+    });
+
+    it('closes when the backdrop is clicked', () => {
+      const nameBtn = fixture.nativeElement.querySelector('.room-name-btn') as HTMLElement;
+      nameBtn.click();
+      fixture.detectChanges();
+
+      const backdrop = fixture.nativeElement.querySelector('.info-backdrop') as HTMLElement;
+      backdrop.click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.room-info-panel')).toBeNull();
+    });
+
+    it('closes on Escape', () => {
+      const nameBtn = fixture.nativeElement.querySelector('.room-name-btn') as HTMLElement;
+      nameBtn.click();
+      fixture.detectChanges();
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.room-info-panel')).toBeNull();
+    });
+
+    it('emits toggleInvisible when the visibility row is tapped', () => {
+      let toggled = false;
+      fixture.componentInstance.toggleInvisible.subscribe(() => (toggled = true));
+      const nameBtn = fixture.nativeElement.querySelector('.room-name-btn') as HTMLElement;
+      nameBtn.click();
+      fixture.detectChanges();
+
+      const visBtn = fixture.nativeElement.querySelector('.room-info-visibility') as HTMLElement;
+      visBtn.click();
+
+      expect(toggled).toBe(true);
+    });
+  });
 });
