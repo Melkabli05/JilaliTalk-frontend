@@ -244,9 +244,11 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
         display: none;
       }
       .comments-scroll {
+        display: flex;
+        flex-direction: column;
         flex: 1;
         min-height: 0;
-        overflow-y: auto;
+        overflow: hidden;
       }
       app-comment-input {
         flex-shrink: 0;
