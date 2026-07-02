@@ -78,10 +78,16 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           [class.ws-reconnecting]="wsStatus() === 'reconnecting'"
           [class.ws-connecting]="wsStatus() === 'connecting'"
           [class.ws-disconnected]="wsStatus() === 'disconnected'"
+          [class.ws-tappable]="wsStatus() === 'disconnected'"
           [appTooltip]="wsTooltip()"
           tooltipPosition="right"
-          aria-label="WebSocket connection status"
+          [attr.role]="wsStatus() === 'disconnected' ? 'button' : null"
+          [attr.tabindex]="wsStatus() === 'disconnected' ? 0 : null"
+          [attr.aria-label]="wsStatus() === 'disconnected' ? 'Disconnected — tap to refresh' : 'WebSocket connection status'"
+          (click)="onStatusClick()"
+          (keydown.enter)="onStatusClick()"
         ></div>
+        <span class="visually-hidden" aria-live="polite">{{ wsTooltip() }}</span>
         <div class="room-meta">
           <div class="room-title-row">
             <div class="name-wrapper">
@@ -625,6 +631,11 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         animation: pulse 0.8s ease-in-out infinite;
       }
       .ws-disconnected { background: var(--rh-ws-disconnected); }
+      .ws-status.ws-tappable { cursor: pointer; }
+      .ws-status.ws-tappable:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: var(--focus-ring-offset);
+      }
 
       @keyframes pulse {
         0%, 100% { opacity: 1; }
@@ -1169,6 +1180,11 @@ export class RoomHeaderComponent {
   }
   onRefresh(): void {
     this.refresh.emit();
+  }
+  onStatusClick(): void {
+    if (this.wsStatus() === 'disconnected') {
+      this.onRefresh();
+    }
   }
   toggleOverflow(): void {
     this.showOverflow.update((v) => !v);
