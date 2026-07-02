@@ -1,14 +1,15 @@
-import { ApplicationConfig, ErrorHandler, provideZonelessChangeDetection, APP_INITIALIZER, inject } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, provideZonelessChangeDetection, APP_INITIALIZER, inject, EnvironmentProviders } from '@angular/core';
 import { IMAGE_CONFIG } from '@angular/common';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideLucideIcons, provideLucideConfig, LucideMoon, LucideSun } from '@lucide/angular';
+import { provideServiceWorker } from '@angular/service-worker';
 import { firstValueFrom } from 'rxjs';
 import { errorInterceptor } from '@core/http/interceptors/error.interceptor';
 import { AppErrorHandler } from '@core/error/error-handler';
 import { AuthStore } from '@core/auth/auth.store';
 import { AuthService } from '@core/auth/auth.service';
-import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
+import { NOTIFICATION_REPORTER, NotificationReporter } from '@core/tokens/notification-reporter.token';
 import { ROOM_INVITE_GATEWAY } from '@core/tokens/room-invite-gateway.token';
 import { NotificationStore } from '@store/notification.store';
 import { RoomApi } from '@features/room/data/room-api';
@@ -41,6 +42,12 @@ export const appConfig: ApplicationConfig = {
     { provide: APP_INITIALIZER, useFactory: restoreSession, multi: true },
     { provide: API_BASE_URL, useValue: environment.apiUrl },
     { provide: WS_BASE_URL, useValue: environment.wsUrl },
+
+    // Service Worker — only registered in production builds (enabled: environment.production).
+    // Dev mode skips SW registration so hot-reload is unaffected.
+    environment.production
+      ? provideServiceWorker('ngsw-worker.js', { enabled: environment.production, registrationStrategy: 'registerWhenStable:30000' })
+      : ([] as EnvironmentProviders[]),
     // Binds the core/-owned NOTIFICATION_REPORTER abstraction to the real store/ implementation —
     // core/ can't import store/ directly (see CLAUDE.md §2), so this is the one place allowed to wire them.
     {
@@ -50,6 +57,8 @@ export const appConfig: ApplicationConfig = {
         return {
           notify: (type: 'info' | 'success' | 'warning' | 'error', title: string, message?: string) =>
             store.add(message === undefined ? { type, title } : { type, title, message }),
+          notifyUserEvent: (params: Parameters<NotificationReporter['notifyUserEvent']>[0]) =>
+            store.addUserEvent(params),
         };
       },
     },

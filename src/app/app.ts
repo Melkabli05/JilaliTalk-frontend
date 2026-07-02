@@ -4,11 +4,14 @@ import { SidenavComponent } from '@core/layout/sidenav.component';
 import { HeaderComponent } from '@core/layout/header.component';
 import { ImBootstrapService } from '@core/realtime/im-bootstrap.service';
 import { ToastContainerComponent } from '@shared/ui/toast/toast-container.component';
+import { PwaUpdateBannerComponent } from '@shared/ui';
+import { PwaUpdateService } from '@core/services/pwa-update.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, SidenavComponent, HeaderComponent, ToastContainerComponent],
+  imports: [RouterOutlet, SidenavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent],
   template: `
     <div class="app-shell">
       <app-sidenav />
@@ -20,6 +23,9 @@ import { ToastContainerComponent } from '@shared/ui/toast/toast-container.compon
       </div>
     </div>
     <app-toast-container />
+    @if (pwaUpdate.updateAvailable()) {
+      <app-pwa-update-banner />
+    }
   `,
   styles: [
     `
@@ -79,4 +85,5 @@ import { ToastContainerComponent } from '@shared/ui/toast/toast-container.compon
 })
 export class App {
   private readonly imBootstrap = inject(ImBootstrapService);
+  readonly pwaUpdate = inject(PwaUpdateService);
 }

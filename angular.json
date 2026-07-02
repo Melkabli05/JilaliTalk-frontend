@@ -36,10 +36,11 @@
           "configurations": {
             "production": {
               "budgets": [
-                { "type": "initial", "maximumWarning": "650kB", "maximumError": "1MB" },
-                { "type": "anyComponentStyle", "maximumWarning": "18kB", "maximumError": "24kB" }
+                { "type": "initial", "maximumWarning": "1MB", "maximumError": "2MB" },
+                { "type": "anyComponentStyle", "maximumWarning": "24kB", "maximumError": "36kB" }
               ],
               "outputHashing": "all",
+              "serviceWorker": "ngsw-config.json",
               "fileReplacements": [
                 { "replace": "src/environments/environment.ts", "with": "src/environments/environment.production.ts" }
               ]

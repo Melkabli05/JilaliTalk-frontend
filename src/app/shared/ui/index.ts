@@ -12,3 +12,4 @@ export { AuthDialogComponent } from './auth-dialog/auth-dialog.component';
 export { ModalComponent } from './modal/modal.component';
 export { OptionCardComponent } from './option-card/option-card.component';
 export { ToastContainerComponent } from './toast/toast-container.component';
+export { PwaUpdateBannerComponent } from './pwa-update-banner/pwa-update-banner.component';
