@@ -2,13 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { StageUsersResponse, AudienceUsersResponse, CommentsResponse, SendCommentPayload, VoiceSignPanelResponse, RoomLevelRewardResponse, RoomLevelConfigResponse, VoiceRoomInfo, LiveRoomInfo, ManagerListResponse, ManagerJudgeResponse, CommentNotifyResponse, CaptionHistoryResponse, VoiceTasksResponse } from './room-model';
+import { StageUsersResponse, AudienceUsersResponse, CommentsResponse, SendCommentPayload, VoiceSignPanelResponse, RoomLevelRewardResponse, RoomLevelConfigResponse, VoiceRoomInfo, LiveRoomInfo, ManagerListResponse, ManagerJudgeResponse, CaptionHistoryResponse, VoiceTasksResponse } from './room-model';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
-
-export interface TranslatePayload {
-  text: string;
-  targetLang: string;
-}
 
 @Injectable({ providedIn: 'root' })
 export class RoomApi {
@@ -180,11 +175,6 @@ export class RoomApi {
       );
   }
 
-  fetchCommentNotify(busiType: number): Observable<CommentNotifyResponse> {
-    const params = new HttpParams().set('busiType', busiType);
-    return this.http.get<CommentNotifyResponse>(`${this.baseUrl}/comments/notify`, { params });
-  }
-
   fetchCaptionHistory(cname: string, busiType: number, pageSize = 20): Observable<CaptionHistoryResponse> {
     const params = new HttpParams().set('cname', cname).set('busiType', busiType).set('pageSize', pageSize);
     return this.http.get<CaptionHistoryResponse>(`${this.baseUrl}/captions/history`, { params });
@@ -234,9 +224,5 @@ export class RoomApi {
   fetchRoomLevelConfig(cname: string, hostId: number): Observable<RoomLevelConfigResponse> {
     const params = new HttpParams().set('cname', cname).set('host_id', hostId);
     return this.http.get<RoomLevelConfigResponse>(`${this.baseUrl}/signin/room-level-config`, { params });
-  }
-
-  translate(payload: TranslatePayload): Observable<{ text: string }> {
-    return this.http.post<{ text: string }>(`${this.baseUrl}/translate`, payload);
   }
 }

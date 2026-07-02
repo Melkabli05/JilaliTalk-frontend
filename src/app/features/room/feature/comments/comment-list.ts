@@ -22,7 +22,6 @@ import {
   LucideCopy,
   LucideCheck,
   LucideCornerUpLeft,
-  LucideGlobe,
   LucideCrown,
   LucideHeart,
 } from '@lucide/angular';
@@ -178,7 +177,6 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
     LucideCopy,
     LucideCheck,
     LucideCornerUpLeft,
-    LucideGlobe,
     LucideCrown,
     LucideHeart,
   ],
@@ -282,11 +280,6 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
                           aria-hidden="true"
                         />
                       }
-                      @if (isTranslating(comment._id)) {
-                        <span class="translating-label">Translating…</span>
-                      } @else if (getTranslation(comment._id); as translated) {
-                        <span class="translation-label">{{ translated }}</span>
-                      }
                       <span class="actions">
                         <button
                           type="button"
@@ -307,15 +300,6 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
                           aria-label="Reply"
                         >
                           <svg aria-hidden="true" lucideCornerUpLeft [size]="11" />
-                        </button>
-                        <button
-                          type="button"
-                          class="action-btn"
-                          [class.action-btn-active]="getTranslation(comment._id)"
-                          (click)="onTranslate(comment)"
-                          aria-label="Translate"
-                        >
-                          <svg aria-hidden="true" lucideGlobe [size]="11" />
                         </button>
                       </span>
                     </div>
@@ -392,7 +376,6 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         --cl-fg-border: color-mix(in srgb, var(--color-accent-500) 30%, transparent);
         --cl-quote-fg: var(--color-primary-600);
         --cl-quote-text: var(--cl-muted);
-        --cl-translate-bg: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
         --cl-empty-bg: var(--color-primary-50);
         --cl-empty-fg: var(--color-primary-400);
       }
@@ -426,7 +409,6 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         --cl-fg-border: color-mix(in srgb, var(--color-accent-500) 40%, transparent);
         --cl-quote-fg: var(--color-primary-300);
         --cl-quote-text: var(--color-neutral-400);
-        --cl-translate-bg: color-mix(in srgb, var(--color-primary-500) 16%, transparent);
         --cl-empty-bg: var(--color-primary-900);
         --cl-empty-fg: var(--color-primary-300);
       }
@@ -685,29 +667,6 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         outline: var(--focus-ring);
         outline-offset: var(--focus-ring-offset);
       }
-      .action-btn-active {
-        color: var(--color-primary-500);
-      }
-
-      /* ─── Translation display ─── */
-      .translation-label {
-        display: block;
-        font-size: var(--text-2xs);
-        color: var(--cl-muted);
-        font-style: italic;
-        margin-top: 2px;
-        padding: 2px var(--space-1);
-        border-radius: var(--radius-sm);
-        background: var(--cl-translate-bg);
-        border-left: 2px solid var(--color-primary-400);
-      }
-      .translating-label {
-        display: block;
-        font-size: var(--text-2xs);
-        color: var(--cl-muted);
-        margin-top: 2px;
-        padding: 2px var(--space-1);
-      }
 
       /* ─── Empty state ─── */
       .empty-state {
@@ -751,10 +710,7 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
 export class CommentListComponent {
   readonly items = input<readonly CommentOrEvent[]>([]);
   readonly currentUserId = input<number>(0);
-  readonly translations = input<ReadonlyMap<string, string>>(new Map());
-  readonly translatingIds = input<ReadonlySet<string>>(new Set());
   readonly reply = output<Comment>();
-  readonly translate = output<{ comment: Comment; text: string }>();
   readonly UserRole = UserRole;
 
   readonly copiedId = signal<string | null>(null);
@@ -828,17 +784,5 @@ export class CommentListComponent {
     if (this.highlightTimer) clearTimeout(this.highlightTimer);
     this.highlightId.set(id);
     this.highlightTimer = setTimeout(() => this.highlightId.set(null), 1200);
-  }
-
-  onTranslate(comment: Comment): void {
-    this.translate.emit({ comment, text: comment.msg.text.text });
-  }
-
-  isTranslating(commentId: string): boolean {
-    return this.translatingIds().has(commentId);
-  }
-
-  getTranslation(commentId: string): string | undefined {
-    return this.translations().get(commentId);
   }
 }

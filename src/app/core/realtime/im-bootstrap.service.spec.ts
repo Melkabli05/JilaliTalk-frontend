@@ -31,6 +31,7 @@ describe('ImBootstrapService', () => {
   let imSocket: ImSocketService;
   let toast: ToastService;
   let notify: ReturnType<typeof vi.fn>;
+  let notifyUserEvent: ReturnType<typeof vi.fn>;
   let gateway: {
     approveStageInvite: Mock<RoomInviteGateway['approveStageInvite']>;
     approveModInvite: Mock<RoomInviteGateway['approveModInvite']>;
@@ -46,6 +47,7 @@ describe('ImBootstrapService', () => {
     FakeWebSocket.instances = [];
     vi.stubGlobal('WebSocket', Object.assign(FakeWebSocket, { OPEN: 1, CLOSED: 3 }));
     notify = vi.fn();
+    notifyUserEvent = vi.fn();
     gateway = {
       approveStageInvite: vi.fn<RoomInviteGateway['approveStageInvite']>(() => of(undefined)),
       approveModInvite: vi.fn<RoomInviteGateway['approveModInvite']>(() => of(undefined)),
@@ -54,7 +56,7 @@ describe('ImBootstrapService', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: AuthStore, useValue: { isAuthenticated: () => true, user: () => ({ userId: 42 }) } },
-        { provide: NOTIFICATION_REPORTER, useValue: { notify } },
+        { provide: NOTIFICATION_REPORTER, useValue: { notify, notifyUserEvent } },
         { provide: ROOM_INVITE_GATEWAY, useValue: gateway satisfies RoomInviteGateway },
       ],
     });
@@ -110,11 +112,52 @@ describe('ImBootstrapService', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it('notifies passive social events (follow) without toasting', () => {
-    push({ type: 'follow', nickname: 'Sam', status: 1 });
+  it('notifies passive social events (follow) as a user-linked notification, without toasting', () => {
+    push({ type: 'follow', userId: '7', nickname: 'Sam', headUrl: 'https://x/sam.jpg', status: 1 });
 
-    expect(notify).toHaveBeenCalledWith('info', 'New follower', 'Sam followed you');
+    expect(notifyUserEvent).toHaveBeenCalledWith({
+      type: 'info',
+      title: 'New follower',
+      message: 'Sam followed you',
+      userId: 7,
+      avatarUrl: 'https://x/sam.jpg',
+      nickname: 'Sam',
+    });
+    expect(notify).not.toHaveBeenCalled();
     expect(toast.toasts()).toHaveLength(0);
+  });
+
+  it('falls back to a plain notification for follow when no userId is present', () => {
+    push({ type: 'follow', userId: '', nickname: 'Sam', status: 2 });
+
+    expect(notify).toHaveBeenCalledWith('info', 'New follower', 'Sam followed you back');
+    expect(notifyUserEvent).not.toHaveBeenCalled();
+  });
+
+  it('notifies gift_message as a user-linked notification', () => {
+    push({ type: 'gift_message', fromUserId: '11', fromNickname: 'Amal', fromHeadUrl: 'https://x/amal.jpg', giftId: 5, count: 2 });
+
+    expect(notifyUserEvent).toHaveBeenCalledWith({
+      type: 'info',
+      title: 'Gift received',
+      message: 'Amal sent you a gift',
+      userId: 11,
+      avatarUrl: 'https://x/amal.jpg',
+      nickname: 'Amal',
+    });
+  });
+
+  it('notifies introduction_message as a user-linked notification', () => {
+    push({ type: 'introduction_message', fromUserId: '12', fromNickname: 'Youssef', fromHeadUrl: 'https://x/y.jpg' });
+
+    expect(notifyUserEvent).toHaveBeenCalledWith({
+      type: 'info',
+      title: 'Introduction',
+      message: 'Youssef sent you an introduction',
+      userId: 12,
+      avatarUrl: 'https://x/y.jpg',
+      nickname: 'Youssef',
+    });
   });
 
   it('still toasts an account ban', () => {

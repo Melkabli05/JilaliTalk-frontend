@@ -45,6 +45,9 @@ export async function handleRealtimeEvent(
         toast.warning('You were muted');
       }
       break;
+    case 'lucky_bag':
+      toast.info('A lucky bag appeared in the room!');
+      break;
     default:
       break;
   }

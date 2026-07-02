@@ -81,11 +81,12 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
       const event = this.bffWs.lastEvent();
       if (!event) return;
       switch (event.type) {
-        case 'user_join':
+        case 'user_join': {
           if (event.isBannedComment) break;
           if (this.stageStore.isOnStage(Number(event.userId))) break;
+          const uid = Number(event.userId);
           this.addAudienceUser({
-            userId: Number(event.userId),
+            userId: uid,
             isOnMic: false,
             isRaiseHand: false,
             isTurnOnMic: false,
@@ -100,10 +101,20 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
             fgLevel: 0,
             fgName: '',
             fgIsActive: false,
-            base: { nickname: event.nickname, signature: null, headUrl: null, nationality: null, nativeLang: -1, timeZone: 0 },
+            base: {
+              nickname: event.nickname,
+              signature: null,
+              headUrl: event.headUrl,
+              nationality: event.nationality,
+              nativeLang: -1,
+              timeZone: 0,
+            },
           });
-          void this.enrichAudienceUser(Number(event.userId));
+          // The BFF already enriches user_join with headUrl/nationality when upstream provides them —
+          // only fall back to a per-user profile fetch when it didn't.
+          if (!event.headUrl) void this.enrichAudienceUser(uid);
           break;
+        }
         case 'user_quit':
           this.removeAudienceUser(Number(event.userId));
           break;

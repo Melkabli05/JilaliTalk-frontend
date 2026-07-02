@@ -56,7 +56,7 @@ export interface GiftEvent {
 
 export type RoomRealtimeEvent =
   | { readonly type: 'connection-state'; readonly state: 'connecting' | 'connected' | 'reconnecting' | 'disconnected' }
-  | { readonly type: 'user_join'; readonly userId: string; readonly nickname: string; readonly isBannedComment: boolean }
+  | { readonly type: 'user_join'; readonly userId: string; readonly nickname: string; readonly headUrl: string | null; readonly nationality: string | null; readonly isBannedComment: boolean }
   | { readonly type: 'user_quit'; readonly userId: string }
   | { readonly type: 'stage_join'; readonly stageUser: StageUserEvent }
   | { readonly type: 'stage_quit'; readonly userId: string }
@@ -75,6 +75,7 @@ export type RoomRealtimeEvent =
   | { readonly type: 'stage_kick'; readonly userId: string; readonly managerName: string; readonly cname: string }
   | { readonly type: 'mod_accepted'; readonly userId: string }
   | { readonly type: 'mod_removed'; readonly userId: string }
-  | { readonly type: 'follow'; readonly nickname: string; readonly status: number }
+  | { readonly type: 'follow'; readonly userId: string; readonly nickname: string; readonly headUrl: string | null; readonly status: number }
+  | { readonly type: 'lucky_bag'; readonly luckyBagId: string; readonly luckyBagNumber: number; readonly cname: string }
   | { readonly type: 'raw'; readonly originalType: string; readonly payload: unknown }
   | { readonly type: 'error'; readonly message: string };

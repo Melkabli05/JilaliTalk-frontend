@@ -119,6 +119,7 @@ export interface FollowEventCard {
   readonly kind: 'follow';
   readonly id: string;
   readonly ts: number;
+  readonly userId: number;
   readonly nickname: string;
   readonly headUrl: string | null;
   readonly isFollowBack: boolean;
@@ -524,25 +525,6 @@ export interface ManagerListResponse {
 
 export interface ManagerJudgeResponse {
   readonly isOnline: boolean;
-}
-
-export interface CommentNotifyItem {
-  readonly id: number;
-  readonly notifyType: number;
-  readonly label: string;
-  readonly textColor: string;
-  readonly backgroundColor: string;
-  readonly notifyContent: readonly {
-    readonly content: string;
-    readonly iconType: number;
-    readonly icon: string;
-    readonly linkUrl: string;
-    readonly level: number;
-  }[];
-}
-
-export interface CommentNotifyResponse {
-  readonly items: readonly CommentNotifyItem[];
 }
 
 export interface CaptionEntry {

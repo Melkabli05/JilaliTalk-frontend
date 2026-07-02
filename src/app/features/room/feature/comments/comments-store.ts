@@ -33,14 +33,6 @@ export class CommentsStore extends CollectionStore<Comment> {
   private readonly _captions = signal<readonly CaptionEntry[]>([]);
   readonly captions = this._captions.asReadonly();
 
-  /** Comment ID → translated text, cached per session. */
-  private readonly _translations = signal<ReadonlyMap<string, string>>(new Map());
-  readonly translations = this._translations.asReadonly();
-
-  /** Comment IDs currently being translated. */
-  private readonly _translatingIds = signal<ReadonlySet<string>>(new Set());
-  readonly translatingIds = this._translatingIds.asReadonly();
-
   private readonly activeJoinedUserIds = new Map<number, number>(); // uid → lastSeen ts
   private readonly pendingQuitTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
@@ -82,8 +74,12 @@ export class CommentsStore extends CollectionStore<Comment> {
     void this.userInfoService.fetchUserInfo(userId);
   }
 
+  /** Backfills nickname/headUrl/nationality from the cached UserInfoService for cards that
+   *  arrived with partial data via {@link pushUserEventCard}. Follow cards carry `userId` for
+   *  click-to-profile but never `nationality` (the BFF's follow event doesn't include it) and
+   *  always arrive fully enriched — so they're excluded from this async-backfill path. */
   private resolveEventCard(card: EventCard): EventCard {
-    if (!('userId' in card) || (card.nickname && card.headUrl && card.nationality)) return card;
+    if (!('userId' in card) || !('nationality' in card) || (card.nickname && card.headUrl && card.nationality)) return card;
     const info = this.userInfoService.getUserInfo(card.userId);
     if (!info) return card;
     return {
@@ -202,8 +198,9 @@ export class CommentsStore extends CollectionStore<Comment> {
               kind: 'follow',
               id: `follow-${event.nickname}-${Date.now()}`,
               ts: Date.now(),
+              userId: Number(event.userId) || 0,
               nickname: event.nickname,
-              headUrl: null,
+              headUrl: event.headUrl,
               isFollowBack: event.status === 2,
             } satisfies EventCard,
           ]);
@@ -218,7 +215,11 @@ export class CommentsStore extends CollectionStore<Comment> {
           }
           if (this.activeJoinedUserIds.has(userId)) break;
           this.activeJoinedUserIds.set(userId, Date.now());
-          this.pushUserEventCard('user_join', userId, 'join', { nickname: event.nickname });
+          this.pushUserEventCard('user_join', userId, 'join', {
+            nickname: event.nickname,
+            headUrl: event.headUrl,
+            nationality: event.nationality,
+          });
           break;
         }
 
@@ -345,33 +346,10 @@ export class CommentsStore extends CollectionStore<Comment> {
     }
   }
 
-  async translateComment(commentId: string, text: string, targetLang: string): Promise<string> {
-    const cached = this._translations().get(commentId);
-    if (cached !== undefined) return cached;
-
-    this._translatingIds.update((s) => new Set(s).add(commentId));
-    try {
-      const result = await firstValueFrom(
-        this.api.translate({ text, targetLang }),
-      );
-      const translated = result.text;
-      this._translations.update((m) => new Map(m).set(commentId, translated));
-      return translated;
-    } finally {
-      this._translatingIds.update((s) => {
-        const next = new Set(s);
-        next.delete(commentId);
-        return next;
-      });
-    }
-  }
-
   override reset(): void {
     super.reset();
     this._captions.set([]);
     this._eventCards.set([]);
-    this._translations.set(new Map());
-    this._translatingIds.set(new Set());
     this.activeJoinedUserIds.clear();
     for (const timer of this.pendingQuitTimers.values()) clearTimeout(timer);
     this.pendingQuitTimers.clear();

@@ -104,9 +104,24 @@ export class ImBootstrapService {
       case 'mod_unmuted':
         this.toast.success('You can speak now');
         break;
-      case 'follow':
-        this.notifications.notify('info', 'New follower', event.status === 2 ? `${event.nickname} followed you back` : `${event.nickname} followed you`);
+      case 'follow': {
+        const uid = Number(event.userId);
+        const message = event.status === 2 ? `${event.nickname} followed you back` : `${event.nickname} followed you`;
+        if (Number.isFinite(uid) && uid > 0) {
+          void this.userInfo.fetchUserInfo(uid);
+          this.notifications.notifyUserEvent({
+            type: 'info',
+            title: 'New follower',
+            message,
+            userId: uid,
+            avatarUrl: event.headUrl ?? null,
+            nickname: event.nickname,
+          });
+        } else {
+          this.notifications.notify('info', 'New follower', message);
+        }
         break;
+      }
       case 'voice_room_shared':
         this.notifications.notify('info', 'Voice room shared', `${event.fromNickname} sent you a voice room`);
         break;
@@ -119,12 +134,42 @@ export class ImBootstrapService {
       case 'image_message':
         this.notifications.notify('info', 'New message', 'Sent you a photo');
         break;
-      case 'gift_message':
-        this.notifications.notify('info', 'Gift received', `${event.fromNickname} sent you a gift`);
+      case 'gift_message': {
+        const uid = Number(event.fromUserId);
+        const message = `${event.fromNickname} sent you a gift`;
+        if (Number.isFinite(uid) && uid > 0) {
+          void this.userInfo.fetchUserInfo(uid);
+          this.notifications.notifyUserEvent({
+            type: 'info',
+            title: 'Gift received',
+            message,
+            userId: uid,
+            avatarUrl: event.fromHeadUrl ?? null,
+            nickname: event.fromNickname,
+          });
+        } else {
+          this.notifications.notify('info', 'Gift received', message);
+        }
         break;
-      case 'introduction_message':
-        this.notifications.notify('info', 'Introduction', `${event.fromNickname} sent you an introduction`);
+      }
+      case 'introduction_message': {
+        const uid = Number(event.fromUserId);
+        const message = `${event.fromNickname} sent you an introduction`;
+        if (Number.isFinite(uid) && uid > 0) {
+          void this.userInfo.fetchUserInfo(uid);
+          this.notifications.notifyUserEvent({
+            type: 'info',
+            title: 'Introduction',
+            message,
+            userId: uid,
+            avatarUrl: event.fromHeadUrl ?? null,
+            nickname: event.fromNickname,
+          });
+        } else {
+          this.notifications.notify('info', 'Introduction', message);
+        }
         break;
+      }
       case 'group_message':
         this.notifications.notify('info', `${event.roomName}`, `${event.senderName}: ${event.text}`);
         break;

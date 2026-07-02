@@ -6,11 +6,11 @@ export type ImEvent =
   | { readonly type: 'mod_accepted'; readonly userId: string }
   | { readonly type: 'mod_removed'; readonly userId: string }
   | { readonly type: 'mod_unmuted'; readonly userId: string }
-  | { readonly type: 'follow'; readonly nickname: string; readonly status: number }
+  | { readonly type: 'follow'; readonly userId: string; readonly nickname: string; readonly headUrl?: string; readonly status: number }
   | { readonly type: 'text_message'; readonly fromUserId: string; readonly text: string; readonly ts: number }
   | { readonly type: 'image_message'; readonly fromUserId: string; readonly imageUrl: string; readonly ts: number }
-  | { readonly type: 'gift_message'; readonly fromUserId: string; readonly fromNickname: string; readonly giftId: number; readonly count: number }
-  | { readonly type: 'introduction_message'; readonly fromUserId: string; readonly fromNickname: string }
+  | { readonly type: 'gift_message'; readonly fromUserId: string; readonly fromNickname: string; readonly fromHeadUrl?: string; readonly giftId: number; readonly count: number }
+  | { readonly type: 'introduction_message'; readonly fromUserId: string; readonly fromNickname: string; readonly fromHeadUrl?: string }
   | { readonly type: 'voice_room_shared'; readonly fromNickname: string; readonly cname: string; readonly headUrl: string | null; readonly count?: number }
   | { readonly type: 'live_room_shared'; readonly fromNickname: string; readonly cname: string; readonly headUrl: string | null }
   | { readonly type: 'group_message'; readonly senderId: string; readonly senderName: string; readonly roomName: string; readonly text: string }

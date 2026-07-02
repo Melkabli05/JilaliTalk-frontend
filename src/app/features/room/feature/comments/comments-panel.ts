@@ -86,10 +86,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
               #commentListEl
               [items]="commentsStore.mergedItems()"
               [currentUserId]="currentUserId()"
-              [translations]="commentsStore.translations()"
-              [translatingIds]="translatingIds()"
               (reply)="onReply($event)"
-              (translate)="onTranslateComment($event)"
             />
 
             @if (typingText(); as label) {
@@ -306,7 +303,6 @@ export class CommentsPanelComponent {
   readonly activeTab = signal<string | undefined>('comments');
   readonly replyTarget = signal<Comment | null>(null);
   readonly expanded = signal(false);
-  readonly translatingIds = computed(() => this.commentsStore.translatingIds());
 
   readonly replyTo = computed<ReplyTarget | null>(() => {
     const comment = this.replyTarget();
@@ -327,10 +323,6 @@ export class CommentsPanelComponent {
     if (names.length === 2) return `${names[0]} & ${names[1]} are writing...`;
     return 'Several people are writing...';
   });
-
-  async onTranslateComment(event: { comment: Comment; text: string }): Promise<void> {
-    await this.commentsStore.translateComment(event.comment._id, event.text, 'ar');
-  }
 
   onTabChange(tab: string | undefined): void {
     if (tab === 'captions') {
