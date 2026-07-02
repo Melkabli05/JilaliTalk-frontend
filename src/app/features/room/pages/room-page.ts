@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, input, effect, DestroyRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
-import { EMPTY, firstValueFrom, forkJoin } from 'rxjs';
+import { EMPTY, firstValueFrom } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RoomStore } from '../state/room-store';
@@ -243,9 +243,21 @@ export class RoomPageComponent extends RoomPageBase {
       throw err;
     }
 
+    // Fired together right after join: the bundle (room info + stage + audience, fanned out
+    // server-side) and comments are independent of each other, so there is no reason to wait
+    // for one before starting the other. firstValueFrom subscribes immediately, so both HTTP
+    // requests are in flight from this point — comments isn't awaited until after ws connects.
+    const bundlePromise = firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType));
+    const commentsPromise = firstValueFrom(this.api.fetchComments(cname, busiType));
+
     let voiceInfo: VoiceRoomInfo;
+    let stage: StageUsersResponse | undefined;
+    let audience: AudienceUsersResponse | undefined;
     try {
-      voiceInfo = await firstValueFrom(this.api.fetchVoiceRoomInfo(cname));
+      const bundle = await bundlePromise;
+      voiceInfo = bundle.voiceRoomInfo;
+      stage = bundle.stageUsers;
+      audience = bundle.audienceUsers;
     } catch {
       await this.router.navigate(['/']);
       this.toast.error('Room not found. Please create a new one.');
@@ -275,15 +287,9 @@ export class RoomPageComponent extends RoomPageBase {
     const uid = this.roomStore.userId();
 
     if (isVisible) this.audienceStore.setCname(cname);
-    const { stage, audience, comments } = await firstValueFrom(
-      forkJoin({
-        stage: this.api.fetchStageUsers(cname, busiType),
-        audience: this.api.fetchAudienceUsers(cname, busiType),
-        comments: this.api.fetchComments(cname, busiType),
-      }),
-    );
     this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
     this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    const comments = await commentsPromise;
     this.commentsStore.updateComments([...(comments?.items ?? [])]);
 
 
