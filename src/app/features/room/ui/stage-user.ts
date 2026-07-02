@@ -50,13 +50,39 @@ import { LucideMicOff, LucideMic } from '@lucide/angular';
     </button>
   `,
   styles: [`
+    :host {
+      display: contents;
+
+      --su-hover-bg: var(--color-neutral-50);
+      --su-badge-border: var(--color-card);
+      --su-badge-muted-bg: var(--color-warm-500);
+      --su-badge-speaking-bg: var(--color-accent-500);
+      --su-role-host-bg: var(--color-gold-100);
+      --su-role-host-fg: var(--color-gold-600);
+      --su-role-mod-bg: var(--color-primary-50);
+      --su-role-mod-fg: var(--color-primary-600);
+      --su-role-away-bg: var(--color-neutral-100);
+      --su-role-away-fg: var(--color-text-muted);
+    }
+    :host-context(.dark) {
+      --su-hover-bg: var(--color-neutral-800);
+      --su-badge-border: var(--color-neutral-800);
+      --su-badge-muted-bg: var(--color-warm-600);
+      --su-badge-speaking-bg: var(--color-accent-400);
+      --su-role-host-bg: var(--color-gold-900);
+      --su-role-host-fg: var(--color-gold-300);
+      --su-role-mod-bg: var(--color-primary-900);
+      --su-role-mod-fg: var(--color-primary-300);
+      --su-role-away-bg: var(--color-neutral-800);
+      --su-role-away-fg: var(--color-text-muted);
+    }
+
     .stage-user {
       display: flex; flex-direction: column; align-items: center; gap: var(--space-1);
       padding: var(--space-1); cursor: pointer; border: none; background: none;
       border-radius: var(--radius-lg); transition: background 0.15s;
     }
-    .stage-user:hover { background: var(--color-neutral-50); }
-    :host-context(.dark) .stage-user:hover { background: var(--color-neutral-800); }
+    .stage-user:hover { background: var(--su-hover-bg); }
     .stage-user:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 
     .avatar-wrapper {
@@ -67,20 +93,11 @@ import { LucideMicOff, LucideMic } from '@lucide/angular';
     .status-badge {
       position: absolute; bottom: -2px; right: -2px;
       width: 20px; height: 20px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-card);
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--su-badge-border);
     }
-    .status-badge.muted { background: var(--color-warm-500); color: var(--color-on-color); }
-    .status-badge.speaking { background: var(--color-accent-500); color: var(--color-on-color); }
-
-    :host-context(.dark) .status-badge {
-      border-color: var(--color-neutral-800);
-    }
-    :host-context(.dark) .status-badge.muted {
-      background: var(--color-warm-600);
-    }
-    :host-context(.dark) .status-badge.speaking {
-      background: var(--color-accent-400);
-    }
+    .status-badge.muted { background: var(--su-badge-muted-bg); color: var(--color-on-color); }
+    .status-badge.speaking { background: var(--su-badge-speaking-bg); color: var(--color-on-color); }
 
     .user-name {
       font-size: var(--text-xs); font-weight: var(--font-medium);
@@ -93,12 +110,9 @@ import { LucideMicOff, LucideMic } from '@lucide/angular';
       font-size: var(--text-2xs); font-weight: var(--font-bold); letter-spacing: 0.5px;
       text-transform: uppercase; padding: 1px 6px; border-radius: var(--radius-full);
     }
-    .role-badge.host { background: var(--color-gold-100); color: var(--color-gold-600); }
-    .role-badge.mod { background: var(--color-primary-50); color: var(--color-primary-600); }
-    .role-badge.away { background: var(--color-neutral-100); color: var(--color-text-muted); }
-    :host-context(.dark) .role-badge.host { background: var(--color-gold-900); color: var(--color-gold-300); }
-    :host-context(.dark) .role-badge.mod { background: var(--color-primary-900); color: var(--color-primary-300); }
-    :host-context(.dark) .role-badge.away { background: var(--color-neutral-800); color: var(--color-text-muted); }
+    .role-badge.host { background: var(--su-role-host-bg); color: var(--su-role-host-fg); }
+    .role-badge.mod { background: var(--su-role-mod-bg); color: var(--su-role-mod-fg); }
+    .role-badge.away { background: var(--su-role-away-bg); color: var(--su-role-away-fg); }
   `],
 })
 export class StageUserComponent {

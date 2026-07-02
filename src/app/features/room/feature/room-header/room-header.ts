@@ -1,6 +1,38 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject, DestroyRef } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  input,
+  output,
+  signal,
+  computed,
+  inject,
+  DestroyRef,
+} from '@angular/core';
 import { Clipboard } from '@angular/cdk/clipboard';
-import { LucideArrowLeft, LucideCopy, LucideCheck, LucideVideoOff, LucideMonitorUp, LucideHand, LucideHandMetal, LucideArrowDownToLine, LucideLogIn, LucideGift, LucideSettings, LucideLogOut, LucideMusic, LucideRefreshCw, LucideEyeOff, LucideEye, LucideShield, LucideStar, LucideCaptions, LucideCaptionsOff, LucideEllipsisVertical, LucideX } from '@lucide/angular';
+import {
+  LucideArrowLeft,
+  LucideCopy,
+  LucideCheck,
+  LucideVideoOff,
+  LucideMonitorUp,
+  LucideHand,
+  LucideHandMetal,
+  LucideArrowDownToLine,
+  LucideLogIn,
+  LucideGift,
+  LucideSettings,
+  LucideLogOut,
+  LucideMusic,
+  LucideRefreshCw,
+  LucideEyeOff,
+  LucideEye,
+  LucideShield,
+  LucideStar,
+  LucideCaptions,
+  LucideCaptionsOff,
+  LucideEllipsisVertical,
+  LucideX,
+} from '@lucide/angular';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
 import { MicButtonComponent } from '../../ui/mic-button';
 import { AvSettingsComponent } from '../audio-settings/av-settings';
@@ -8,7 +40,33 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
 @Component({
   selector: 'app-room-header',
 
-  imports: [MicButtonComponent, TooltipDirective, AvSettingsComponent, LucideArrowLeft, LucideCopy, LucideCheck, LucideVideoOff, LucideMonitorUp, LucideHand, LucideHandMetal, LucideArrowDownToLine, LucideLogIn, LucideGift, LucideSettings, LucideLogOut, LucideMusic, LucideRefreshCw, LucideEyeOff, LucideEye, LucideShield, LucideStar, LucideCaptions, LucideCaptionsOff, LucideEllipsisVertical, LucideX],
+  imports: [
+    MicButtonComponent,
+    TooltipDirective,
+    AvSettingsComponent,
+    LucideArrowLeft,
+    LucideCopy,
+    LucideCheck,
+    LucideVideoOff,
+    LucideMonitorUp,
+    LucideHand,
+    LucideHandMetal,
+    LucideArrowDownToLine,
+    LucideLogIn,
+    LucideGift,
+    LucideSettings,
+    LucideLogOut,
+    LucideMusic,
+    LucideRefreshCw,
+    LucideEyeOff,
+    LucideEye,
+    LucideShield,
+    LucideStar,
+    LucideCaptions,
+    LucideCaptionsOff,
+    LucideEllipsisVertical,
+    LucideX,
+  ],
   host: {
     '(document:keydown.escape)': 'closeOverflow()',
   },
@@ -16,15 +74,6 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
   template: `
     <header class="room-header">
       <div class="header-left">
-        <button
-          class="icon-btn back-btn"
-          appTooltip="Leave room"
-          tooltipPosition="right"
-          aria-label="Go back"
-          (click)="goBack.emit()"
-        >
-          <svg aria-hidden="true" lucideArrowLeft [size]="18"></svg>
-        </button>
         <div
           class="ws-status"
           [class.ws-connected]="wsStatus() === 'connected'"
@@ -44,7 +93,11 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           <div class="room-subtitle">
             <span class="room-topic">{{ topic() }}</span>
             <span class="separator">·</span>
-            <span class="room-cname" (click)="copyCname()" [attr.aria-label]="'Copy room ID ' + cname()">
+            <span
+              class="room-cname"
+              (click)="copyCname()"
+              [attr.aria-label]="'Copy room ID ' + cname()"
+            >
               @if (cnameCopied()) {
                 <svg aria-hidden="true" lucideCheck [size]="9"></svg>
               } @else {
@@ -350,857 +403,654 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
       </div>
     }
   `,
-  styles: [`
-    :host { display: block; height: 56px; }
+  styles: [
+    `
+      /* ─── Theming via custom properties ─────────────────────────────
+         Dark-mode swaps to overridden --rh-* tokens below; the rules
+         themselves never duplicate selectors. */
+      :host {
+        display: block;
+        height: var(--room-header-height);
+        container-type: inline-size;
+        container-name: room-header;
 
-    .room-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: var(--space-2) var(--space-3);
-      background: var(--color-card);
-      border-bottom: 1px solid var(--color-border);
-      gap: var(--space-2);
-      height: 56px;
-      box-sizing: border-box;
-    }
+        /* Light theme tokens */
+        --rh-bg: var(--color-card);
+        --rh-border: var(--color-border);
+        --rh-chip-bg: var(--color-neutral-100);
+        --rh-text: var(--color-text);
+        --rh-text-muted: var(--color-text-muted);
+        --rh-text-secondary: var(--color-text-secondary);
 
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      flex: 1 1 0;
-      min-width: 0;
-    }
+        /* Toolbar button colors (per-button variants override these) */
+        --rh-btn-bg: var(--color-card);
+        --rh-btn-color: var(--color-text-muted);
+        --rh-btn-border: transparent;
+        --rh-btn-hover-shadow: var(--shadow-sm);
 
-    .header-center {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-      flex: 0 1 auto;
-      min-width: 0;
-      padding: var(--space-1);
-      border-radius: var(--radius-xl);
-      background: var(--color-neutral-100);
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      position: relative;
-    }
+        /* State button colors */
+        --rh-btn-active-bg: var(--color-primary-100);
+        --rh-btn-active-color: var(--color-primary-600);
+        --rh-btn-active-border: var(--color-primary-200);
 
-    .media-controls,
-    .engagement-controls {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-    }
+        --rh-btn-highlight-bg: var(--color-gold-100);
+        --rh-btn-highlight-color: var(--color-gold-600);
+        --rh-btn-highlight-border: var(--color-gold-200);
 
-    .header-center::-webkit-scrollbar { display: none; }
-    .header-center > * { flex-shrink: 0; }
+        /* Status dot */
+        --rh-ws-connected: var(--color-accent-500);
+        --rh-ws-reconnecting: var(--color-gold-500);
+        --rh-ws-connecting: var(--color-gold-500);
+        --rh-ws-disconnected: var(--color-warm-500);
 
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-      flex: 1 1 0;
-      justify-content: flex-end;
-    }
+        /* Channel-fill buttons */
+        --rh-btn-primary-fg: var(--color-primary-600);
+        --rh-btn-primary-bg: var(--color-primary-50);
+        --rh-btn-primary-hover-bg: var(--color-primary-100);
+        --rh-btn-primary-hover-border: var(--color-primary-200);
 
-    .icon-btn {
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--radius-md);
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--color-text-secondary);
-      transition: background 0.15s, color 0.15s;
-      flex-shrink: 0;
-    }
+        --rh-btn-accent-fg: var(--color-accent-600);
+        --rh-btn-accent-bg: var(--color-accent-50);
+        --rh-btn-accent-hover-bg: var(--color-accent-100);
+        --rh-btn-accent-hover-border: var(--color-accent-200);
 
-    .icon-btn:hover {
-      background: var(--color-neutral-100);
-      color: var(--color-text);
-    }
+        --rh-btn-gold-fg: var(--color-gold-600);
+        --rh-btn-gold-bg: var(--color-gold-50);
+        --rh-btn-gold-hover-bg: var(--color-gold-100);
+        --rh-btn-gold-hover-border: var(--color-gold-200);
 
-    .ws-status {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      transition: background 0.2s;
-      cursor: default;
-    }
+        --rh-btn-warm-fg: var(--color-warm-600);
+        --rh-btn-warm-bg: var(--color-warm-50);
+        --rh-btn-warm-hover-bg: var(--color-warm-100);
+        --rh-btn-warm-hover-border: var(--color-warm-200);
 
-    .ws-connected    { background: var(--color-accent-500); }
-    .ws-reconnecting { background: var(--color-gold-500); animation: pulse 1.2s ease-in-out infinite; }
-    .ws-connecting   { background: var(--color-gold-500); animation: pulse 0.8s ease-in-out infinite; }
-    .ws-disconnected { background: var(--color-warm-500); }
+        --rh-btn-neutral-fg: var(--color-text-secondary);
+        --rh-btn-neutral-bg: var(--color-neutral-50);
+        --rh-btn-neutral-hover-bg: var(--color-neutral-100);
+        --rh-btn-neutral-hover-border: var(--color-neutral-200);
+        --rh-btn-neutral-hover-color: var(--color-text);
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.35; }
-    }
-
-    .toolbar-btn {
-      position: relative;
-      width: 38px;
-      height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--radius-lg);
-      background: var(--color-card);
-      border: 1px solid transparent;
-      cursor: pointer;
-      color: var(--color-text-muted);
-      transition:
-        background 0.15s,
-        color 0.15s,
-        border-color 0.15s,
-        box-shadow 0.15s;
-      flex-shrink: 0;
-    }
-
-    .toolbar-btn:hover {
-      box-shadow: var(--shadow-sm);
-    }
-
-    .toolbar-btn:active {
-      transform: scale(0.92);
-    }
-
-    .toolbar-btn:disabled {
-      cursor: default;
-      opacity: 0.55;
-    }
-
-    .toolbar-btn:disabled:hover {
-      transform: none;
-      box-shadow: none;
-    }
-
-    .toolbar-btn:disabled:active {
-      transform: none;
-    }
-
-    .spinning {
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Toggle states */
-    .toolbar-btn.active {
-      background: var(--color-primary-100);
-      color: var(--color-primary-600);
-      border-color: var(--color-primary-200);
-    }
-
-    .toolbar-btn.highlight {
-      background: var(--color-gold-100);
-      color: var(--color-gold-600);
-      border-color: var(--color-gold-200);
-    }
-
-    /* Per-button colors */
-    .toolbar-btn.c-refresh {
-      color: var(--color-primary-600);
-      background: var(--color-primary-50);
-    }
-    .toolbar-btn.c-refresh:hover {
-      background: var(--color-primary-100);
-      border-color: var(--color-primary-200);
-    }
-
-    .toolbar-btn.c-cam {
-      color: var(--color-accent-600);
-      background: var(--color-accent-50);
-    }
-    .toolbar-btn.c-cam:hover {
-      background: var(--color-accent-100);
-      border-color: var(--color-accent-200);
-    }
-
-    .toolbar-btn.c-screen {
-      color: var(--color-primary-600);
-      background: var(--color-primary-50);
-    }
-    .toolbar-btn.c-screen:hover {
-      background: var(--color-primary-100);
-      border-color: var(--color-primary-200);
-    }
-
-    .toolbar-btn.c-hand {
-      color: var(--color-gold-600);
-      background: var(--color-gold-50);
-    }
-    .toolbar-btn.c-hand:hover {
-      background: var(--color-gold-100);
-      border-color: var(--color-gold-200);
-    }
-
-    /* Join stage (moderator → direct entry — blue) */
-    .toolbar-btn.c-hand-join {
-      color: var(--color-primary-600);
-      background: var(--color-primary-50);
-    }
-    .toolbar-btn.c-hand-join:hover {
-      background: var(--color-primary-100);
-      border-color: var(--color-primary-200);
-    }
-
-    /* Leave stage (on stage → exit — teal/green) */
-    .toolbar-btn.c-hand-leave {
-      color: var(--color-accent-600);
-      background: var(--color-accent-50);
-    }
-    .toolbar-btn.c-hand-leave:hover {
-      background: var(--color-accent-100);
-      border-color: var(--color-accent-200);
-    }
-
-    .toolbar-btn.c-gift {
-      color: var(--color-warm-600);
-      background: var(--color-warm-50);
-    }
-    .toolbar-btn.c-gift:hover {
-      background: var(--color-warm-100);
-      border-color: var(--color-warm-200);
-    }
-
-    .toolbar-btn.c-pitch {
-      color: var(--color-accent-600);
-      background: var(--color-accent-50);
-    }
-    .toolbar-btn.c-pitch:hover {
-      background: var(--color-accent-100);
-      border-color: var(--color-accent-200);
-    }
-
-    .toolbar-btn.c-settings,
-    .toolbar-btn.c-managers,
-    .toolbar-btn.c-captions {
-      color: var(--color-text-secondary);
-      background: var(--color-neutral-50);
-    }
-    .toolbar-btn.c-settings:hover,
-    .toolbar-btn.c-managers:hover,
-    .toolbar-btn.c-captions:hover {
-      background: var(--color-neutral-100);
-      border-color: var(--color-neutral-200);
-      color: var(--color-text);
-    }
-
-    .toolbar-btn.c-settings.active {
-      background: var(--color-primary-50);
-      color: var(--color-primary-600);
-      border-color: var(--color-primary-200);
-    }
-
-    .toolbar-btn.danger {
-      color: var(--color-warm-600);
-      background: var(--color-warm-50);
-    }
-    .toolbar-btn.danger:hover {
-      background: var(--color-warm-100);
-      border-color: var(--color-warm-200);
-    }
-
-    .toolbar-sep {
-      width: 1px;
-      height: 20px;
-      background: var(--color-border);
-      margin: 0 var(--space-1);
-      flex-shrink: 0;
-    }
-
-    /* Mic host */
-    app-mic-button.tip {
-      display: inline-flex;
-    }
-
-    .room-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .room-title-row {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-    }
-
-    .invisible-badge,
-    .visible-badge {
-      position: relative;
-      width: 38px;
-      height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--radius-lg);
-      border: 1px solid;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.12s;
-      flex-shrink: 0;
-    }
-    .invisible-badge:hover,
-    .visible-badge:hover { box-shadow: var(--shadow-sm); }
-    .invisible-badge:active,
-    .visible-badge:active { transform: scale(0.92); }
-
-    .invisible-badge {
-      color: var(--color-warm-600);
-      background: var(--color-warm-50);
-      border-color: var(--color-warm-200);
-    }
-    .invisible-badge:hover { background: var(--color-warm-100); border-color: var(--color-warm-300); }
-
-    .visible-badge {
-      color: var(--color-primary-600);
-      background: var(--color-primary-50);
-      border-color: var(--color-primary-200);
-    }
-    .visible-badge:hover { background: var(--color-primary-100); border-color: var(--color-primary-300); }
-
-    .name-wrapper {
-      overflow: hidden;
-      flex: 1;
-    }
-
-    .room-name {
-      font-size: var(--text-sm);
-      font-weight: var(--font-semibold);
-      color: var(--color-text);
-      margin: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .room-subtitle {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-    }
-
-    .room-topic {
-      font-size: var(--text-xs);
-      color: var(--color-text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 120px;
-    }
-
-    .separator {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-    }
-
-    .room-cname {
-      display: inline-flex;
-      align-items: center;
-      gap: 2px;
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      cursor: pointer;
-      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
-      padding: 1px 4px;
-      border-radius: var(--radius-sm);
-      transition: background 0.15s, color 0.15s;
-    }
-
-    .room-cname:hover {
-      background: var(--color-neutral-100);
-      color: var(--color-primary-500);
-    }
-
-    .cname-text {
-      font-size: var(--text-xs);
-    }
-
-    /* Back button */
-    .back-btn {
-      flex-shrink: 0;
-    }
-
-    /* More button */
-    .toolbar-btn.c-more {
-      color: var(--color-text-secondary);
-      background: var(--color-neutral-100);
-    }
-    .toolbar-btn.c-more:hover {
-      background: var(--color-neutral-200);
-      color: var(--color-text);
-    }
-
-    /* Secondary actions wrapper (desktop) */
-    .secondary-actions {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-    }
-
-    /* Overflow menu */
-    .overflow-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      z-index: 100;
-      animation: fade-in 0.2s ease-out;
-    }
-
-    @keyframes fade-in {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-
-    .overflow-panel {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--color-card);
-      border-top-left-radius: var(--radius-2xl);
-      border-top-right-radius: var(--radius-2xl);
-      z-index: 101;
-      padding: var(--space-2) var(--space-3);
-      padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
-      box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2);
-      animation: panel-enter 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-      /* drag handle */
-      touch-action: pan-y;
-      user-select: none;
-    }
-
-    @keyframes panel-enter {
-      from {
-        opacity: 0;
-        transform: translateY(24px) scale(0.96);
+        /* Sep / misc */
+        --rh-sep: var(--color-border);
+        --rh-handle-bg: var(--color-neutral-300);
       }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+
+      :host-context(.dark) {
+        --rh-bg: var(--color-neutral-800);
+        --rh-border: var(--color-neutral-700);
+        --rh-chip-bg: var(--color-neutral-800);
+        --rh-text: var(--color-neutral-100);
+        --rh-text-muted: var(--color-neutral-400);
+        --rh-text-secondary: var(--color-neutral-300);
+
+        --rh-btn-bg: var(--color-neutral-700);
+        --rh-btn-color: var(--color-neutral-300);
+        --rh-btn-border: transparent;
+
+        --rh-btn-active-bg: var(--color-primary-900);
+        --rh-btn-active-color: var(--color-primary-300);
+        --rh-btn-active-border: var(--color-primary-700);
+
+        --rh-btn-highlight-bg: var(--color-gold-900);
+        --rh-btn-highlight-color: var(--color-gold-300);
+        --rh-btn-highlight-border: var(--color-gold-700);
+
+        --rh-ws-connected: var(--color-accent-400);
+        --rh-ws-reconnecting: var(--color-gold-400);
+        --rh-ws-connecting: var(--color-gold-400);
+        --rh-ws-disconnected: var(--color-warm-400);
+
+        --rh-btn-primary-fg: var(--color-primary-300);
+        --rh-btn-primary-bg: var(--color-primary-900);
+        --rh-btn-primary-hover-bg: var(--color-primary-800);
+        --rh-btn-primary-hover-border: var(--color-primary-700);
+
+        --rh-btn-accent-fg: var(--color-accent-300);
+        --rh-btn-accent-bg: var(--color-accent-900);
+        --rh-btn-accent-hover-bg: var(--color-accent-800);
+        --rh-btn-accent-hover-border: var(--color-accent-700);
+
+        --rh-btn-gold-fg: var(--color-gold-300);
+        --rh-btn-gold-bg: var(--color-gold-900);
+        --rh-btn-gold-hover-bg: var(--color-gold-800);
+        --rh-btn-gold-hover-border: var(--color-gold-700);
+
+        --rh-btn-warm-fg: var(--color-warm-300);
+        --rh-btn-warm-bg: var(--color-warm-900);
+        --rh-btn-warm-hover-bg: var(--color-warm-800);
+        --rh-btn-warm-hover-border: var(--color-warm-700);
+
+        --rh-btn-neutral-fg: var(--color-neutral-300);
+        --rh-btn-neutral-bg: var(--color-neutral-700);
+        --rh-btn-neutral-hover-bg: var(--color-neutral-600);
+        --rh-btn-neutral-hover-border: var(--color-neutral-500);
+        --rh-btn-neutral-hover-color: var(--color-neutral-100);
+
+        --rh-sep: var(--color-neutral-600);
+        --rh-handle-bg: var(--color-neutral-600);
       }
-    }
 
-    .overflow-handle {
-      width: 40px;
-      height: 4px;
-      border-radius: 2px;
-      background: var(--color-neutral-300);
-      margin: 0 auto var(--space-2);
-    }
-    :host-context(.dark) .overflow-handle {
-      background: var(--color-neutral-600);
-    }
-
-    .overflow-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--space-3);
-      padding-bottom: var(--space-2);
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .overflow-title {
-      font-size: var(--text-sm);
-      font-weight: var(--font-semibold);
-      color: var(--color-text);
-    }
-
-    .overflow-divider {
-      height: 1px;
-      background: var(--color-border);
-      margin: var(--space-2) 0;
-    }
-
-    .overflow-list {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .overflow-row {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      width: 100%;
-      padding: var(--space-3) var(--space-2);
-      border-radius: var(--radius-lg);
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--color-text);
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      text-align: left;
-      transition: background 0.12s, color 0.12s, transform 0.1s;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .overflow-row:active {
-      background: var(--color-neutral-100);
-      transform: scale(0.985);
-    }
-
-    .overflow-row:disabled {
-      opacity: 0.4;
-      cursor: default;
-    }
-
-    .overflow-row:disabled:active {
-      background: none;
-      transform: none;
-    }
-
-    .overflow-row svg {
-      flex-shrink: 0;
-      color: var(--color-text-secondary);
-    }
-
-    .row-label {
-      flex: 1;
-    }
-
-    .row-badge {
-      font-size: var(--text-2xs);
-      font-weight: var(--font-semibold);
-      padding: 2px 8px;
-      border-radius: var(--radius-full);
-      background: var(--color-accent-100);
-      color: var(--color-accent-600);
-    }
-
-    .overflow-row-primary {
-      color: var(--color-warm-600);
-      font-weight: var(--font-semibold);
-    }
-
-    .overflow-row-primary svg {
-      color: var(--color-warm-500);
-    }
-
-    .overflow-row-primary:active {
-      background: var(--color-warm-50);
-    }
-
-    /* Responsive breakpoints */
-    @media (max-width: 1023px) {
-      .header-center {
-        overflow-x: auto;
+      /* ─── Header shell ────────────────────────────────────────────── */
+      .room-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-2) var(--space-3);
+        background: var(--rh-bg);
+        border-bottom: 1px solid var(--rh-border);
+        gap: var(--space-2);
+        height: var(--room-header-height);
+        box-sizing: border-box;
       }
-    }
 
-    @media (max-width: 699px) {
-      .toolbar-btn {
-        width: 32px;
-        height: 32px;
-      }
       .header-left {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
+      .header-center {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        flex: 0 1 auto;
+        min-width: 0;
+        padding: var(--space-1);
+        border-radius: var(--radius-xl);
+        background: var(--rh-chip-bg);
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        position: relative;
+      }
+      .header-center::-webkit-scrollbar { display: none; }
+      .header-center > * { flex-shrink: 0; }
+
+      .media-controls,
+      .engagement-controls {
+        display: flex;
+        align-items: center;
         gap: var(--space-1);
       }
-      .room-topic {
-        max-width: 80px;
-      }
-      .overflow-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
 
-    @media (max-width: 480px) {
-      .room-subtitle {
-        display: none;
-      }
-    }
-
-    /* Mobile: hide desktop-secondary elements, show mobile-only */
-    @media (max-width: 767px) {
-      .hide-mobile {
-        display: none !important;
-      }
-    }
-
-    .hide {
-      display: none !important;
-    }
-
-    /* Desktop: hide mobile-more button */
-    @media (min-width: 768px) {
-      .toolbar-btn.c-more {
-        display: none;
-      }
-    }
-
-    /* ─── Dark mode ─────────────────────────────────────────────────────── */
-    :host-context(.dark) {
-      .room-header {
-        background: var(--color-neutral-800);
-        border-color: var(--color-neutral-700);
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        flex: 1 1 0;
+        justify-content: flex-end;
       }
 
-      .header-center {
-        background: var(--color-neutral-800);
-      }
-
+      /* ─── Icon buttons (copy, more, etc.) ──────────────────────────── */
       .icon-btn {
-        color: var(--color-neutral-300);
+        width: var(--icon-btn-size);
+        height: var(--icon-btn-size);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-md);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--rh-text-secondary);
+        transition: background 0.15s, color 0.15s;
+        flex-shrink: 0;
+        -webkit-user-select: none;
+        user-select: none;
       }
-
       .icon-btn:hover {
+        background: var(--color-neutral-100);
+        color: var(--rh-text);
+      }
+      :host-context(.dark) .icon-btn:hover {
         background: var(--color-neutral-700);
         color: var(--color-neutral-100);
       }
 
+      /* ─── WebSocket status dot ─────────────────────────────────────── */
+      .ws-status {
+        width: var(--space-3);
+        height: var(--space-3);
+        border-radius: 50%;
+        flex-shrink: 0;
+        transition: background 0.2s;
+        cursor: default;
+      }
+      .ws-connected { background: var(--rh-ws-connected); }
+      .ws-reconnecting {
+        background: var(--rh-ws-reconnecting);
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+      .ws-connecting {
+        background: var(--rh-ws-connecting);
+        animation: pulse 0.8s ease-in-out infinite;
+      }
+      .ws-disconnected { background: var(--rh-ws-disconnected); }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+      }
+
+      /* ─── Toolbar buttons (mic / cam / hand / gift / etc.) ─────────── */
       .toolbar-btn {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-300);
+        position: relative;
+        width: var(--toolbar-btn-size);
+        height: var(--toolbar-btn-size);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-lg);
+        background: var(--rh-btn-bg);
+        border: 1px solid var(--rh-btn-border);
+        cursor: pointer;
+        color: var(--rh-btn-color);
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s,
+          box-shadow 0.15s;
+        flex-shrink: 0;
+        -webkit-user-select: none;
+        user-select: none;
       }
-
-      .toolbar-btn:hover {
-        background: var(--color-neutral-600);
-        color: var(--color-neutral-100);
-      }
-
+      .toolbar-btn:hover { box-shadow: var(--rh-btn-hover-shadow); }
+      .toolbar-btn:active { transform: scale(0.92); }
+      .toolbar-btn:disabled { cursor: default; opacity: 0.55; }
+      .toolbar-btn:disabled:hover { transform: none; box-shadow: none; }
+      .toolbar-btn:disabled:active { transform: none; }
       .toolbar-btn.active {
-        background: var(--color-primary-900);
-        color: var(--color-primary-300);
-        border-color: var(--color-primary-700);
+        background: var(--rh-btn-active-bg);
+        color: var(--rh-btn-active-color);
+        border-color: var(--rh-btn-active-border);
       }
-
       .toolbar-btn.highlight {
-        background: var(--color-gold-900);
-        color: var(--color-gold-300);
-        border-color: var(--color-gold-700);
+        background: var(--rh-btn-highlight-bg);
+        color: var(--rh-btn-highlight-color);
+        border-color: var(--rh-btn-highlight-border);
       }
 
-      .toolbar-btn.c-refresh {
-        color: var(--color-primary-300);
-        background: var(--color-primary-900);
-      }
-      .toolbar-btn.c-refresh:hover {
-        background: var(--color-primary-800);
-        border-color: var(--color-primary-700);
-      }
-
-      .toolbar-btn.c-cam {
-        color: var(--color-accent-300);
-        background: var(--color-accent-900);
-      }
-      .toolbar-btn.c-cam:hover {
-        background: var(--color-accent-800);
-        border-color: var(--color-accent-700);
-      }
-
+      /* Per-button color variants — every variant is just a token override. */
+      .toolbar-btn.c-refresh,
       .toolbar-btn.c-screen {
-        color: var(--color-primary-300);
-        background: var(--color-primary-900);
+        color: var(--rh-btn-primary-fg);
+        background: var(--rh-btn-primary-bg);
       }
+      .toolbar-btn.c-refresh:hover,
       .toolbar-btn.c-screen:hover {
-        background: var(--color-primary-800);
-        border-color: var(--color-primary-700);
+        background: var(--rh-btn-primary-hover-bg);
+        border-color: var(--rh-btn-primary-hover-border);
       }
-
+      .toolbar-btn.c-cam,
+      .toolbar-btn.c-pitch,
+      .toolbar-btn.c-hand-leave {
+        color: var(--rh-btn-accent-fg);
+        background: var(--rh-btn-accent-bg);
+      }
+      .toolbar-btn.c-cam:hover,
+      .toolbar-btn.c-pitch:hover,
+      .toolbar-btn.c-hand-leave:hover {
+        background: var(--rh-btn-accent-hover-bg);
+        border-color: var(--rh-btn-accent-hover-border);
+      }
       .toolbar-btn.c-hand {
-        color: var(--color-gold-300);
-        background: var(--color-gold-900);
+        color: var(--rh-btn-gold-fg);
+        background: var(--rh-btn-gold-bg);
       }
       .toolbar-btn.c-hand:hover {
-        background: var(--color-gold-800);
-        border-color: var(--color-gold-700);
+        background: var(--rh-btn-gold-hover-bg);
+        border-color: var(--rh-btn-gold-hover-border);
       }
-
       .toolbar-btn.c-hand-join {
-        color: var(--color-primary-300);
-        background: var(--color-primary-900);
+        color: var(--rh-btn-primary-fg);
+        background: var(--rh-btn-primary-bg);
       }
       .toolbar-btn.c-hand-join:hover {
-        background: var(--color-primary-800);
-        border-color: var(--color-primary-700);
+        background: var(--rh-btn-primary-hover-bg);
+        border-color: var(--rh-btn-primary-hover-border);
       }
-
-      .toolbar-btn.c-hand-leave {
-        color: var(--color-accent-300);
-        background: var(--color-accent-900);
+      .toolbar-btn.c-gift,
+      .toolbar-btn.danger {
+        color: var(--rh-btn-warm-fg);
+        background: var(--rh-btn-warm-bg);
       }
-      .toolbar-btn.c-hand-leave:hover {
-        background: var(--color-accent-800);
-        border-color: var(--color-accent-700);
+      .toolbar-btn.c-gift:hover,
+      .toolbar-btn.danger:hover {
+        background: var(--rh-btn-warm-hover-bg);
+        border-color: var(--rh-btn-warm-hover-border);
       }
-
-      .toolbar-btn.c-gift {
-        color: var(--color-warm-300);
-        background: var(--color-warm-900);
-      }
-      .toolbar-btn.c-gift:hover {
-        background: var(--color-warm-800);
-        border-color: var(--color-warm-700);
-      }
-
-      .toolbar-btn.c-pitch {
-        color: var(--color-accent-300);
-        background: var(--color-accent-900);
-      }
-      .toolbar-btn.c-pitch:hover {
-        background: var(--color-accent-800);
-        border-color: var(--color-accent-700);
-      }
-
       .toolbar-btn.c-settings,
       .toolbar-btn.c-managers,
       .toolbar-btn.c-captions {
-        color: var(--color-neutral-300);
-        background: var(--color-neutral-700);
+        color: var(--rh-btn-neutral-fg);
+        background: var(--rh-btn-neutral-bg);
       }
       .toolbar-btn.c-settings:hover,
       .toolbar-btn.c-managers:hover,
       .toolbar-btn.c-captions:hover {
-        background: var(--color-neutral-600);
-        color: var(--color-neutral-100);
-        border-color: var(--color-neutral-500);
+        background: var(--rh-btn-neutral-hover-bg);
+        border-color: var(--rh-btn-neutral-hover-border);
+        color: var(--rh-btn-neutral-hover-color);
+      }
+      .toolbar-btn.c-settings.active {
+        background: var(--rh-btn-primary-bg);
+        color: var(--rh-btn-primary-fg);
+        border-color: var(--rh-btn-primary-hover-border);
+      }
+      .toolbar-btn.c-more {
+        color: var(--rh-btn-neutral-fg);
+        background: var(--rh-btn-neutral-hover-bg);
+      }
+      .toolbar-btn.c-more:hover {
+        background: var(--rh-btn-neutral-bg);
+        color: var(--rh-text);
       }
 
-      .toolbar-btn.c-settings.active {
-        background: var(--color-primary-900);
-        color: var(--color-primary-300);
+      .spinning { animation: spin 0.8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .toolbar-sep {
+        width: 1px;
+        height: 20px;
+        background: var(--rh-sep);
+        margin: 0 var(--space-1);
+        flex-shrink: 0;
+      }
+
+      app-mic-button.tip { display: inline-flex; }
+
+      /* ─── Room meta (name + topic + cname) ─────────────────────────── */
+      .room-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+        flex: 1;
+      }
+      .room-title-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+      }
+      .invisible-badge,
+      .visible-badge {
+        position: relative;
+        width: var(--toolbar-btn-size);
+        height: var(--toolbar-btn-size);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-lg);
+        border: 1px solid;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s,
+          box-shadow 0.15s,
+          transform 0.12s;
+        flex-shrink: 0;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .invisible-badge:hover,
+      .visible-badge:hover { box-shadow: var(--shadow-sm); }
+      .invisible-badge:active,
+      .visible-badge:active { transform: scale(0.92); }
+
+      .invisible-badge {
+        color: var(--rh-btn-warm-fg);
+        background: var(--rh-btn-warm-bg);
+        border-color: var(--rh-btn-warm-hover-border);
+      }
+      .invisible-badge:hover {
+        background: var(--rh-btn-warm-hover-bg);
+        border-color: var(--color-warm-300);
+      }
+      :host-context(.dark) .invisible-badge:hover {
+        border-color: var(--color-warm-600);
+      }
+
+      .visible-badge {
+        color: var(--rh-btn-primary-fg);
+        background: var(--rh-btn-primary-bg);
+        border-color: var(--rh-btn-primary-hover-border);
+      }
+      .visible-badge:hover {
+        background: var(--rh-btn-primary-hover-bg);
+        border-color: var(--color-primary-300);
+      }
+      :host-context(.dark) .visible-badge:hover {
         border-color: var(--color-primary-600);
       }
 
-      .toolbar-btn.danger {
-        color: var(--color-warm-300);
-        background: var(--color-warm-900);
-      }
-      .toolbar-btn.danger:hover {
-        background: var(--color-warm-800);
-        border-color: var(--color-warm-700);
-      }
-
-      .toolbar-sep {
-        background: var(--color-neutral-600);
-      }
-
-      .invisible-badge {
-        color: var(--color-warm-300);
-        background: var(--color-warm-900);
-        border-color: var(--color-warm-700);
-      }
-      .invisible-badge:hover { background: var(--color-warm-800); border-color: var(--color-warm-600); }
-
-      .visible-badge {
-        color: var(--color-primary-300);
-        background: var(--color-primary-900);
-        border-color: var(--color-primary-700);
-      }
-      .visible-badge:hover { background: var(--color-primary-800); border-color: var(--color-primary-600); }
-
-      .ws-connected    { background: var(--color-accent-400); }
-      .ws-reconnecting { background: var(--color-gold-400); }
-      .ws-connecting   { background: var(--color-gold-400); }
-      .ws-disconnected { background: var(--color-warm-400); }
-
+      .name-wrapper { overflow: hidden; flex: 1; }
       .room-name {
-        color: var(--color-neutral-100);
+        font-size: var(--text-sm);
+        font-weight: var(--font-semibold);
+        color: var(--rh-text);
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
-
+      .room-subtitle {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+      }
       .room-topic {
-        color: var(--color-neutral-400);
+        font-size: var(--text-xs);
+        color: var(--rh-text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
       }
-
       .separator {
-        color: var(--color-neutral-500);
+        font-size: var(--text-xs);
+        color: var(--rh-text-muted);
       }
-
       .room-cname {
-        color: var(--color-neutral-400);
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        font-size: var(--text-xs);
+        color: var(--rh-text-muted);
+        cursor: pointer;
+        font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+        padding: 1px 4px;
+        border-radius: var(--radius-sm);
+        transition: background 0.15s, color 0.15s;
+        -webkit-user-select: none;
+        user-select: none;
       }
-
       .room-cname:hover {
+        background: var(--color-neutral-100);
+        color: var(--color-primary-500);
+      }
+      :host-context(.dark) .room-cname:hover {
         background: var(--color-neutral-700);
         color: var(--color-primary-400);
       }
-
-      .toolbar-btn.c-more {
-        color: var(--color-neutral-300);
-        background: var(--color-neutral-700);
+      .cname-text { font-size: var(--text-xs); }
+      .back-btn { flex-shrink: 0; }
+      .secondary-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
       }
-      .toolbar-btn.c-more:hover {
-        background: var(--color-neutral-600);
-        color: var(--color-neutral-100);
+
+      /* ─── Overflow menu (mobile bottom-sheet) ──────────────────────── */
+      .overflow-backdrop {
+        position: fixed;
+        inset: 0;
+        background: color-mix(in srgb, var(--color-black) 40%, transparent);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: var(--z-toast);
+        animation: fade-in 0.2s ease-out;
+      }
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
       }
 
       .overflow-panel {
-        background: var(--color-neutral-800);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--rh-bg);
+        border-top-left-radius: var(--radius-2xl);
+        border-top-right-radius: var(--radius-2xl);
+        z-index: calc(var(--z-toast) + 1);
+        padding: var(--space-2) var(--space-3);
+        padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+        box-shadow: var(--shadow-modal);
+        animation: panel-enter 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        touch-action: pan-y;
+        user-select: none;
+        -webkit-user-select: none;
+        max-height: min(85dvh, calc(100dvh - var(--app-header-height) - env(safe-area-inset-top, 0px)));
+        display: flex;
+        flex-direction: column;
+        overscroll-behavior: contain;
+      }
+      @keyframes panel-enter {
+        from {
+          opacity: 0;
+          transform: translateY(24px) scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
       }
 
+      .overflow-handle {
+        width: 40px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--rh-handle-bg);
+        margin: 0 auto var(--space-2);
+        flex-shrink: 0;
+      }
       .overflow-header {
-        border-color: var(--color-neutral-700);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-3);
+        padding-bottom: var(--space-2);
+        border-bottom: 1px solid var(--rh-border);
+        flex-shrink: 0;
       }
-
       .overflow-title {
-        color: var(--color-neutral-100);
+        font-size: var(--text-sm);
+        font-weight: var(--font-semibold);
+        color: var(--rh-text);
       }
-
       .overflow-divider {
+        height: 1px;
+        background: var(--rh-border);
+        margin: var(--space-2) 0;
+        flex-shrink: 0;
+      }
+      .overflow-list {
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        min-height: 0;
+      }
+      .overflow-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        width: 100%;
+        padding: var(--space-3) var(--space-2);
+        border-radius: var(--radius-lg);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--rh-text);
+        font-size: var(--text-sm);
+        font-weight: var(--font-medium);
+        text-align: left;
+        transition: background 0.12s, color 0.12s, transform 0.1s;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .overflow-row:active {
+        background: var(--color-neutral-100);
+        transform: scale(0.985);
+      }
+      :host-context(.dark) .overflow-row:active {
         background: var(--color-neutral-700);
       }
-
-      .overflow-row {
-        color: var(--color-neutral-100);
-      }
-
+      .overflow-row:disabled { opacity: 0.4; cursor: default; }
+      .overflow-row:disabled:active { background: none; transform: none; }
       .overflow-row svg {
+        flex-shrink: 0;
+        color: var(--rh-text-secondary);
+      }
+      :host-context(.dark) .overflow-row svg {
         color: var(--color-neutral-400);
       }
-
-      .overflow-row:active {
-        background: var(--color-neutral-700);
-      }
-
+      .row-label { flex: 1; }
       .row-badge {
+        font-size: var(--text-2xs);
+        font-weight: var(--font-semibold);
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        background: var(--color-accent-100);
+        color: var(--color-accent-600);
+      }
+      :host-context(.dark) .row-badge {
         background: var(--color-accent-900);
         color: var(--color-accent-300);
       }
-
       .overflow-row-primary {
-        color: var(--color-warm-300);
+        color: var(--rh-btn-warm-fg);
+        font-weight: var(--font-semibold);
       }
+      .overflow-row-primary svg { color: var(--color-warm-500); }
+      :host-context(.dark) .overflow-row-primary svg { color: var(--color-warm-400); }
+      .overflow-row-primary:active { background: var(--rh-btn-warm-bg); }
+      :host-context(.dark) .overflow-row-primary:active { background: var(--color-warm-900); }
 
-      .overflow-row-primary svg {
-        color: var(--color-warm-400);
-      }
+      .hide { display: none !important; }
+      .hide-mobile { display: none; }
 
-      .overflow-row-primary:active {
-        background: var(--color-warm-900);
+      /* ─── Container queries (the page lives inside .app-main; the room
+             decides its layout based on available width, not viewport) ── */
+      @container room-header (max-width: 1023.98px) {
+        .header-center {
+          overflow-x: auto;
+          overscroll-behavior-x: contain;
+          scroll-padding-inline: var(--space-2);
+        }
+        .hide-mobile { display: none !important; }
       }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .spinning {
-        animation: none;
+      @container room-header (min-width: 768px) {
+        .toolbar-btn.c-more { display: none; }
       }
-      .toolbar-btn:active {
-        transform: none;
+      @container room-header (max-width: 699.98px) {
+        .toolbar-btn {
+          width: var(--toolbar-btn-size-sm);
+          height: var(--toolbar-btn-size-sm);
+        }
+        .header-left { gap: var(--space-1); }
+        .room-topic { max-width: 80px; }
+        .overflow-grid { grid-template-columns: repeat(3, 1fr); }
       }
-      .overflow-backdrop,
-      .overflow-panel {
-        animation: none;
+      @container room-header (max-width: 479.98px) {
+        .room-subtitle { display: none; }
       }
-      .overflow-row:active {
-        transform: none;
-      }
-    }
-  `]
+    `,
+  ],
 })
 export class RoomHeaderComponent {
   readonly name = input<string>('');
@@ -1217,7 +1067,9 @@ export class RoomHeaderComponent {
   readonly refreshing = input<boolean>(false);
   readonly invisible = input<boolean>(false);
   readonly captionEnabled = input<boolean>(false);
-  readonly wsStatus = input<'connecting' | 'connected' | 'reconnecting' | 'disconnected'>('disconnected');
+  readonly wsStatus = input<'connecting' | 'connected' | 'reconnecting' | 'disconnected'>(
+    'disconnected',
+  );
 
   readonly leave = output<void>();
   readonly refresh = output<void>();
@@ -1254,10 +1106,14 @@ export class RoomHeaderComponent {
 
   readonly wsTooltip = computed<string>(() => {
     switch (this.wsStatus()) {
-      case 'connected':    return 'Live — realtime connected';
-      case 'reconnecting': return 'Reconnecting…';
-      case 'connecting':  return 'Connecting…';
-      case 'disconnected': return 'Disconnected — tap to refresh';
+      case 'connected':
+        return 'Live — realtime connected';
+      case 'reconnecting':
+        return 'Reconnecting…';
+      case 'connecting':
+        return 'Connecting…';
+      case 'disconnected':
+        return 'Disconnected — tap to refresh';
     }
   });
 
@@ -1275,9 +1131,7 @@ export class RoomHeaderComponent {
     return 'raise';
   });
 
-  readonly visibilityTooltip = computed(() =>
-    this.invisible() ? 'Go visible' : 'Go invisible',
-  );
+  readonly visibilityTooltip = computed(() => (this.invisible() ? 'Go visible' : 'Go invisible'));
 
   copyCname(): void {
     const c = this.cname();
@@ -1287,21 +1141,51 @@ export class RoomHeaderComponent {
     this.copyResetTimer = setTimeout(() => this.cnameCopied.set(false), 2000);
   }
 
-  onToggleMic(): void { this.toggleMic.emit(); }
-  onToggleCam(): void { this.toggleCam.emit(); }
-  onToggleCamOrShare(): void { this.toggleCamOrShare.emit(); }
-  onToggleHand(): void { this.toggleHand.emit(); }
-  onGift(): void { this.gift.emit(); }
-  onPitch(): void { this.pitch.emit(); }
-  onSettings(): void { this.settings.emit(); }
-  onManagers(): void { this.managers.emit(); }
-  onReward(): void { this.reward.emit(); }
-  onToggleCaption(): void { this.toggleCaption.emit(); }
-  onToggleInvisible(): void { this.toggleInvisible.emit(); }
-  onLeave(): void { this.leave.emit(); }
-  onRefresh(): void { this.refresh.emit(); }
-  toggleOverflow(): void { this.showOverflow.update((v) => !v); }
-  closeOverflow(): void { this.showOverflow.set(false); }
+  onToggleMic(): void {
+    this.toggleMic.emit();
+  }
+  onToggleCam(): void {
+    this.toggleCam.emit();
+  }
+  onToggleCamOrShare(): void {
+    this.toggleCamOrShare.emit();
+  }
+  onToggleHand(): void {
+    this.toggleHand.emit();
+  }
+  onGift(): void {
+    this.gift.emit();
+  }
+  onPitch(): void {
+    this.pitch.emit();
+  }
+  onSettings(): void {
+    this.settings.emit();
+  }
+  onManagers(): void {
+    this.managers.emit();
+  }
+  onReward(): void {
+    this.reward.emit();
+  }
+  onToggleCaption(): void {
+    this.toggleCaption.emit();
+  }
+  onToggleInvisible(): void {
+    this.toggleInvisible.emit();
+  }
+  onLeave(): void {
+    this.leave.emit();
+  }
+  onRefresh(): void {
+    this.refresh.emit();
+  }
+  toggleOverflow(): void {
+    this.showOverflow.update((v) => !v);
+  }
+  closeOverflow(): void {
+    this.showOverflow.set(false);
+  }
 
   private touchStartY = 0;
 

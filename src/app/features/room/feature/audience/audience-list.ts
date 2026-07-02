@@ -163,6 +163,8 @@ type ViewMode = 'grid' | 'list';
       display: flex;
       flex-direction: column;
       height: 100%;
+      container-type: inline-size;
+      container-name: audience-list;
     }
 
     .audience-list {
@@ -206,8 +208,8 @@ type ViewMode = 'grid' | 'list';
     }
 
     .tool-btn {
-      width: 28px;
-      height: 28px;
+      width: var(--icon-btn-size);
+      height: var(--icon-btn-size);
       border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
@@ -555,7 +557,16 @@ export class AudienceListComponent {
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
-      this.collapsed.set(window.matchMedia('(max-width: 1023px)').matches);
+      const mql = window.matchMedia('(max-width: 1023.98px)');
+      const apply = () => this.collapsed.set(mql.matches);
+      apply();
+      // Re-evaluate on viewport changes (rotate, resize, zoom, devtools open).
+      if ('addEventListener' in mql) {
+        mql.addEventListener('change', apply);
+      } else if ('addListener' in mql) {
+        // Safari < 14 fallback
+        (mql as unknown as { addListener: (cb: () => void) => void }).addListener(apply);
+      }
     }
 
     effect(() => {

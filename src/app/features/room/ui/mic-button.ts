@@ -26,12 +26,27 @@ import { LucideMic, LucideMicOff } from '@lucide/angular';
     </button>
   `,
   styles: [`
+    /* Container queries: room-header decides the slot width; the mic
+       shrinks on narrow slots via @container, not the viewport. */
+    :host {
+      display: inline-flex;
+      container-type: inline-size;
+      container-name: mic-button;
+    }
     .mic-btn {
-      width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
-      border-radius: var(--radius-lg); background: var(--color-card); border: 1px solid transparent; cursor: pointer;
+      width: var(--toolbar-btn-size);
+      height: var(--toolbar-btn-size);
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-lg);
+      background: var(--color-card);
+      border: 1px solid transparent;
+      cursor: pointer;
       color: var(--color-text-muted);
       transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
-      flex-shrink: 0; position: relative;
+      flex-shrink: 0;
+      position: relative;
+      -webkit-user-select: none;
+      user-select: none;
     }
     .mic-btn:hover { box-shadow: var(--shadow-sm); }
     .mic-btn:active { transform: scale(0.92); }
@@ -70,13 +85,11 @@ import { LucideMic, LucideMicOff } from '@lucide/angular';
       }
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      .mic-btn.speaking::after { animation: none; opacity: 0.9; }
-      .mic-btn:active { transform: none; }
-    }
-
-    @media (max-width: 699px) {
-      .mic-btn { width: 32px; height: 32px; }
+    @container mic-button (max-width: 699.98px) {
+      .mic-btn {
+        width: var(--toolbar-btn-size-sm);
+        height: var(--toolbar-btn-size-sm);
+      }
     }
   `]
 })

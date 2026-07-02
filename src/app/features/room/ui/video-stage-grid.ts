@@ -66,18 +66,47 @@ import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user'
         overflow: hidden;
       }
 
+      /* Theming tokens — dark mode overrides below */
+      :host {
+        --vsg-card-bg: var(--color-card);
+        --vsg-card-border: var(--color-border);
+        --vsg-header-bg: var(--color-neutral-50);
+        --vsg-header-border: var(--color-border);
+        --vsg-text: var(--color-text);
+        --vsg-text-muted: var(--color-text-muted);
+        --vsg-chip-bg: var(--color-neutral-100);
+        --vsg-icon: var(--color-primary-500);
+        --vsg-icon-hover-bg: var(--color-neutral-100);
+        --vsg-icon-hover-fg: var(--color-text);
+        --vsg-scroll: var(--color-neutral-200);
+      }
+      :host-context(.dark) {
+        --vsg-card-bg: var(--color-card);
+        --vsg-card-border: var(--color-border);
+        --vsg-header-bg: var(--color-neutral-800);
+        --vsg-header-border: var(--color-neutral-700);
+        --vsg-text: var(--color-neutral-100);
+        --vsg-text-muted: var(--color-neutral-400);
+        --vsg-chip-bg: var(--color-neutral-700);
+        --vsg-icon: var(--color-primary-400);
+        --vsg-icon-hover-bg: var(--color-neutral-700);
+        --vsg-icon-hover-fg: var(--color-neutral-100);
+        --vsg-scroll: var(--color-neutral-600);
+      }
+
       .stage-card {
         display: flex;
         flex-direction: column;
         height: 100%;
-        border: 1px solid var(--color-border);
-        background: var(--color-card);
+        border: 1px solid var(--vsg-card-border);
+        background: var(--vsg-card-bg);
         overflow: hidden;
       }
 
       .stage-card:fullscreen {
         border: none;
-        background: #000;
+        background: var(--color-black);
+        padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
       }
 
       .stage-header {
@@ -85,21 +114,12 @@ import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user'
         align-items: center;
         justify-content: space-between;
         padding: var(--space-2) var(--space-3);
-        border-bottom: 1px solid var(--color-border);
-        background: var(--color-neutral-50);
+        border-bottom: 1px solid var(--vsg-header-border);
+        background: var(--vsg-header-bg);
         flex-shrink: 0;
       }
-      :host-context(.dark) .stage-header {
-        background: var(--color-neutral-800);
-        border-color: var(--color-neutral-700);
-      }
 
-      .header-left {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-      }
-
+      .header-left,
       .header-right {
         display: flex;
         align-items: center;
@@ -107,8 +127,8 @@ import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user'
       }
 
       .fullscreen-btn {
-        width: 22px;
-        height: 22px;
+        width: var(--icon-btn-size);
+        height: var(--icon-btn-size);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -119,45 +139,28 @@ import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user'
         color: var(--color-text-muted);
       }
       .fullscreen-btn:hover {
-        background: var(--color-neutral-100);
-        color: var(--color-text);
+        background: var(--vsg-icon-hover-bg);
+        color: var(--vsg-icon-hover-fg);
       }
       .fullscreen-btn:focus-visible {
         outline: var(--focus-ring);
         outline-offset: var(--focus-ring-offset);
       }
-      :host-context(.dark) .fullscreen-btn:hover {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-100);
-      }
 
-      .header-icon {
-        color: var(--color-primary-500);
-      }
-      :host-context(.dark) .header-icon {
-        color: var(--color-primary-400);
-      }
-
+      .header-icon { color: var(--vsg-icon); }
       .header-title {
         font-size: var(--text-xs);
         font-weight: var(--font-semibold);
-        color: var(--color-text);
+        color: var(--vsg-text);
         margin: 0;
-      }
-      :host-context(.dark) .header-title {
-        color: var(--color-neutral-100);
       }
 
       .stage-count {
         font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        background: var(--color-neutral-100);
+        color: var(--vsg-text-muted);
+        background: var(--vsg-chip-bg);
         padding: 1px 6px;
         border-radius: var(--radius-full);
-      }
-      :host-context(.dark) .stage-count {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-400);
       }
 
       .stage-grid {
@@ -166,38 +169,23 @@ import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user'
         padding: var(--space-3);
         overflow: hidden;
         height: 100%;
+        /* baseline: 2 columns. 1 speaker is naturally single-column because
+           there's only one item; 3 speakers need three columns. */
         grid-template-columns: repeat(2, 1fr);
       }
-
-      .stage-grid[data-count='1'] {
-        grid-template-columns: 1fr;
-      }
-
-      .stage-grid[data-count='2'] {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
       .stage-grid[data-count='3'] {
         grid-template-columns: repeat(3, 1fr);
       }
-
       .stage-grid[data-count='4'] {
         grid-template-columns: repeat(2, 1fr);
       }
 
-      .stage-grid::-webkit-scrollbar {
-        width: 6px;
-      }
+      .stage-grid::-webkit-scrollbar { width: 6px; }
       .stage-grid::-webkit-scrollbar-thumb {
-        background: var(--color-neutral-200);
+        background: var(--vsg-scroll);
         border-radius: var(--radius-full);
       }
-      :host-context(.dark) .stage-grid::-webkit-scrollbar-thumb {
-        background: var(--color-neutral-600);
-      }
-      .stage-grid::-webkit-scrollbar-track {
-        background: transparent;
-      }
+      .stage-grid::-webkit-scrollbar-track { background: transparent; }
 
       .stage-empty {
         display: flex;
@@ -205,16 +193,9 @@ import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user'
         align-items: center;
         justify-content: center;
         gap: var(--space-2);
-        color: var(--color-text-muted);
+        color: var(--vsg-text-muted);
       }
-      :host-context(.dark) .stage-empty {
-        color: var(--color-neutral-400);
-      }
-
-      .empty-icon {
-        opacity: 0.4;
-      }
-
+      .empty-icon { opacity: 0.4; }
       .empty-text {
         font-size: var(--text-sm);
         margin: 0;

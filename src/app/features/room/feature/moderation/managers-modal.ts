@@ -120,7 +120,46 @@ export interface ManagersModalData {
     </app-modal>
   `,
   styles: [`
-    :host { display: block; width: 380px; max-width: calc(100vw - var(--space-8)); }
+    :host {
+      display: block;
+      width: 380px;
+      max-width: calc(100vw - var(--space-8));
+
+      --mm-skeleton-from: var(--color-neutral-200);
+      --mm-skeleton-mid: var(--color-neutral-100);
+      --mm-skeleton-to: var(--color-neutral-200);
+      --mm-hover-bg: var(--color-neutral-50);
+      --mm-empty-bg: var(--color-neutral-100);
+      --mm-empty-icon-color: var(--color-text-muted);
+      --mm-retry-bg: var(--color-card);
+      --mm-retry-border: var(--color-border);
+      --mm-retry-color: var(--color-text);
+      --mm-retry-hover-bg: var(--color-neutral-50);
+      --mm-name-color: var(--color-text);
+      --mm-offline-bg: var(--color-neutral-100);
+      --mm-offline-fg: var(--color-text-muted);
+      --mm-stay-fg: var(--color-text-muted);
+      --mm-remove-hover-bg: var(--color-warm-50);
+      --mm-remove-hover-fg: var(--color-warm-600);
+    }
+    :host-context(.dark) {
+      --mm-skeleton-from: var(--color-neutral-700);
+      --mm-skeleton-mid: var(--color-neutral-600);
+      --mm-skeleton-to: var(--color-neutral-700);
+      --mm-hover-bg: var(--color-neutral-700);
+      --mm-empty-bg: var(--color-neutral-700);
+      --mm-empty-icon-color: var(--color-text-muted);
+      --mm-retry-bg: var(--color-neutral-800);
+      --mm-retry-border: var(--color-neutral-700);
+      --mm-retry-color: var(--color-neutral-200);
+      --mm-retry-hover-bg: var(--color-neutral-700);
+      --mm-name-color: var(--color-neutral-100);
+      --mm-offline-bg: var(--color-neutral-700);
+      --mm-offline-fg: var(--color-neutral-300);
+      --mm-stay-fg: var(--color-neutral-400);
+      --mm-remove-hover-bg: var(--color-warm-600);
+      --mm-remove-hover-fg: var(--color-warm-50);
+    }
 
     .loading-list { display: flex; flex-direction: column; gap: var(--space-2); }
     .skeleton-item {
@@ -133,27 +172,21 @@ export interface ManagersModalData {
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      background: var(--color-neutral-200);
-      animation: shimmer 1.4s infinite;
-      background: linear-gradient(90deg, var(--color-neutral-200) 25%, var(--color-neutral-100) 50%, var(--color-neutral-200) 75%);
+      background: linear-gradient(90deg, var(--mm-skeleton-from) 25%, var(--mm-skeleton-mid) 50%, var(--mm-skeleton-to) 75%);
       background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
     }
     .skeleton-text {
       flex: 1;
       height: 14px;
       border-radius: var(--radius-sm);
-      background: linear-gradient(90deg, var(--color-neutral-200) 25%, var(--color-neutral-100) 50%, var(--color-neutral-200) 75%);
+      background: linear-gradient(90deg, var(--mm-skeleton-from) 25%, var(--mm-skeleton-mid) 50%, var(--mm-skeleton-to) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
     }
     @keyframes shimmer {
       0% { background-position: 200% 0; }
       100% { background-position: -200% 0; }
-    }
-    :host-context(.dark) .skeleton-avatar,
-    :host-context(.dark) .skeleton-text {
-      background: linear-gradient(90deg, var(--color-neutral-700) 25%, var(--color-neutral-600) 50%, var(--color-neutral-700) 75%);
-      background-size: 200% 100%;
     }
 
     .empty-state {
@@ -170,12 +203,16 @@ export interface ManagersModalData {
       width: 56px;
       height: 56px;
       border-radius: var(--radius-full);
-      background: var(--color-neutral-100);
-      color: var(--color-text-muted);
+      background: var(--mm-empty-bg);
+      color: var(--mm-empty-icon-color);
     }
-    :host-context(.dark) .empty-icon-circle { background: var(--color-neutral-700); }
-    .empty-icon-circle.error { background: var(--color-warm-50); color: var(--color-warm-500); }
-    :host-context(.dark) .empty-icon-circle.error { background: color-mix(in srgb, var(--color-warm-600) 25%, transparent); }
+    .empty-icon-circle.error {
+      background: var(--color-warm-50);
+      color: var(--color-warm-500);
+    }
+    :host-context(.dark) .empty-icon-circle.error {
+      background: color-mix(in srgb, var(--color-warm-600) 25%, transparent);
+    }
     .empty-text {
       font-size: var(--text-sm);
       font-weight: var(--font-medium);
@@ -194,19 +231,17 @@ export interface ManagersModalData {
       display: inline-flex;
       align-items: center;
       gap: var(--space-1);
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--mm-retry-border);
       border-radius: var(--radius-md);
-      background: var(--color-card);
-      color: var(--color-text);
+      background: var(--mm-retry-bg);
+      color: var(--mm-retry-color);
       font-size: var(--text-sm);
       font-weight: var(--font-medium);
       padding: var(--space-1) var(--space-3);
       cursor: pointer;
       transition: background 0.15s;
     }
-    .retry-btn:hover { background: var(--color-neutral-50); }
-    :host-context(.dark) .retry-btn { background: var(--color-neutral-800); border-color: var(--color-neutral-700); color: var(--color-neutral-200); }
-    :host-context(.dark) .retry-btn:hover { background: var(--color-neutral-700); }
+    .retry-btn:hover { background: var(--mm-retry-hover-bg); }
     .retry-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 
     .managers-list {
@@ -234,21 +269,22 @@ export interface ManagersModalData {
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .manager-item:hover { background: var(--color-neutral-50); transform: translateX(2px); }
-    .manager-item:focus-visible { outline: var(--focus-ring); outline-offset: -2px; background: var(--color-neutral-50); }
-    :host-context(.dark) .manager-item:hover,
-    :host-context(.dark) .manager-item:focus-visible { background: var(--color-neutral-700); }
+    .manager-item:hover { background: var(--mm-hover-bg); transform: translateX(2px); }
+    .manager-item:focus-visible {
+      outline: var(--focus-ring);
+      outline-offset: -2px;
+      background: var(--mm-hover-bg);
+    }
 
     .manager-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .manager-name {
       font-size: var(--text-sm);
       font-weight: var(--font-medium);
-      color: var(--color-text);
+      color: var(--mm-name-color);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    :host-context(.dark) .manager-name { color: var(--color-neutral-100); }
 
     .manager-meta { display: flex; align-items: center; gap: var(--space-2); }
     .role-badge {
@@ -262,29 +298,30 @@ export interface ManagersModalData {
       border-radius: var(--radius-full);
       padding: 1px 6px;
     }
-    :host-context(.dark) .role-badge { color: var(--color-primary-300); background: var(--color-primary-900); }
+    :host-context(.dark) .role-badge {
+      color: var(--color-primary-300);
+      background: var(--color-primary-900);
+    }
     .offline-badge {
       font-size: var(--text-2xs);
       font-weight: var(--font-semibold);
       padding: 1px 6px;
       border-radius: var(--radius-full);
-      background: var(--color-neutral-100);
-      color: var(--color-text-muted);
+      background: var(--mm-offline-bg);
+      color: var(--mm-offline-fg);
       flex-shrink: 0;
     }
-    :host-context(.dark) .offline-badge { background: var(--color-neutral-700); color: var(--color-neutral-300); }
     .stay-time {
       display: inline-flex;
       align-items: center;
       gap: 3px;
       font-size: var(--text-2xs);
-      color: var(--color-text-muted);
+      color: var(--mm-stay-fg);
     }
-    :host-context(.dark) .stay-time { color: var(--color-neutral-400); }
 
     .remove-btn {
-      width: 28px;
-      height: 28px;
+      width: var(--icon-btn-size);
+      height: var(--icon-btn-size);
       border-radius: var(--radius-full);
       border: none;
       background: transparent;
@@ -304,9 +341,11 @@ export interface ManagersModalData {
       opacity: 1;
       transform: scale(1);
     }
-    .remove-btn:hover { background: var(--color-warm-50); color: var(--color-warm-600); }
+    .remove-btn:hover {
+      background: var(--mm-remove-hover-bg);
+      color: var(--mm-remove-hover-fg);
+    }
     .remove-btn:disabled { opacity: 1; cursor: not-allowed; color: var(--color-text-muted); }
-    :host-context(.dark) .remove-btn:hover { background: var(--color-warm-600); color: var(--color-warm-50); }
   `],
 })
 export class ManagersModalComponent {

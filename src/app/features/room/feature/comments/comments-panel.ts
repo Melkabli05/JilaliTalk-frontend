@@ -125,29 +125,9 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         display: flex;
         flex-direction: column;
         height: 100%;
-        width: 100% !important;
-      }
+        container-type: inline-size;
+        container-name: comments-panel;
 
-      :host.expanded {
-        position: fixed;
-        inset: 0;
-        z-index: 200;
-        animation: panel-expand 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-      }
-
-      @keyframes panel-expand {
-        from {
-          opacity: 0;
-          transform: scale(0.96);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
-
-      /* ─── Design tokens ─── */
-      :host {
         --cp-bg: var(--color-card);
         --cp-border: var(--color-border);
         --cp-tab-bg: var(--color-neutral-100);
@@ -166,11 +146,21 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         --cp-icon: var(--color-neutral-400);
       }
 
+      :host.expanded {
+        position: fixed;
+        inset: 0;
+        z-index: var(--z-modal);
+        animation: panel-expand 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      @keyframes panel-expand {
+        from { opacity: 0; transform: scale(0.96); }
+        to { opacity: 1; transform: scale(1); }
+      }
+
       .comments-panel {
         display: flex;
         flex-direction: column;
         height: 100%;
-        width: 100% !important;
         background: var(--cp-bg);
         border-left: 1px solid var(--cp-border);
       }
@@ -189,7 +179,6 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         gap: var(--space-2);
         min-width: 0;
       }
-
       .tabs {
         display: flex;
         gap: 2px;
@@ -228,8 +217,8 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         gap: var(--space-1);
       }
       .icon-btn {
-        width: 24px;
-        height: 24px;
+        width: var(--icon-btn-size);
+        height: var(--icon-btn-size);
         border-radius: var(--radius-sm);
         display: flex;
         align-items: center;
@@ -239,37 +228,21 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         cursor: pointer;
         color: var(--cp-icon);
       }
-      .icon-btn:disabled {
-        cursor: default;
-        opacity: 0.6;
-      }
+      .icon-btn:disabled { cursor: default; opacity: 0.6; }
       .icon-btn:focus-visible {
         outline: var(--focus-ring);
         outline-offset: var(--focus-ring-offset);
       }
-      .expand-btn {
-        display: none;
-      }
-      @media (max-width: 1023px) {
-        .expand-btn {
-          display: flex;
-        }
-      }
-      .spinning {
-        animation: spin 0.8s linear infinite;
-      }
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .spinning {
-          animation: none;
-        }
-        :host.expanded {
-          animation: none;
-        }
+      .expand-btn { display: none; }
+
+      .spinning { animation: spin 0.8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* Container query: comments-panel sits in a column that may be the
+         mobile bottom slot or the desktop sidebar; expand affordance only
+         makes sense when the panel is in the mobile slot. */
+      @container comments-panel (max-width: 1023.98px) {
+        .expand-btn { display: flex; }
       }
 
       .tab-panel {
@@ -280,9 +253,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         overflow: hidden;
         position: relative;
       }
-      .tab-panel[inert] {
-        display: none;
-      }
+      .tab-panel[inert] { display: none; }
       .comments-scroll {
         display: flex;
         flex-direction: column;
@@ -290,11 +261,8 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         min-height: 0;
         overflow: hidden;
       }
-      app-comment-input {
-        flex-shrink: 0;
-      }
+      app-comment-input { flex-shrink: 0; }
 
-      /* ─── Typing indicator ─── */
       .typing-indicator {
         display: flex;
         align-items: center;
@@ -310,8 +278,8 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         align-items: center;
       }
       .typing-dot {
-        width: 4px;
-        height: 4px;
+        width: var(--space-1);
+        height: var(--space-1);
         border-radius: 50%;
         background: var(--color-primary-500);
         opacity: 0.5;

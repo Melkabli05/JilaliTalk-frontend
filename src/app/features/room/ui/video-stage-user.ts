@@ -94,6 +94,27 @@ export interface PlayableVideoTrack {
     `
       :host {
         display: contents;
+
+        --vsu-video-bg: var(--color-neutral-200);
+        --vsu-crown-bg: var(--color-gold-100);
+        --vsu-crown-border: var(--color-gold-200);
+        --vsu-crown-fg: var(--color-gold-500);
+        --vsu-mic-bg: var(--color-warm-500);
+        --vsu-mic-border: var(--color-card);
+        --vsu-overlay-bg: color-mix(in srgb, var(--color-black) 50%, transparent);
+        --vsu-overlay-hover-bg: color-mix(in srgb, var(--color-black) 70%, transparent);
+        --vsu-overlay-fg: var(--color-on-color);
+        --vsu-badge-default-bg: color-mix(in srgb, var(--color-on-color) 20%, transparent);
+        --vsu-badge-default-fg: var(--color-on-color);
+        --vsu-badge-speaker-bg: color-mix(in srgb, var(--color-on-color) 15%, transparent);
+      }
+      :host-context(.dark) {
+        --vsu-video-bg: var(--color-neutral-700);
+        --vsu-crown-bg: var(--color-gold-900);
+        --vsu-crown-border: var(--color-gold-700);
+        --vsu-crown-fg: var(--color-gold-300);
+        --vsu-mic-bg: var(--color-warm-600);
+        --vsu-mic-border: var(--color-neutral-800);
       }
 
       .tile {
@@ -115,17 +136,14 @@ export interface PlayableVideoTrack {
         position: relative;
         width: 100%;
         height: 100%;
-        background: var(--color-neutral-200);
+        background: var(--vsu-video-bg);
         border-radius: var(--radius-lg);
         overflow: hidden;
-      }
-      :host-context(.dark) .video-container {
-        background: var(--color-neutral-700);
       }
 
       .video-container:fullscreen {
         border-radius: 0;
-        background: #000;
+        background: var(--color-black);
       }
 
       .expand-btn {
@@ -135,17 +153,17 @@ export interface PlayableVideoTrack {
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: rgba(0, 0, 0, 0.5);
+        background: var(--vsu-overlay-bg);
         border: none;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #fff;
+        color: var(--vsu-overlay-fg);
         cursor: pointer;
         z-index: 3;
       }
       .expand-btn:hover {
-        background: rgba(0, 0, 0, 0.7);
+        background: var(--vsu-overlay-hover-bg);
       }
       .expand-btn:focus-visible {
         outline: var(--focus-ring);
@@ -159,9 +177,6 @@ export interface PlayableVideoTrack {
         border: 2px solid var(--color-accent-400);
         pointer-events: none;
         z-index: 2;
-      }
-      :host-context(.dark) .speak-ring {
-        border-color: var(--color-accent-400);
       }
 
       .video-feed {
@@ -184,18 +199,13 @@ export interface PlayableVideoTrack {
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: var(--color-gold-100);
-        border: 1px solid var(--color-gold-200);
+        background: var(--vsu-crown-bg);
+        border: 1px solid var(--vsu-crown-border);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--color-gold-500);
+        color: var(--vsu-crown-fg);
         z-index: 3;
-      }
-      :host-context(.dark) .crown-badge {
-        background: var(--color-gold-900);
-        border-color: var(--color-gold-700);
-        color: var(--color-gold-300);
       }
 
       .mic-badge {
@@ -205,17 +215,13 @@ export interface PlayableVideoTrack {
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: var(--color-warm-500);
-        border: 1.5px solid var(--color-card);
+        background: var(--vsu-mic-bg);
+        border: 1.5px solid var(--vsu-mic-border);
         display: flex;
         align-items: center;
         justify-content: center;
         color: var(--color-on-color);
         z-index: 3;
-      }
-      :host-context(.dark) .mic-badge {
-        background: var(--color-warm-600);
-        border-color: var(--color-neutral-800);
       }
 
       .name-overlay {
@@ -224,8 +230,8 @@ export interface PlayableVideoTrack {
         left: 0;
         right: 0;
         padding: 4px 8px;
-        background: rgba(0, 0, 0, 0.5);
-        color: var(--color-on-color);
+        background: var(--vsu-overlay-bg);
+        color: var(--vsu-overlay-fg);
         display: flex;
         align-items: center;
         gap: 4px;
@@ -241,13 +247,13 @@ export interface PlayableVideoTrack {
       }
 
       .role-badge {
-        font-size: 9px;
+        font-size: var(--text-2xs);
         font-weight: var(--font-bold);
         letter-spacing: 0.5px;
         text-transform: uppercase;
         padding: 1px 5px;
         border-radius: var(--radius-full);
-        background: rgba(255, 255, 255, 0.2);
+        background: var(--vsu-badge-default-bg);
       }
       .role-badge.host {
         background: var(--color-primary-500);
@@ -258,11 +264,11 @@ export interface PlayableVideoTrack {
         color: var(--color-gold-900);
       }
       .role-badge.speaker {
-        background: rgba(255, 255, 255, 0.15);
-        color: var(--color-on-color);
+        background: var(--vsu-badge-speaker-bg);
+        color: var(--vsu-badge-default-fg);
       }
       .role-badge.ai {
-        background: color-mix(in srgb, var(--color-accent-400) 70%, #fff);
+        background: color-mix(in srgb, var(--color-accent-400) 70%, var(--color-on-color));
         color: var(--color-accent-900);
       }
     `,

@@ -121,10 +121,15 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     }
   `,
   styles: [`
+    /* Container queries: the page is loaded into .app-main, so the layout
+       depends on the available width inside that slot, not the viewport.
+       container-type lets children react to the same parent context. */
     :host {
       display: block;
       height: 100%;
       overflow: hidden;
+      container-type: inline-size;
+      container-name: room-page;
     }
 
     .room-layout {
@@ -134,10 +139,13 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       overflow: hidden;
     }
 
+    /* Mobile-first: column stack. .left-column takes the bulk of vertical
+       space; audience-section grows inside it. */
     .room-body {
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-height: 0;
     }
 
     .left-column {
@@ -145,32 +153,36 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       flex-direction: column;
       min-height: 0;
       overflow: hidden;
+      flex: 1 1 auto;
     }
 
     .room-header {
       flex-shrink: 0;
       overflow: visible;
       position: relative;
-      z-index: 5;
+      z-index: var(--z-overlay);
     }
 
     .stage-section { flex-shrink: 0; min-height: 0; min-width: 0; }
-    .audience-section { flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
-
-    @media (min-width: 1024px) {
-      .room-body { display: grid; grid-template-columns: minmax(0, 1fr) var(--comments-panel-width); overflow: hidden; }
-      .left-column { height: 100%; }
-      .comments-section { display: flex; height: 100%; overflow: hidden; }
+    .audience-section { flex: 1 1 0; min-height: 0; min-width: 0; overflow: hidden; }
+    .comments-section {
+      display: flex;
+      flex-direction: column;
+      flex: 0 0 auto;
+      min-height: 0;
+      overflow: hidden;
+      max-height: 50%;
     }
 
-    @media (max-width: 1023px) {
-      .comments-section {
-        flex: 1;
-        min-height: 0;
+    /* Desktop: two-column grid, comments becomes a sidebar. */
+    @container room-page (min-width: 1024px) {
+      .room-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
         overflow: hidden;
-        display: flex;
-        flex-direction: column;
       }
+      .left-column { height: 100%; flex: none; }
+      .comments-section { display: flex; height: 100%; max-height: none; flex: none; }
     }
   `]
 })

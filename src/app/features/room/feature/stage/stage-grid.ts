@@ -38,6 +38,25 @@ import { LucideUserCircle } from '@lucide/angular';
         display: flex;
         flex-direction: column;
         overflow-y: auto;
+
+        --sg-header-border: var(--color-border);
+        --sg-title: var(--color-text);
+        --sg-count-bg: var(--color-neutral-100);
+        --sg-count-fg: var(--color-text-secondary);
+        --sg-empty-bg: var(--color-neutral-50);
+        --sg-empty-border: var(--color-neutral-200);
+        --sg-empty-fg: var(--color-neutral-300);
+        --sg-empty-label: var(--color-text-muted);
+      }
+      :host-context(.dark) {
+        --sg-header-border: var(--color-neutral-700);
+        --sg-title: var(--color-neutral-200);
+        --sg-count-bg: var(--color-neutral-700);
+        --sg-count-fg: var(--color-neutral-400);
+        --sg-empty-bg: var(--color-neutral-800);
+        --sg-empty-border: var(--color-neutral-700);
+        --sg-empty-fg: var(--color-neutral-600);
+        --sg-empty-label: var(--color-neutral-500);
       }
 
       .stage-header {
@@ -45,31 +64,22 @@ import { LucideUserCircle } from '@lucide/angular';
         align-items: center;
         gap: var(--space-2);
         padding: var(--space-2) var(--space-3);
-        border-bottom: 1px solid var(--color-border);
+        border-bottom: 1px solid var(--sg-header-border);
         flex-shrink: 0;
       }
 
       .stage-title {
         font-size: var(--text-sm);
         font-weight: var(--font-semibold);
-        color: var(--color-text);
-      }
-
-      :host-context(.dark) .stage-title {
-        color: var(--color-neutral-200);
+        color: var(--sg-title);
       }
 
       .stage-count {
         font-size: var(--text-xs);
-        color: var(--color-text-secondary);
+        color: var(--sg-count-fg);
         padding: 1px 6px;
         border-radius: var(--radius-full);
-        background: var(--color-neutral-100);
-      }
-
-      :host-context(.dark) .stage-count {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-400);
+        background: var(--sg-count-bg);
       }
 
       .stage-grid {
@@ -94,30 +104,17 @@ import { LucideUserCircle } from '@lucide/angular';
         width: 100%;
         aspect-ratio: 1;
         border-radius: 50%;
-        border: 2px dashed var(--color-neutral-200);
-        background: var(--color-neutral-50);
+        border: 2px dashed var(--sg-empty-border);
+        background: var(--sg-empty-bg);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--color-neutral-300);
-      }
-      :host-context(.dark) .empty-avatar {
-        background: var(--color-neutral-800);
-        border-color: var(--color-neutral-700);
-        color: var(--color-neutral-600);
+        color: var(--sg-empty-fg);
       }
 
       .empty-label {
         font-size: var(--text-2xs);
-        color: var(--color-text-muted);
-      }
-
-      :host-context(.dark) .empty-label {
-        color: var(--color-neutral-500);
-      }
-
-      :host-context(.dark) .stage-header {
-        border-color: var(--color-neutral-700);
+        color: var(--sg-empty-label);
       }
     `,
   ],

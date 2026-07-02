@@ -359,10 +359,8 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         flex-direction: column;
         flex: 1;
         min-height: 0;
-      }
 
-      /* ─── Design tokens ─── */
-      :host {
+        /* ─── Design tokens ─── */
         --cl-bg: var(--color-neutral-50);
         --cl-border: var(--color-border);
         --cl-text: var(--color-text);
@@ -376,6 +374,27 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         --cl-tag-bg: var(--color-neutral-100);
         --cl-tag-txt: var(--color-text-muted);
         --cl-action-bg: transparent;
+        --cl-name-self: var(--color-primary-600);
+        --cl-host-bg: color-mix(in srgb, var(--color-gold-500) 16%, transparent);
+        --cl-host-fg: var(--color-gold-600);
+        --cl-host-border: color-mix(in srgb, var(--color-gold-500) 40%, transparent);
+        --cl-mod-bg: color-mix(in srgb, var(--color-primary-500) 14%, transparent);
+        --cl-mod-fg: var(--color-primary-600);
+        --cl-mod-border: color-mix(in srgb, var(--color-primary-500) 40%, transparent);
+        --cl-vip-gold-bg: color-mix(in srgb, var(--color-gold-200) 60%, transparent);
+        --cl-vip-gold-fg: var(--color-gold-700);
+        --cl-vip-gold-border: color-mix(in srgb, var(--color-gold-500) 35%, transparent);
+        --cl-vip-primary-bg: var(--color-primary-50);
+        --cl-vip-primary-fg: var(--color-primary-600);
+        --cl-vip-primary-border: color-mix(in srgb, var(--color-primary-500) 30%, transparent);
+        --cl-fg-bg: color-mix(in srgb, var(--color-accent-500) 12%, transparent);
+        --cl-fg-fg: var(--color-accent-600);
+        --cl-fg-border: color-mix(in srgb, var(--color-accent-500) 30%, transparent);
+        --cl-quote-fg: var(--color-primary-600);
+        --cl-quote-text: var(--cl-muted);
+        --cl-translate-bg: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
+        --cl-empty-bg: var(--color-primary-50);
+        --cl-empty-fg: var(--color-primary-400);
       }
       :host-context(.dark) {
         --cl-bg: var(--color-neutral-800);
@@ -384,13 +403,32 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         --cl-muted: var(--color-neutral-500);
         --cl-name: var(--color-neutral-200);
         --cl-scroll: var(--color-neutral-600);
-        --cl-msg-bg: transparent;
         --cl-sep-bg: var(--color-neutral-800);
         --cl-sep-txt: var(--color-neutral-400);
         --cl-sep-line: var(--color-neutral-700);
         --cl-tag-bg: color-mix(in srgb, var(--color-neutral-700) 70%, transparent);
         --cl-tag-txt: var(--color-neutral-400);
-        --cl-action-bg: transparent;
+        --cl-name-self: var(--color-primary-300);
+        --cl-host-bg: color-mix(in srgb, var(--color-gold-500) 24%, transparent);
+        --cl-host-fg: var(--color-gold-300);
+        --cl-host-border: color-mix(in srgb, var(--color-gold-500) 45%, transparent);
+        --cl-mod-bg: color-mix(in srgb, var(--color-primary-500) 24%, transparent);
+        --cl-mod-fg: var(--color-primary-300);
+        --cl-mod-border: color-mix(in srgb, var(--color-primary-500) 45%, transparent);
+        --cl-vip-gold-bg: color-mix(in srgb, var(--color-gold-500) 25%, transparent);
+        --cl-vip-gold-fg: var(--color-gold-300);
+        --cl-vip-gold-border: color-mix(in srgb, var(--color-gold-500) 45%, transparent);
+        --cl-vip-primary-bg: color-mix(in srgb, var(--color-primary-500) 20%, transparent);
+        --cl-vip-primary-fg: var(--color-primary-300);
+        --cl-vip-primary-border: color-mix(in srgb, var(--color-primary-500) 45%, transparent);
+        --cl-fg-bg: color-mix(in srgb, var(--color-accent-500) 22%, transparent);
+        --cl-fg-fg: var(--color-accent-300);
+        --cl-fg-border: color-mix(in srgb, var(--color-accent-500) 40%, transparent);
+        --cl-quote-fg: var(--color-primary-300);
+        --cl-quote-text: var(--color-neutral-400);
+        --cl-translate-bg: color-mix(in srgb, var(--color-primary-500) 16%, transparent);
+        --cl-empty-bg: var(--color-primary-900);
+        --cl-empty-fg: var(--color-primary-300);
       }
 
       .comment-list {
@@ -403,12 +441,10 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         scrollbar-width: thin;
         scrollbar-color: var(--cl-scroll) transparent;
       }
-      .comment-list::-webkit-scrollbar {
-        width: 4px;
-      }
+      .comment-list::-webkit-scrollbar { width: var(--space-1); }
       .comment-list::-webkit-scrollbar-thumb {
         background: var(--cl-scroll);
-        border-radius: 2px;
+        border-radius: var(--radius-full);
       }
 
       /* ─── Date separator ─── */
@@ -428,7 +464,7 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         font-size: var(--text-2xs);
         font-weight: var(--font-medium);
         color: var(--cl-sep-txt);
-        padding: 1px 8px;
+        padding: 1px var(--space-2);
         border-radius: var(--radius-full);
         background: var(--cl-sep-bg);
         white-space: nowrap;
@@ -469,10 +505,7 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         max-width: 50%;
       }
       .name.is-self {
-        color: var(--color-primary-600);
-      }
-      :host-context(.dark) .name.is-self {
-        color: var(--color-primary-300);
+        color: var(--cl-name-self);
       }
 
       /* ─── Role / VIP / FG chips ─── */
@@ -487,24 +520,14 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         border: 1px solid transparent;
       }
       .role-badge.host {
-        background: color-mix(in srgb, var(--color-gold-500) 16%, transparent);
-        color: var(--color-gold-600);
-        border-color: color-mix(in srgb, var(--color-gold-500) 40%, transparent);
+        background: var(--cl-host-bg);
+        color: var(--cl-host-fg);
+        border-color: var(--cl-host-border);
       }
       .role-badge.mod {
-        background: color-mix(in srgb, var(--color-primary-500) 14%, transparent);
-        color: var(--color-primary-600);
-        border-color: color-mix(in srgb, var(--color-primary-500) 40%, transparent);
-      }
-      :host-context(.dark) .role-badge.host {
-        background: color-mix(in srgb, var(--color-gold-500) 24%, transparent);
-        color: var(--color-gold-300);
-        border-color: color-mix(in srgb, var(--color-gold-500) 45%, transparent);
-      }
-      :host-context(.dark) .role-badge.mod {
-        background: color-mix(in srgb, var(--color-primary-500) 24%, transparent);
-        color: var(--color-primary-300);
-        border-color: color-mix(in srgb, var(--color-primary-500) 45%, transparent);
+        background: var(--cl-mod-bg);
+        color: var(--cl-mod-fg);
+        border-color: var(--cl-mod-border);
       }
 
       .vip-chip,
@@ -522,36 +545,20 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         border: 1px solid transparent;
       }
       .vip-chip.vip-gold {
-        background: color-mix(in srgb, var(--color-gold-200) 60%, transparent);
-        color: var(--color-gold-700);
-        border-color: color-mix(in srgb, var(--color-gold-500) 35%, transparent);
+        background: var(--cl-vip-gold-bg);
+        color: var(--cl-vip-gold-fg);
+        border-color: var(--cl-vip-gold-border);
       }
       .vip-chip.vip-primary {
-        background: var(--color-primary-50);
-        color: var(--color-primary-600);
-        border-color: color-mix(in srgb, var(--color-primary-500) 30%, transparent);
+        background: var(--cl-vip-primary-bg);
+        color: var(--cl-vip-primary-fg);
+        border-color: var(--cl-vip-primary-border);
       }
-      :host-context(.dark) .vip-chip.vip-gold {
-        background: color-mix(in srgb, var(--color-gold-500) 25%, transparent);
-        color: var(--color-gold-300);
-        border-color: color-mix(in srgb, var(--color-gold-500) 45%, transparent);
-      }
-      :host-context(.dark) .vip-chip.vip-primary {
-        background: color-mix(in srgb, var(--color-primary-500) 20%, transparent);
-        color: var(--color-primary-300);
-        border-color: color-mix(in srgb, var(--color-primary-500) 45%, transparent);
-      }
-
       .fg-chip {
-        background: color-mix(in srgb, var(--color-accent-500) 12%, transparent);
-        color: var(--color-accent-600);
+        background: var(--cl-fg-bg);
+        color: var(--cl-fg-fg);
+        border-color: var(--cl-fg-border);
         text-transform: none;
-        border-color: color-mix(in srgb, var(--color-accent-500) 30%, transparent);
-      }
-      :host-context(.dark) .fg-chip {
-        background: color-mix(in srgb, var(--color-accent-500) 22%, transparent);
-        color: var(--color-accent-300);
-        border-color: color-mix(in srgb, var(--color-accent-500) 40%, transparent);
       }
 
       .time {
@@ -583,10 +590,6 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
       .bubble.own {
         background: var(--color-primary-500);
         color: var(--color-on-color);
-      }
-      :host-context(.dark) .bubble {
-        background: var(--cl-bg);
-        color: var(--cl-text);
       }
       :host-context(.dark) .bubble.own {
         background: var(--color-primary-600);
@@ -638,7 +641,7 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         gap: 3px;
         font-size: var(--text-2xs);
         font-weight: var(--font-medium);
-        color: var(--color-primary-600);
+        color: var(--cl-quote-fg);
       }
       .reply-quote__label strong {
         font-weight: var(--font-bold);
@@ -646,22 +649,16 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
       .reply-quote.own .reply-quote__label {
         color: var(--color-on-color);
       }
-      :host-context(.dark) .reply-quote__label {
-        color: var(--color-primary-300);
-      }
       .reply-quote__text {
         font-size: var(--text-2xs);
         font-style: italic;
-        color: var(--cl-muted);
+        color: var(--cl-quote-text);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
       .reply-quote.own .reply-quote__text {
         color: color-mix(in srgb, var(--color-on-color) 75%, transparent);
-      }
-      :host-context(.dark) .reply-quote__text {
-        color: var(--color-neutral-400);
       }
 
       /* ─── Actions (always visible, inline inside bubble) ─── */
@@ -701,12 +698,8 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         margin-top: 2px;
         padding: 2px var(--space-1);
         border-radius: var(--radius-sm);
-        background: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
+        background: var(--cl-translate-bg);
         border-left: 2px solid var(--color-primary-400);
-      }
-      :host-context(.dark) .translation-label {
-        background: color-mix(in srgb, var(--color-primary-500) 16%, transparent);
-        color: var(--color-primary-300);
       }
       .translating-label {
         display: block;
@@ -729,16 +722,12 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         width: 40px;
         height: 40px;
         border-radius: var(--radius-xl);
-        background: var(--color-primary-50);
+        background: var(--cl-empty-bg);
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: var(--space-2);
-        color: var(--color-primary-400);
-      }
-      :host-context(.dark) .empty-icon {
-        background: var(--color-primary-900);
-        color: var(--color-primary-300);
+        color: var(--cl-empty-fg);
       }
       .empty-title {
         font-size: var(--text-sm);
@@ -750,6 +739,11 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         font-size: var(--text-xs);
         color: var(--cl-muted);
         margin: 0;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        /* No animations are used; nothing to disable here. Block reserved
+           so future motion-adding edits are forced to opt-in. */
       }
     `,
   ],

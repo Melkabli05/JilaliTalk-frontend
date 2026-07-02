@@ -64,10 +64,14 @@ export interface SendEvent {
     </div>
   `,
   styles: [`
-    :host { display: block; flex-shrink: 0; position: relative; }
-
-    /* ─── Design tokens ─── */
+    /* Create a stacking context so the absolutely-positioned emoji picker
+       can't escape the comment panel and clip behind the room header. */
     :host {
+      display: block;
+      flex-shrink: 0;
+      position: relative;
+      isolation: isolate;
+
       --ci-border:  var(--color-border);
       --ci-bg:      var(--color-card);
       --ci-input:   var(--color-neutral-50);
@@ -129,7 +133,7 @@ export interface SendEvent {
     .emoji-btn.active { color: var(--ci-text); }
     .emoji-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
     .emoji-picker-container {
-      position: absolute; bottom: 100%; left: var(--space-3); z-index: 100;
+      position: absolute; bottom: 100%; left: var(--space-3); z-index: 1;
       margin-bottom: var(--space-1);
     }
     emoji-picker {

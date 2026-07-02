@@ -155,7 +155,7 @@ import {
       display: flex;
       align-items: center;
       gap: var(--space-2);
-      padding: 6px var(--space-2);
+      padding: var(--space-1) var(--space-2);
       border-radius: var(--radius-xl);
       background: var(--ec-bg);
       border: 1px solid var(--ec-border);
@@ -168,7 +168,7 @@ import {
       flex: 1;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: var(--space-1);
       flex-wrap: wrap;
       font-size: var(--text-xs);
       min-width: 0;
@@ -192,7 +192,7 @@ import {
       display: inline-flex;
       align-items: center;
       gap: 2px;
-      font-size: 9px;
+      font-size: var(--text-2xs);
       font-weight: var(--font-bold);
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -318,7 +318,7 @@ import {
       background: color-mix(in srgb, var(--color-warm-500) 22%, transparent);
       color: var(--color-warm-300);
     }
-    .wb-tag { font-size: 9px; }
+    .wb-tag { font-size: var(--text-2xs); }
     .live-dot {
       position: absolute;
       top: -1px;
@@ -367,7 +367,7 @@ import {
     }
     .gift .event-nickname { color: var(--color-gold-700); font-weight: var(--font-bold); }
     .gift-label {
-      font-size: 9px;
+      font-size: var(--text-2xs);
       font-weight: var(--font-bold);
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -414,11 +414,11 @@ import {
       position: absolute;
       top: -5px;
       right: -5px;
-      font-size: 9px;
+      font-size: var(--text-2xs);
       font-weight: var(--font-bold);
       color: var(--color-on-color);
       background: var(--color-warm-500);
-      padding: 0 4px;
+      padding: 0 var(--space-1);
       border-radius: var(--radius-full);
       line-height: 14px;
       box-shadow: 0 0 0 1.5px var(--color-card);
@@ -443,7 +443,7 @@ import {
       display: inline-flex;
       align-items: center;
       gap: 2px;
-      font-size: 9px;
+      font-size: var(--text-2xs);
       font-weight: var(--font-bold);
       font-variant-numeric: tabular-nums;
       color: var(--color-gold-700);

@@ -141,30 +141,43 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
   `,
   styles: [
     `
+      /* Container queries: parent (.app-main) owns viewport height and
+         bottom-nav padding. The room page must NOT compute its own vh.
+         Layout adapts to the slot width via @container, not viewport. */
+      :host {
+        display: block;
+        height: 100%;
+        overflow: hidden;
+        container-type: inline-size;
+        container-name: video-room;
+      }
+
       .room-layout {
         display: grid;
         grid-template-rows: 1fr;
-        height: calc(100dvh - 56px);
+        height: 100%;
         overflow: hidden;
       }
 
       .room-body {
         display: grid;
-        grid-template-columns: 1fr var(--comments-panel-width);
+        grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
         overflow: hidden;
+        min-height: 0;
       }
 
       .left-column {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: 56px minmax(0, 1fr) auto;
+        grid-template-rows: var(--room-header-height) minmax(0, 1fr) auto;
         overflow: hidden;
+        min-height: 0;
       }
 
       .room-header {
         overflow: visible;
         position: relative;
-        z-index: 5;
+        z-index: var(--z-overlay);
       }
 
       .stage-section {
@@ -187,17 +200,16 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       .comments-section {
         height: 100%;
         overflow: hidden;
+        min-height: 0;
       }
 
-      @media (max-width: 1023px) {
+      /* Mobile: comments hidden, single-column body. */
+      @container video-room (max-width: 1023.98px) {
         .comments-section {
           display: none;
         }
         .room-body {
           grid-template-columns: 1fr;
-        }
-        .room-layout {
-          height: calc(100dvh - 56px - var(--bottom-nav-height));
         }
       }
     `,

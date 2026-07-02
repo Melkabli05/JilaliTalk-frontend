@@ -243,15 +243,63 @@ import { firstValueFrom } from 'rxjs';
     </div>
   `,
   styles: [`
+    :host {
+      /* Theming tokens */
+      --sp-skeleton-from: var(--color-neutral-200);
+      --sp-skeleton-mid: var(--color-neutral-100);
+      --sp-skeleton-to: var(--color-neutral-200);
+      --sp-tabs-bg: var(--color-neutral-100);
+      --sp-tab-active-bg: var(--color-card);
+      --sp-tab-active-fg: var(--color-primary-600);
+      --sp-close-bg: color-mix(in srgb, var(--color-card) 70%, transparent);
+      --sp-close-hover-bg: var(--color-neutral-200);
+      --sp-streak-fg: var(--color-gold-600);
+      --sp-streak-border: var(--color-gold-200);
+      --sp-day-bg: var(--color-neutral-50);
+      --sp-today-bg: var(--color-primary-50);
+      --sp-signed-border: var(--color-gold-200);
+      --sp-status-locked-bg: var(--color-neutral-300);
+      --sp-status-locked-fg: var(--color-neutral-600);
+      --sp-card-bg: var(--color-neutral-50);
+      --sp-card-border: var(--color-border);
+      --sp-task-icon-bg: color-mix(in srgb, var(--color-primary-50) 60%, var(--color-card));
+      --sp-locked-bg: var(--color-neutral-200);
+      --sp-locked-fg: var(--color-text-muted);
+      --sp-xp-track: var(--color-neutral-200);
+      --sp-body-scroll: var(--color-neutral-300);
+    }
+    :host-context(.dark) {
+      --sp-skeleton-from: var(--color-neutral-700);
+      --sp-skeleton-mid: var(--color-neutral-600);
+      --sp-skeleton-to: var(--color-neutral-700);
+      --sp-tabs-bg: var(--color-neutral-900);
+      --sp-tab-active-bg: var(--color-neutral-700);
+      --sp-tab-active-fg: var(--color-primary-300);
+      --sp-close-bg: color-mix(in srgb, var(--color-neutral-900) 40%, transparent);
+      --sp-close-hover-bg: var(--color-neutral-600);
+      --sp-streak-fg: var(--color-gold-300);
+      --sp-streak-border: color-mix(in srgb, var(--color-gold-500) 30%, transparent);
+      --sp-today-bg: color-mix(in srgb, var(--color-primary-700) 25%, transparent);
+      --sp-signed-border: color-mix(in srgb, var(--color-gold-500) 30%, transparent);
+      --sp-status-locked-bg: var(--color-neutral-600);
+      --sp-status-locked-fg: var(--color-neutral-300);
+      --sp-card-bg: var(--color-neutral-800);
+      --sp-task-icon-bg: color-mix(in srgb, var(--color-primary-900) 50%, var(--color-neutral-800));
+      --sp-locked-bg: var(--color-neutral-700);
+      --sp-locked-fg: var(--color-neutral-400);
+      --sp-xp-track: var(--color-neutral-700);
+      --sp-body-scroll: var(--color-neutral-600);
+    }
+
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgb(0 0 0 / 55%);
+      background: color-mix(in srgb, var(--color-black) 55%, transparent);
       backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 200;
+      z-index: var(--z-modal);
       animation: fadeIn 0.15s ease-out;
     }
     @keyframes fadeIn {
@@ -307,8 +355,8 @@ import { firstValueFrom } from 'rxjs';
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      width: var(--icon-btn-size);
+      height: var(--icon-btn-size);
       border-radius: var(--radius-md);
       background: color-mix(in srgb, var(--color-gold-300) 35%, var(--color-card));
       color: var(--color-gold-500);
@@ -325,10 +373,11 @@ import { firstValueFrom } from 'rxjs';
       margin: 0;
     }
     .close-btn {
-      width: 28px; height: 28px;
+      width: var(--icon-btn-size);
+      height: var(--icon-btn-size);
       border-radius: var(--radius-full);
       border: none;
-      background: color-mix(in srgb, var(--color-card) 70%, transparent);
+      background: var(--sp-close-bg);
       color: var(--color-text-muted);
       cursor: pointer;
       display: flex;
@@ -336,10 +385,12 @@ import { firstValueFrom } from 'rxjs';
       justify-content: center;
       transition: background 0.15s, color 0.15s, transform 0.15s;
     }
-    .close-btn:hover { background: var(--color-neutral-200); color: var(--color-text); transform: rotate(90deg); }
+    .close-btn:hover {
+      background: var(--sp-close-hover-bg);
+      color: var(--color-text);
+      transform: rotate(90deg);
+    }
     .close-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-    :host-context(.dark) .close-btn { background: color-mix(in srgb, var(--color-neutral-900) 40%, transparent); color: var(--color-neutral-300); }
-    :host-context(.dark) .close-btn:hover { background: var(--color-neutral-600); }
 
     .tabs {
       display: flex;
@@ -347,9 +398,8 @@ import { firstValueFrom } from 'rxjs';
       margin: var(--space-3) var(--space-4) 0;
       padding: 3px;
       border-radius: var(--radius-lg);
-      background: var(--color-neutral-100);
+      background: var(--sp-tabs-bg);
     }
-    :host-context(.dark) .tabs { background: var(--color-neutral-900); }
     .tab {
       flex: 1;
       padding: var(--space-2) var(--space-3);
@@ -364,21 +414,19 @@ import { firstValueFrom } from 'rxjs';
     }
     .tab:hover { color: var(--color-text); }
     .tab.active {
-      color: var(--color-primary-600);
-      background: var(--color-card);
+      color: var(--sp-tab-active-fg);
+      background: var(--sp-tab-active-bg);
       box-shadow: var(--shadow-xs);
       font-weight: var(--font-semibold);
     }
-    :host-context(.dark) .tab.active { color: var(--color-primary-300); background: var(--color-neutral-700); }
 
     .panel-body {
       padding: var(--space-4);
       overflow-y: auto;
       flex: 1;
       scrollbar-width: thin;
-      scrollbar-color: var(--color-neutral-300) transparent;
+      scrollbar-color: var(--sp-body-scroll) transparent;
     }
-    :host-context(.dark) .panel-body { scrollbar-color: var(--color-neutral-600) transparent; }
 
     .loading-grid {
       display: grid;
@@ -389,7 +437,7 @@ import { firstValueFrom } from 'rxjs';
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: var(--space-1);
       padding: var(--space-2);
     }
     .sk-circle {
@@ -401,13 +449,9 @@ import { firstValueFrom } from 'rxjs';
       border-radius: var(--radius-sm);
     }
     .sk-circle, .sk-text {
-      background: linear-gradient(90deg, var(--color-neutral-200) 25%, var(--color-neutral-100) 50%, var(--color-neutral-200) 75%);
+      background: linear-gradient(90deg, var(--sp-skeleton-from) 25%, var(--sp-skeleton-mid) 50%, var(--sp-skeleton-to) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
-    }
-    :host-context(.dark) .sk-circle, :host-context(.dark) .sk-text {
-      background: linear-gradient(90deg, var(--color-neutral-700) 25%, var(--color-neutral-600) 50%, var(--color-neutral-700) 75%);
-      background-size: 200% 100%;
     }
     @keyframes shimmer {
       0% { background-position: 200% 0; }
@@ -426,11 +470,10 @@ import { firstValueFrom } from 'rxjs';
       padding: var(--space-2) var(--space-3);
       border-radius: var(--radius-lg);
       background: linear-gradient(135deg, var(--color-gold-50), color-mix(in srgb, var(--color-gold-100) 70%, var(--color-gold-50)));
-      border: 1px solid var(--color-gold-200);
+      border: 1px solid var(--sp-streak-border);
     }
     :host-context(.dark) .streak-banner {
       background: linear-gradient(135deg, color-mix(in srgb, var(--color-gold-700) 25%, transparent), color-mix(in srgb, var(--color-gold-600) 15%, transparent));
-      border-color: color-mix(in srgb, var(--color-gold-500) 30%, transparent);
     }
     .streak-icon {
       color: var(--color-gold-500);
@@ -446,9 +489,8 @@ import { firstValueFrom } from 'rxjs';
     .streak-label {
       font-size: var(--text-sm);
       font-weight: var(--font-semibold);
-      color: var(--color-gold-600);
+      color: var(--sp-streak-fg);
     }
-    :host-context(.dark) .streak-label { color: var(--color-gold-300); }
     .sign-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
@@ -461,8 +503,8 @@ import { firstValueFrom } from 'rxjs';
       gap: 4px;
       padding: var(--space-2) var(--space-1);
       border-radius: var(--radius-lg);
-      background: var(--color-neutral-50);
-      border: 1px solid var(--color-border);
+      background: var(--sp-day-bg);
+      border: 1px solid var(--sp-card-border);
       position: relative;
       transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, background 0.15s;
       animation: itemIn 0.25s ease-out backwards;
@@ -473,26 +515,19 @@ import { firstValueFrom } from 'rxjs';
     }
     .sign-day.today {
       border-color: var(--color-primary-400);
-      background: var(--color-primary-50);
+      background: var(--sp-today-bg);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-400) 18%, transparent);
       animation: itemIn 0.25s ease-out backwards, pulseToday 2.4s ease-in-out infinite;
     }
-    :host-context(.dark) .sign-day.today { background: color-mix(in srgb, var(--color-primary-700) 25%, transparent); }
     .sign-day.signed {
       background: linear-gradient(160deg, var(--color-gold-50), color-mix(in srgb, var(--color-gold-100) 50%, var(--color-gold-50)));
-      border-color: var(--color-gold-200);
+      border-color: var(--sp-signed-border);
     }
     :host-context(.dark) .sign-day.signed {
       background: color-mix(in srgb, var(--color-gold-600) 18%, transparent);
-      border-color: color-mix(in srgb, var(--color-gold-500) 30%, transparent);
     }
-    .sign-day.locked {
-      opacity: 0.6;
-    }
-    .sign-day.locked:hover {
-      transform: none;
-      box-shadow: none;
-    }
+    .sign-day.locked { opacity: 0.6; }
+    .sign-day.locked:hover { transform: none; box-shadow: none; }
     @keyframes itemIn {
       from { opacity: 0; transform: translateY(4px) scale(0.95); }
       to { opacity: 1; transform: translateY(0) scale(1); }
@@ -517,9 +552,7 @@ import { firstValueFrom } from 'rxjs';
       width: 30px; height: 30px;
       object-fit: contain;
     }
-    .sign-day.locked .gift-thumb {
-      filter: grayscale(1);
-    }
+    .sign-day.locked .gift-thumb { filter: grayscale(1); }
     .status-badge {
       position: absolute;
       bottom: -4px; right: -4px;
@@ -534,12 +567,8 @@ import { firstValueFrom } from 'rxjs';
       color: var(--color-on-color);
     }
     .status-locked {
-      background: var(--color-neutral-300);
-      color: var(--color-neutral-600);
-    }
-    :host-context(.dark) .status-locked {
-      background: var(--color-neutral-600);
-      color: var(--color-neutral-300);
+      background: var(--sp-status-locked-bg);
+      color: var(--sp-status-locked-fg);
     }
     @keyframes popIn {
       from { opacity: 0; transform: scale(0.5); }
@@ -547,12 +576,12 @@ import { firstValueFrom } from 'rxjs';
     }
     .gift-icon { font-size: 18px; }
     .day-label {
-      font-size: 9px;
+      font-size: var(--text-2xs);
       font-weight: var(--font-semibold);
       color: var(--color-text);
     }
     .gift-name {
-      font-size: 8px;
+      font-size: var(--text-2xs);
       color: var(--color-text-muted);
       text-align: center;
       overflow: hidden;
@@ -582,7 +611,8 @@ import { firstValueFrom } from 'rxjs';
       border-color: color-mix(in srgb, var(--color-primary-500) 30%, transparent);
     }
     .room-level-icon {
-      width: 28px; height: 28px;
+      width: var(--icon-btn-size);
+      height: var(--icon-btn-size);
       object-fit: contain;
     }
     .room-level-icon-fallback {
@@ -628,8 +658,8 @@ import { firstValueFrom } from 'rxjs';
       gap: var(--space-3);
       padding: var(--space-3);
       border-radius: var(--radius-lg);
-      background: var(--color-neutral-50);
-      border: 1px solid var(--color-border);
+      background: var(--sp-card-bg);
+      border: 1px solid var(--sp-card-border);
       transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
       animation: itemIn 0.25s ease-out backwards;
     }
@@ -642,7 +672,6 @@ import { firstValueFrom } from 'rxjs';
       .reward-item { animation: none; }
       .reward-item:hover { transform: none; }
     }
-    :host-context(.dark) .reward-item { background: var(--color-neutral-800); }
     .reward-icon-wrap {
       width: 40px; height: 40px;
       border-radius: var(--radius-md);
@@ -655,7 +684,8 @@ import { firstValueFrom } from 'rxjs';
     }
     .reward-icon { font-size: 20px; }
     .reward-icon-img {
-      width: 28px; height: 28px;
+      width: var(--icon-btn-size);
+      height: var(--icon-btn-size);
       object-fit: contain;
     }
     .reward-info {
@@ -674,7 +704,7 @@ import { firstValueFrom } from 'rxjs';
       white-space: nowrap;
     }
     .reward-count {
-      font-size: 10px;
+      font-size: var(--text-2xs);
       color: var(--color-text-muted);
     }
     .claim-btn {
@@ -696,13 +726,8 @@ import { firstValueFrom } from 'rxjs';
     .claim-btn:active:not(:disabled) { transform: translateY(0); }
     .claim-btn:disabled { opacity: 0.6; cursor: default; }
     .claim-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-    .reward-item.claimed {
-      opacity: 0.65;
-    }
-    .reward-item.claimed:hover {
-      transform: none;
-      box-shadow: none;
-    }
+    .reward-item.claimed { opacity: 0.65; }
+    .reward-item.claimed:hover { transform: none; box-shadow: none; }
     .claimed-badge {
       display: flex;
       align-items: center;
@@ -726,10 +751,9 @@ import { firstValueFrom } from 'rxjs';
       width: 100%;
       height: 6px;
       border-radius: var(--radius-full);
-      background: var(--color-neutral-200);
+      background: var(--sp-xp-track);
       overflow: hidden;
     }
-    :host-context(.dark) .xp-bar { background: var(--color-neutral-700); }
     .xp-bar-fill {
       height: 100%;
       border-radius: var(--radius-full);
@@ -752,8 +776,8 @@ import { firstValueFrom } from 'rxjs';
       gap: var(--space-3);
       padding: var(--space-3);
       border-radius: var(--radius-lg);
-      background: var(--color-neutral-50);
-      border: 1px solid var(--color-border);
+      background: var(--sp-card-bg);
+      border: 1px solid var(--sp-card-border);
       transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
       animation: itemIn 0.25s ease-out backwards;
     }
@@ -766,30 +790,16 @@ import { firstValueFrom } from 'rxjs';
       .task-item { animation: none; }
       .task-item:hover { transform: none; }
     }
-    :host-context(.dark) .task-item { background: var(--color-neutral-800); }
-    .task-item.claimed {
-      opacity: 0.65;
-    }
-    .task-item.claimed:hover {
-      transform: none;
-      box-shadow: none;
-    }
-    .task-item.locked {
-      opacity: 0.5;
-    }
-    .task-item.locked:hover {
-      transform: none;
-      box-shadow: none;
-    }
+    .task-item.claimed { opacity: 0.65; }
+    .task-item.claimed:hover { transform: none; box-shadow: none; }
+    .task-item.locked { opacity: 0.5; }
+    .task-item.locked:hover { transform: none; box-shadow: none; }
     .task-icon-wrap {
       width: 40px; height: 40px;
       border-radius: var(--radius-md);
-      background: color-mix(in srgb, var(--color-primary-50) 60%, var(--color-card));
+      background: var(--sp-task-icon-bg);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-    }
-    :host-context(.dark) .task-icon-wrap {
-      background: color-mix(in srgb, var(--color-primary-900) 50%, var(--color-neutral-800));
     }
     .task-icon { color: var(--color-primary-500); }
     .task-icon-img {
@@ -830,15 +840,11 @@ import { firstValueFrom } from 'rxjs';
       gap: var(--space-1);
       padding: var(--space-1) var(--space-3);
       border-radius: var(--radius-md);
-      background: var(--color-neutral-200);
-      color: var(--color-text-muted);
+      background: var(--sp-locked-bg);
+      color: var(--sp-locked-fg);
       font-size: var(--text-xs);
       font-weight: var(--font-semibold);
       flex-shrink: 0;
-    }
-    :host-context(.dark) .locked-badge {
-      background: var(--color-neutral-700);
-      color: var(--color-neutral-400);
     }
   `],
 })

@@ -115,8 +115,8 @@ import { AuthService } from '@core/auth/auth.service';
     .app-header {
       position: sticky;
       top: 0;
-      z-index: 30;
-      height: 56px;
+      z-index: var(--z-shell-header);
+      height: var(--app-header-height);
       display: flex;
       align-items: center;
       justify-content: space-between;

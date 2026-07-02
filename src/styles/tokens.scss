@@ -1,6 +1,5 @@
 /* ─── Tailwind v4 ────────────────────────────────────────────── */
 @import "tailwindcss";
-
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ─── Design Tokens ──────────────────────────────────────────
@@ -18,7 +17,6 @@
   --color-primary-700: hsl(230deg 28% 35%);
   --color-primary-800: hsl(230deg 28% 25%);
   --color-primary-900: hsl(230deg 28% 15%);
-
   --color-accent-50: hsl(155deg 32% 95%);
   --color-accent-100: hsl(155deg 32% 90%);
   --color-accent-200: hsl(155deg 32% 80%);
@@ -29,7 +27,6 @@
   --color-accent-700: hsl(155deg 32% 28%);
   --color-accent-800: hsl(155deg 32% 20%);
   --color-accent-900: hsl(155deg 32% 12%);
-
   --color-warm-50: hsl(10deg 32% 95%);
   --color-warm-100: hsl(10deg 32% 90%);
   --color-warm-200: hsl(10deg 32% 80%);
@@ -40,7 +37,6 @@
   --color-warm-700: hsl(10deg 32% 38%);
   --color-warm-800: hsl(10deg 32% 28%);
   --color-warm-900: hsl(10deg 32% 18%);
-
   --color-gold-50: hsl(40deg 35% 95%);
   --color-gold-100: hsl(40deg 35% 90%);
   --color-gold-200: hsl(40deg 35% 80%);
@@ -51,7 +47,6 @@
   --color-gold-700: hsl(40deg 35% 30%);
   --color-gold-800: hsl(40deg 35% 22%);
   --color-gold-900: hsl(40deg 35% 15%);
-
   --color-social-50: hsl(195deg 55% 95%);
   --color-social-100: hsl(195deg 55% 90%);
   --color-social-200: hsl(195deg 55% 80%);
@@ -62,7 +57,6 @@
   --color-social-700: hsl(195deg 55% 28%);
   --color-social-800: hsl(195deg 55% 20%);
   --color-social-900: hsl(195deg 55% 12%);
-
   --color-berry-50: hsl(330deg 50% 96%);
   --color-berry-100: hsl(330deg 50% 91%);
   --color-berry-200: hsl(330deg 50% 82%);
@@ -73,7 +67,6 @@
   --color-berry-700: hsl(330deg 50% 30%);
   --color-berry-800: hsl(330deg 50% 21%);
   --color-berry-900: hsl(330deg 50% 13%);
-
   --color-error-50: hsl(0deg 72% 96%);
   --color-error-100: hsl(0deg 72% 91%);
   --color-error-200: hsl(0deg 72% 83%);
@@ -84,7 +77,6 @@
   --color-error-700: hsl(0deg 65% 36%);
   --color-error-800: hsl(0deg 65% 27%);
   --color-error-900: hsl(0deg 60% 18%);
-
   --color-neutral-50: hsl(35deg 15% 97%);
   --color-neutral-100: hsl(35deg 10% 93%);
   --color-neutral-200: hsl(35deg 10% 87%);
@@ -104,7 +96,6 @@
   --color-text-muted: var(--color-neutral-400);
   --color-text-secondary: var(--color-neutral-500);
   --color-border: var(--color-neutral-200);
-
   --color-live: hsl(0deg 84% 60%);
   --color-live-bg: hsl(0deg 84% 60% / 90%);
   --color-ended: hsl(220deg 9% 46%);
@@ -177,7 +168,29 @@
   --comments-panel-width: 500px;
   --avatar-label-width: 72px;
 
-  /* ── Focus Ring ── */
+  /* Header heights (previously hardcoded as 56px in multiple files) */
+  --app-header-height: 56px;
+  --room-header-height: 56px;
+
+  /* Toolbar / icon button sizes */
+  --toolbar-btn-size: 38px;
+  --toolbar-btn-size-sm: 32px;
+  --toolbar-btn-size-lg: 44px;
+  --icon-btn-size: 28px;
+
+  /* Touch-target minimums (WCAG 2.5.5 AAA for primary actions) */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 38px;
+
+  /* Z-index scale (semantic — keep magic numbers out of components) */
+  --z-shell-header: 30;
+  --z-overlay: 50;
+  --z-modal-backdrop: 60;
+  --z-modal: 70;
+  --z-toast: 100;
+  --z-skip-link: 9999;
+
+  /* Focus Ring */
   --focus-ring: 2px solid var(--color-primary-500);
   --focus-ring-offset: 2px;
 }
@@ -196,7 +209,6 @@
   --color-primary-700: var(--color-primary-700);
   --color-primary-800: var(--color-primary-800);
   --color-primary-900: var(--color-primary-900);
-
   --color-accent: var(--color-accent-500);
   --color-accent-50: var(--color-accent-50);
   --color-accent-100: var(--color-accent-100);
@@ -208,7 +220,6 @@
   --color-accent-700: var(--color-accent-700);
   --color-accent-800: var(--color-accent-800);
   --color-accent-900: var(--color-accent-900);
-
   --color-warm: var(--color-warm-500);
   --color-warm-50: var(--color-warm-50);
   --color-warm-100: var(--color-warm-100);
@@ -220,7 +231,6 @@
   --color-warm-700: var(--color-warm-700);
   --color-warm-800: var(--color-warm-800);
   --color-warm-900: var(--color-warm-900);
-
   --color-gold: var(--color-gold-500);
   --color-gold-50: var(--color-gold-50);
   --color-gold-100: var(--color-gold-100);
@@ -232,7 +242,6 @@
   --color-gold-700: var(--color-gold-700);
   --color-gold-800: var(--color-gold-800);
   --color-gold-900: var(--color-gold-900);
-
   --color-social: var(--color-social-500);
   --color-social-50: var(--color-social-50);
   --color-social-100: var(--color-social-100);
@@ -244,7 +253,6 @@
   --color-social-700: var(--color-social-700);
   --color-social-800: var(--color-social-800);
   --color-social-900: var(--color-social-900);
-
   --color-berry: var(--color-berry-500);
   --color-berry-50: var(--color-berry-50);
   --color-berry-100: var(--color-berry-100);
@@ -256,7 +264,6 @@
   --color-berry-700: var(--color-berry-700);
   --color-berry-800: var(--color-berry-800);
   --color-berry-900: var(--color-berry-900);
-
   --color-error: var(--color-error-500);
   --color-error-50: var(--color-error-50);
   --color-error-100: var(--color-error-100);
@@ -268,7 +275,6 @@
   --color-error-700: var(--color-error-700);
   --color-error-800: var(--color-error-800);
   --color-error-900: var(--color-error-900);
-
   --color-neutral-50:  var(--color-neutral-50);
   --color-neutral-100: var(--color-neutral-100);
   --color-neutral-200: var(--color-neutral-200);
@@ -341,22 +347,48 @@
   --bottom-nav-height:     var(--bottom-nav-height);
   --comments-panel-width:   var(--comments-panel-width);
   --avatar-label-width:     var(--avatar-label-width);
+  --app-header-height:     var(--app-header-height);
+  --room-header-height:    var(--room-header-height);
+  --toolbar-btn-size:      var(--toolbar-btn-size);
+  --toolbar-btn-size-sm:   var(--toolbar-btn-size-sm);
+  --toolbar-btn-size-lg:   var(--toolbar-btn-size-lg);
+  --icon-btn-size:         var(--icon-btn-size);
+  --touch-target-min:      var(--touch-target-min);
+  --touch-target-comfortable: var(--touch-target-comfortable);
+  --z-shell-header:        var(--z-shell-header);
+  --z-overlay:             var(--z-overlay);
+  --z-modal-backdrop:      var(--z-modal-backdrop);
+  --z-modal:               var(--z-modal);
+  --z-toast:               var(--z-toast);
 }
 
 /* ─── Animations ─────────────────────────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
+
 @keyframes fade-in-up { to { opacity: 1; transform: translateY(0); } }
+
 @keyframes skeleton-pulse { 0%, 100% { opacity: 0.6; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1); } }
+
 @keyframes speak-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
 @keyframes tooltip-fade-in { to { opacity: 1; } }
+
 @keyframes shimmer { to { background-position: -200% 0; } }
+
 @keyframes slide-up { to { opacity: 1; transform: translateY(0) scale(1); } }
+
 @keyframes item-in { to { opacity: 1; transform: translateY(0); } }
+
 @keyframes pop-in { to { opacity: 1; transform: scale(1); } }
+
 @keyframes pulse-live { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
 @keyframes lang-select-fade-in { to { opacity: 1; transform: translateY(0); } }
+
 @keyframes dropdown-fade-in { to { opacity: 1; transform: translateY(0) scale(1); } }
+
 @keyframes check-pop { to { transform: scale(1); opacity: 1; } }
+
 @keyframes slide-in { to { opacity: 1; transform: translateX(0); } }
 
 /* ─── Animation Variables (for @apply ── */

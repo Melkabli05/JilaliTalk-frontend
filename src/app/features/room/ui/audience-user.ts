@@ -138,6 +138,49 @@ export type AudienceUserDisplay = 'grid' | 'list';
     }
   `,
   styles: [`
+    :host {
+      display: contents;
+
+      --au-hover-bg: var(--color-neutral-50);
+      --au-invite-overlay-bg: var(--color-primary-500);
+      --au-ghost-bg: var(--color-neutral-700);
+      --au-ghost-fg: var(--color-neutral-100);
+      --au-ghost-border: var(--color-card);
+      --au-hand-bg: var(--color-card);
+      --au-hand-border: var(--color-border);
+      --au-mode-normal-bg: var(--color-neutral-100);
+      --au-mode-normal-fg: var(--color-text-muted);
+      --au-mode-mod-bg: var(--color-primary-50);
+      --au-mode-mod-fg: var(--color-primary-600);
+      --au-nickname: var(--color-text);
+      --au-meta: var(--color-text-muted);
+      --au-you-bg: var(--color-primary-50);
+      --au-you-fg: var(--color-primary-600);
+      --au-invite-bg: var(--color-primary-50);
+      --au-invite-fg: var(--color-primary-500);
+      --au-invite-hover-bg: var(--color-primary-100);
+    }
+    :host-context(.dark) {
+      --au-hover-bg: var(--color-neutral-800);
+      --au-invite-overlay-bg: var(--color-primary-400);
+      --au-ghost-bg: var(--color-neutral-600);
+      --au-ghost-fg: var(--color-neutral-100);
+      --au-ghost-border: var(--color-neutral-800);
+      --au-hand-bg: var(--color-neutral-800);
+      --au-hand-border: var(--color-neutral-700);
+      --au-mode-normal-bg: var(--color-neutral-700);
+      --au-mode-normal-fg: var(--color-neutral-300);
+      --au-mode-mod-bg: var(--color-primary-900);
+      --au-mode-mod-fg: var(--color-primary-300);
+      --au-nickname: var(--color-neutral-100);
+      --au-meta: var(--color-neutral-400);
+      --au-you-bg: var(--color-primary-900);
+      --au-you-fg: var(--color-primary-300);
+      --au-invite-bg: var(--color-primary-900);
+      --au-invite-fg: var(--color-primary-300);
+      --au-invite-hover-bg: var(--color-primary-800);
+    }
+
     .audience-user {
       border: none; background: none; cursor: pointer;
       transition: background 0.15s; font-family: inherit;
@@ -149,8 +192,7 @@ export type AudienceUserDisplay = 'grid' | 'list';
       padding: var(--space-1); border-radius: var(--radius-md);
       position: relative;
     }
-    .audience-user.grid:hover { background: var(--color-neutral-50); }
-    :host-context(.dark) .audience-user.grid:hover { background: var(--color-neutral-800); }
+    .audience-user.grid:hover { background: var(--au-hover-bg); }
 
     .av-button {
       display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -162,7 +204,7 @@ export type AudienceUserDisplay = 'grid' | 'list';
     .invite-overlay-btn {
       position: absolute; top: 0; right: 0;
       width: 20px; height: 20px; border-radius: var(--radius-md);
-      background: var(--color-primary-500); color: var(--color-on-color); border: none;
+      background: var(--au-invite-overlay-bg); color: var(--color-on-color); border: none;
       display: flex; align-items: center; justify-content: center; cursor: pointer;
       opacity: 0; transition: opacity 0.15s;
     }
@@ -170,7 +212,6 @@ export type AudienceUserDisplay = 'grid' | 'list';
     .invite-overlay-btn:focus-visible { opacity: 1; }
     .invite-overlay-btn:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
     .invite-overlay-btn:disabled { cursor: not-allowed; opacity: 0.7; }
-    :host-context(.dark) .invite-overlay-btn { background: var(--color-primary-400); color: var(--color-on-color); }
 
     .spinning { animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -186,38 +227,26 @@ export type AudienceUserDisplay = 'grid' | 'list';
       font-size: var(--text-2xs); font-weight: var(--font-bold); letter-spacing: 0.5px;
       text-transform: uppercase; padding: 1px 5px; border-radius: var(--radius-full);
     }
-    .mode-badge.normal { background: var(--color-neutral-100); color: var(--color-text-muted); }
-    .mode-badge.moderator { background: var(--color-primary-50); color: var(--color-primary-600); }
+    .mode-badge.normal { background: var(--au-mode-normal-bg); color: var(--au-mode-normal-fg); }
+    .mode-badge.moderator { background: var(--au-mode-mod-bg); color: var(--au-mode-mod-fg); }
     .mode-badge.ghost { background: var(--color-neutral-700); color: var(--color-neutral-100); }
-    :host-context(.dark) .mode-badge.normal { background: var(--color-neutral-700); color: var(--color-neutral-300); }
-    :host-context(.dark) .mode-badge.moderator { background: var(--color-primary-900); color: var(--color-primary-300); }
 
     .ghost-indicator {
       position: absolute; bottom: -2px; right: -2px;
       width: 16px; height: 16px; border-radius: 50%;
-      background: var(--color-neutral-700); color: var(--color-neutral-100);
-      border: 1px solid var(--color-card);
+      background: var(--au-ghost-bg); color: var(--au-ghost-fg);
+      border: 1px solid var(--au-ghost-border);
       display: flex; align-items: center; justify-content: center;
     }
-    :host-context(.dark) .ghost-indicator {
-      background: var(--color-neutral-600);
-      border-color: var(--color-neutral-800);
-    }
 
-    .av-wrap {
-      position: relative; display: inline-flex;
-      border-radius: 50%;
-    }
+    .av-wrap { position: relative; display: inline-flex; border-radius: 50%; }
 
     .hand-indicator {
       position: absolute; top: -2px; right: -2px;
       width: 16px; height: 16px; border-radius: 50%;
-      background: var(--color-card); border: 1px solid var(--color-border);
+      background: var(--au-hand-bg); border: 1px solid var(--au-hand-border);
       display: flex; align-items: center; justify-content: center;
       font-size: var(--text-2xs); line-height: 1;
-    }
-    :host-context(.dark) .hand-indicator {
-      background: var(--color-neutral-800); border-color: var(--color-neutral-700);
     }
 
     .audience-user.list {
@@ -225,51 +254,45 @@ export type AudienceUserDisplay = 'grid' | 'list';
       width: 100%; padding: var(--space-1) var(--space-2);
       border-radius: var(--radius-xl); text-align: left;
     }
-    .audience-user.list:hover { background: var(--color-neutral-50); }
-    :host-context(.dark) .audience-user.list:hover { background: var(--color-neutral-800); }
+    .audience-user.list:hover { background: var(--au-hover-bg); }
 
     .info-col { flex: 1; min-width: 0; }
     .name-row { display: flex; align-items: center; gap: var(--space-1); }
-    .nickname { font-size: var(--text-xs); font-weight: var(--font-semibold); color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nickname {
+      font-size: var(--text-xs); font-weight: var(--font-semibold);
+      color: var(--au-nickname);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .you-badge {
       font-size: var(--text-2xs); font-weight: var(--font-bold);
-      background: var(--color-primary-50); color: var(--color-primary-600);
+      background: var(--au-you-bg); color: var(--au-you-fg);
       padding: 0 4px; border-radius: var(--radius-sm);
     }
-    :host-context(.dark) .you-badge { background: var(--color-primary-900); color: var(--color-primary-300); }
 
     .meta-row { display: flex; align-items: center; gap: var(--space-1); margin-top: 1px; }
-    .level-badge { font-size: var(--text-2xs); color: var(--color-text-muted); }
-    .meta-sep { font-size: var(--text-2xs); color: var(--color-text-muted); }
-    .learning-langs { font-size: var(--text-2xs); color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    :host-context(.dark) {
-      .nickname { color: var(--color-neutral-100); }
-      .level-badge, .meta-sep, .learning-langs { color: var(--color-neutral-400); }
-    }
+    .level-badge,
+    .meta-sep,
+    .learning-langs { font-size: var(--text-2xs); color: var(--au-meta); }
+    .learning-langs { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .action-col { flex-shrink: 0; display: flex; align-items: center; gap: var(--space-1); }
 
     .raise-hand-indicator {
       width: 24px; height: 24px; border-radius: 50%;
-      background: var(--color-warm-400); display: flex; align-items: center; justify-content: center; color: var(--color-on-color);
+      background: var(--color-warm-400); display: flex; align-items: center; justify-content: center;
+      color: var(--color-on-color);
       font-size: 11px;
     }
 
     .invite-btn {
       width: 32px; height: 32px; border-radius: var(--radius-lg);
       display: flex; align-items: center; justify-content: center;
-      background: var(--color-primary-50); color: var(--color-primary-500);
+      background: var(--au-invite-bg); color: var(--au-invite-fg);
       border: none; cursor: pointer; transition: background 0.15s, opacity 0.15s;
     }
-    .invite-btn:hover { background: var(--color-primary-100); }
+    .invite-btn:hover { background: var(--au-invite-hover-bg); }
     .invite-btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .invite-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-    :host-context(.dark) .invite-btn {
-      background: var(--color-primary-900);
-      color: var(--color-primary-300);
-    }
-    :host-context(.dark) .invite-btn:hover { background: var(--color-primary-800); }
   `],
 })
 export class AudienceUserComponent {

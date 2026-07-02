@@ -105,7 +105,7 @@ const formatTime = formatClockTime;
     }
     .time {
       margin-left: auto;
-      font-size: 10px;
+      font-size: var(--text-2xs);
       color: var(--cl-muted);
       flex-shrink: 0;
     }
