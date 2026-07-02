@@ -13,8 +13,7 @@ import { CommentInputComponent, ReplyTarget, SendEvent } from './comment-input';
 import { CaptionListComponent } from './caption-list';
 import { Comment } from '../../data/room-model';
 import { CommentsStore } from './comments-store';
-import { ToastService } from '@core/services/toast.service';
-import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@lucide/angular';
+import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, LucideRefreshCw } from '@lucide/angular';
 
 @Component({
   selector: 'app-comments-panel',
@@ -29,9 +28,13 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
     CaptionListComponent,
     LucideMessageCircle,
     LucideCaptions,
-    LucideX,
+    LucideMaximize2,
+    LucideMinimize2,
     LucideRefreshCw,
   ],
+  host: {
+    '[class.expanded]': 'expanded()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="comments-panel" ngTabs>
@@ -62,8 +65,16 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
           >
             <svg aria-hidden="true" lucideRefreshCw [size]="13" [class.spinning]="refreshing()" />
           </button>
-          <button class="icon-btn" (click)="onClose()" aria-label="Close">
-            <svg aria-hidden="true" lucideX [size]="14" />
+          <button
+            class="icon-btn expand-btn"
+            (click)="toggleExpanded()"
+            [attr.aria-label]="expanded() ? 'Collapse comments' : 'Expand comments'"
+          >
+            @if (expanded()) {
+              <svg aria-hidden="true" lucideMinimize2 [size]="13" />
+            } @else {
+              <svg aria-hidden="true" lucideMaximize2 [size]="13" />
+            }
           </button>
         </div>
       </div>
@@ -115,6 +126,24 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
         flex-direction: column;
         height: 100%;
         width: 100% !important;
+      }
+
+      :host.expanded {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        animation: panel-expand 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      @keyframes panel-expand {
+        from {
+          opacity: 0;
+          transform: scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
 
       /* ─── Design tokens ─── */
@@ -218,6 +247,14 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
         outline: var(--focus-ring);
         outline-offset: var(--focus-ring-offset);
       }
+      .expand-btn {
+        display: none;
+      }
+      @media (max-width: 1023px) {
+        .expand-btn {
+          display: flex;
+        }
+      }
       .spinning {
         animation: spin 0.8s linear infinite;
       }
@@ -228,6 +265,9 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
       }
       @media (prefers-reduced-motion: reduce) {
         .spinning {
+          animation: none;
+        }
+        :host.expanded {
           animation: none;
         }
       }
@@ -284,7 +324,6 @@ import { LucideMessageCircle, LucideCaptions, LucideX, LucideRefreshCw } from '@
 })
 export class CommentsPanelComponent {
   readonly commentsStore = inject(CommentsStore);
-  private readonly toast = inject(ToastService);
 
   readonly comments = input<readonly Comment[]>([]);
   readonly captions = input<readonly import('../../data/room-model').CaptionEntry[]>([]);
@@ -298,6 +337,7 @@ export class CommentsPanelComponent {
 
   readonly activeTab = signal<string | undefined>('comments');
   readonly replyTarget = signal<Comment | null>(null);
+  readonly expanded = signal(false);
   readonly translatingIds = computed(() => this.commentsStore.translatingIds());
 
   readonly replyTo = computed<ReplyTarget | null>(() => {
@@ -343,7 +383,7 @@ export class CommentsPanelComponent {
     this.refresh.emit();
   }
 
-  onClose(): void {
-    this.toast.info('Comments panel is open on desktop');
+  toggleExpanded(): void {
+    this.expanded.update((v) => !v);
   }
 }
