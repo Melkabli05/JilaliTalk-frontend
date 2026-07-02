@@ -73,7 +73,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
               (toggleInvisible)="onToggleInvisible()"
               (refresh)="onRefreshRoom()"
               (leave)="onLeave()"
-              (goBack)="onLeave()"
             />
           </div>
 

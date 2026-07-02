@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { Clipboard } from '@angular/cdk/clipboard';
 import {
-  LucideArrowLeft,
   LucideCopy,
   LucideCheck,
   LucideVideoOff,
@@ -44,7 +43,6 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
     MicButtonComponent,
     TooltipDirective,
     AvSettingsComponent,
-    LucideArrowLeft,
     LucideCopy,
     LucideCheck,
     LucideVideoOff,
@@ -875,7 +873,6 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         color: var(--color-primary-400);
       }
       .cname-text { font-size: var(--text-xs); }
-      .back-btn { flex-shrink: 0; }
       .secondary-actions {
         display: flex;
         align-items: center;
@@ -1084,7 +1081,6 @@ export class RoomHeaderComponent {
   readonly reward = output<void>();
   readonly toggleCaption = output<void>();
   readonly toggleInvisible = output<void>();
-  readonly goBack = output<void>();
 
   readonly cnameCopied = signal(false);
   readonly showSettings = signal(false);
