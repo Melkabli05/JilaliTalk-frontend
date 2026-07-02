@@ -48,3 +48,6 @@ Thumbs.db
 /.claude
 .vercel
 .env*
+
+# Git worktrees (superpowers:using-git-worktrees)
+/.worktrees
