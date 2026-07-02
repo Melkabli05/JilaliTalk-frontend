@@ -16,7 +16,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       <div
         class="notification-overlay"
         [class.open]="store.isOpen()"
-        (click)="onOverlayClick($event)"
+        (click)="onOverlayClick()"
         role="presentation"
       ></div>
       <div
@@ -436,7 +436,7 @@ export class NotificationPanelComponent {
   private readonly dialog = inject(Dialog);
   private readonly userInfo = inject(UserInfoService);
 
-  onOverlayClick(event: MouseEvent): void {
+  onOverlayClick(): void {
     this.store.close();
   }
 

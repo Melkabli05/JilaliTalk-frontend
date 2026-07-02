@@ -44,6 +44,9 @@ interface CommentGroup {
 const GROUP_WINDOW_MS = 60_000;
 const NAME_COLOR_COUNT = 6;
 
+// Token values, not hex literals — these already adapt correctly under the dark theme
+// via CSS custom property overrides (see CLAUDE.md §16), so no separate dark-mode array
+// is needed.
 const NAME_COLORS_LIGHT = [
   'var(--color-primary-600)',
   'var(--color-accent-600)',
@@ -51,14 +54,6 @@ const NAME_COLORS_LIGHT = [
   'var(--color-gold-600)',
   'var(--color-social-600)',
   'var(--color-berry-600)',
-];
-const NAME_COLORS_DARK = [
-  'var(--color-primary-300)',
-  'var(--color-accent-300)',
-  'var(--color-warm-300)',
-  'var(--color-gold-300)',
-  'var(--color-social-300)',
-  'var(--color-berry-300)',
 ];
 
 function nameColorIndex(userId: number): number {

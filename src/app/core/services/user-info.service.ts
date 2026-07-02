@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
@@ -209,6 +209,13 @@ export interface UserInfo {
   readonly details: UserProfileDetails | null;
 }
 
+/**
+ * Two caching layers work together here: this service caches per browser session (never
+ * expires, cleared on reload) to skip the network round-trip entirely on a hit; the BFF's
+ * `/api/users/info` additionally caches server-side for 24h of inactivity (Caffeine,
+ * time-to-idle) to skip the expensive Curve25519 handshake on its own misses. A miss here is
+ * therefore usually still cheap — this cache exists to avoid the request, not the upstream cost.
+ */
 @Injectable({ providedIn: 'root' })
 export class UserInfoService {
   private readonly http = inject(HttpClient);
@@ -263,15 +270,6 @@ export class UserInfoService {
       return null;
     } finally {
       this._loading.set(false);
-    }
-  }
-
-  /** Prime the cache for a set of user IDs (used when entering a room). */
-  prefetch(userIds: number[]): void {
-    for (const id of userIds) {
-      if (id > 0 && !this._cache().has(id)) {
-        void this.fetchUserInfo(id); // fire-and-forget, ok if some fail
-      }
     }
   }
 }
