@@ -1,5 +1,6 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Service, computed, effect, inject, signal } from '@angular/core';
 import { ImSocketService } from '@core/realtime/im-socket.service';
+import { StorageService } from '@core/services/storage.service';
 import type { ImEvent } from '@core/realtime/im-events';
 import type { DmConversation, DmMessage } from '../models/dm.model';
 
@@ -7,11 +8,17 @@ const STORAGE_KEY = 'jilali_dm_v1';
 const MAX_MESSAGES = 200;
 const MAX_CONVERSATIONS = 100;
 
-@Injectable()
+@Service()
 export class MessagesStore {
   private readonly imSocket = inject(ImSocketService);
+  private readonly storage = inject(StorageService);
 
-  private readonly _convMap = signal(loadFromStorage());
+  private readonly _convMap = signal(
+    this.storage.get<[string, DmConversation][]>(STORAGE_KEY)?.reduce(
+      (acc, [k, v]) => acc.set(k, { ...v, isTyping: false, unread: 0 }),
+      new Map<string, DmConversation>(),
+    ) ?? new Map(),
+  );
   private readonly _selectedId = signal<string | null>(null);
 
   readonly conversations = computed(() =>
@@ -33,7 +40,11 @@ export class MessagesStore {
     });
 
     effect(() => {
-      saveToStorage(this._convMap());
+      const map = this._convMap();
+      const entries = [...map.entries()]
+        .sort(([, a], [, b]) => b.lastTs - a.lastTs)
+        .slice(0, MAX_CONVERSATIONS);
+      this.storage.set(STORAGE_KEY, entries);
     });
   }
 
@@ -128,26 +139,4 @@ export class MessagesStore {
 
 function uid(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function loadFromStorage(): Map<string, DmConversation> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return new Map();
-    const entries = JSON.parse(raw) as [string, DmConversation][];
-    return new Map(entries.map(([k, v]) => [k, { ...v, isTyping: false, unread: 0 }]));
-  } catch {
-    return new Map();
-  }
-}
-
-function saveToStorage(map: Map<string, DmConversation>): void {
-  try {
-    const entries = [...map.entries()]
-      .sort(([, a], [, b]) => b.lastTs - a.lastTs)
-      .slice(0, MAX_CONVERSATIONS);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  } catch {
-    // Quota exceeded — silently ignore
-  }
 }

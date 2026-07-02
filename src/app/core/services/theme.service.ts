@@ -1,16 +1,20 @@
-import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
+import { Service, inject, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { StorageService } from '@core/services/storage.service';
 
-@Injectable({ providedIn: 'root' })
+const THEME_KEY = 'theme';
+
+@Service()
 export class ThemeService {
   private platformId = inject(PLATFORM_ID);
+  private storage = inject(StorageService);
 
   private readonly _isDark = signal(false);
   readonly isDark = this._isDark.asReadonly();
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
-      const stored = localStorage.getItem('theme');
+      const stored = this.storage.get<string>(THEME_KEY);
       this._isDark.set(stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches));
       this.applyTheme();
     }
@@ -19,7 +23,7 @@ export class ThemeService {
   toggle(): void {
     this._isDark.update(v => !v);
     if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem('theme', this._isDark() ? 'dark' : 'light');
+      this.storage.set(THEME_KEY, this._isDark() ? 'dark' : 'light');
       this.applyTheme();
     }
   }

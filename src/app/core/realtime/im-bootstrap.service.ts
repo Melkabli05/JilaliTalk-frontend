@@ -2,6 +2,7 @@ import { Injectable, effect, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '@core/auth/auth.store';
 import { ToastService } from '@core/services/toast.service';
+import { UserInfoService } from '@core/services/user-info.service';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
 import { ROOM_INVITE_GATEWAY } from '@core/tokens/room-invite-gateway.token';
 import { ImSocketService } from './im-socket.service';
@@ -14,6 +15,7 @@ export class ImBootstrapService {
   private readonly gateway = inject(ROOM_INVITE_GATEWAY);
   private readonly toast = inject(ToastService);
   private readonly notifications = inject(NOTIFICATION_REPORTER);
+  private readonly userInfo = inject(UserInfoService);
 
   constructor() {
     effect(() => {
@@ -36,9 +38,22 @@ export class ImBootstrapService {
    *  handles these five at all. */
   private handle(event: ImEvent): void {
     switch (event.type) {
-      case 'profile_visit':
-        this.notifications.notify('info', 'Profile visit', `${event.visitorUserId} visited your profile`);
+      case 'profile_visit': {
+        const uid = Number(event.visitorUserId);
+        if (!Number.isFinite(uid)) break;
+        // Prefetch profile so UserInfoModal is populated by the time the user clicks the notification
+        void this.userInfo.fetchUserInfo(uid);
+        const displayName = event.nickname?.trim() || event.visitorUserId;
+        this.notifications.notifyUserEvent({
+          type: 'info',
+          title: 'Profile visit',
+          message: `${displayName} visited your profile`,
+          userId: uid,
+          avatarUrl: event.headUrl ?? null,
+          nickname: event.nickname ?? null,
+        });
         break;
+      }
       case 'stage_invite': {
         const cname = event.cname;
         this.toast.action('The host invited you to join the stage', [

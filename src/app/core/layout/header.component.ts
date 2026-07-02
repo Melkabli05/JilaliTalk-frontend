@@ -333,8 +333,14 @@ export class HeaderComponent {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      window.addEventListener('online', () => this.isConnected.set(true));
-      window.addEventListener('offline', () => this.isConnected.set(false));
+      const online = () => this.isConnected.set(true);
+      const offline = () => this.isConnected.set(false);
+      this.destroyRef.onDestroy(() => {
+        window.removeEventListener('online', online);
+        window.removeEventListener('offline', offline);
+      });
+      window.addEventListener('online', online);
+      window.addEventListener('offline', offline);
     }
   }
 

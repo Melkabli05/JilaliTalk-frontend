@@ -7,10 +7,21 @@ export type ReportedNotificationType = 'info' | 'success' | 'warning' | 'error';
 
 export interface NotificationReporter {
   notify(type: ReportedNotificationType, title: string, message?: string): void;
+  /** User-linked notification — carries userId and optional avatar so the notification
+   *  panel can render a profile avatar and route clicks to a user-info modal. */
+  notifyUserEvent(params: {
+    type: ReportedNotificationType;
+    title: string;
+    message?: string;
+    userId: number;
+    avatarUrl?: string | null;
+    nickname?: string | null;
+  }): void;
 }
 
 export const NOTIFICATION_REPORTER = new InjectionToken<NotificationReporter>('NOTIFICATION_REPORTER', {
   factory: () => ({
-    notify: () => {}, // no-op until app.config.ts binds the real NotificationStore
+    notify: () => {},
+    notifyUserEvent: () => {},
   }),
 });

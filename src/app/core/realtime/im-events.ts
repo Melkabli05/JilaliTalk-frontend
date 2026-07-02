@@ -1,6 +1,6 @@
 export type ImEvent =
   | { readonly type: 'connection-state'; readonly state: 'connecting' | 'connected' | 'disconnected' }
-  | { readonly type: 'profile_visit'; readonly visitorUserId: string }
+  | { readonly type: 'profile_visit'; readonly visitorUserId: string; readonly nickname?: string; readonly headUrl?: string }
   | { readonly type: 'stage_invite'; readonly userId: string; readonly cname: string }
   | { readonly type: 'mod_invite'; readonly userId: string; readonly cname: string }
   | { readonly type: 'mod_accepted'; readonly userId: string }

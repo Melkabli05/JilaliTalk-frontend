@@ -1,12 +1,16 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Dialog } from '@angular/cdk/dialog';
 import { LucideBell, LucideCheck, LucideTrash2, LucideX } from '@lucide/angular';
 import { NotificationStore, AppNotification } from '@store/notification.store';
+import { UserInfoService } from '@core/services/user-info.service';
+import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal';
+import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 
 @Component({
   selector: 'app-notification-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, LucideBell, LucideCheck, LucideTrash2, LucideX],
+  imports: [DatePipe, LucideBell, LucideCheck, LucideTrash2, LucideX, AvatarComponent],
   template: `
     @if (store.isOpen()) {
       <div
@@ -84,7 +88,20 @@ import { NotificationStore, AppNotification } from '@store/notification.store';
                 (keydown.enter)="onNotificationClick(notification)"
                 (keydown.space)="onNotificationClick(notification); $event.preventDefault()"
               >
-                <div class="notification-indicator" [attr.data-type]="notification.type" aria-hidden="true"></div>
+                @if (notification.userId) {
+                  <app-avatar
+                    [src]="notification.avatarUrl ?? ''"
+                    [alt]="notification.nickname ?? 'User'"
+                    [initials]="notification.nickname ? notification.nickname.slice(0, 2) : null"
+                    size="sm"
+                    shape="circle"
+                    class="notification-avatar"
+                    [clickable]="true"
+                    (avatarClick)="openUserModal(notification.userId!, notification.nickname ?? undefined, notification.avatarUrl ?? undefined)"
+                  />
+                } @else {
+                  <div class="notification-indicator" [attr.data-type]="notification.type" aria-hidden="true"></div>
+                }
                 <div class="notification-content">
                   <p class="notification-title">{{ notification.title }}</p>
                   @if (notification.message) {
@@ -376,6 +393,13 @@ import { NotificationStore, AppNotification } from '@store/notification.store';
       margin-top: 4px;
     }
 
+    /* Notification Avatar */
+    .notification-avatar {
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 2px;
+    }
+
     /* Remove Button */
     .remove-btn {
       display: inline-flex;
@@ -409,6 +433,8 @@ import { NotificationStore, AppNotification } from '@store/notification.store';
 })
 export class NotificationPanelComponent {
   readonly store = inject(NotificationStore);
+  private readonly dialog = inject(Dialog);
+  private readonly userInfo = inject(UserInfoService);
 
   onOverlayClick(event: MouseEvent): void {
     this.store.close();
@@ -416,5 +442,15 @@ export class NotificationPanelComponent {
 
   onNotificationClick(notification: AppNotification): void {
     this.store.markRead(notification.id);
+  }
+
+  openUserModal(userId: number, nickname?: string, headUrl?: string): void {
+    // Prefetch enriched profile in the background
+    void this.userInfo.fetchUserInfo(userId);
+    this.dialog.open<UserInfoModalComponent, UserInfoModalData>(UserInfoModalComponent, {
+      data: { userId, nickname: nickname ?? null, headUrl: headUrl ?? null },
+      backdropClass: 'app-modal-backdrop',
+      ariaLabelledBy: 'user-info-title',
+    });
   }
 }
