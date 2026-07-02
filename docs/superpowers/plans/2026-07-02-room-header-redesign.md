@@ -715,7 +715,10 @@ Replace with:
               </button>
             </div>
           }
+        </div>
 ```
+
+(Note: this closing `</div>` for `.room-meta` was missing from the original version of this step — a bug in the plan, not the implementer's fault. `.room-info-panel` must be a DOM descendant of `.room-meta` for its `position: absolute` to anchor under the room name, since `.room-meta` carries `position: relative`.)
 
 (Note: the icon size on the old badge button was already bumped to `18` by Task 3's blanket `16`→`18` replace; this diff reflects that post-Task-3 state.)
 
