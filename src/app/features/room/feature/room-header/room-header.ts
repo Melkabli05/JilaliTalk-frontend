@@ -7,6 +7,8 @@ import {
   computed,
   inject,
   DestroyRef,
+  ElementRef,
+  viewChild,
 } from '@angular/core';
 import { Clipboard } from '@angular/cdk/clipboard';
 import {
@@ -210,10 +212,13 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         </button>
 
         <button
+          #moreBtn
           class="toolbar-btn c-more"
           appTooltip="More actions"
           tooltipPosition="bottom"
           aria-label="More actions"
+          [attr.aria-expanded]="showOverflow()"
+          aria-haspopup="dialog"
           (click)="toggleOverflow()"
         >
           <svg aria-hidden="true" lucideEllipsisVertical [size]="18"></svg>
@@ -310,9 +315,12 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
     @if (showOverflow()) {
       <div class="overflow-backdrop" (click)="closeOverflow()"></div>
       <div
+        #overflowPanel
         class="overflow-panel"
         role="dialog"
+        aria-modal="true"
         aria-label="More actions"
+        tabindex="-1"
         (touchstart)="onTouchStart($event)"
         (touchmove)="onTouchMove($event)"
         (touchend)="onTouchEnd($event)"
@@ -591,8 +599,8 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
 
       /* ─── Icon buttons (copy, more, etc.) ──────────────────────────── */
       .icon-btn {
-        width: var(--icon-btn-size);
-        height: var(--icon-btn-size);
+        width: var(--touch-target-min);
+        height: var(--touch-target-min);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -956,6 +964,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           transform: translateY(0) scale(1);
         }
       }
+      .overflow-panel:focus { outline: none; }
 
       .overflow-handle {
         width: 40px;
@@ -997,7 +1006,9 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         align-items: center;
         gap: var(--space-3);
         width: 100%;
+        min-height: var(--touch-target-min);
         padding: var(--space-3) var(--space-2);
+        box-sizing: border-box;
         border-radius: var(--radius-lg);
         background: none;
         border: none;
@@ -1199,11 +1210,22 @@ export class RoomHeaderComponent {
       this.onRefresh();
     }
   }
+  private readonly moreBtn = viewChild<ElementRef<HTMLButtonElement>>('moreBtn');
+  private readonly overflowPanel = viewChild<ElementRef<HTMLElement>>('overflowPanel');
+
   toggleOverflow(): void {
-    this.showOverflow.update((v) => !v);
+    const opening = !this.showOverflow();
+    this.showOverflow.set(opening);
+    if (opening) {
+      queueMicrotask(() => this.overflowPanel()?.nativeElement.focus());
+    }
   }
   closeOverflow(): void {
+    const wasOpen = this.showOverflow();
     this.showOverflow.set(false);
+    if (wasOpen) {
+      queueMicrotask(() => this.moreBtn()?.nativeElement.focus());
+    }
   }
   toggleRoomInfo(): void {
     this.showRoomInfo.update((v) => !v);

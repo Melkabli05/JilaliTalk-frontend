@@ -137,4 +137,39 @@ describe('RoomHeaderComponent', () => {
       expect(toggled).toBe(true);
     });
   });
+
+  describe('overflow menu accessibility', () => {
+    it('has dialog semantics', () => {
+      const moreBtn = fixture.nativeElement.querySelector('.toolbar-btn.c-more') as HTMLElement;
+      moreBtn.click();
+      fixture.detectChanges();
+
+      const panel = fixture.nativeElement.querySelector('.overflow-panel') as HTMLElement;
+      expect(panel.getAttribute('role')).toBe('dialog');
+      expect(panel.getAttribute('aria-modal')).toBe('true');
+    });
+
+    it('moves focus into the panel on open', async () => {
+      const moreBtn = fixture.nativeElement.querySelector('.toolbar-btn.c-more') as HTMLElement;
+      moreBtn.click();
+      fixture.detectChanges();
+      await new Promise((resolve) => queueMicrotask(() => resolve(undefined)));
+
+      const panel = fixture.nativeElement.querySelector('.overflow-panel') as HTMLElement;
+      expect(document.activeElement).toBe(panel);
+    });
+
+    it('returns focus to the more-actions button on close', async () => {
+      const moreBtn = fixture.nativeElement.querySelector('.toolbar-btn.c-more') as HTMLElement;
+      moreBtn.click();
+      fixture.detectChanges();
+      await new Promise((resolve) => queueMicrotask(() => resolve(undefined)));
+
+      fixture.componentInstance.closeOverflow();
+      fixture.detectChanges();
+      await new Promise((resolve) => queueMicrotask(() => resolve(undefined)));
+
+      expect(document.activeElement).toBe(moreBtn);
+    });
+  });
 });
