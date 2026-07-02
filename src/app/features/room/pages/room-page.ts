@@ -129,6 +129,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
 
     .room-layout {
       display: grid;
+      grid-template-rows: 1fr;
       height: 100%;
       overflow: hidden;
     }
