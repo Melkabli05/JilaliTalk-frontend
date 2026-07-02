@@ -1,23 +1,41 @@
-import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed, signal, viewChild, ElementRef } from '@angular/core';
 import { StageUser } from '../data/room-model';
 import { sortByStageRole } from './stage-sort.util';
-import { LucideUsers, LucideVideo } from '@lucide/angular';
+import { LucideUsers, LucideVideo, LucideMaximize2, LucideMinimize2 } from '@lucide/angular';
 import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user';
 
 @Component({
   selector: 'app-video-stage-grid',
-  imports: [VideoStageUserComponent, LucideUsers, LucideVideo],
+  imports: [VideoStageUserComponent, LucideUsers, LucideVideo, LucideMaximize2, LucideMinimize2],
+  host: {
+    '[class.fullscreen]': 'fullscreen()',
+    '(document:fullscreenchange)': 'onFullscreenChange()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="stage-card">
+    <div class="stage-card" #stageCardRef>
       <header class="stage-header">
         <div class="header-left">
           <svg aria-hidden="true" lucideVideo size="14" class="header-icon"></svg>
           <h3 class="header-title">Live Stage</h3>
         </div>
-        @if (stageCount() > 0) {
-          <span class="stage-count">{{ stageCount() }}/{{ maxStageSize() }}</span>
-        }
+        <div class="header-right">
+          @if (stageCount() > 0) {
+            <span class="stage-count">{{ stageCount() }}/{{ maxStageSize() }}</span>
+          }
+          <button
+            class="fullscreen-btn"
+            type="button"
+            (click)="toggleFullscreen()"
+            [attr.aria-label]="fullscreen() ? 'Exit fullscreen' : 'Fullscreen'"
+          >
+            @if (fullscreen()) {
+              <svg aria-hidden="true" lucideMinimize2 [size]="13" />
+            } @else {
+              <svg aria-hidden="true" lucideMaximize2 [size]="13" />
+            }
+          </button>
+        </div>
       </header>
 
       @if (stageCount() > 0) {
@@ -57,6 +75,11 @@ import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user'
         overflow: hidden;
       }
 
+      .stage-card:fullscreen {
+        border: none;
+        background: #000;
+      }
+
       .stage-header {
         display: flex;
         align-items: center;
@@ -75,6 +98,37 @@ import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user'
         display: flex;
         align-items: center;
         gap: var(--space-2);
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+
+      .fullscreen-btn {
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-sm);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--color-text-muted);
+      }
+      .fullscreen-btn:hover {
+        background: var(--color-neutral-100);
+        color: var(--color-text);
+      }
+      .fullscreen-btn:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: var(--focus-ring-offset);
+      }
+      :host-context(.dark) .fullscreen-btn:hover {
+        background: var(--color-neutral-700);
+        color: var(--color-neutral-100);
       }
 
       .header-icon {
@@ -178,7 +232,23 @@ export class VideoStageGridComponent {
   readonly sortedStageUsers = computed(() => sortByStageRole(this.users()));
   readonly stageCount = computed(() => this.users().length);
 
+  private readonly stageCardRef = viewChild<ElementRef<HTMLDivElement>>('stageCardRef');
+  readonly fullscreen = signal(false);
+
   videoTrackForUser(uid: number): PlayableVideoTrack | null {
     return this.videoTracks().get(uid) ?? null;
+  }
+
+  toggleFullscreen(): void {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+      return;
+    }
+    const el = this.stageCardRef()?.nativeElement;
+    void el?.requestFullscreen().catch(() => {});
+  }
+
+  onFullscreenChange(): void {
+    this.fullscreen.set(document.fullscreenElement === this.stageCardRef()?.nativeElement);
   }
 }

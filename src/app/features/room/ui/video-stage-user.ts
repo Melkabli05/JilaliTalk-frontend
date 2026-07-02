@@ -4,6 +4,7 @@ import {
   input,
   output,
   computed,
+  signal,
   DestroyRef,
   inject,
   effect,
@@ -13,7 +14,7 @@ import {
 import { StageUser } from '../data/room-model';
 import { UserRole } from '@core/models/user-role';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
-import { LucideMicOff, LucideCrown } from '@lucide/angular';
+import { LucideMicOff, LucideCrown, LucideMaximize2, LucideMinimize2 } from '@lucide/angular';
 
 export interface PlayableVideoTrack {
   play(container: HTMLElement): void;
@@ -22,17 +23,23 @@ export interface PlayableVideoTrack {
 
 @Component({
   selector: 'app-video-stage-user',
-  imports: [AvatarComponent, LucideMicOff, LucideCrown],
+  imports: [AvatarComponent, LucideMicOff, LucideCrown, LucideMaximize2, LucideMinimize2],
+  host: {
+    '(document:fullscreenchange)': 'onFullscreenChange()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <button
+    <div
       class="tile"
-      type="button"
+      role="button"
+      tabindex="0"
       [class.speaking]="isActiveSpeaker()"
       [attr.aria-label]="ariaLabel()"
       (click)="userClick.emit(user())"
+      (keydown.enter)="userClick.emit(user())"
+      (keydown.space)="$event.preventDefault(); userClick.emit(user())"
     >
-      <div class="video-container">
+      <div class="video-container" #tileContainer>
         @if (isActiveSpeaker()) {
           <div class="speak-ring" aria-hidden="true"></div>
         }
@@ -57,6 +64,19 @@ export interface PlayableVideoTrack {
           </div>
         }
 
+        <button
+          class="expand-btn"
+          type="button"
+          (click)="onExpandClick($event)"
+          [attr.aria-label]="expanded() ? 'Exit fullscreen' : 'Fullscreen'"
+        >
+          @if (expanded()) {
+            <svg aria-hidden="true" lucideMinimize2 [size]="11" />
+          } @else {
+            <svg aria-hidden="true" lucideMaximize2 [size]="11" />
+          }
+        </button>
+
         <div class="name-overlay">
           <span class="name">{{ user().nickname }}</span>
           @if (user().isAiUser) {
@@ -68,7 +88,7 @@ export interface PlayableVideoTrack {
           }
         </div>
       </div>
-    </button>
+    </div>
   `,
   styles: [
     `
@@ -101,6 +121,35 @@ export interface PlayableVideoTrack {
       }
       :host-context(.dark) .video-container {
         background: var(--color-neutral-700);
+      }
+
+      .video-container:fullscreen {
+        border-radius: 0;
+        background: #000;
+      }
+
+      .expand-btn {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.5);
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        cursor: pointer;
+        z-index: 3;
+      }
+      .expand-btn:hover {
+        background: rgba(0, 0, 0, 0.7);
+      }
+      .expand-btn:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: 2px;
       }
 
       .speak-ring {
@@ -230,6 +279,8 @@ export class VideoStageUserComponent {
   readonly hasVideoTrack = computed(() => this.videoTrack() !== null);
 
   private readonly videoContainerRef = viewChild<ElementRef<HTMLDivElement>>('videoContainer');
+  private readonly tileContainerRef = viewChild<ElementRef<HTMLDivElement>>('tileContainer');
+  readonly expanded = signal(false);
 
   protected readonly isActiveSpeaker = computed(() => this.speaking() && this.user().isTurnOnMic);
 
@@ -268,4 +319,18 @@ export class VideoStageUserComponent {
     parts.push(this.hasVideoTrack() ? 'camera on' : 'camera off');
     return parts.join(', ');
   });
+
+  onExpandClick(event: Event): void {
+    event.stopPropagation();
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+      return;
+    }
+    const el = this.tileContainerRef()?.nativeElement;
+    void el?.requestFullscreen().catch(() => {});
+  }
+
+  onFullscreenChange(): void {
+    this.expanded.set(document.fullscreenElement === this.tileContainerRef()?.nativeElement);
+  }
 }
