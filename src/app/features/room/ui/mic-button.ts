@@ -19,19 +19,15 @@ import { LucideMic, LucideMicOff } from '@lucide/angular';
       [attr.aria-pressed]="isOn()"
     >
       @if (isOn()) {
-        <svg aria-hidden="true" lucideMic [size]="16"></svg>
+        <svg aria-hidden="true" lucideMic [size]="18"></svg>
       } @else {
-        <svg aria-hidden="true" lucideMicOff [size]="16"></svg>
+        <svg aria-hidden="true" lucideMicOff [size]="18"></svg>
       }
     </button>
   `,
   styles: [`
-    /* Container queries: room-header decides the slot width; the mic
-       shrinks on narrow slots via @container, not the viewport. */
     :host {
       display: inline-flex;
-      container-type: inline-size;
-      container-name: mic-button;
     }
     .mic-btn {
       width: var(--toolbar-btn-size);
@@ -85,12 +81,6 @@ import { LucideMic, LucideMicOff } from '@lucide/angular';
       }
     }
 
-    @container mic-button (max-width: 699.98px) {
-      .mic-btn {
-        width: var(--toolbar-btn-size-sm);
-        height: var(--toolbar-btn-size-sm);
-      }
-    }
   `]
 })
 export class MicButtonComponent {

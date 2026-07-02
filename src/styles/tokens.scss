@@ -173,9 +173,7 @@
   --room-header-height: 56px;
 
   /* Toolbar / icon button sizes */
-  --toolbar-btn-size: 38px;
-  --toolbar-btn-size-sm: 32px;
-  --toolbar-btn-size-lg: 44px;
+  --toolbar-btn-size: var(--touch-target-min);
   --icon-btn-size: 28px;
 
   /* Touch-target minimums (WCAG 2.5.5 AAA for primary actions) */
@@ -350,8 +348,6 @@
   --app-header-height:     var(--app-header-height);
   --room-header-height:    var(--room-header-height);
   --toolbar-btn-size:      var(--toolbar-btn-size);
-  --toolbar-btn-size-sm:   var(--toolbar-btn-size-sm);
-  --toolbar-btn-size-lg:   var(--toolbar-btn-size-lg);
   --icon-btn-size:         var(--icon-btn-size);
   --touch-target-min:      var(--touch-target-min);
   --touch-target-comfortable: var(--touch-target-comfortable);

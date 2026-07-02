@@ -114,9 +114,9 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           (click)="onToggleInvisible()"
         >
           @if (invisible()) {
-            <svg aria-hidden="true" lucideEyeOff [size]="16"></svg>
+            <svg aria-hidden="true" lucideEyeOff [size]="18"></svg>
           } @else {
-            <svg aria-hidden="true" lucideEye [size]="16"></svg>
+            <svg aria-hidden="true" lucideEye [size]="18"></svg>
           }
         </button>
       </div>
@@ -146,7 +146,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
                 (click)="onToggleCam()"
                 aria-label="Toggle camera"
               >
-                <svg aria-hidden="true" lucideVideoOff [size]="16"></svg>
+                <svg aria-hidden="true" lucideVideoOff [size]="18"></svg>
               </button>
               <button
                 class="toolbar-btn c-screen hide-mobile"
@@ -155,7 +155,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
                 (click)="onToggleCamOrShare()"
                 aria-label="Screen share"
               >
-                <svg aria-hidden="true" lucideMonitorUp [size]="16"></svg>
+                <svg aria-hidden="true" lucideMonitorUp [size]="18"></svg>
               </button>
               <div class="toolbar-sep hide-mobile"></div>
             }
@@ -172,16 +172,16 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
             >
               @switch (handIcon()) {
                 @case ('leave-stage') {
-                  <svg aria-hidden="true" lucideArrowDownToLine [size]="16"></svg>
+                  <svg aria-hidden="true" lucideArrowDownToLine [size]="18"></svg>
                 }
                 @case ('lower-hand') {
-                  <svg aria-hidden="true" lucideHandMetal [size]="16"></svg>
+                  <svg aria-hidden="true" lucideHandMetal [size]="18"></svg>
                 }
                 @case ('join-stage') {
-                  <svg aria-hidden="true" lucideLogIn [size]="16"></svg>
+                  <svg aria-hidden="true" lucideLogIn [size]="18"></svg>
                 }
                 @default {
-                  <svg aria-hidden="true" lucideHand [size]="16"></svg>
+                  <svg aria-hidden="true" lucideHand [size]="18"></svg>
                 }
               }
             </button>
@@ -197,7 +197,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           (click)="onRefresh()"
           aria-label="Refresh room info"
         >
-          <svg aria-hidden="true" lucideRefreshCw [size]="16" [class.spinning]="refreshing()"></svg>
+          <svg aria-hidden="true" lucideRefreshCw [size]="18" [class.spinning]="refreshing()"></svg>
         </button>
 
         <button
@@ -207,7 +207,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           aria-label="More actions"
           (click)="toggleOverflow()"
         >
-          <svg aria-hidden="true" lucideEllipsisVertical [size]="16"></svg>
+          <svg aria-hidden="true" lucideEllipsisVertical [size]="18"></svg>
         </button>
       </div>
 
@@ -223,7 +223,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
                 (click)="onGift()"
                 aria-label="Send gift"
               >
-                <svg aria-hidden="true" lucideGift [size]="16"></svg>
+                <svg aria-hidden="true" lucideGift [size]="18"></svg>
               </button>
               <button
                 class="toolbar-btn c-pitch"
@@ -232,7 +232,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
                 (click)="onPitch()"
                 aria-label="Pitch settings"
               >
-                <svg aria-hidden="true" lucideMusic [size]="16"></svg>
+                <svg aria-hidden="true" lucideMusic [size]="18"></svg>
               </button>
               <button
                 class="toolbar-btn c-reward"
@@ -241,7 +241,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
                 (click)="onReward()"
                 aria-label="Daily rewards"
               >
-                <svg aria-hidden="true" lucideStar [size]="16"></svg>
+                <svg aria-hidden="true" lucideStar [size]="18"></svg>
               </button>
               <button
                 class="toolbar-btn c-settings"
@@ -251,7 +251,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
                 (click)="showSettings.set(!showSettings())"
                 aria-label="Noise suppression settings"
               >
-                <svg aria-hidden="true" lucideSettings [size]="16"></svg>
+                <svg aria-hidden="true" lucideSettings [size]="18"></svg>
               </button>
               @if (showSettings()) {
                 <app-av-settings (onClose)="showSettings.set(false)" />
@@ -266,7 +266,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
             (click)="onManagers()"
             aria-label="View room managers"
           >
-            <svg aria-hidden="true" lucideShield [size]="16"></svg>
+            <svg aria-hidden="true" lucideShield [size]="18"></svg>
           </button>
 
           <!-- Captions: always visible — useful for watching in any mode -->
@@ -279,9 +279,9 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
             [attr.aria-label]="captionEnabled() ? 'Turn off captions' : 'Turn on captions'"
           >
             @if (captionEnabled()) {
-              <svg aria-hidden="true" lucideCaptions [size]="16"></svg>
+              <svg aria-hidden="true" lucideCaptions [size]="18"></svg>
             } @else {
-              <svg aria-hidden="true" lucideCaptionsOff [size]="16"></svg>
+              <svg aria-hidden="true" lucideCaptionsOff [size]="18"></svg>
             }
           </button>
         </div>
@@ -293,7 +293,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
           (click)="onLeave()"
           aria-label="Leave room"
         >
-          <svg aria-hidden="true" lucideLogOut [size]="16"></svg>
+          <svg aria-hidden="true" lucideLogOut [size]="18"></svg>
         </button>
       </div>
     </header>
@@ -312,7 +312,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         <div class="overflow-header">
           <span class="overflow-title">More actions</span>
           <button class="icon-btn" aria-label="Close menu" (click)="closeOverflow()">
-            <svg aria-hidden="true" lucideX [size]="16"></svg>
+            <svg aria-hidden="true" lucideX [size]="18"></svg>
           </button>
         </div>
 
@@ -1035,13 +1035,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         .toolbar-btn.c-more { display: none; }
       }
       @container room-header (max-width: 699.98px) {
-        .toolbar-btn {
-          width: var(--toolbar-btn-size-sm);
-          height: var(--toolbar-btn-size-sm);
-        }
         .header-left { gap: var(--space-1); }
-        .room-topic { max-width: 80px; }
-        .overflow-grid { grid-template-columns: repeat(3, 1fr); }
       }
       @container room-header (max-width: 479.98px) {
         .room-subtitle { display: none; }
