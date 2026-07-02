@@ -127,7 +127,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       display: block;
       height: 100%;
       overflow: hidden;
-      container-type: inline-size;
+      container-type: size;
       container-name: room-page;
     }
 
@@ -162,8 +162,20 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       z-index: var(--z-overlay);
     }
 
-    .stage-section { flex-shrink: 1; min-height: 0; min-width: 0; max-height: 32vh; overflow: hidden; }
-    .audience-section { flex: 1 1 0; min-height: 0; min-width: 0; overflow: hidden; }
+    .stage-section {
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 1;
+      min-height: 0;
+      min-width: 0;
+      max-height: 30cqh;
+      overflow: hidden;
+    }
+    .stage-section app-stage-grid {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .audience-section { flex: 1 1 0; min-height: 22cqh; min-width: 0; overflow: hidden; }
     .comments-section {
       display: flex;
       flex-direction: column;
@@ -175,7 +187,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
 
     /* Tablet-sized mobile: a touch more stage room. */
     @container room-page (min-width: 480px) {
-      .stage-section { max-height: 38vh; }
+      .stage-section { max-height: 34cqh; }
     }
 
     /* Desktop: two-column grid, comments becomes a sidebar. */
