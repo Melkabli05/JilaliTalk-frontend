@@ -15,7 +15,7 @@ import { SigninPanelComponent } from '../feature/signin/signin-panel';
 import { GiftsStore } from '../feature/gifts/gifts-store';
 import { InRoomRtmStore } from '../feature/in-room-rtm/in-room-rtm-store';
 import { GoodieStore } from '../feature/goodie-bag/goodie-store';
-import { StageUser, SendCommentPayload, VoiceRoomInfo } from '../data/room-model';
+import { StageUser, SendCommentPayload, VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse } from '../data/room-model';
 import { UserRole } from '@core/models/user-role';
 import { SendEvent } from '../feature/comments/comment-input';
 import { environment } from '@env/environment';
@@ -332,19 +332,17 @@ export class RoomPageComponent extends RoomPageBase {
   }
 
   private async makeVisible(cname: string, busiType: number): Promise<void> {
-    const rtcInfo = this.roomStore.rtcInfo();
-    let voiceInfo: VoiceRoomInfo | undefined = rtcInfo
-      ? { channelInfo: {}, configInfo: { heartbeatSecond: null }, hostInfo: null } as unknown as VoiceRoomInfo
-      : undefined;
-
-    if (!voiceInfo) {
-      try {
-        const fetched = await firstValueFrom(this.api.fetchVoiceRoomInfo(cname));
-        voiceInfo = fetched;
-      } catch {
-        this.toast.error('Failed to rejoin — room info unavailable');
-        return;
-      }
+    let voiceInfo: VoiceRoomInfo;
+    let stage: StageUsersResponse | undefined;
+    let audience: AudienceUsersResponse | undefined;
+    try {
+      const bundle = await firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType));
+      voiceInfo = bundle.voiceRoomInfo;
+      stage = bundle.stageUsers;
+      audience = bundle.audienceUsers;
+    } catch {
+      this.toast.error('Failed to rejoin — room info unavailable');
+      return;
     }
 
     try {
@@ -358,22 +356,14 @@ export class RoomPageComponent extends RoomPageBase {
     this.syncVisibilityToUrl(true);
     this.bffWs.connect(
       cname,
-      voiceInfo!.hostInfo?.userId ?? 0,
+      voiceInfo.hostInfo?.userId ?? 0,
       busiType,
-      voiceInfo!.configInfo?.heartbeatSecond ?? null,
+      voiceInfo.configInfo?.heartbeatSecond ?? null,
     );
     this.audienceStore.setCname(cname);
     this.stageStore.reset();
-    try {
-      const { stage, audience } = await firstValueFrom(
-        forkJoin({
-          stage: this.api.fetchStageUsers(cname, busiType),
-          audience: this.api.fetchAudienceUsers(cname, busiType),
-        }),
-      );
-      this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
-      this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
-    } catch { /* 30s reconciliation will catch up */ }
+    this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
+    this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
     this.toast.success('You are now visible');
   }
 

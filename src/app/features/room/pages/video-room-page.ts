@@ -15,7 +15,7 @@ import { SigninPanelComponent } from '../feature/signin/signin-panel';
 import { GiftsStore } from '../feature/gifts/gifts-store';
 import { InRoomRtmStore } from '../feature/in-room-rtm/in-room-rtm-store';
 import { GoodieStore } from '../feature/goodie-bag/goodie-store';
-import { StageUser, AudienceUser, SendCommentPayload, LiveRoomInfo } from '../data/room-model';
+import { StageUser, AudienceUser, SendCommentPayload, LiveRoomInfo, StageUsersResponse, AudienceUsersResponse } from '../data/room-model';
 import { SendEvent } from '../feature/comments/comment-input';
 import { environment } from '@env/environment';
 import { RoomHeaderComponent } from '../feature/room-header';
@@ -387,18 +387,17 @@ export class VideoRoomPageComponent extends RoomPageBase {
   }
 
   private async makeVisible(cname: string, busiType: number): Promise<void> {
-    const rtcInfo = this.roomStore.rtcInfo();
-    let liveInfo: LiveRoomInfo | undefined = rtcInfo
-      ? { channelInfo: {}, hostInfo: null } as unknown as LiveRoomInfo
-      : undefined;
-
-    if (!liveInfo) {
-      try {
-        liveInfo = await firstValueFrom(this.api.fetchLiveRoomInfo(cname));
-      } catch {
-        this.toast.error('Failed to rejoin — room info unavailable');
-        return;
-      }
+    let liveInfo: LiveRoomInfo;
+    let stage: StageUsersResponse | undefined;
+    let audience: AudienceUsersResponse | undefined;
+    try {
+      const bundle = await firstValueFrom(this.api.fetchJoinBundle<LiveRoomInfo>(cname, busiType));
+      liveInfo = bundle.voiceRoomInfo;
+      stage = bundle.stageUsers;
+      audience = bundle.audienceUsers;
+    } catch {
+      this.toast.error('Failed to rejoin — room info unavailable');
+      return;
     }
 
     try {
@@ -410,19 +409,11 @@ export class VideoRoomPageComponent extends RoomPageBase {
 
     this.roomStore.setVisibility(true);
     this.syncVisibilityToUrl(true);
-    this.bffWs.connect(cname, liveInfo!.hostInfo?.userId ?? 0, busiType);
+    this.bffWs.connect(cname, liveInfo.hostInfo?.userId ?? 0, busiType);
     this.audienceStore.setCname(cname);
     this.stageStore.reset();
-    try {
-      const { stage, audience } = await firstValueFrom(
-        forkJoin({
-          stage: this.api.fetchStageUsers(cname, busiType),
-          audience: this.api.fetchAudienceUsers(cname, busiType),
-        }),
-      );
-      this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
-      this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
-    } catch { /* 30s reconciliation will catch up */ }
+    this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
+    this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
     this.toast.success('You are now visible');
   }
 
