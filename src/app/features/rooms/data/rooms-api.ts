@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import {
   ChannelListResponse,
   Category,
@@ -9,10 +8,12 @@ import {
   RoomType,
 } from './rooms-model';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { CategoriesService } from '@shared/data/categories.service';
 
 @Injectable()
 export class RoomsApi {
   private readonly http = inject(HttpClient);
+  private readonly categoriesService = inject(CategoriesService);
   private readonly baseUrl = `${inject(API_BASE_URL)}/rooms`;
 
   listRooms(
@@ -81,9 +82,6 @@ export class RoomsApi {
   }
 
   fetchCategories(busiType = 2): Observable<readonly Category[]> {
-    const params = new HttpParams().set('busiType', busiType);
-    return this.http
-      .get<{ items: Category[] }>(`${this.baseUrl}/categories`, { params })
-      .pipe(map((res) => res.items));
+    return this.categoriesService.fetchCategories(busiType);
   }
 }
