@@ -89,6 +89,12 @@ import { LucideMicOff, LucideMic } from '@lucide/angular';
       position: relative; display: inline-flex;
       border-radius: 50%;
       width: 100%;
+      /* Ceiling matching app-avatar's original "xl" size (--space-16 = 64px) —
+         stage-grid's columns are much wider on desktop (repeat(4, 1fr) across
+         the full row) than on mobile, and without a cap this scales up with
+         the column instead of just filling it, ballooning avatars far past
+         their intended size on wide screens. */
+      max-width: var(--space-16);
     }
     /* app-avatar's "xl" size token is a fixed 64px regardless of container —
        unlike .empty-avatar below (width: 100%; aspect-ratio: 1), which scales

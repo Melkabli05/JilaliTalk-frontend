@@ -109,6 +109,11 @@ import { LucideUserCircle } from '@lucide/angular';
 
       .empty-avatar {
         width: 100%;
+        /* Ceiling matching app-stage-user's avatar cap (--space-16 = 64px) — on
+           desktop, repeat(4, 1fr) columns are far wider than on mobile, and
+           without this the placeholder scales up with the column instead of
+           just filling it. */
+        max-width: var(--space-16);
         aspect-ratio: 1;
         border-radius: 50%;
         border: 2px dashed var(--sg-empty-border);
