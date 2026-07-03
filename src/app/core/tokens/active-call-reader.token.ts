@@ -10,6 +10,7 @@ export interface ActiveCallSnapshot {
 export interface ActiveCallReader {
   readonly snapshot: Signal<ActiveCallSnapshot | null>;
   updateMicState(isMicOn: boolean): void;
+  leave(): Promise<void>;
   clear(): void;
 }
 
@@ -17,6 +18,7 @@ export const ACTIVE_CALL_READER = new InjectionToken<ActiveCallReader>('ACTIVE_C
   factory: () => ({
     snapshot: signal<ActiveCallSnapshot | null>(null),
     updateMicState: () => {},
+    leave: () => Promise.resolve(),
     clear: () => {},
   }),
 });

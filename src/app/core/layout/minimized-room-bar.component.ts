@@ -1,14 +1,14 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CdkDrag } from '@angular/cdk/drag-drop';
-import { LucideMic, LucideMicOff } from '@lucide/angular';
+import { LucideMic, LucideMicOff, LucidePhoneOff } from '@lucide/angular';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { ACTIVE_CALL_READER } from '@core/tokens/active-call-reader.token';
 
 @Component({
   selector: 'app-minimized-room-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CdkDrag, LucideMic, LucideMicOff],
+  imports: [CdkDrag, LucideMic, LucideMicOff, LucidePhoneOff],
   template: `
     @if (snapshot(); as call) {
       <div class="minimized-bar" cdkDrag cdkDragBoundary=".app-shell">
@@ -26,6 +26,14 @@ import { ACTIVE_CALL_READER } from '@core/tokens/active-call-reader.token';
           } @else {
             <svg aria-hidden="true" lucideMicOff [size]="16"></svg>
           }
+        </button>
+        <button
+          type="button"
+          class="leave-btn"
+          aria-label="Leave room"
+          (click)="leave()"
+        >
+          <svg aria-hidden="true" lucidePhoneOff [size]="16"></svg>
         </button>
       </div>
     }
@@ -75,7 +83,8 @@ import { ACTIVE_CALL_READER } from '@core/tokens/active-call-reader.token';
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .mic-toggle {
+    .mic-toggle,
+    .leave-btn {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -83,9 +92,15 @@ import { ACTIVE_CALL_READER } from '@core/tokens/active-call-reader.token';
       height: var(--space-9);
       border-radius: var(--radius-full);
       border: none;
+      cursor: pointer;
+    }
+    .mic-toggle {
       background: var(--color-neutral-100);
       color: var(--color-text);
-      cursor: pointer;
+    }
+    .leave-btn {
+      background: var(--color-danger);
+      color: var(--color-on-danger, #fff);
     }
     :host-context(.dark) .minimized-bar {
       background: var(--color-neutral-800);
@@ -111,5 +126,9 @@ export class MinimizedRoomBarComponent {
     void this.rcs.setMicEnabled(!isCurrentlyOn).then(() => {
       this.activeCall.updateMicState(!isCurrentlyOn);
     });
+  }
+
+  leave(): void {
+    void this.activeCall.leave();
   }
 }

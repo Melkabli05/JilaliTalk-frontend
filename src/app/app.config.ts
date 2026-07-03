@@ -1,6 +1,6 @@
 import { ApplicationConfig, ErrorHandler, provideZonelessChangeDetection, APP_INITIALIZER, inject, computed, EnvironmentProviders } from '@angular/core';
 import { IMAGE_CONFIG } from '@angular/common';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { provideRouter, withComponentInputBinding, Router } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideLucideIcons, provideLucideConfig, LucideMoon, LucideSun } from '@lucide/angular';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -14,6 +14,8 @@ import { ROOM_INVITE_GATEWAY } from '@core/tokens/room-invite-gateway.token';
 import { ACTIVE_CALL_READER } from '@core/tokens/active-call-reader.token';
 import { NotificationStore } from '@store/notification.store';
 import { ActiveCallStore } from '@store/active-call.store';
+import { RoomConnectionService } from '@core/realtime/room-connection.service';
+import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { RoomApi } from '@features/room/data/room-api';
 
 import { environment } from '@env/environment';
@@ -86,6 +88,9 @@ export const appConfig: ApplicationConfig = {
       provide: ACTIVE_CALL_READER,
       useFactory: () => {
         const store = inject(ActiveCallStore);
+        const rcs = inject(RoomConnectionService);
+        const bffWs = inject(BffRoomSocketService);
+        const router = inject(Router);
         return {
           snapshot: computed(() =>
             store.minimized()
@@ -93,6 +98,15 @@ export const appConfig: ApplicationConfig = {
               : null,
           ),
           updateMicState: (v: boolean) => store.updateMicState(v),
+          leave: async (): Promise<void> => {
+            try {
+              await rcs.leave();
+              bffWs.disconnect();
+            } finally {
+              store.clear();
+              await router.navigate(['/rooms/voice']);
+            }
+          },
           clear: () => store.clear(),
         };
       },
