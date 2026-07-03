@@ -1,4 +1,4 @@
-import { ApplicationConfig, ErrorHandler, provideZonelessChangeDetection, APP_INITIALIZER, inject, EnvironmentProviders } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, provideZonelessChangeDetection, APP_INITIALIZER, inject, computed, EnvironmentProviders } from '@angular/core';
 import { IMAGE_CONFIG } from '@angular/common';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
@@ -11,7 +11,9 @@ import { AuthStore } from '@core/auth/auth.store';
 import { AuthService } from '@core/auth/auth.service';
 import { NOTIFICATION_REPORTER, NotificationReporter } from '@core/tokens/notification-reporter.token';
 import { ROOM_INVITE_GATEWAY } from '@core/tokens/room-invite-gateway.token';
+import { ACTIVE_CALL_READER } from '@core/tokens/active-call-reader.token';
 import { NotificationStore } from '@store/notification.store';
+import { ActiveCallStore } from '@store/active-call.store';
 import { RoomApi } from '@features/room/data/room-api';
 
 import { environment } from '@env/environment';
@@ -77,6 +79,21 @@ export const appConfig: ApplicationConfig = {
           approveStageInvite: (cname: string, accepted: boolean) =>
             api.stageInviteApproval(cname, STAGE_INVITE_BUSI_TYPE, 3, accepted ? 1 : 2),
           approveModInvite: (cname: string, userId: number) => api.approveManager(cname, userId),
+        };
+      },
+    },
+    {
+      provide: ACTIVE_CALL_READER,
+      useFactory: () => {
+        const store = inject(ActiveCallStore);
+        return {
+          snapshot: computed(() =>
+            store.minimized()
+              ? { cname: store.cname()!, busiType: store.busiType(), roomName: store.roomName(), isMicOn: store.isMicOn() }
+              : null,
+          ),
+          updateMicState: (v: boolean) => store.updateMicState(v),
+          clear: () => store.clear(),
         };
       },
     },
