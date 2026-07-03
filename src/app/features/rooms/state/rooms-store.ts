@@ -10,10 +10,10 @@ import {
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RoomsApi } from '../data/rooms-api';
 import { ChannelListItem, Category, ChannelListResponse, RoomType, filterRooms } from '../data/rooms-model';
+import { SearchDebounce, paginateDedup, computeIsAutoSearching } from '../data/pagination-search.util';
 
 const PAGE_SIZE = 20;
 const MAX_SEARCH_OFFSET = PAGE_SIZE * 10;
-const SEARCH_DEBOUNCE_MS = 250;
 
 interface RoomsPageSource {
   readonly type: RoomType;
@@ -25,14 +25,12 @@ interface RoomsPageSource {
 @Injectable()
 export class RoomsStore {
   private readonly api = inject(RoomsApi);
+  private readonly search = new SearchDebounce(inject(DestroyRef));
 
   private readonly _currentType = signal<RoomType>(RoomType.Voice);
   private readonly _offset = signal(0);
   private readonly _selectedCategoryId = signal<number | null>(null);
   private readonly _selectedLanguageId = signal<number | null>(null);
-  private readonly _searchQuery = signal('');
-  private readonly _debouncedSearchQuery = signal('');
-  private searchDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
   private readonly roomsPage = rxResource({
     params: () => ({
@@ -52,26 +50,20 @@ export class RoomsStore {
       offset: this._offset(),
       items: this.roomsPage.value()?.items ?? [],
     }),
-    computation: (source, previous) => {
-      if (
-        !previous ||
-        previous.source.type !== source.type ||
-        previous.source.langId !== source.langId ||
-        source.offset === 0
-      ) {
-        return source.items;
-      }
-      const existing = new Set(previous.value.map((r) => r.channel.cname));
-      const newItems = source.items.filter((r) => !existing.has(r.channel.cname));
-      return [...previous.value, ...newItems];
-    },
+    computation: (source, previous) =>
+      paginateDedup(
+        source,
+        previous,
+        (a, b) => a.type === b.type && a.langId === b.langId,
+        (r) => r.channel.cname,
+      ),
   });
 
   readonly rooms = this._rooms.asReadonly();
   readonly currentType = this._currentType.asReadonly();
   readonly selectedCategoryId = this._selectedCategoryId.asReadonly();
   readonly selectedLanguageId = this._selectedLanguageId.asReadonly();
-  readonly searchQuery = this._searchQuery.asReadonly();
+  readonly searchQuery = this.search.query;
 
   readonly isLoading = computed(() => this.roomsPage.isLoading());
   readonly error = computed(() => this.roomsPage.error());
@@ -80,16 +72,18 @@ export class RoomsStore {
     () => this.roomsPage.status() === 'resolved' && this._rooms().length === 0,
   );
 
-  readonly isAutoSearching = computed(
-    () =>
-      this._debouncedSearchQuery().trim().length > 0 &&
-      this.filteredRooms().length === 0 &&
-      this.hasMore() &&
-      this._offset() < MAX_SEARCH_OFFSET,
+  readonly isAutoSearching = computed(() =>
+    computeIsAutoSearching({
+      debouncedQuery: this.search.debounced(),
+      filteredCount: this.filteredRooms().length,
+      hasMore: this.hasMore(),
+      offset: this._offset(),
+      maxOffset: MAX_SEARCH_OFFSET,
+    }),
   );
 
   readonly filteredRooms = computed(() =>
-    filterRooms(this._rooms(), this._selectedCategoryId(), this._selectedLanguageId(), this._debouncedSearchQuery()),
+    filterRooms(this._rooms(), this._selectedCategoryId(), this._selectedLanguageId(), this.search.debounced()),
   );
 
   private readonly recommendedResource = rxResource({
@@ -130,16 +124,7 @@ export class RoomsStore {
   }
 
   setSearchQuery(query: string): void {
-    this._searchQuery.set(query);
-    clearTimeout(this.searchDebounceTimer);
-    if (!query.trim()) {
-      this._debouncedSearchQuery.set(query);
-      return;
-    }
-    this.searchDebounceTimer = setTimeout(
-      () => this._debouncedSearchQuery.set(query),
-      SEARCH_DEBOUNCE_MS,
-    );
+    this.search.set(query);
   }
 
   refresh(): void {
@@ -149,8 +134,6 @@ export class RoomsStore {
   }
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => clearTimeout(this.searchDebounceTimer));
-
     effect(() => {
       if (this.isAutoSearching() && !this.isLoading()) {
         this.loadMore();
