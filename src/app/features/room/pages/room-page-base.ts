@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, input, effect, computed, DestroyRef, Injector, Type } from '@angular/core';
 import { Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { Dialog } from '@angular/cdk/dialog';
 import { EMPTY, firstValueFrom, forkJoin, interval, type Subscription } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
@@ -25,6 +26,7 @@ import { buildModActionDefs } from '@features/room/data/mod-action-defs';
 import { UserActionModalData } from '../feature/moderation/user-action-modal';
 import { ManagersModalComponent } from '../feature/moderation/managers-modal';
 import { UserActionModalComponent } from '../feature/moderation/user-action-modal';
+import { ActiveCallStore } from '@store/active-call.store';
 
 export abstract class RoomPageBase {
 
@@ -50,6 +52,8 @@ export abstract class RoomPageBase {
   protected readonly goodieStore = inject(GoodieStore);
   protected readonly managersStore = inject(ManagersStore);
   protected readonly router = inject(Router);
+  protected readonly activeCallStore = inject(ActiveCallStore);
+  protected readonly location = inject(Location);
   protected readonly api = inject(RoomApi);
   readonly rcs = inject(RoomConnectionService);
   readonly bffWs = inject(BffRoomSocketService);
@@ -148,6 +152,9 @@ export abstract class RoomPageBase {
     this.destroyRef.onDestroy(() => {
       this._destroying.set(true);
       this.typingPruneSub?.unsubscribe();
+      if (this.activeCallStore.cname() !== null && this.activeCallStore.cname() === this.roomStore.cname()) {
+        return;
+      }
       this.rcs.leave().catch(() => {}).finally(() =>
         this.roomStore.leaveRoom().finally(() => {
           this.stageStore.reset();
@@ -357,6 +364,17 @@ export abstract class RoomPageBase {
       this.bffWs.disconnect();
     } finally {
       await this.router.navigate(this.leaveNavTarget);
+    }
+  }
+
+  onMinimize(): void {
+    const cname = this.roomStore.cname();
+    if (!cname) return;
+    this.activeCallStore.minimize(cname, this.roomStore.busiType(), this.roomStore.name(), this.roomStore.isMicOn());
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      this.location.back();
+    } else {
+      this.router.navigate(['/rooms/voice']);
     }
   }
 
