@@ -188,10 +188,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
        app-header is visible again here (immersive mode only applies below 1024px), so
        :host reserves space for it — no shared shell CSS is touched for this. */
     @container room-page (min-width: 1024px) {
-      :host {
-        padding-top: var(--app-header-height);
-        padding-bottom: 0;
-      }
       .room-layout {
         grid-template-areas: "header comments" "stage comments" "audience comments";
         grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
@@ -199,6 +195,17 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       }
       .stage-section { max-height: none; }
       .comments-section { max-height: none; }
+    }
+
+    /* Viewport query, not @container: the global app-header's visibility is a viewport/shell
+       concern (see app.ts / header.component.ts), not a slot-width concern — using
+       @container here would create a dead band between the viewport crossing 1024px (sidebar
+       shows) and the container crossing 1024px (desktop sidebar takes 84px out of it first). */
+    @media (min-width: 1024px) {
+      :host {
+        padding-top: var(--app-header-height);
+        padding-bottom: 0;
+      }
     }
   `]
 })
