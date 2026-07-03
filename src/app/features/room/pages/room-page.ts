@@ -128,19 +128,25 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       container-type: size;
       container-name: room-page;
       /* Mobile: the app shell goes immersive (see app.ts / header / sidenav) and hides
-         its own header + bottom nav, so this component owns safe-area insets instead. */
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
+         its own header + bottom nav, so this component owns safe-area insets instead.
+         max() guarantees a small floor on non-notched devices, where the env()
+         value resolves to exactly 0. */
+      padding-top: max(env(safe-area-inset-top), var(--space-1));
+      padding-bottom: max(env(safe-area-inset-bottom), var(--space-1));
     }
 
     .room-layout {
       display: grid;
       grid-template-areas: "header" "stage" "audience" "comments";
       grid-template-columns: 1fr;
-      /* Mobile-first: stage is capped, audience has a guaranteed floor and grows,
-         comments takes up to half the available height. Same numbers as the
-         2026-07-02 mobile-layout fix, now expressed as grid tracks. */
-      grid-template-rows: auto minmax(0, 30cqh) minmax(22cqh, 1fr) minmax(0, 50%);
+      /* Mobile-first: stage is capped. Audience sizes purely to its own rendered
+         content — a single horizontal strip of avatars in grid view, or just its
+         header bar when the user collapses it via its own collapse toggle — rather
+         than stretching to fill leftover space. Comments (a live chat feed that
+         benefits from extra height far more than a strip of avatars does) absorbs
+         the remainder via its 1fr track, so collapsing audience automatically
+         grows comments with no JS coordination needed between the two. */
+      grid-template-rows: auto minmax(0, 30cqh) auto minmax(0, 1fr);
       height: 100%;
       overflow: hidden;
     }
@@ -181,7 +187,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
 
     /* Tablet-sized mobile: a touch more stage room. */
     @container room-page (min-width: 480px) {
-      .room-layout { grid-template-rows: auto minmax(0, 34cqh) minmax(22cqh, 1fr) minmax(0, 50%); }
+      .room-layout { grid-template-rows: auto minmax(0, 34cqh) auto minmax(0, 1fr); }
     }
 
     /* Desktop: two-column grid, comments becomes a full-height sidebar. The global
@@ -193,8 +199,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
         grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
         grid-template-rows: auto auto minmax(22cqh, 1fr);
       }
-      .stage-section { max-height: none; }
-      .comments-section { max-height: none; }
     }
 
     /* Viewport query, not @container: the global app-header's visibility is a viewport/shell
