@@ -1,6 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, input, effect, DestroyRef } from '@angular/core';
-import { Router } from '@angular/router';
-import { Dialog } from '@angular/cdk/dialog';
+import { Component, inject, input, effect } from '@angular/core';
 import { EMPTY, firstValueFrom } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -9,7 +7,7 @@ import { JoinCancelledError } from '../state/base-room-store';
 import { StageStore } from '../state/stage-store';
 import { AudienceStore } from '../state/audience-store';
 import { CommentsStore } from '../feature/comments/comments-store';
-import { ModStore, ModAction } from '../feature/moderation/mod-store';
+import { ModStore } from '../feature/moderation/mod-store';
 import { ManagersStore } from '../feature/moderation/managers-store';
 import { SigninPanelComponent } from '../feature/signin/signin-panel';
 import { GiftsStore } from '../feature/gifts/gifts-store';
@@ -23,10 +21,7 @@ import { RoomHeaderComponent } from '../feature/room-header';
 import { StageGridComponent } from '../feature/stage/stage-grid';
 import { AudienceListComponent } from '../feature/audience/audience-list';
 import { CommentsPanelComponent } from '../feature/comments/comments-panel';
-import { ManagersModalComponent } from '../feature/moderation/managers-modal';
-import { AvSettingsComponent } from '../feature/audio-settings/av-settings';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
 import { RoomPageBase, RoomStoreContract } from './room-page-base';
 
@@ -37,8 +32,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     StageGridComponent,
     AudienceListComponent,
     CommentsPanelComponent,
-    ManagersModalComponent,
-    AvSettingsComponent,
     SigninPanelComponent,
   ],
   providers: [RoomStore, StageStore, AudienceStore, CommentsStore, ModStore, GiftsStore, InRoomRtmStore, GoodieStore, ManagersStore, RoomConnectionService],
@@ -115,10 +108,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     }
   `,
   styles: [`
-    /* :host is sized by .app-main (see app.ts) and, on desktop, additionally
-       reserves space for the fixed global app-header (see @container rule below) —
-       the room page must never compute its own vh/dvh. Layout adapts to the slot
-       width/height via @container, not the viewport. */
     :host {
       display: block;
       box-sizing: border-box;
@@ -126,10 +115,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       overflow: hidden;
       container-type: size;
       container-name: room-page;
-      /* Mobile: the app shell goes immersive (see app.ts / header / sidenav) and hides
-         its own header + bottom nav, so this component owns safe-area insets instead.
-         max() guarantees a small floor on non-notched devices, where the env()
-         value resolves to exactly 0. */
       padding-top: max(env(safe-area-inset-top), var(--space-1));
       padding-bottom: max(env(safe-area-inset-bottom), var(--space-1));
     }
@@ -138,17 +123,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       display: grid;
       grid-template-areas: "header" "stage" "audience" "comments";
       grid-template-columns: 1fr;
-      /* Mobile-first: stage is capped. Audience sizes to its own rendered content —
-         shrinking to just its header bar when collapsed, growing up to a 22cqh
-         ceiling otherwise — instead of a floor-less "auto", so it can never push
-         the room page's total height past :host and force the whole page to
-         scroll inside .app-main (the one thing this page must never do: only
-         comments scrolls vertically, and audience-list's own .audience-grid
-         scrolls horizontally — nothing here scrolls the page itself). Comments
-         (a live chat feed that benefits from extra height far more than a strip
-         of avatars does) absorbs the remainder via its 1fr track, so collapsing
-         audience still grows comments automatically, just within a safe ceiling. */
-      grid-template-rows: auto minmax(0, 30cqh) minmax(0, 22cqh) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 30cqh) minmax(0, min(max-content, 22cqh)) minmax(0, 1fr);
       height: 100%;
       overflow: hidden;
     }
@@ -187,14 +162,10 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       overflow: hidden;
     }
 
-    /* Tablet-sized mobile: a touch more stage room. */
     @container room-page (min-width: 480px) {
-      .room-layout { grid-template-rows: auto minmax(0, 34cqh) minmax(0, 22cqh) minmax(0, 1fr); }
+      .room-layout { grid-template-rows: auto minmax(0, 34cqh) minmax(0, min(max-content, 22cqh)) minmax(0, 1fr); }
     }
 
-    /* Desktop: two-column grid, comments becomes a full-height sidebar. The global
-       app-header is visible again here (immersive mode only applies below 1024px), so
-       :host reserves space for it — no shared shell CSS is touched for this. */
     @container room-page (min-width: 1024px) {
       .room-layout {
         grid-template-areas: "header comments" "stage comments" "audience comments";
@@ -203,10 +174,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       }
     }
 
-    /* Viewport query, not @container: the global app-header's visibility is a viewport/shell
-       concern (see app.ts / header.component.ts), not a slot-width concern — using
-       @container here would create a dead band between the viewport crossing 1024px (sidebar
-       shows) and the container crossing 1024px (desktop sidebar takes 84px out of it first). */
     @media (min-width: 1024px) {
       :host {
         padding-top: var(--app-header-height);
