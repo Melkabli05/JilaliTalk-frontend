@@ -102,6 +102,17 @@ interface NavGroup {
     </nav>
   `,
   styles: [`
+    /* :host has no box of its own: both children below are already independently
+       positioned (.sidebar-desktop is fixed or display:none; .mobile-nav is fixed),
+       so this wrapper must not consume a track in the app-shell grid it sits in —
+       app.ts's .app-shell has no grid-template-rows, so on the mobile single-column
+       layout this element and .main-wrapper would otherwise be auto-placed into two
+       separate implicit rows, with this one claiming visible space despite rendering
+       nothing in normal flow. */
+    :host {
+      display: contents;
+    }
+
     /* ─── Desktop Sidebar ─────────────────────────────── */
     .sidebar-desktop {
       display: none;
