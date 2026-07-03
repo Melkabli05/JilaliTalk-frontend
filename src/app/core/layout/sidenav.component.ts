@@ -176,6 +176,13 @@ interface NavGroup {
       display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
     }
     @media (min-width: 1024px) { .mobile-nav { display: none; } }
+    /* Immersive routes (mobile room pages) hide the bottom nav so the room gets the
+       full viewport height. Desktop sidebar is unaffected. */
+    @media (max-width: 1023.98px) {
+      :host-context(.app-shell.immersive) .mobile-nav {
+        display: none;
+      }
+    }
 
     .mobile-nav-inner {
       width: 100%; height: var(--bottom-nav-height);

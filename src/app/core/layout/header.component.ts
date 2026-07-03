@@ -131,6 +131,13 @@ import { AuthService } from '@core/auth/auth.service';
     @media (min-width: 1024px) {
       .app-header { padding: 0 var(--space-6); left: var(--sidebar-width); }
     }
+    /* Immersive routes (mobile room pages) hide the global header entirely — the
+       room's own header becomes the only top chrome. Desktop is unaffected. */
+    @media (max-width: 1023.98px) {
+      :host-context(.app-shell.immersive) .app-header {
+        display: none;
+      }
+    }
     /* Brand */
     .brand {
       display: flex;
