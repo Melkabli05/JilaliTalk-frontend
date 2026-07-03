@@ -221,20 +221,28 @@ export class RoomPageComponent extends RoomPageBase {
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
     const visible = this.visible();
     this.audienceStore.setBusiType(busiType);
-    try {
-      await this.roomStore.joinRoom(cname, busiType, visible);
-    } catch (err) {
-      if (err instanceof JoinCancelledError) {
-        await this.router.navigate(this.leaveNavTarget);
-        await this.roomStore.leaveRoom();
-        this.stageStore.reset();
-        this.audienceStore.reset();
-        return;
-      }
-      throw err;
+
+    const isRestore = this.activeCallStore.cname() === cname;
+    if (this.activeCallStore.minimized() && !isRestore) {
+      await this.rcs.leave().catch(() => {});
+      this.activeCallStore.clear();
     }
 
-    // room info + stage + audience + comments, fanned out server-side in one round-trip.
+    if (!isRestore) {
+      try {
+        await this.roomStore.joinRoom(cname, busiType, visible);
+      } catch (err) {
+        if (err instanceof JoinCancelledError) {
+          await this.router.navigate(this.leaveNavTarget);
+          await this.roomStore.leaveRoom();
+          this.stageStore.reset();
+          this.audienceStore.reset();
+          return;
+        }
+        throw err;
+      }
+    }
+
     let voiceInfo: VoiceRoomInfo;
     let stage: StageUsersResponse | undefined;
     let audience: AudienceUsersResponse | undefined;
@@ -268,9 +276,17 @@ export class RoomPageComponent extends RoomPageBase {
     if (reqUser?.base?.headUrl) this.roomStore.setHeadUrl(reqUser.base.headUrl);
     if (reqUser?.base?.nationality) this.roomStore.setNationality(reqUser.base.nationality);
 
+    if (isRestore) {
+      this.roomStore.setMicOn(this.activeCallStore.isMicOn());
+    }
+
     const isVisible = this.roomStore.isVisible();
-    const heartbeatHostId = isVisible ? (voiceInfo.hostInfo?.userId ?? 0) : 0;
-    this.bffWs.connect(cname, heartbeatHostId, busiType, voiceInfo.configInfo?.heartbeatSecond ?? null);
+
+    if (!isRestore) {
+      const heartbeatHostId = isVisible ? (voiceInfo.hostInfo?.userId ?? 0) : 0;
+      this.bffWs.connect(cname, heartbeatHostId, busiType, voiceInfo.configInfo?.heartbeatSecond ?? null);
+    }
+
     const uid = this.roomStore.userId();
 
     if (isVisible) this.audienceStore.setCname(cname);
@@ -278,22 +294,27 @@ export class RoomPageComponent extends RoomPageBase {
     this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
     this.commentsStore.updateComments([...(comments?.items ?? [])]);
 
-
     this.rtmStore.setCurrentUid(uid);
 
-    try {
-      const rtcInfo = this.roomStore.rtcInfo();
-      const rtcToken = rtcInfo?.token ?? null;
-      const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : environment.agoraAppIdVoice;
-      await this.rcs.connect(cname, uid, rtcToken, appId, !isVisible);
-    } catch {
-      this.toast.error('Failed to connect to audio');
+    if (!isRestore) {
+      try {
+        const rtcInfo = this.roomStore.rtcInfo();
+        const rtcToken = rtcInfo?.token ?? null;
+        const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : environment.agoraAppIdVoice;
+        await this.rcs.connect(cname, uid, rtcToken, appId, !isVisible);
+      } catch {
+        this.toast.error('Failed to connect to audio');
+      }
+
+      try {
+        await this.rcs.connectRtm(uid);
+        await this.rcs.subscribeRtmChannel(cname);
+      } catch {
+      }
     }
 
-    try {
-      await this.rcs.connectRtm(uid);
-      await this.rcs.subscribeRtmChannel(cname);
-    } catch {
+    if (isRestore) {
+      this.activeCallStore.clear();
     }
   }
 
