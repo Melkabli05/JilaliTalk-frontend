@@ -139,14 +139,17 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       display: grid;
       grid-template-areas: "header" "stage" "audience" "comments";
       grid-template-columns: 1fr;
-      /* Mobile-first: stage is capped. Audience sizes purely to its own rendered
-         content — a single horizontal strip of avatars in grid view, or just its
-         header bar when the user collapses it via its own collapse toggle — rather
-         than stretching to fill leftover space. Comments (a live chat feed that
-         benefits from extra height far more than a strip of avatars does) absorbs
-         the remainder via its 1fr track, so collapsing audience automatically
-         grows comments with no JS coordination needed between the two. */
-      grid-template-rows: auto minmax(0, 30cqh) auto minmax(0, 1fr);
+      /* Mobile-first: stage is capped. Audience sizes to its own rendered content —
+         shrinking to just its header bar when collapsed, growing up to a 22cqh
+         ceiling otherwise — instead of a floor-less "auto", so it can never push
+         the room page's total height past :host and force the whole page to
+         scroll inside .app-main (the one thing this page must never do: only
+         comments scrolls vertically, and audience-list's own .audience-grid
+         scrolls horizontally — nothing here scrolls the page itself). Comments
+         (a live chat feed that benefits from extra height far more than a strip
+         of avatars does) absorbs the remainder via its 1fr track, so collapsing
+         audience still grows comments automatically, just within a safe ceiling. */
+      grid-template-rows: auto minmax(0, 30cqh) minmax(0, 22cqh) minmax(0, 1fr);
       height: 100%;
       overflow: hidden;
     }
@@ -187,7 +190,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
 
     /* Tablet-sized mobile: a touch more stage room. */
     @container room-page (min-width: 480px) {
-      .room-layout { grid-template-rows: auto minmax(0, 34cqh) auto minmax(0, 1fr); }
+      .room-layout { grid-template-rows: auto minmax(0, 34cqh) minmax(0, 22cqh) minmax(0, 1fr); }
     }
 
     /* Desktop: two-column grid, comments becomes a full-height sidebar. The global
