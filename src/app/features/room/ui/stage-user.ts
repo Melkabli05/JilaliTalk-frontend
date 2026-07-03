@@ -88,6 +88,18 @@ import { LucideMicOff, LucideMic } from '@lucide/angular';
     .avatar-wrapper {
       position: relative; display: inline-flex;
       border-radius: 50%;
+      width: 100%;
+    }
+    /* app-avatar's "xl" size token is a fixed 64px regardless of container —
+       unlike .empty-avatar below (width: 100%; aspect-ratio: 1), which scales
+       with the grid column. Overriding to the same scale-with-column pattern
+       here keeps real stage users and empty placeholder slots visually
+       identical in size at every viewport/column width, instead of drifting
+       apart whenever the grid's column width changes. */
+    .avatar-wrapper app-avatar {
+      width: 100% !important;
+      height: auto !important;
+      aspect-ratio: 1;
     }
 
     .status-badge {
@@ -113,6 +125,17 @@ import { LucideMicOff, LucideMic } from '@lucide/angular';
     .role-badge.host { background: var(--su-role-host-bg); color: var(--su-role-host-fg); }
     .role-badge.mod { background: var(--su-role-mod-bg); color: var(--su-role-mod-fg); }
     .role-badge.away { background: var(--su-role-away-bg); color: var(--su-role-away-fg); }
+
+    /* Host/mod text badges are redundant with the crown already shown on the
+       avatar (see [crownType] above) at the stage grid's compact mobile size —
+       hide them there, but keep them on desktop where there's more room and
+       the crown is smaller relative to the avatar. ":not(.away)" keeps the
+       away indicator (a different, non-role concept) visible at every width. */
+    @container room-page (max-width: 1023.98px) {
+      .role-badge:not(.away) {
+        display: none;
+      }
+    }
   `],
 })
 export class StageUserComponent {

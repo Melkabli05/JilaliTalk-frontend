@@ -41,7 +41,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     AvSettingsComponent,
     SigninPanelComponent,
   ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [RoomStore, StageStore, AudienceStore, CommentsStore, ModStore, GiftsStore, InRoomRtmStore, GoodieStore, ManagersStore, RoomConnectionService],
   template: `
 <div class="room-layout">

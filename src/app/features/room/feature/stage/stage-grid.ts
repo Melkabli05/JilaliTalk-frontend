@@ -84,10 +84,17 @@ import { LucideUserCircle } from '@lucide/angular';
 
       .stage-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(64px, 80px));
+        /* Fixed 4 columns — a predictable line of 4 items per row (wrapping to a
+           second row of 4, then a final partial row) — instead of size-based
+           auto-fill, which could produce a different column count depending on
+           container width. Avatars keep their own fixed size (app-avatar's "xl"
+           token doesn't scale with the column); the grid item stretches to fill
+           its 1fr column and centers the avatar within it via .stage-user's own
+           flex centering. */
+        grid-template-columns: repeat(4, 1fr);
         justify-content: start;
         gap: var(--space-2) var(--space-7);
-        padding: var(--space-3);
+        padding: var(--space-2);
         align-content: start;
         background-color: var(--color-card);
       }
