@@ -718,7 +718,7 @@ export class UserInfoModalComponent {
 
   constructor() {
     const uid = this.data.userId;
-    if (uid > 0 && !this.userInfoService.getUserInfo(uid)) {
+    if (uid > 0 && (!this.userInfoService.getUserInfo(uid) || this.userInfoService.isStale(uid))) {
       void this.userInfoService.fetchUserInfo(uid);
     }
   }

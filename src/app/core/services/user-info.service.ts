@@ -219,6 +219,8 @@ export interface EnrichBatchResponse {
   readonly profiles: readonly UserInfo[];
 }
 
+const STALE_AFTER_MS = 5 * 60 * 1000; // 5 minutes — matches the room heartbeat cadence's order of magnitude
+
 /**
  * Caching lives on the backend only: the BFF's `/api/users/info` caches server-side for 24h
  * of inactivity (Caffeine, time-to-idle) to skip the expensive Curve25519 handshake, so a call
@@ -236,7 +238,7 @@ export class UserInfoService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${inject(API_BASE_URL)}/users`;
 
-  private readonly _cache = signal<ReadonlyMap<number, UserInfo>>(new Map());
+  private readonly _cache = signal<ReadonlyMap<number, { readonly info: UserInfo; readonly fetchedAt: number }>>(new Map());
   private readonly _loading = signal(false);
   // Tracks in-flight fetch promises so concurrent requests for the same uid
   // are deduplicated — only one HTTP call per uid runs at a time.
@@ -245,7 +247,13 @@ export class UserInfoService {
   readonly loading = this._loading.asReadonly();
 
   getUserInfo(userId: number): UserInfo | null {
-    return this._cache().get(userId) ?? null;
+    return this._cache().get(userId)?.info ?? null;
+  }
+
+  /** True if `userId` has never been fetched, or its cached entry is older than the TTL. */
+  isStale(userId: number): boolean {
+    const entry = this._cache().get(userId);
+    return !entry || Date.now() - entry.fetchedAt > STALE_AFTER_MS;
   }
 
   async fetchUserInfo(userId: number): Promise<UserInfo | null> {
@@ -284,9 +292,10 @@ export class UserInfoService {
   /** Merges externally-fetched profiles into the cache without an HTTP call of its own. */
   primeCache(profiles: readonly UserInfo[]): void {
     if (profiles.length === 0) return;
+    const now = Date.now();
     this._cache.update((map) => {
       const next = new Map(map);
-      for (const profile of profiles) next.set(profile.userId, profile);
+      for (const profile of profiles) next.set(profile.userId, { info: profile, fetchedAt: now });
       return next;
     });
   }
@@ -300,7 +309,7 @@ export class UserInfoService {
       const resolved = info ?? ({} as UserInfo);
       // Keyed by the requested userId explicitly, not resolved.userId — the fallback `{}`
       // has no userId field, so primeCache (which keys off profile.userId) can't be reused here.
-      this._cache.update((map) => new Map(map).set(userId, resolved));
+      this._cache.update((map) => new Map(map).set(userId, { info: resolved, fetchedAt: Date.now() }));
       return resolved;
     } catch {
       return null;
