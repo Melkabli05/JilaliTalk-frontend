@@ -214,6 +214,11 @@ export interface UserInfo {
   readonly details: UserProfileDetails | null;
 }
 
+/** Response shape of `POST /users/enrich-batch`. */
+export interface EnrichBatchResponse {
+  readonly profiles: readonly UserInfo[];
+}
+
 /**
  * Caching lives on the backend only: the BFF's `/api/users/info` caches server-side for 24h
  * of inactivity (Caffeine, time-to-idle) to skip the expensive Curve25519 handshake, so a call
@@ -260,6 +265,32 @@ export class UserInfoService {
     }
   }
 
+  /**
+   * Batch-fetches profiles for multiple uids in one round trip (`POST /users/enrich-batch`)
+   * and primes the cache with the results, so a subsequent `getUserInfo()` for any of those
+   * uids returns the enriched value. Callers that queue uids from bursty realtime events
+   * (audience/stage rosters, comment event cards, IM notifications) should batch through this
+   * — via `EnrichBatchQueue` (`shared/utils`) — rather than call `fetchUserInfo` per uid.
+   */
+  async enrichBatchAndCache(userIds: readonly number[]): Promise<readonly UserInfo[]> {
+    if (userIds.length === 0) return [];
+    const { profiles } = await firstValueFrom(
+      this.http.post<EnrichBatchResponse>(`${this.baseUrl}/enrich-batch`, { userIds }),
+    );
+    this.primeCache(profiles);
+    return profiles;
+  }
+
+  /** Merges externally-fetched profiles into the cache without an HTTP call of its own. */
+  primeCache(profiles: readonly UserInfo[]): void {
+    if (profiles.length === 0) return;
+    this._cache.update((map) => {
+      const next = new Map(map);
+      for (const profile of profiles) next.set(profile.userId, profile);
+      return next;
+    });
+  }
+
   private async doFetch(userId: number): Promise<UserInfo | null> {
     this._loading.set(true);
     try {
@@ -267,11 +298,9 @@ export class UserInfoService {
         this.http.get<UserInfo>(`${this.baseUrl}/info`, { params: { userId } }),
       );
       const resolved = info ?? ({} as UserInfo);
-      this._cache.update((map) => {
-        const next = new Map(map);
-        next.set(userId, resolved);
-        return next;
-      });
+      // Keyed by the requested userId explicitly, not resolved.userId — the fallback `{}`
+      // has no userId field, so primeCache (which keys off profile.userId) can't be reused here.
+      this._cache.update((map) => new Map(map).set(userId, resolved));
       return resolved;
     } catch {
       return null;

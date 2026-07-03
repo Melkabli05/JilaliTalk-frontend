@@ -3,7 +3,6 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { StageUsersResponse, AudienceUsersResponse, CommentsResponse, SendCommentPayload, VoiceSignPanelResponse, RoomLevelRewardResponse, RoomLevelConfigResponse, VoiceRoomInfo, LiveRoomInfo, ManagerListResponse, ManagerJudgeResponse, CaptionHistoryResponse, VoiceTasksResponse } from './room-model';
-import { UserInfo } from '@core/services/user-info.service';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
 
 @Injectable({ providedIn: 'root' })
@@ -42,15 +41,6 @@ export class RoomApi {
   /** Returns the current audience roster revision — poll this to decide whether to refetch. */
   fetchAudienceRevision(cname: string): Observable<{ revision: number }> {
     return this.http.get<{ revision: number }>(`${this.baseUrl}/rooms/${cname}/audience-revision`);
-  }
-
-  /**
-   * Batch enrichment for partial user data received over the LiveHub WebSocket.
-   * Replaces per-user GET /users/info calls in AudienceStore.enrichAudienceUser(),
-   * StageStore.enrichStageUser(), and ghost-audience.util.ts.
-   */
-  enrichBatch(userIds: number[]): Observable<EnrichBatchResponse> {
-    return this.http.post<EnrichBatchResponse>(`${this.baseUrl}/users/enrich-batch`, { userIds });
   }
 
   /**
@@ -250,11 +240,6 @@ export class RoomApi {
     const params = new HttpParams().set('cname', cname).set('host_id', hostId);
     return this.http.get<RoomLevelConfigResponse>(`${this.baseUrl}/signin/room-level-config`, { params });
   }
-}
-
-/** Response shape of POST /users/enrich-batch */
-export interface EnrichBatchResponse {
-  readonly profiles: readonly UserInfo[];
 }
 
 /** Response shape of GET /rooms/{cname}/join-bundle */

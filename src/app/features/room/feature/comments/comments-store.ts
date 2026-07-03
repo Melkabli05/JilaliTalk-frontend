@@ -1,7 +1,7 @@
 import { Injectable, signal, effect, inject, computed } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Comment, CaptionEntry, CommentOrEvent, EventCard } from '../../data/room-model';
-import { CollectionStore } from '@shared/utils/collection-store';
+import { CollectionStore, EnrichBatchQueue } from '@shared/utils';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserInfoService } from '@core/services/user-info.service';
 import { UserRole } from '@core/models/user-role';
@@ -35,6 +35,9 @@ export class CommentsStore extends CollectionStore<Comment> {
 
   private readonly activeJoinedUserIds = new Map<number, number>(); // uid → lastSeen ts
   private readonly pendingQuitTimers = new Map<number, ReturnType<typeof setTimeout>>();
+  private readonly enrichQueue = new EnrichBatchQueue((uids) =>
+    this.userInfoService.enrichBatchAndCache(uids).then(() => undefined),
+  );
 
   readonly mergedItems = computed<readonly CommentOrEvent[]>(() => {
     const comments: MergedEntry[] = this.items().map((c) => ({ item: c, ts: c.createdAtMs }));
@@ -71,7 +74,7 @@ export class CommentsStore extends CollectionStore<Comment> {
         ...extra,
       } as EventCard,
     ]);
-    void this.userInfoService.fetchUserInfo(userId);
+    this.enrichQueue.queue(userId);
   }
 
   /** Backfills nickname/headUrl/nationality from the cached UserInfoService for cards that
@@ -229,7 +232,7 @@ export class CommentsStore extends CollectionStore<Comment> {
           const userId = Number(event.userId);
           this.activeJoinedUserIds.delete(userId);
           this.scheduleQuitCard(userId, event.userId);
-          void this.userInfoService.fetchUserInfo(userId);
+          this.enrichQueue.queue(userId);
           break;
         }
 
@@ -355,5 +358,6 @@ export class CommentsStore extends CollectionStore<Comment> {
     for (const timer of this.pendingQuitTimers.values()) clearTimeout(timer);
     this.pendingQuitTimers.clear();
     this._currentUserId = 0;
+    this.enrichQueue.dispose();
   }
 }

@@ -5,6 +5,7 @@ import { ToastService } from '@core/services/toast.service';
 import { UserInfoService } from '@core/services/user-info.service';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
 import { ROOM_INVITE_GATEWAY } from '@core/tokens/room-invite-gateway.token';
+import { EnrichBatchQueue } from '@shared/utils';
 import { ImSocketService } from './im-socket.service';
 import type { ImEvent } from './im-events';
 
@@ -16,6 +17,12 @@ export class ImBootstrapService {
   private readonly toast = inject(ToastService);
   private readonly notifications = inject(NOTIFICATION_REPORTER);
   private readonly userInfo = inject(UserInfoService);
+  /** Prefetches profiles for notification events (profile_visit/follow/gift/introduction) so
+   *  UserInfoModal is warm by the time the user clicks — batched instead of one call per event,
+   *  since a burst of queued notifications can flush at once (e.g. app foregrounded). */
+  private readonly enrichQueue = new EnrichBatchQueue((uids) =>
+    this.userInfo.enrichBatchAndCache(uids).then(() => undefined),
+  );
 
   constructor() {
     effect(() => {
@@ -42,7 +49,7 @@ export class ImBootstrapService {
         const uid = Number(event.visitorUserId);
         if (!Number.isFinite(uid)) break;
         // Prefetch profile so UserInfoModal is populated by the time the user clicks the notification
-        void this.userInfo.fetchUserInfo(uid);
+        this.enrichQueue.queue(uid);
         const displayName = event.nickname?.trim() || event.visitorUserId;
         this.notifications.notifyUserEvent({
           type: 'info',
@@ -108,7 +115,7 @@ export class ImBootstrapService {
         const uid = Number(event.userId);
         const message = event.status === 2 ? `${event.nickname} followed you back` : `${event.nickname} followed you`;
         if (Number.isFinite(uid) && uid > 0) {
-          void this.userInfo.fetchUserInfo(uid);
+          this.enrichQueue.queue(uid);
           this.notifications.notifyUserEvent({
             type: 'info',
             title: 'New follower',
@@ -138,7 +145,7 @@ export class ImBootstrapService {
         const uid = Number(event.fromUserId);
         const message = `${event.fromNickname} sent you a gift`;
         if (Number.isFinite(uid) && uid > 0) {
-          void this.userInfo.fetchUserInfo(uid);
+          this.enrichQueue.queue(uid);
           this.notifications.notifyUserEvent({
             type: 'info',
             title: 'Gift received',
@@ -156,7 +163,7 @@ export class ImBootstrapService {
         const uid = Number(event.fromUserId);
         const message = `${event.fromNickname} sent you an introduction`;
         if (Number.isFinite(uid) && uid > 0) {
-          void this.userInfo.fetchUserInfo(uid);
+          this.enrichQueue.queue(uid);
           this.notifications.notifyUserEvent({
             type: 'info',
             title: 'Introduction',
