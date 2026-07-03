@@ -1,6 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal, input, effect, computed, DestroyRef, Injector, Type } from '@angular/core';
 import { Router } from '@angular/router';
-import { Location } from '@angular/common';
 import { Dialog } from '@angular/cdk/dialog';
 import { EMPTY, firstValueFrom, forkJoin, interval, type Subscription } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
@@ -53,7 +52,6 @@ export abstract class RoomPageBase {
   protected readonly managersStore = inject(ManagersStore);
   protected readonly router = inject(Router);
   protected readonly activeCallStore = inject(ActiveCallStore);
-  protected readonly location = inject(Location);
   protected readonly api = inject(RoomApi);
   readonly rcs = inject(RoomConnectionService);
   readonly bffWs = inject(BffRoomSocketService);
@@ -371,11 +369,7 @@ export abstract class RoomPageBase {
     const cname = this.roomStore.cname();
     if (!cname) return;
     this.activeCallStore.minimize(cname, this.roomStore.busiType(), this.roomStore.name(), this.roomStore.isMicOn());
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      this.location.back();
-    } else {
-      this.router.navigate(['/rooms/voice']);
-    }
+    this.router.navigate(this.leaveNavTarget);
   }
 
 
