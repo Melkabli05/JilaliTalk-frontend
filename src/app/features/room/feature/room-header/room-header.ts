@@ -33,6 +33,7 @@ import {
   LucideCaptionsOff,
   LucideEllipsisVertical,
   LucideX,
+  LucideMinimize2,
 } from '@lucide/angular';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
 import { MicButtonComponent } from '../../ui/mic-button';
@@ -66,6 +67,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
     LucideCaptionsOff,
     LucideEllipsisVertical,
     LucideX,
+    LucideMinimize2,
   ],
   host: {
     '(document:keydown.escape)': 'closeOverflow(); closeRoomInfo();',
@@ -312,6 +314,16 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
             }
           </button>
         </div>
+
+        <button
+          class="toolbar-btn"
+          appTooltip="Minimize"
+          tooltipPosition="left"
+          (click)="onMinimize()"
+          aria-label="Minimize room"
+        >
+          <svg aria-hidden="true" lucideMinimize2 [size]="18"></svg>
+        </button>
 
         <button
           class="toolbar-btn danger"
@@ -1117,6 +1129,7 @@ export class RoomHeaderComponent {
   );
 
   readonly leave = output<void>();
+  readonly minimize = output<void>();
   readonly refresh = output<void>();
   readonly toggleMic = output<void>();
   readonly toggleCam = output<void>();
@@ -1216,6 +1229,9 @@ export class RoomHeaderComponent {
   }
   onLeave(): void {
     this.leave.emit();
+  }
+  onMinimize(): void {
+    this.minimize.emit();
   }
   onRefresh(): void {
     this.refresh.emit();
