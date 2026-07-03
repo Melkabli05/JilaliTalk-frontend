@@ -4,6 +4,7 @@ export const roomRoutes: Routes = [
   {
     path: ':cname/:busiType',
     title: 'Room',
+    data: { immersive: true },
     loadComponent: () =>
       import('./pages/room-page').then((m) => m.RoomPageComponent),
   },

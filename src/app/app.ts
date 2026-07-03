@@ -1,19 +1,27 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet, type ActivatedRouteSnapshot } from '@angular/router';
+import { filter, map } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { SidenavComponent } from '@core/layout/sidenav.component';
 import { HeaderComponent } from '@core/layout/header.component';
 import { ImBootstrapService } from '@core/realtime/im-bootstrap.service';
 import { ToastContainerComponent } from '@shared/ui/toast/toast-container.component';
 import { PwaUpdateBannerComponent } from '@shared/ui';
 import { PwaUpdateService } from '@core/services/pwa-update.service';
-import { toSignal } from '@angular/core/rxjs-interop';
+
+/** Walks to the deepest activated route and reports whether it opted into immersive mode. */
+function isImmersiveRoute(root: ActivatedRouteSnapshot): boolean {
+  let node = root;
+  while (node.firstChild) node = node.firstChild;
+  return node.data['immersive'] === true;
+}
 
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, SidenavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent],
   template: `
-    <div class="app-shell">
+    <div class="app-shell" [class.immersive]="immersive()">
       <app-sidenav />
       <div class="main-wrapper">
         <app-header />
@@ -81,10 +89,28 @@ import { toSignal } from '@angular/core/rxjs-interop';
           padding-bottom: 0;
         }
       }
+
+      /* Immersive routes (mobile room pages) hide the global header and bottom nav —
+         see :host-context(.app-shell.immersive) in header/sidenav components — so
+         .app-main no longer needs to reserve space for the bottom nav here. */
+      @media (max-width: 1023.98px) {
+        .app-shell.immersive .app-main {
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+      }
     `,
   ],
 })
 export class App {
   private readonly imBootstrap = inject(ImBootstrapService);
+  private readonly router = inject(Router);
   readonly pwaUpdate = inject(PwaUpdateService);
+
+  readonly immersive = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => isImmersiveRoute(this.router.routerState.snapshot.root)),
+    ),
+    { initialValue: false },
+  );
 }
