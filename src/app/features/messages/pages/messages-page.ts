@@ -18,6 +18,7 @@ import {
 } from '@lucide/angular';
 import { ImSocketService } from '@core/realtime/im-socket.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
+import { relativeTime } from '@shared/utils';
 import { MessagesSearchComponent } from '../ui/search/messages-search';
 import { MessagesStore } from '../store/messages.store';
 import type { DmConversation, DmMessage } from '../models/dm.model';
@@ -968,20 +969,7 @@ export class MessagesPageComponent {
   }
 
   protected relativeTime(ts: number): string {
-    const diff = Date.now() - ts;
-    const secs = Math.floor(diff / 1000);
-    if (secs < 60) return 'now';
-    const mins = Math.floor(secs / 60);
-    if (mins < 60) return `${mins}m`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h`;
-    if (hrs < 48) return 'Yesterday';
-    const d = new Date(ts);
-    const now = new Date();
-    if (d.getFullYear() === now.getFullYear()) {
-      return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    }
-    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' });
+    return relativeTime(ts);
   }
 
   protected fmtTime(ts: number): string {
