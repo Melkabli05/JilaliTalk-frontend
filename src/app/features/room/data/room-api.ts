@@ -44,20 +44,41 @@ export class RoomApi {
   }
 
   /**
-   * Bundled room-info + stage + audience in one round-trip — the BFF fans the three upstream
-   * calls out concurrently server-side instead of the browser making three sequential ones.
-   * `T` is `VoiceRoomInfo` or `LiveRoomInfo` at the call site: both wrap the same backend
+   * Bundled room-info + stage + audience + comments in one round-trip — the BFF fans all four
+   * upstream calls out concurrently server-side instead of the browser making four separate
+   * ones. `T` is `VoiceRoomInfo` or `LiveRoomInfo` at the call site: both wrap the same backend
    * `VoiceRoomInfoResponse` JSON shape, dispatched server-side by `busiType`.
+   *
+   * Not used by `AudienceStore`'s revision-triggered reconciliation poll — that only needs a
+   * roster refresh, so it deliberately keeps calling `fetchAudienceUsers` alone instead of
+   * pulling in room info/stage/comments on every drift check.
    */
   fetchJoinBundle<T = VoiceRoomInfo>(
     cname: string,
     busiType: number,
-  ): Observable<{ voiceRoomInfo: T; stageUsers: StageUsersResponse; audienceUsers: AudienceUsersResponse }> {
+  ): Observable<{
+    voiceRoomInfo: T;
+    stageUsers: StageUsersResponse;
+    audienceUsers: AudienceUsersResponse;
+    comments: CommentsResponse;
+  }> {
     const params = new HttpParams().set('busiType', busiType);
-    return this.http.get<{ voiceRoomInfo: T; stageUsers: StageUsersResponse; audienceUsers: AudienceUsersResponse }>(
-      `${this.baseUrl}/rooms/${cname}/join-bundle`,
-      { params },
-    );
+    return this.http
+      .get<{
+        voiceRoomInfo: T;
+        stageUsers: StageUsersResponse;
+        audienceUsers: AudienceUsersResponse;
+        comments: CommentsResponse;
+      }>(`${this.baseUrl}/rooms/${cname}/join-bundle`, { params })
+      .pipe(
+        map((res) => ({
+          ...res,
+          comments: {
+            ...res.comments,
+            items: res.comments?.items?.map((c) => ({ ...c, createdAt: c.createdAt * 1000 })) ?? null,
+          },
+        })),
+      );
   }
 
   fetchComments(cname: string, busiType: number): Observable<CommentsResponse> {

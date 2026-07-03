@@ -15,7 +15,7 @@ import { SigninPanelComponent } from '../feature/signin/signin-panel';
 import { GiftsStore } from '../feature/gifts/gifts-store';
 import { InRoomRtmStore } from '../feature/in-room-rtm/in-room-rtm-store';
 import { GoodieStore } from '../feature/goodie-bag/goodie-store';
-import { StageUser, AudienceUser, SendCommentPayload, LiveRoomInfo, StageUsersResponse, AudienceUsersResponse } from '../data/room-model';
+import { StageUser, AudienceUser, SendCommentPayload, LiveRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../data/room-model';
 import { SendEvent } from '../feature/comments/comment-input';
 import { environment } from '@env/environment';
 import { RoomHeaderComponent } from '../feature/room-header';
@@ -298,23 +298,19 @@ export class VideoRoomPageComponent extends RoomPageBase {
       throw err;
     }
 
-    // Fired together right after join: the bundle (room info + stage + audience, fanned out
-    // server-side) and comments are independent of each other, so there is no reason to wait
-    // for one before starting the other. firstValueFrom subscribes immediately, so both HTTP
-    // requests are in flight from this point — comments isn't awaited until after ws connects.
+    // room info + stage + audience + comments, fanned out server-side in one round-trip.
     // (channelInfo has no `cname` field upstream — actualCname always equals the input cname —
-    // so it's safe to key both calls off `cname` before the response comes back.)
-    const bundlePromise = firstValueFrom(this.api.fetchJoinBundle<LiveRoomInfo>(cname, busiType));
-    const commentsPromise = firstValueFrom(this.api.fetchComments(cname, busiType));
-
+    // so it's safe to key the call off `cname` before the response comes back.)
     let liveInfo: LiveRoomInfo;
     let stage: StageUsersResponse | undefined;
     let audience: AudienceUsersResponse | undefined;
+    let comments: CommentsResponse | undefined;
     try {
-      const bundle = await bundlePromise;
+      const bundle = await firstValueFrom(this.api.fetchJoinBundle<LiveRoomInfo>(cname, busiType));
       liveInfo = bundle.voiceRoomInfo;
       stage = bundle.stageUsers;
       audience = bundle.audienceUsers;
+      comments = bundle.comments;
     } catch {
       await this.router.navigate(['/rooms']);
       this.toast.error('Room not found');
@@ -346,7 +342,6 @@ export class VideoRoomPageComponent extends RoomPageBase {
     if (isVisible) this.audienceStore.setCname(actualCname);
     this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
     this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
-    const comments = await commentsPromise;
     this.commentsStore.updateComments([...(comments?.items ?? [])]);
 
 

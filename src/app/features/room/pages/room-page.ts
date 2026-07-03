@@ -15,7 +15,7 @@ import { SigninPanelComponent } from '../feature/signin/signin-panel';
 import { GiftsStore } from '../feature/gifts/gifts-store';
 import { InRoomRtmStore } from '../feature/in-room-rtm/in-room-rtm-store';
 import { GoodieStore } from '../feature/goodie-bag/goodie-store';
-import { StageUser, SendCommentPayload, VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse } from '../data/room-model';
+import { StageUser, SendCommentPayload, VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../data/room-model';
 import { UserRole } from '@core/models/user-role';
 import { SendEvent } from '../feature/comments/comment-input';
 import { environment } from '@env/environment';
@@ -255,21 +255,17 @@ export class RoomPageComponent extends RoomPageBase {
       throw err;
     }
 
-    // Fired together right after join: the bundle (room info + stage + audience, fanned out
-    // server-side) and comments are independent of each other, so there is no reason to wait
-    // for one before starting the other. firstValueFrom subscribes immediately, so both HTTP
-    // requests are in flight from this point — comments isn't awaited until after ws connects.
-    const bundlePromise = firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType));
-    const commentsPromise = firstValueFrom(this.api.fetchComments(cname, busiType));
-
+    // room info + stage + audience + comments, fanned out server-side in one round-trip.
     let voiceInfo: VoiceRoomInfo;
     let stage: StageUsersResponse | undefined;
     let audience: AudienceUsersResponse | undefined;
+    let comments: CommentsResponse | undefined;
     try {
-      const bundle = await bundlePromise;
+      const bundle = await firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType));
       voiceInfo = bundle.voiceRoomInfo;
       stage = bundle.stageUsers;
       audience = bundle.audienceUsers;
+      comments = bundle.comments;
     } catch {
       await this.router.navigate(['/']);
       this.toast.error('Room not found. Please create a new one.');
@@ -301,7 +297,6 @@ export class RoomPageComponent extends RoomPageBase {
     if (isVisible) this.audienceStore.setCname(cname);
     this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
     this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
-    const comments = await commentsPromise;
     this.commentsStore.updateComments([...(comments?.items ?? [])]);
 
 
