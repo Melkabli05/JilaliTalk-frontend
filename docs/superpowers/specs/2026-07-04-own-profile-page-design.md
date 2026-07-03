@@ -22,7 +22,9 @@ All of this exists in `jilalibff` today, commit `f896351`, and was verified with
 | `POST /api/profile/visitors` | Paginated "who viewed my profile" — body includes `sign` (see Risk below) | ⚠️ not yet tested — see Risk |
 | `GET /api/profile/blocklist` | Blocked users list — every real capture returned it empty; write endpoints (block/unblock) don't exist anywhere in `profile_endpoints.md`'s research | ✅ (confirmed empty-shape) |
 
-Response envelope: bundle/followers/following/blocklist all return their payload directly (Micronaut Serde, camelCase JSON, e.g. `{"userInfo": {...}, "isOwnProfile": true, "stats": {...}, "limitations": {...}}` for the bundle — see the live curl output captured earlier this session for the exact shape). No client-side envelope unwrapping needed; the BFF already strips upstream's `code`/`status` wrapper for these four.
+Response envelope — corrected against the actual live curl output captured earlier this session (two different shapes, not one):
+- **`bundle` is unwrapped** — the BFF's `ProfileBundleResponse` record IS the direct response body: `{"userInfo": {...}, "isOwnProfile": true, "stats": {...}, "limitations": {...}}`. No envelope to strip.
+- **`followers`/`following`/`blocklist` still carry upstream's original envelope** — `followers`/`following` use `{"status": 0, "message": "success", "data": {"pageIndex": "...", "more": true, "count": N, "list": [...]}}`; `blocklist` uses `{"code": 0, "msg": "ok", "data": {"blackList": null}}`. `profile-api.ts` must unwrap `.data` for these three (the BFF's `ProfileController` passes these through unmodified — only the bundle endpoint constructs a fresh unwrapped record).
 
 ### Risk: Visitors tab's `sign` field
 
