@@ -93,8 +93,13 @@ interface NavGroup {
               @case ('globe') { <svg aria-hidden="true" lucideGlobe [size]="22"></svg> }
               @case ('tv') { <svg aria-hidden="true" lucideTv [size]="22"></svg> }
               @case ('lock') { <svg aria-hidden="true" lucideLock [size]="22"></svg> }
+              @case ('message') { <svg aria-hidden="true" lucideMessageCircle [size]="22"></svg> }
+              @case ('user') { <svg aria-hidden="true" lucideUser [size]="22"></svg> }
             }
-            <span class="mobile-nav-label">{{ item.label === 'Voice Rooms' ? 'Voice' : item.label === 'Live Streams' ? 'Live' : item.label === 'Private Rooms' ? 'Private' : item.label }}</span>
+            @if (item.badge && item.badge > 0) {
+              <span class="nav-badge mobile-nav-badge" aria-label="{{ item.badge }} notifications">{{ item.badge > 9 ? '9+' : item.badge }}</span>
+            }
+            <span class="mobile-nav-label">{{ mobileLabel(item.label) }}</span>
           </a>
         }
       </div>
@@ -210,6 +215,7 @@ interface NavGroup {
     }
 
     .mobile-nav-item {
+      position: relative;
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       gap: 2px; padding: var(--space-2) var(--space-3);
@@ -291,6 +297,17 @@ export class SidenavComponent {
   readonly mobileNavItems: NavItem[] = [
     { id: 'voice', iconName: 'globe', label: 'Voice Rooms', route: '/rooms/voice' },
     { id: 'live', iconName: 'tv', label: 'Live Streams', route: '/rooms/live' },
-    { id: 'private', iconName: 'lock', label: 'Private Rooms', route: '/rooms/private' },
+    { id: 'messages', iconName: 'message', label: 'Messages', route: '/messages', badge: 5 },
+    { id: 'profile', iconName: 'user', label: 'Profile', route: '/profile' },
   ];
+
+  /** Short labels so four items fit at typical mobile widths without crowding. */
+  mobileLabel(full: string): string {
+    switch (full) {
+      case 'Voice Rooms': return 'Voice';
+      case 'Live Streams': return 'Live';
+      case 'Private Rooms': return 'Private';
+      default: return full;
+    }
+  }
 }
