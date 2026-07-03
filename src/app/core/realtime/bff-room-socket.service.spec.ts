@@ -72,15 +72,22 @@ describe('BffRoomSocketService', () => {
     expect(service.lastEvent()).toBeNull();
   });
 
-  it('reconnects with exponential backoff after the socket closes', () => {
-    service.connect('VR_1_2');
-    FakeWebSocket.instances[0]!.onclose?.();
+  it('reconnects using full-jitter backoff: delay = random(0, min(cap, base*2^attempt))', () => {
+    // First attempt's bound is base (1000ms); pin Math.random so the jittered delay is
+    // deterministic: floor(0.5 * 1001) = 500ms.
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    try {
+      service.connect('VR_1_2');
+      FakeWebSocket.instances[0]!.onclose?.();
 
-    vi.advanceTimersByTime(999);
-    expect(FakeWebSocket.instances).toHaveLength(1);
+      vi.advanceTimersByTime(499);
+      expect(FakeWebSocket.instances).toHaveLength(1);
 
-    vi.advanceTimersByTime(1);
-    expect(FakeWebSocket.instances).toHaveLength(2);
+      vi.advanceTimersByTime(1);
+      expect(FakeWebSocket.instances).toHaveLength(2);
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
   it('stops reconnecting and clears lastEvent after disconnect()', async () => {

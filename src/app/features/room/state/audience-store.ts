@@ -73,11 +73,9 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
     const busiType = this.busiType();
     if (!cname) return;
     try {
-      const { revision } = await firstValueFrom(this.api.fetchAudienceRevision(cname));
-      if (revision <= this.lastAudienceRevision) return;
-      this.lastAudienceRevision = revision;
-      const audience = await firstValueFrom(this.api.fetchAudienceUsers(cname, busiType));
-      this.updateAudienceUsers([...(audience?.list ?? [])]);
+      const result = await firstValueFrom(this.api.fetchAudienceReconcile(cname, busiType, this.lastAudienceRevision));
+      this.lastAudienceRevision = result.revision;
+      if (result.changed) this.updateAudienceUsers([...(result.list ?? [])]);
     } catch {
     }
   }

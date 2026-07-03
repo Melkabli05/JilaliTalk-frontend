@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { FollowService } from '@core/services/follow.service';
 import {
   FollowResult,
   FollowersPage,
@@ -19,6 +20,7 @@ import {
 export class ProfileApi {
   private readonly http = inject(HttpClient);
   private readonly base = inject(API_BASE_URL);
+  private readonly followService = inject(FollowService);
 
   readonly profileBase = `${this.base}/profile`;
 
@@ -44,18 +46,10 @@ export class ProfileApi {
     return this.http.get<FollowingPage>(`${this.profileBase}/following`, { params });
   }
 
+  /** Toggles the follow relationship — see {@link FollowService} for why there's
+   *  no separate `unfollow()`. Read the response's `data.status` for the outcome. */
   follow(followUid: number, nickName: string): Observable<FollowResult> {
-    return this.http.post<FollowResult>(`${this.profileBase}/follow`, {
-      follow_uid: followUid,
-      nick_name: nickName,
-    });
-  }
-
-  unfollow(followUid: number, nickName: string): Observable<FollowResult> {
-    return this.http.post<FollowResult>(`${this.profileBase}/follow`, {
-      follow_uid: followUid,
-      nick_name: nickName,
-    });
+    return this.followService.follow(followUid, nickName);
   }
 
   recordVisit(uid: number, visitorUid: number): Observable<Record<string, unknown>> {

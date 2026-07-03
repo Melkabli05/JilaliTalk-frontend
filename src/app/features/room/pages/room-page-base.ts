@@ -25,6 +25,7 @@ import { buildModActionDefs } from '@features/room/data/mod-action-defs';
 import { UserActionModalData } from '../feature/moderation/user-action-modal';
 import { ManagersModalComponent } from '../feature/moderation/managers-modal';
 import { UserActionModalComponent } from '../feature/moderation/user-action-modal';
+import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal/user-info-modal.component';
 import { ActiveCallStore } from '@store/active-call.store';
 
 export abstract class RoomPageBase {
@@ -309,7 +310,27 @@ export abstract class RoomPageBase {
     });
   }
 
+  /**
+   * Hosts and moderators get the full moderation modal (mute/kick/ban etc.)
+   * for real users; a plain viewer — or anyone clicking a ghost placeholder,
+   * which has no confirmed identity to act on — gets the read-only profile
+   * card (with follow) instead.
+   */
   protected openUserActions(user: UserActionModalData): void {
+    const canModerate = (this.roomStore.isHost() || this.roomStore.isModerator()) && !user.isGhost;
+    if (!canModerate) {
+      this.dialog.open(UserInfoModalComponent, {
+        data: {
+          userId: user.userId ?? 0,
+          nickname: user.nickname ?? user.base?.nickname ?? null,
+          headUrl: user.headUrl ?? user.base?.headUrl ?? null,
+        } satisfies UserInfoModalData,
+        backdropClass: 'app-modal-backdrop',
+        injector: this.injector,
+      });
+      return;
+    }
+
     if (user.userId) this.modStore.selectUser(user.userId);
     const ref = this.dialog.open<ModAction | undefined>(UserActionModalComponent, {
       data: user,

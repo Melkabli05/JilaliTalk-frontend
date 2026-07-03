@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { forkJoin, of } from 'rxjs';
+import { map, of } from 'rxjs';
 import { RoomApi } from '../../data/room-api';
 import {
   VoiceSignPanelResponse,
@@ -64,10 +64,9 @@ export class SigninStore {
     stream: ({ params }) =>
       params === undefined
         ? of({ rewards: EMPTY_REWARDS, config: EMPTY_LEVEL_CONFIG })
-        : forkJoin({
-            rewards: this.api.fetchRoomLevelRewards(params.cname, params.hostId, params.level),
-            config: this.api.fetchRoomLevelConfig(params.cname, params.hostId),
-          }),
+        : this.api
+            .fetchRoomLevelBundle(params.cname, params.hostId, params.level)
+            .pipe(map((bundle) => ({ rewards: bundle.reward, config: bundle.config }))),
     defaultValue: { rewards: EMPTY_REWARDS, config: EMPTY_LEVEL_CONFIG },
   });
 

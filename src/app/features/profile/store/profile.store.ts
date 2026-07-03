@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed, linkedSignal } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '@core/auth/auth.store';
@@ -42,7 +42,13 @@ export class ProfileStore {
 
   readonly unreadLikes = signal(0);
 
-  readonly isFollowing = linkedSignal({ source: () => false, computation: () => false });
+  /**
+   * There's no endpoint that reports "does the viewer already follow this user"
+   * up front (verified against jilalibff and the captured HelloTalk traffic —
+   * see FollowService's doc comment), so this starts unknown-as-false and is
+   * only ever set from a real toggle response's `data.status` afterward.
+   */
+  readonly isFollowing = signal(false);
 
   setTab(tab: ProfileTab): void { this.activeTab.set(tab); }
   setTargetUid(uid: number | null): void { this._targetUid.set(uid); }

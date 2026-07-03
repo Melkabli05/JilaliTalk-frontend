@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { StageUsersResponse, AudienceUsersResponse, CommentsResponse, SendCommentPayload, VoiceSignPanelResponse, RoomLevelRewardResponse, RoomLevelConfigResponse, VoiceRoomInfo, LiveRoomInfo, ManagerListResponse, ManagerJudgeResponse, CaptionHistoryResponse, VoiceTasksResponse } from './room-model';
+import { StageUsersResponse, AudienceUsersResponse, AudienceUser, CommentsResponse, SendCommentPayload, VoiceSignPanelResponse, RoomLevelRewardResponse, RoomLevelConfigResponse, VoiceRoomInfo, LiveRoomInfo, ManagerListResponse, ManagerJudgeResponse, CaptionHistoryResponse, VoiceTasksResponse } from './room-model';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
 
 @Injectable({ providedIn: 'root' })
@@ -26,21 +26,15 @@ export class RoomApi {
     return this.http.get<StageUsersResponse>(`${this.baseUrl}/stage/list`, { params });
   }
 
-  fetchAudienceUsers(
-    cname: string,
-    busiType: number,
-    offset = 0,
-    limit = 50,
-  ): Observable<AudienceUsersResponse> {
-    return this.http.post<AudienceUsersResponse>(
-      `${this.baseUrl}/users/rooms/list`,
-      { cname, busi_type: busiType, get_type: [3], limit, offset },
-    );
-  }
-
-  /** Returns the current audience roster revision — poll this to decide whether to refetch. */
-  fetchAudienceRevision(cname: string): Observable<{ revision: number }> {
-    return this.http.get<{ revision: number }>(`${this.baseUrl}/rooms/${cname}/audience-revision`);
+  /**
+   * One round trip for the audience drift-correction poll: the BFF returns immediately with
+   * `changed: false` (no upstream call) when `sinceRevision` already matches the current
+   * server-side revision, and only fetches + returns the roster when it doesn't. Replaces the
+   * previous two-call sequence of a revision check followed by a conditional roster refetch.
+   */
+  fetchAudienceReconcile(cname: string, busiType: number, sinceRevision: number): Observable<AudienceReconcileResponse> {
+    const params = new HttpParams().set('busiType', busiType).set('sinceRevision', sinceRevision);
+    return this.http.get<AudienceReconcileResponse>(`${this.baseUrl}/rooms/${cname}/audience-reconcile`, { params });
   }
 
   /**
@@ -49,8 +43,8 @@ export class RoomApi {
    * ones. Comments already have createdAtMs/updatedAtMs in milliseconds (server-side converted).
    *
    * Not used by AudienceStore's revision-triggered reconciliation poll — that only needs a
-   * roster refresh, so it deliberately keeps calling fetchAudienceUsers alone instead of
-   * pulling in room info/stage/comments on every drift check.
+   * roster refresh, so it deliberately uses fetchAudienceReconcile instead of pulling in room
+   * info/stage/comments on every drift check.
    */
   fetchJoinBundle<T = VoiceRoomInfo>(
     cname: string,
@@ -212,12 +206,17 @@ export class RoomApi {
     return this.http.get<VoiceTasksResponse>(`${this.baseUrl}/signin/tasks`);
   }
 
-  fetchRoomLevelRewards(cname: string, hostId: number, level = 1): Observable<RoomLevelRewardResponse> {
+  /**
+   * Bundled reward + config for the rewards tab — the BFF fans both upstream calls out
+   * concurrently server-side instead of the browser making them separately (mirrors
+   * fetchJoinBundle).
+   */
+  fetchRoomLevelBundle(cname: string, hostId: number, level = 1): Observable<RoomLevelBundleResponse> {
     const params = new HttpParams()
       .set('cname', cname)
       .set('host_id', hostId)
       .set('level', level);
-    return this.http.get<RoomLevelRewardResponse>(`${this.baseUrl}/signin/room-level-reward`, { params });
+    return this.http.get<RoomLevelBundleResponse>(`${this.baseUrl}/signin/room-level-bundle`, { params });
   }
 
   claimRoomLevelReward(cname: string, hostId: number): Observable<void> {
@@ -236,10 +235,6 @@ export class RoomApi {
       );
   }
 
-  fetchRoomLevelConfig(cname: string, hostId: number): Observable<RoomLevelConfigResponse> {
-    const params = new HttpParams().set('cname', cname).set('host_id', hostId);
-    return this.http.get<RoomLevelConfigResponse>(`${this.baseUrl}/signin/room-level-config`, { params });
-  }
 }
 
 /** Response shape of GET /rooms/{cname}/join-bundle */
@@ -248,4 +243,17 @@ export interface JoinBundleResponse<T = VoiceRoomInfo> {
   readonly stageUsers: StageUsersResponse;
   readonly audienceUsers: AudienceUsersResponse;
   readonly comments: CommentsResponse;
+}
+
+/** Response shape of GET /rooms/{cname}/audience-reconcile */
+export interface AudienceReconcileResponse {
+  readonly revision: number;
+  readonly changed: boolean;
+  readonly list: readonly AudienceUser[] | null;
+}
+
+/** Response shape of GET /signin/room-level-bundle */
+export interface RoomLevelBundleResponse {
+  readonly reward: RoomLevelRewardResponse;
+  readonly config: RoomLevelConfigResponse;
 }

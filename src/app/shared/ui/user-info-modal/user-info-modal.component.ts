@@ -1,11 +1,16 @@
-import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 import { UserInfoService } from '@core/services/user-info.service';
+import { FollowService } from '@core/services/follow.service';
+import { ToastService } from '@core/services/toast.service';
+import { AuthStore } from '@core/auth/auth.store';
 import { ModalComponent } from '@shared/ui/modal/modal.component';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
-import { LucideX, LucideCrown } from '@lucide/angular';
+import { httpErrorMessage } from '@shared/utils/http-error-message.util';
+import { LucideX, LucideCrown, LucideUserPlus, LucideUserCheck, LucideLoader } from '@lucide/angular';
 
 export interface UserInfoModalData {
   readonly userId: number;
@@ -29,6 +34,9 @@ export interface UserInfoModalData {
     LanguageTagComponent,
     LucideX,
     LucideCrown,
+    LucideUserPlus,
+    LucideUserCheck,
+    LucideLoader,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -81,6 +89,28 @@ export interface UserInfoModalData {
           </div>
         </div>
       </div>
+
+      @if (canFollow()) {
+        <div class="follow-action-row">
+          <button
+            type="button"
+            class="follow-btn"
+            [class.follow-btn--following]="isFollowing()"
+            [disabled]="isTogglingFollow()"
+            (click)="toggleFollow()"
+            [attr.aria-label]="followBtnLabel()"
+          >
+            @if (isTogglingFollow()) {
+              <svg aria-hidden="true" lucideLoader [size]="13" class="spin"></svg>
+            } @else if (isFollowing()) {
+              <svg aria-hidden="true" lucideUserCheck [size]="13"></svg>
+            } @else {
+              <svg aria-hidden="true" lucideUserPlus [size]="13"></svg>
+            }
+            {{ followBtnLabel() }}
+          </button>
+        </div>
+      }
 
       @if (signature()) {
         <p class="bio">{{ signature() }}</p>
@@ -627,6 +657,54 @@ export interface UserInfoModalData {
       @media (prefers-reduced-motion: reduce) {
         .identity-card, .bio, .detail-row, .tags-row, .links-row { animation: none; }
       }
+
+      .follow-action-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-4) 0;
+        animation: itemIn 0.2s ease-out 0.1s backwards;
+      }
+
+      .follow-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 14px;
+        border-radius: var(--radius-full);
+        border: 1.5px solid var(--color-primary, #4F46E5);
+        background: var(--color-primary, #4F46E5);
+        color: #fff;
+        font-size: var(--text-xs);
+        font-weight: var(--font-semibold);
+        cursor: pointer;
+        transition: background 0.15s, opacity 0.15s, border-color 0.15s;
+      }
+      .follow-btn:hover:not(:disabled) {
+        background: var(--color-primary-700, #4338ca);
+        border-color: var(--color-primary-700, #4338ca);
+      }
+      .follow-btn:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: 2px;
+      }
+      .follow-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .follow-btn--following {
+        background: transparent;
+        color: var(--color-primary, #4F46E5);
+      }
+      .follow-btn--following:hover:not(:disabled) {
+        background: var(--color-primary-50);
+        border-color: var(--color-primary, #4F46E5);
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .spin { animation: spin 0.8s linear infinite; }
     `,
   ],
 })
@@ -634,6 +712,9 @@ export class UserInfoModalComponent {
   readonly ref = inject<DialogRef<void>>(DialogRef);
   private readonly data = inject<UserInfoModalData>(DIALOG_DATA);
   private readonly userInfoService = inject(UserInfoService);
+  private readonly followService = inject(FollowService);
+  private readonly toast = inject(ToastService);
+  private readonly authStore = inject(AuthStore);
 
   constructor() {
     const uid = this.data.userId;
@@ -725,4 +806,54 @@ export class UserInfoModalComponent {
 
   readonly remarkName = computed(() => this.details()?.remark?.remarkName ?? null);
   readonly profileUrl = computed(() => this.details()?.default?.profileShareUrl ?? null);
+
+  // ── Follow state ─────────────────────────────────────────────────────────────
+  //
+  // The upstream profile-enrichment endpoint (`/profile/v2/userinfo`, which backs
+  // UserInfoService) has no follow/mutual field in its `relation` payload — verified
+  // against jilalibff's UserInfoResponse.RelationInfo, which only carries counts
+  // (followers, following, likes, ...). There's also no per-arbitrary-user
+  // "am I following them" lookup anywhere in the captured HelloTalk traffic; that
+  // signal only shows up contextually, on room-list and end-page-audience payloads.
+  // So the initial state here is genuinely unknown — `null` — and the only truth we
+  // ever get is the toggle response's `data.status` (1 = now following, 0 = not),
+  // which becomes the definitive state for the rest of this modal's lifetime.
+
+  private readonly _isFollowing = signal<boolean | null>(null);
+  private readonly _isTogglingFollow = signal(false);
+
+  readonly isFollowing = this._isFollowing.asReadonly();
+  readonly isTogglingFollow = this._isTogglingFollow.asReadonly();
+
+  /** True when the current user is NOT viewing their own profile. */
+  readonly canFollow = computed(() => {
+    const me = this.authStore.user();
+    const targetId = this.data.userId;
+    return me != null && me.userId !== targetId;
+  });
+
+  readonly followBtnLabel = computed(() => {
+    if (this.isTogglingFollow()) return '…';
+    return this.isFollowing() ? 'Following' : 'Follow';
+  });
+
+  async toggleFollow(): Promise<void> {
+    const uid = this.data.userId;
+    const nick = this.displayName();
+    if (this._isTogglingFollow()) return;
+
+    this._isTogglingFollow.set(true);
+    try {
+      const result = await firstValueFrom(this.followService.follow(uid, nick));
+      if (result.status === 0) {
+        this._isFollowing.set(result.data?.status === 1);
+      } else {
+        this.toast.error(result.message || 'Could not update follow status. Please try again.');
+      }
+    } catch (err) {
+      this.toast.error(httpErrorMessage(err, 'Could not update follow status. Please try again.'));
+    } finally {
+      this._isTogglingFollow.set(false);
+    }
+  }
 }

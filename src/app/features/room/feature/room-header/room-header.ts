@@ -598,7 +598,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         gap: var(--space-1);
         flex: 0 1 auto;
         min-width: 0;
-        padding: var(--space-1);
+        padding: 0 var(--space-1);
         border-radius: var(--radius-xl);
         background: var(--rh-chip-bg);
         scrollbar-width: none;
@@ -798,7 +798,7 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
 
       .toolbar-sep {
         width: 1px;
-        height: 20px;
+        height: var(--space-6);
         background: var(--rh-sep);
         margin: 0 var(--space-1);
         flex-shrink: 0;

@@ -23,7 +23,6 @@ export type AudienceUserDisplay = 'grid' | 'list';
           class="av-button"
           type="button"
           [attr.aria-label]="ariaLabel()"
-          [attr.aria-disabled]="isGhost() ? 'true' : null"
           (click)="onGridClick()"
         >
           <div class="av-wrap">
@@ -198,7 +197,6 @@ export type AudienceUserDisplay = 'grid' | 'list';
       display: flex; flex-direction: column; align-items: center; gap: 2px;
       border: none; background: none; cursor: pointer; padding: 0;
     }
-    .av-button[aria-disabled="true"] { cursor: default; }
     .av-button:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); border-radius: var(--radius-md); }
 
     .invite-overlay-btn {
@@ -353,7 +351,6 @@ export class AudienceUserComponent {
   }
 
   onGridClick(): void {
-    if (this.isGhost()) return;
     this.userClick.emit(this.user());
   }
 }

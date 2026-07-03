@@ -11,6 +11,8 @@ import { firstValueFrom } from 'rxjs';
 import { ProfileStore, ProfileTab } from '../store/profile.store';
 import { AuthStore } from '@core/auth/auth.store';
 import { ProfileApi } from '../data-access/profile-api';
+import { ToastService } from '@core/services/toast.service';
+import { httpErrorMessage } from '@shared/utils/http-error-message.util';
 import { VisitorListComponent } from '../ui/visitor-list/visitor-list.component';
 import { StatsTabComponent } from '../ui/stats-tab/stats-tab.component';
 import { EditProfileSheetComponent } from '../ui/edit-profile-sheet/edit-profile-sheet.component';
@@ -361,6 +363,7 @@ export class ProfilePageComponent implements OnInit {
   protected readonly store = inject(ProfileStore);
   protected readonly auth = inject(AuthStore);
   private readonly api = inject(ProfileApi);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(Dialog);
@@ -400,16 +403,21 @@ export class ProfilePageComponent implements OnInit {
 
   async toggleFollow(): Promise<void> {
     const uid = this.store.profile()?.data?.user?.userId;
-    if (!uid) return;
+    if (!uid || this._followLoading()) return;
     const nick = this.store.profile()?.data?.user?.nickName ?? '';
-    const was = this.store.isFollowing();
-    this.store.isFollowing.set(!was);
     this._followLoading.set(true);
     try {
       const r = await firstValueFrom(this.api.follow(uid, nick));
-      if (r.status !== 0) this.store.isFollowing.set(was);
-    } catch { this.store.isFollowing.set(was); }
-    finally { this._followLoading.set(false); }
+      if (r.status === 0) {
+        this.store.isFollowing.set(r.data?.status === 1);
+      } else {
+        this.toast.error(r.message || 'Could not update follow status. Please try again.');
+      }
+    } catch (err) {
+      this.toast.error(httpErrorMessage(err, 'Could not update follow status. Please try again.'));
+    } finally {
+      this._followLoading.set(false);
+    }
   }
 
   navigateTo(userId: number): void {

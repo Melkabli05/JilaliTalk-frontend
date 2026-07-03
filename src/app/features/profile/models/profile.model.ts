@@ -77,11 +77,7 @@ export interface FollowingData {
   readonly list: FollowerUser[];
 }
 
-export interface FollowResult {
-  readonly status: number;
-  readonly message: string;
-  readonly data: Record<string, unknown> | null;
-}
+export type { FollowResult } from '@core/services/follow.service';
 
 export interface LikeCount {
   readonly status: number;
