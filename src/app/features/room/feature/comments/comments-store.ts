@@ -37,7 +37,7 @@ export class CommentsStore extends CollectionStore<Comment> {
   private readonly pendingQuitTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
   readonly mergedItems = computed<readonly CommentOrEvent[]>(() => {
-    const comments: MergedEntry[] = this.items().map((c) => ({ item: c, ts: c.createdAt }));
+    const comments: MergedEntry[] = this.items().map((c) => ({ item: c, ts: c.createdAtMs }));
     const cards: MergedEntry[] = this._eventCards().map((c) => ({
       item: this.resolveEventCard(c),
       ts: c.ts,
@@ -165,7 +165,8 @@ export class CommentsStore extends CollectionStore<Comment> {
         case 'comment':
           this.addComment({
             _id: event.comment.id,
-            createdAt: event.comment.ts,
+            createdAtMs: event.comment.ts,
+            updatedAtMs: event.comment.ts,
             userId: Number(event.comment.userId),
             nickname: event.comment.nickname,
             headUrl: event.comment.headUrl,
@@ -308,14 +309,14 @@ export class CommentsStore extends CollectionStore<Comment> {
   }
 
   updateComments(comments: Comment[]): void {
-    this.setCollection([...comments].sort((a, b) => a.createdAt - b.createdAt));
+    this.setCollection([...comments].sort((a, b) => a.createdAtMs - b.createdAtMs));
   }
 
   mergeComments(fresh: Comment[]): void {
     this.collection.update((existing) => {
       const existingIds = new Set(existing.map((c) => c._id));
       const newOnes = fresh.filter((c) => !existingIds.has(c._id));
-      return [...existing, ...newOnes].sort((a, b) => a.createdAt - b.createdAt);
+      return [...existing, ...newOnes].sort((a, b) => a.createdAtMs - b.createdAtMs);
     });
   }
 

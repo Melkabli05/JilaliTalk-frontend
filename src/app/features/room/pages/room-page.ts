@@ -569,7 +569,8 @@ export class RoomPageComponent extends RoomPageBase {
     const selfUid = this.roomStore.userId();
     this.commentsStore.addComment({
       _id: `local-${selfUid}-${Date.now()}`,
-      createdAt: Date.now(),
+      createdAtMs: Date.now(),
+      updatedAtMs: Date.now(),
       userId: selfUid,
       nickname,
       headUrl,

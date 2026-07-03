@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { StageUsersResponse, AudienceUsersResponse, CommentsResponse, SendCommentPayload, VoiceSignPanelResponse, RoomLevelRewardResponse, RoomLevelConfigResponse, VoiceRoomInfo, LiveRoomInfo, ManagerListResponse, ManagerJudgeResponse, CaptionHistoryResponse, VoiceTasksResponse } from './room-model';
+import { UserInfo } from '@core/services/user-info.service';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
 
 @Injectable({ providedIn: 'root' })
@@ -44,41 +45,29 @@ export class RoomApi {
   }
 
   /**
+   * Batch enrichment for partial user data received over the LiveHub WebSocket.
+   * Replaces per-user GET /users/info calls in AudienceStore.enrichAudienceUser(),
+   * StageStore.enrichStageUser(), and ghost-audience.util.ts.
+   */
+  enrichBatch(userIds: number[]): Observable<EnrichBatchResponse> {
+    return this.http.post<EnrichBatchResponse>(`${this.baseUrl}/users/enrich-batch`, { userIds });
+  }
+
+  /**
    * Bundled room-info + stage + audience + comments in one round-trip — the BFF fans all four
    * upstream calls out concurrently server-side instead of the browser making four separate
-   * ones. `T` is `VoiceRoomInfo` or `LiveRoomInfo` at the call site: both wrap the same backend
-   * `VoiceRoomInfoResponse` JSON shape, dispatched server-side by `busiType`.
+   * ones. Comments already have createdAtMs/updatedAtMs in milliseconds (server-side converted).
    *
-   * Not used by `AudienceStore`'s revision-triggered reconciliation poll — that only needs a
-   * roster refresh, so it deliberately keeps calling `fetchAudienceUsers` alone instead of
+   * Not used by AudienceStore's revision-triggered reconciliation poll — that only needs a
+   * roster refresh, so it deliberately keeps calling fetchAudienceUsers alone instead of
    * pulling in room info/stage/comments on every drift check.
    */
   fetchJoinBundle<T = VoiceRoomInfo>(
     cname: string,
     busiType: number,
-  ): Observable<{
-    voiceRoomInfo: T;
-    stageUsers: StageUsersResponse;
-    audienceUsers: AudienceUsersResponse;
-    comments: CommentsResponse;
-  }> {
+  ): Observable<JoinBundleResponse<T>> {
     const params = new HttpParams().set('busiType', busiType);
-    return this.http
-      .get<{
-        voiceRoomInfo: T;
-        stageUsers: StageUsersResponse;
-        audienceUsers: AudienceUsersResponse;
-        comments: CommentsResponse;
-      }>(`${this.baseUrl}/rooms/${cname}/join-bundle`, { params })
-      .pipe(
-        map((res) => ({
-          ...res,
-          comments: {
-            ...res.comments,
-            items: res.comments?.items?.map((c) => ({ ...c, createdAt: c.createdAt * 1000 })) ?? null,
-          },
-        })),
-      );
+    return this.http.get<JoinBundleResponse<T>>(`${this.baseUrl}/rooms/${cname}/join-bundle`, { params });
   }
 
   fetchComments(cname: string, busiType: number): Observable<CommentsResponse> {
@@ -86,14 +75,7 @@ export class RoomApi {
       .set('cname', cname)
       .set('busiType', busiType);
 
-    return this.http
-      .get<CommentsResponse>(`${this.baseUrl}/comments`, { params })
-      .pipe(
-        map((res) => ({
-          ...res,
-          items: res.items?.map((c) => ({ ...c, createdAt: c.createdAt * 1000 })) ?? null,
-        })),
-      );
+    return this.http.get<CommentsResponse>(`${this.baseUrl}/comments`, { params });
   }
 
   sendComment(payload: SendCommentPayload): Observable<void> {
@@ -268,4 +250,17 @@ export class RoomApi {
     const params = new HttpParams().set('cname', cname).set('host_id', hostId);
     return this.http.get<RoomLevelConfigResponse>(`${this.baseUrl}/signin/room-level-config`, { params });
   }
+}
+
+/** Response shape of POST /users/enrich-batch */
+export interface EnrichBatchResponse {
+  readonly profiles: readonly UserInfo[];
+}
+
+/** Response shape of GET /rooms/{cname}/join-bundle */
+export interface JoinBundleResponse<T = VoiceRoomInfo> {
+  readonly voiceRoomInfo: T;
+  readonly stageUsers: StageUsersResponse;
+  readonly audienceUsers: AudienceUsersResponse;
+  readonly comments: CommentsResponse;
 }

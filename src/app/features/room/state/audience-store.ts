@@ -10,6 +10,8 @@ import { RoomApi } from '../data/room-api';
 import { StageStore } from './stage-store';
 
 const AUDIENCE_RECONCILE_MS = 30_000;
+/** Collects user IDs for batch enrichment and flushes after this many ms of quiet time. */
+const ENRICH_BATCH_DELAY_MS = 200;
 
 @Injectable()
 export class AudienceStore extends CollectionStore<AudienceUser> {
@@ -23,32 +25,55 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
   private readonly _cname = signal<string | null>(null);
   /** Last audience revision seen — initialised to -1 so the first poll always refetches. */
   private lastAudienceRevision = -1;
+  /** UIDs queued for batch enrichment, flushed after ENRICH_BATCH_DELAY_MS of quiet time. */
+  private pendingEnrichUids = new Set<number>();
+  private enrichTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly cname = this._cname.asReadonly();
   readonly audienceUsers = this.items;
   readonly audienceCount = computed(() => this.items().length);
 
-  private async enrichAudienceUser(userId: number): Promise<void> {
-    const info = await this.userInfoService.fetchUserInfo(userId);
-    if (!info) return;
-    this.collection.update((list) =>
-      list.map((u) => {
-        if (u.userId !== userId || u.base?.headUrl) return u;
-        return {
-          ...u,
-          vipType: u.vipType || info.details?.base?.vipType || 0,
-          giftLevel: u.giftLevel || info.details?.giftLevel || 0,
-          base: {
-            nickname: u.base?.nickname || info.nickname || null,
-            signature: u.base?.signature ?? null,
-            headUrl: info.details?.base?.headUrl ?? null,
-            nationality: u.base?.nationality || info.nationality || null,
-            nativeLang: u.base?.nativeLang ?? -1,
-            timeZone: u.base?.timeZone ?? 0,
-          },
-        };
-      }),
-    );
+  private queueEnrich(uid: number): void {
+    if (this.pendingEnrichUids.has(uid)) return;
+    this.pendingEnrichUids.add(uid);
+    if (this.enrichTimer === null) {
+      this.enrichTimer = setTimeout(() => this.flushEnrichBatch(), ENRICH_BATCH_DELAY_MS);
+    }
+  }
+
+  private async flushEnrichBatch(): Promise<void> {
+    if (this.enrichTimer !== null) {
+      clearTimeout(this.enrichTimer);
+      this.enrichTimer = null;
+    }
+    const uids = [...this.pendingEnrichUids];
+    this.pendingEnrichUids.clear();
+    if (uids.length === 0) return;
+    try {
+      const { profiles } = await firstValueFrom(this.api.enrichBatch(uids));
+      this.collection.update((list) =>
+        list.map((u) => {
+          if (!uids.includes(u.userId)) return u;
+          const info = profiles.find((p) => p.userId === u.userId);
+          if (!info) return u;
+          return {
+            ...u,
+            vipType: u.vipType || info.details?.base?.vipType || 0,
+            giftLevel: u.giftLevel || info.details?.giftLevel || 0,
+            base: {
+              nickname: u.base?.nickname || info.nickname || null,
+              signature: u.base?.signature ?? null,
+              headUrl: info.details?.base?.headUrl ?? null,
+              nationality: u.base?.nationality || info.nationality || null,
+              nativeLang: u.base?.nativeLang ?? -1,
+              timeZone: u.base?.timeZone ?? 0,
+            },
+          };
+        }),
+      );
+    } catch {
+      // silently discard — partial data is acceptable
+    }
   }
 
   setBusiType(busiType: number): void {
@@ -116,9 +141,8 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
               timeZone: 0,
             },
           });
-          // The BFF already enriches user_join with headUrl/nationality when upstream provides them —
-          // only fall back to a per-user profile fetch when it didn't.
-          if (!event.headUrl) void this.enrichAudienceUser(uid);
+          // Queue for batch enrichment — flushed after ENRICH_BATCH_DELAY_MS of quiet time.
+          if (!event.headUrl || !event.nationality) this.queueEnrich(uid);
           break;
         }
         case 'user_quit':
@@ -184,5 +208,10 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
     super.reset();
     this._cname.set(null);
     this.lastAudienceRevision = -1;
+    if (this.enrichTimer !== null) {
+      clearTimeout(this.enrichTimer);
+      this.enrichTimer = null;
+    }
+    this.pendingEnrichUids.clear();
   }
 }

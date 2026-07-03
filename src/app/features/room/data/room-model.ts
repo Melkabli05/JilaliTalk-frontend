@@ -199,7 +199,9 @@ export type CommentOrEvent = Comment | EventCard;
 
 export interface Comment {
   readonly _id: string;
-  readonly createdAt: number;
+  /** Server-side Unix→milliseconds converted value — no client transform needed. */
+  readonly createdAtMs: number;
+  readonly updatedAtMs: number;
   readonly userId: number;
   readonly nickname: string;
   readonly headUrl: string | null;

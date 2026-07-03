@@ -713,21 +713,7 @@ export class UserInfoModalComponent {
     };
   });
 
-  readonly tagChips = computed<readonly string[]>(() => {
-    const tags = this.details()?.tags;
-    if (!tags) return [];
-    return [
-      ...(tags.hobby ?? []),
-      ...(tags.occupation ?? []),
-      ...(tags.hometown ?? []),
-      ...(tags.travelling ?? []),
-      ...(tags.mbti ?? []),
-      ...(tags.zodiacSign ?? []),
-      ...(tags.bloodType ?? []),
-    ]
-      .map((t) => t.tag ?? '')
-      .filter((tag) => tag.length > 0);
-  });
+  readonly tagChips = computed<readonly string[]>(() => this.info()?.tags ?? []);
 
   readonly giftLevel = computed(() => this.details()?.giftLevel ?? null);
 

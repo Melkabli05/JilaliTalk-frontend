@@ -37,7 +37,7 @@ interface CommentGroup {
   fgLevel: number;
   fgName: string | null;
   fgIsActive: boolean;
-  createdAt: number;
+  createdAtMs: number;
   messages: readonly Comment[];
 }
 
@@ -96,12 +96,12 @@ function buildGroups(comments: readonly Comment[]): (CommentGroup & { dateLabel?
   let lastDate: string | null = null;
 
   for (const c of comments) {
-    const dateLabel = formatDateLabel(c.createdAt);
+    const dateLabel = formatDateLabel(c.createdAtMs);
     const last = out[out.length - 1];
     const sameGroup =
       last &&
       last.userId === c.userId &&
-      c.createdAt - last.createdAt <= GROUP_WINDOW_MS &&
+      c.createdAtMs - last.createdAtMs <= GROUP_WINDOW_MS &&
       dateLabel === lastDate;
 
     if (!sameGroup) {
@@ -116,7 +116,7 @@ function buildGroups(comments: readonly Comment[]): (CommentGroup & { dateLabel?
         fgLevel: c.fgLevel,
         fgName: c.fgName,
         fgIsActive: c.fgIsActive,
-        createdAt: c.createdAt,
+        createdAtMs: c.createdAtMs,
         messages: [c],
       };
       if (dateLabel !== lastDate) {
@@ -151,7 +151,7 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
   const commentRows: readonly CommentRow[] = buildGroups(comments).map((group) => ({
     type: 'comments' as const,
     group,
-    ts: group.createdAt,
+    ts: group.createdAtMs,
   }));
   const eventRows: readonly EventRow[] = events.map((card) => ({
     type: 'event' as const,
@@ -231,7 +231,7 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
                     </span>
                   }
 
-                  <span class="time">{{ formatTime(row.group.createdAt) }}</span>
+                  <span class="time">{{ formatTime(row.group.createdAtMs) }}</span>
                 </div>
 
                 @for (comment of row.group.messages; track comment._id) {

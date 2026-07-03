@@ -207,6 +207,9 @@ export interface UserInfo {
   readonly liveStateCname: string | null;
   /** Pre-computed sum of the six contribution point categories, from the BFF. */
   readonly pointsTotal: number;
+  /** Pre-flattened tag chips (hobby / occupation / MBTI / etc.) — the BFF folds the eight
+   *  upstream `TagsInfo.*` arrays into one flat list so the modal doesn't have to. */
+  readonly tags: readonly string[] | null;
   /** Full upstream profile — avatars, languages, tags, vip status, etc. */
   readonly details: UserProfileDetails | null;
 }
