@@ -84,19 +84,27 @@ import { LucideUserCircle } from '@lucide/angular';
 
       .stage-grid {
         display: grid;
-        /* Fixed 4 columns — a predictable line of 4 items per row (wrapping to a
-           second row of 4, then a final partial row) — instead of size-based
-           auto-fill, which could produce a different column count depending on
-           container width. Avatars keep their own fixed size (app-avatar's "xl"
-           token doesn't scale with the column); the grid item stretches to fill
-           its 1fr column and centers the avatar within it via .stage-user's own
-           flex centering. */
+        /* Mobile: fixed 4 columns — a predictable line of 4 items per row
+           (wrapping to a second row of 4, then a final partial row), sized to
+           the stage's narrow mobile width. Desktop reverts to size-based
+           auto-fill below, since the wider desktop stage area comfortably
+           fits more per row than a fixed 4 would use well. */
         grid-template-columns: repeat(4, 1fr);
         justify-content: start;
         gap: var(--space-2) var(--space-7);
         padding: var(--space-2);
         align-content: start;
         background-color: var(--color-card);
+      }
+
+      /* Desktop: responsive auto-fill, same as before the mobile-first rework —
+         the room-page container this is nested in is already wide here, so a
+         size-based column count (not a fixed 4) uses the space better across
+         the full 8-slot stage. */
+      @container room-page (min-width: 1024px) {
+        .stage-grid {
+          grid-template-columns: repeat(auto-fill, minmax(64px, 80px));
+        }
       }
 
       .empty-slot {
