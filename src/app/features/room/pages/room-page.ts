@@ -195,7 +195,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       .room-layout {
         grid-template-areas: "header comments" "stage comments" "audience comments";
         grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
-        grid-template-rows: auto auto minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(22cqh, 1fr);
       }
       .stage-section { max-height: none; }
       .comments-section { max-height: none; }
