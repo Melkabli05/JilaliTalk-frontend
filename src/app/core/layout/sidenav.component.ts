@@ -107,14 +107,21 @@ interface NavGroup {
     </nav>
   `,
   styles: [`
-    /* :host has no box of its own: both children below are already independently
+/* This element has no box of its own: both children below are already independently
        positioned (.sidebar-desktop is fixed or display:none; .mobile-nav is fixed),
        so this wrapper must not consume a track in the app-shell grid it sits in —
        app.ts's .app-shell has no grid-template-rows, so on the mobile single-column
        layout this element and .main-wrapper would otherwise be auto-placed into two
        separate implicit rows, with this one claiming visible space despite rendering
-       nothing in normal flow. */
-    :host {
+       nothing in normal flow.
+       Plain tag selector, not :host: this component uses ViewEncapsulation.None, so
+       its styles are already unscoped global CSS — :host (like :host-context(), see
+       below) is only rewritten into a working selector under the default Emulated
+       encapsulation, and ships as inert, non-matching syntax under None. A bare
+       ':host {}' here silently never applied, leaving <app-sidenav> as a real block-level
+       grid item with a non-zero auto height (from its own box-model quirks), which pushed
+       every route's content down by ~190px on desktop. */
+    app-sidenav {
       display: contents;
     }
 
@@ -131,6 +138,12 @@ interface NavGroup {
       padding: var(--space-4);
     }
     @media (min-width: 1024px) { .sidebar-desktop { display: flex; } }
+    /* Standalone routes (e.g. /messages) keep the mobile bottom nav but drop the
+       desktop sidebar — focused pages where the chrome strip is just noise. The
+       mobile-nav and safe-area-spacer still render via the same component. */
+    @media (min-width: 1024px) {
+      .app-shell.standalone .sidebar-desktop { display: none; }
+    }
 
     .sidebar-logo {
       height: var(--space-16);

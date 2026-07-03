@@ -1,30 +1,30 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { PwaUpdateService } from '@core/services/pwa-update.service';
-import { LucideRefreshCw, LucideX } from '@lucide/angular';
+import { LucideRefreshCw } from '@lucide/angular';
 
 @Component({
   selector: 'app-pwa-update-banner',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideRefreshCw, LucideX],
+  imports: [LucideRefreshCw],
   template: `
     <div class="update-toast" role="status" aria-live="polite">
       <div class="update-toast__icon" aria-hidden="true">
         <svg lucideRefreshCw [size]="18"></svg>
       </div>
+
       <div class="update-toast__body">
-        <span class="update-toast__text">A new version of JilaliTalk is available.</span>
-        <button type="button" class="update-toast__action" (click)="activate()">
+        <span class="update-toast__text">
+          A new version of JilaliTalk is available.
+        </span>
+
+        <button
+          type="button"
+          class="update-toast__action"
+          (click)="activate()"
+        >
           Reload to update
         </button>
       </div>
-      <button
-        type="button"
-        class="update-toast__close"
-        (click)="pwaUpdate.dismiss()"
-        aria-label="Dismiss update notice"
-      >
-        <svg aria-hidden="true" lucideX [size]="14"></svg>
-      </button>
     </div>
   `,
   styles: `
@@ -34,7 +34,6 @@ import { LucideRefreshCw, LucideX } from '@lucide/angular';
 
     .update-toast {
       position: fixed;
-      /* app-header height + breathing room, mirrors app-toast-container's anchor */
       top: calc(var(--app-header-height) + var(--space-3));
       left: 50%;
       transform: translateX(var(--update-toast-translate, -50%));
@@ -52,10 +51,6 @@ import { LucideRefreshCw, LucideX } from '@lucide/angular';
       animation: update-toast-enter 280ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Desktop's fixed sidebar offsets the content area — shift the centering
-       anchor right by half the sidebar width, same fix as app-toast-container.
-       Drives both the static centering transform and the enter-animation keyframe
-       via a single custom property, so the keyframes don't need to be redefined. */
     @media (min-width: 1024px) {
       .update-toast {
         --update-toast-translate: calc(-50% + var(--sidebar-width) / 2);
@@ -65,11 +60,13 @@ import { LucideRefreshCw, LucideX } from '@lucide/angular';
     @keyframes update-toast-enter {
       from {
         opacity: 0;
-        transform: translateX(var(--update-toast-translate, -50%)) translateY(-12px) scale(0.96);
+        transform: translateX(var(--update-toast-translate, -50%))
+          translateY(-12px) scale(0.96);
       }
       to {
         opacity: 1;
-        transform: translateX(var(--update-toast-translate, -50%)) translateY(0) scale(1);
+        transform: translateX(var(--update-toast-translate, -50%))
+          translateY(0) scale(1);
       }
     }
 
@@ -81,8 +78,12 @@ import { LucideRefreshCw, LucideX } from '@lucide/angular';
       width: 32px;
       height: 32px;
       border-radius: var(--radius-md);
-      background-color: color-mix(in srgb, var(--color-primary, #4F46E5) 14%, var(--color-surface));
-      color: var(--color-primary, #4F46E5);
+      background-color: color-mix(
+        in srgb,
+        var(--color-primary, #4f46e5) 14%,
+        var(--color-surface)
+      );
+      color: var(--color-primary, #4f46e5);
     }
 
     .update-toast__body {
@@ -105,40 +106,19 @@ import { LucideRefreshCw, LucideX } from '@lucide/angular';
       padding: 4px 10px;
       border-radius: var(--radius-sm);
       border: none;
-      background-color: var(--color-primary, #4F46E5);
+      background-color: var(--color-primary, #4f46e5);
       color: var(--color-on-color, #fff);
       font-size: var(--text-xs);
       font-weight: 600;
       cursor: pointer;
       transition: filter 0.15s ease;
     }
+
     .update-toast__action:hover {
       filter: brightness(0.9);
     }
-    .update-toast__action:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: var(--focus-ring-offset);
-    }
 
-    .update-toast__close {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
-      border-radius: var(--radius-sm);
-      border: none;
-      background: transparent;
-      color: var(--color-text-muted);
-      cursor: pointer;
-      transition: background-color 0.15s ease, color 0.15s ease;
-    }
-    .update-toast__close:hover {
-      background-color: var(--color-neutral-100);
-      color: var(--color-text);
-    }
-    .update-toast__close:focus-visible {
+    .update-toast__action:focus-visible {
       outline: var(--focus-ring);
       outline-offset: var(--focus-ring-offset);
     }

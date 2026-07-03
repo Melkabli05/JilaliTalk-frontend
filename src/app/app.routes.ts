@@ -14,6 +14,7 @@ export const routes: Routes = [
   {
     path: 'messages',
     title: 'Messages',
+    data: { standalone: true },
     loadComponent: () =>
       import('./features/messages').then((m) => m.MessagesPageComponent),
   },

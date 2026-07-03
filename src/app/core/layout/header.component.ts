@@ -130,6 +130,9 @@ import { AuthService } from '@core/auth/auth.service';
     }
     @media (min-width: 1024px) {
       .app-header { padding: 0 var(--space-6); left: var(--sidebar-width); }
+      /* Standalone routes collapse the grid to a single column — flush the
+         header to the left edge. */
+      .app-shell.standalone .app-header { left: 0; }
     }
     /* Immersive routes (mobile room pages) hide the global header entirely — the
        room's own header becomes the only top chrome. Desktop is unaffected.
