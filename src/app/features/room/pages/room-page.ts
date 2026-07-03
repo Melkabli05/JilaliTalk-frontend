@@ -45,68 +45,64 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
   providers: [RoomStore, StageStore, AudienceStore, CommentsStore, ModStore, GiftsStore, InRoomRtmStore, GoodieStore, ManagersStore, RoomConnectionService],
   template: `
 <div class="room-layout">
-      <div class="room-body">
-        <div class="left-column">
-          <div class="room-header">
-            <app-room-header
-              [name]="roomStore.name()"
-              [topic]="roomStore.topic()"
-              [cname]="roomStore.cname() ?? ''"
-              [isMicOn]="roomStore.isMicOn()"
-              [micSpeaking]="selfSpeaking()"
-              [micBusy]="mediaToggleBusy()"
-              [isHandRaised]="roomStore.isHandRaised()"
-              [isOnStage]="stageStore.isOnStage(roomStore.userId())"
-              [isModerator]="roomStore.isModerator()"
-              [invisible]="!roomStore.isVisible()"
-              [refreshing]="refreshingRoom()"
-              [captionEnabled]="captionEnabled()"
-              [wsStatus]="bffWs.wsStatus()"
-              (toggleMic)="onMediaToggle()"
-              (toggleCamOrShare)="onToggleCamOrShare()"
-              (toggleHand)="onToggleHand()"
-              (gift)="onGift()"
-              (pitch)="onPitch()"
-              (managers)="onManagers()"
-              (reward)="onReward()"
-              (toggleCaption)="onToggleCaption()"
-              (toggleInvisible)="onToggleInvisible()"
-              (refresh)="onRefreshRoom()"
-              (leave)="onLeave()"
-            />
-          </div>
-
-          <section class="stage-section">
-            <app-stage-grid [users]="stageStore.stageUsers()" [speakingUids]="rcs.speakingUids()" (userClick)="onStageUserClick($event)" />
-          </section>
-
-          <section class="audience-section">
-            <app-audience-list
-              [users]="audienceWithGhosts()"
-              [speakingUids]="rcs.speakingUids()"
-              [currentUserId]="roomStore.userId()"
-              [canInviteToStage]="roomStore.isHost()"
-              [inviteBusy]="inviteBusy()"
-              (userClick)="onAudienceUserClick($event)"
-              (inviteToStage)="onInviteToStage($event)"
-            />
-          </section>
-        </div>
-
-        <aside class="comments-section">
-          <app-comments-panel
-            [comments]="commentsStore.comments()"
-            [captions]="commentsStore.captions()"
-            [currentUserId]="roomStore.userId()"
-            [refreshing]="refreshingComments()"
-            [typingNames]="typingNames()"
-            (sendComment)="onSendComment($event)"
-            (typing)="onTyping()"
-            (refresh)="onRefreshComments()"
-            (loadCaptions)="onLoadCaptions()"
-          />
-        </aside>
+      <div class="room-header">
+        <app-room-header
+          [name]="roomStore.name()"
+          [topic]="roomStore.topic()"
+          [cname]="roomStore.cname() ?? ''"
+          [isMicOn]="roomStore.isMicOn()"
+          [micSpeaking]="selfSpeaking()"
+          [micBusy]="mediaToggleBusy()"
+          [isHandRaised]="roomStore.isHandRaised()"
+          [isOnStage]="stageStore.isOnStage(roomStore.userId())"
+          [isModerator]="roomStore.isModerator()"
+          [invisible]="!roomStore.isVisible()"
+          [refreshing]="refreshingRoom()"
+          [captionEnabled]="captionEnabled()"
+          [wsStatus]="bffWs.wsStatus()"
+          (toggleMic)="onMediaToggle()"
+          (toggleCamOrShare)="onToggleCamOrShare()"
+          (toggleHand)="onToggleHand()"
+          (gift)="onGift()"
+          (pitch)="onPitch()"
+          (managers)="onManagers()"
+          (reward)="onReward()"
+          (toggleCaption)="onToggleCaption()"
+          (toggleInvisible)="onToggleInvisible()"
+          (refresh)="onRefreshRoom()"
+          (leave)="onLeave()"
+        />
       </div>
+
+      <section class="stage-section">
+        <app-stage-grid [users]="stageStore.stageUsers()" [speakingUids]="rcs.speakingUids()" (userClick)="onStageUserClick($event)" />
+      </section>
+
+      <section class="audience-section">
+        <app-audience-list
+          [users]="audienceWithGhosts()"
+          [speakingUids]="rcs.speakingUids()"
+          [currentUserId]="roomStore.userId()"
+          [canInviteToStage]="roomStore.isHost()"
+          [inviteBusy]="inviteBusy()"
+          (userClick)="onAudienceUserClick($event)"
+          (inviteToStage)="onInviteToStage($event)"
+        />
+      </section>
+
+      <aside class="comments-section">
+        <app-comments-panel
+          [comments]="commentsStore.comments()"
+          [captions]="commentsStore.captions()"
+          [currentUserId]="roomStore.userId()"
+          [refreshing]="refreshingComments()"
+          [typingNames]="typingNames()"
+          (sendComment)="onSendComment($event)"
+          (typing)="onTyping()"
+          (refresh)="onRefreshComments()"
+          (loadCaptions)="onLoadCaptions()"
+        />
+      </aside>
     </div>
 
     @if (showSignin()) {
@@ -120,86 +116,89 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     }
   `,
   styles: [`
-    /* Container queries: the page is loaded into .app-main, so the layout
-       depends on the available width inside that slot, not the viewport.
-       container-type lets children react to the same parent context. */
+    /* :host is sized by .app-main (see app.ts) and, on desktop, additionally
+       reserves space for the fixed global app-header (see @container rule below) —
+       the room page must never compute its own vh/dvh. Layout adapts to the slot
+       width/height via @container, not the viewport. */
     :host {
       display: block;
+      box-sizing: border-box;
       height: 100%;
       overflow: hidden;
       container-type: size;
       container-name: room-page;
+      /* Mobile: the app shell goes immersive (see app.ts / header / sidenav) and hides
+         its own header + bottom nav, so this component owns safe-area insets instead. */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
     .room-layout {
       display: grid;
-      grid-template-rows: 1fr;
+      grid-template-areas: "header" "stage" "audience" "comments";
+      grid-template-columns: 1fr;
+      /* Mobile-first: stage is capped, audience has a guaranteed floor and grows,
+         comments takes up to half the available height. Same numbers as the
+         2026-07-02 mobile-layout fix, now expressed as grid tracks. */
+      grid-template-rows: auto minmax(0, 30cqh) minmax(22cqh, 1fr) minmax(0, 50%);
       height: 100%;
       overflow: hidden;
     }
 
-    /* Mobile-first: column stack. .left-column takes the bulk of vertical
-       space; audience-section grows inside it. */
-    .room-body {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    .left-column {
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      overflow: hidden;
-      flex: 1 1 auto;
-    }
-
     .room-header {
-      flex-shrink: 0;
-      overflow: visible;
+      grid-area: header;
       position: relative;
       z-index: var(--z-overlay);
     }
 
     .stage-section {
+      grid-area: stage;
       display: flex;
       flex-direction: column;
-      flex-shrink: 1;
       min-height: 0;
       min-width: 0;
-      max-height: 30cqh;
       overflow: hidden;
     }
     .stage-section app-stage-grid {
       flex: 1 1 auto;
       min-height: 0;
     }
-    .audience-section { flex: 1 1 0; min-height: 22cqh; min-width: 0; overflow: hidden; }
+
+    .audience-section {
+      grid-area: audience;
+      min-height: 0;
+      min-width: 0;
+      overflow: hidden;
+    }
+
     .comments-section {
+      grid-area: comments;
       display: flex;
       flex-direction: column;
-      flex: 0 0 auto;
       min-height: 0;
       overflow: hidden;
-      max-height: 50%;
     }
 
     /* Tablet-sized mobile: a touch more stage room. */
     @container room-page (min-width: 480px) {
-      .stage-section { max-height: 34cqh; }
+      .room-layout { grid-template-rows: auto minmax(0, 34cqh) minmax(22cqh, 1fr) minmax(0, 50%); }
     }
 
-    /* Desktop: two-column grid, comments becomes a sidebar. */
+    /* Desktop: two-column grid, comments becomes a full-height sidebar. The global
+       app-header is visible again here (immersive mode only applies below 1024px), so
+       :host reserves space for it — no shared shell CSS is touched for this. */
     @container room-page (min-width: 1024px) {
-      .room-body {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
-        overflow: hidden;
+      :host {
+        padding-top: var(--app-header-height);
+        padding-bottom: 0;
       }
-      .left-column { height: 100%; flex: none; }
-      .stage-section { max-height: none; height: auto; flex: none; }
-      .comments-section { display: flex; height: 100%; max-height: none; flex: none; }
+      .room-layout {
+        grid-template-areas: "header comments" "stage comments" "audience comments";
+        grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
+        grid-template-rows: auto auto minmax(0, 1fr);
+      }
+      .stage-section { max-height: none; }
+      .comments-section { max-height: none; }
     }
   `]
 })
