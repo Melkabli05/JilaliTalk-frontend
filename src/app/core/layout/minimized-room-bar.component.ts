@@ -46,7 +46,7 @@ import { ACTIVE_CALL_READER } from '@core/tokens/active-call-reader.token';
       position: fixed;
       left: var(--space-4);
       bottom: calc(var(--bottom-nav-height) + var(--space-4) + env(safe-area-inset-bottom));
-      z-index: var(--z-modal);
+      z-index: var(--z-toast);
       display: flex;
       align-items: center;
       gap: var(--space-2);
