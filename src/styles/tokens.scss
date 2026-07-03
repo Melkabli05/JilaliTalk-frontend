@@ -182,6 +182,7 @@
 
   /* Z-index scale (semantic — keep magic numbers out of components) */
   --z-shell-header: 30;
+  --z-shell-sidenav: 40;
   --z-overlay: 50;
   --z-modal-backdrop: 60;
   --z-modal: 70;
@@ -352,6 +353,7 @@
   --touch-target-min:      var(--touch-target-min);
   --touch-target-comfortable: var(--touch-target-comfortable);
   --z-shell-header:        var(--z-shell-header);
+  --z-shell-sidenav:       var(--z-shell-sidenav);
   --z-overlay:             var(--z-overlay);
   --z-modal-backdrop:      var(--z-modal-backdrop);
   --z-modal:               var(--z-modal);

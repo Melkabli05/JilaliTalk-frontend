@@ -122,7 +122,7 @@ interface NavGroup {
       background-color: var(--color-card);
       border-right: 1px solid var(--color-border);
       flex-direction: column;
-      z-index: 100;
+      z-index: var(--z-shell-sidenav);
       padding: var(--space-4);
     }
     @media (min-width: 1024px) { .sidebar-desktop { display: flex; } }
@@ -184,7 +184,7 @@ interface NavGroup {
 
     /* ─── Mobile Bottom Nav ─────────────────────────── */
     .mobile-nav {
-      display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: var(--z-shell-sidenav);
     }
     @media (min-width: 1024px) { .mobile-nav { display: none; } }
     /* Immersive routes (mobile room pages) hide the bottom nav so the room gets the
