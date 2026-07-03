@@ -23,19 +23,18 @@ export interface FollowResult {
 }
 
 /**
- * Owns the follow endpoint so both `core`/`shared` consumers (e.g. the user-info
- * modal) and `features/profile` can reach it without `shared` importing a feature.
+ * Owns the follow/unfollow endpoints so both `core`/`shared` consumers (e.g. the
+ * user-info modal) and `features/profile` can reach them without `shared` importing
+ * a feature.
  * <p>
- * There is only one upstream endpoint, {@code POST /relation/follow} — confirmed
- * against jilalibff's {@code ProfileClient}/{@code ProfileController} and every
- * captured call in {@code endpots/organized_captures_new/relation_follow.jsonl}.
- * It's a pure toggle: calling it flips the relationship from whatever it currently
- * is upstream, with no request field to say which direction you want. A separate
- * {@code unfollow()} method here would be misleading — it'd send the identical
- * request and could just as easily *create* a follow if the caller's assumption
- * about the current state were wrong. Callers must read {@link FollowResult.data}
- * `.status` from the response (1 = now following, 0 = now not) to learn the real
- * outcome; never assume the direction from which method they called.
+ * These are two separate upstream endpoints, not one toggle — confirmed live against
+ * the real HelloTalk API (neither {@code /relation/follow}'s idempotence nor
+ * {@code /relation/unfollow}'s existence appear in any {@code endpots} capture, since
+ * every captured call happened to be a fresh follow). {@code POST /relation/follow} is
+ * idempotent: calling it while already following just re-confirms the follow, it never
+ * un-follows. Un-following requires {@code POST /relation/unfollow} with an
+ * {@code unfollow_uid} field. Callers must call the method matching the direction they
+ * want; there is no single call that flips state either way.
  */
 @Injectable({ providedIn: 'root' })
 export class FollowService {
@@ -47,6 +46,13 @@ export class FollowService {
   follow(followUid: number, nickName: string): Observable<FollowResult> {
     return this.http.post<FollowResult>(`${this.profileBase}/follow`, {
       follow_uid: followUid,
+      nick_name: nickName,
+    });
+  }
+
+  unfollow(unfollowUid: number, nickName: string): Observable<FollowResult> {
+    return this.http.post<FollowResult>(`${this.profileBase}/unfollow`, {
+      unfollow_uid: unfollowUid,
       nick_name: nickName,
     });
   }

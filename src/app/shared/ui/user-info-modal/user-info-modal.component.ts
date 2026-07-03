@@ -842,9 +842,15 @@ export class UserInfoModalComponent {
     const nick = this.displayName();
     if (this._isTogglingFollow()) return;
 
+    // follow()/unfollow() are separate, non-toggling upstream calls (see FollowService's
+    // doc) — which one to send depends on the state we're currently in.
+    const request$ = this.isFollowing()
+      ? this.followService.unfollow(uid, nick)
+      : this.followService.follow(uid, nick);
+
     this._isTogglingFollow.set(true);
     try {
-      const result = await firstValueFrom(this.followService.follow(uid, nick));
+      const result = await firstValueFrom(request$);
       if (result.status === 0) {
         this._isFollowing.set(result.data?.status === 1);
       } else {

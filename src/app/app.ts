@@ -19,12 +19,21 @@ function isImmersiveRoute(root: ActivatedRouteSnapshot): boolean {
   return node.data['immersive'] === true;
 }
 
+/** Walks to the deepest activated route and reports whether it wants the desktop sidebar
+ *  hidden but the mobile bottom nav kept (a focused page that still needs cross-route nav
+ *  on phone but doesn't want a chrome strip on desktop). */
+function isStandaloneRoute(root: ActivatedRouteSnapshot): boolean {
+  let node = root;
+  while (node.firstChild) node = node.firstChild;
+  return node.data['standalone'] === true;
+}
+
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, SidenavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent, MinimizedRoomBarComponent],
   template: `
-    <div class="app-shell" [class.immersive]="immersive()">
+    <div class="app-shell" [class.immersive]="immersive()" [class.standalone]="standalone()">
       @if (!hideSidenav()) {
         <app-sidenav />
       }
@@ -62,6 +71,11 @@ function isImmersiveRoute(root: ActivatedRouteSnapshot): boolean {
       @media (min-width: 1024px) {
         .app-shell {
           grid-template-columns: var(--sidebar-width) 1fr;
+        }
+        /* Standalone routes drop the sidebar at all viewports — collapse the
+           grid to a single column so content fills the viewport. */
+        .app-shell.standalone {
+          grid-template-columns: 1fr;
         }
       }
 
@@ -132,6 +146,17 @@ export class App {
     this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
       map(() => isImmersiveRoute(this.router.routerState.snapshot.root)),
+    ),
+    { initialValue: false },
+  );
+
+  /** Routes marked standalone drop the desktop sidebar (the chrome strip is just noise
+   *  on focused pages) but keep the mobile bottom nav so phone users still have cross-route
+   *  navigation. Driven from CSS via the .app-shell.standalone class. */
+  readonly standalone = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => isStandaloneRoute(this.router.routerState.snapshot.root)),
     ),
     { initialValue: false },
   );
