@@ -21,7 +21,6 @@ import { RoomHeaderComponent } from '../feature/room-header';
 import { StageGridComponent } from '../feature/stage/stage-grid';
 import { AudienceListComponent } from '../feature/audience/audience-list';
 import { CommentsPanelComponent } from '../feature/comments/comments-panel';
-import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
 import { RoomPageBase, RoomStoreContract } from './room-page-base';
 
@@ -34,7 +33,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     CommentsPanelComponent,
     SigninPanelComponent,
   ],
-  providers: [RoomStore, StageStore, AudienceStore, CommentsStore, ModStore, GiftsStore, InRoomRtmStore, GoodieStore, ManagersStore, RoomConnectionService],
+  providers: [RoomStore, StageStore, AudienceStore, CommentsStore, ModStore, GiftsStore, InRoomRtmStore, GoodieStore, ManagersStore],
   template: `
 <div class="room-layout">
       <div class="room-header">
