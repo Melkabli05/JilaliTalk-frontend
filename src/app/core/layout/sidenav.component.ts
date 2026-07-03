@@ -177,9 +177,13 @@ interface NavGroup {
     }
     @media (min-width: 1024px) { .mobile-nav { display: none; } }
     /* Immersive routes (mobile room pages) hide the bottom nav so the room gets the
-       full viewport height. Desktop sidebar is unaffected. */
+       full viewport height. Desktop sidebar is unaffected.
+       Plain ancestor selector, not :host-context: this component uses
+       ViewEncapsulation.None, so its styles are already unscoped global CSS —
+       :host-context() is only rewritten into a working selector under the default
+       Emulated encapsulation, and ships as inert, non-matching syntax under None. */
     @media (max-width: 1023.98px) {
-      :host-context(.app-shell.immersive) .mobile-nav {
+      .app-shell.immersive .mobile-nav {
         display: none;
       }
     }

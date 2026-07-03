@@ -132,9 +132,13 @@ import { AuthService } from '@core/auth/auth.service';
       .app-header { padding: 0 var(--space-6); left: var(--sidebar-width); }
     }
     /* Immersive routes (mobile room pages) hide the global header entirely — the
-       room's own header becomes the only top chrome. Desktop is unaffected. */
+       room's own header becomes the only top chrome. Desktop is unaffected.
+       Plain ancestor selector, not :host-context: this component uses
+       ViewEncapsulation.None, so its styles are already unscoped global CSS —
+       :host-context() is only rewritten into a working selector under the default
+       Emulated encapsulation, and ships as inert, non-matching syntax under None. */
     @media (max-width: 1023.98px) {
-      :host-context(.app-shell.immersive) .app-header {
+      .app-shell.immersive .app-header {
         display: none;
       }
     }
