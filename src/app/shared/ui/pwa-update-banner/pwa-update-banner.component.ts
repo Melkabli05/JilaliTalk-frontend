@@ -36,8 +36,8 @@ import { LucideRefreshCw } from '@lucide/angular';
       font-size: 0.875rem;
       font-weight: 500;
       position: sticky;
-      bottom: 0;
-      z-index: 50;
+      top: 0;
+      z-index: 9999;
     }
 
     .update-banner__text {
