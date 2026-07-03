@@ -74,88 +74,93 @@ type ViewMode = 'grid' | 'list';
         </div>
       </div>
 
-      @if (!collapsed() && showSearch()) {
-        <div class="search-row">
-          <div class="search-box">
-            <svg aria-hidden="true" lucideSearch [size]="13" class="search-icon"></svg>
-            <input
-              #searchInput
-              class="search-input"
-              type="text"
-              placeholder="Search by name or language..."
-              [value]="searchQuery()"
-              (input)="onSearchInput($event)"
-              (keydown.escape)="onSearchEscape()"
-              aria-label="Search audience members"
-            />
-            @if (searchQuery()) {
-              <button class="search-clear-btn" type="button" (click)="clearSearch()" aria-label="Clear search">
-                <svg aria-hidden="true" lucideX [size]="11"></svg>
-              </button>
-            }
-          </div>
-        </div>
-      }
-
-      @if (!collapsed()) {
-      <div class="audience-scroll">
-        @if (viewMode() === 'grid') {
-          <div class="audience-grid" role="list">
-            @for (user of displayUsers(); track user.userId) {
-              <app-audience-user
-                [user]="user"
-                display="grid"
-                [speaking]="speakingUids().includes(user.userId)"
-                [canInvite]="canInviteToStage()"
-                [inviteBusy]="inviteBusy() === user.userId"
-                [currentUserId]="currentUserId()"
-                (userClick)="onUserClick($event)"
-                (invite)="onInviteToStage($event)"
-              />
-            }
-          </div>
-        } @else {
-          @for (group of languageGroups(); track group.language) {
-            <div class="lang-group">
-              <div class="lang-header">
-                <span class="lang-flag">{{ group.flag }}</span>
-                <span class="lang-name">{{ group.language }}</span>
-                <span class="lang-count">{{ group.users.length }}</span>
-              </div>
-              <div class="lang-users">
-                @for (user of group.users; track user.userId) {
-                  <app-audience-user
-                    [user]="user"
-                    display="list"
-                    [speaking]="speakingUids().includes(user.userId)"
-                    [canInvite]="canInviteToStage()"
-                    [inviteBusy]="inviteBusy() === user.userId"
-                    [currentUserId]="currentUserId()"
-                    (invite)="onInviteToStage($event)"
-                  />
+      <!-- Always rendered (never @if-removed) so collapse/expand can animate via the
+           grid-template-rows 1fr/0fr technique below, instead of the instant
+           mount/unmount an @if would give it. -->
+      <div class="audience-body" [class.collapsed]="collapsed()">
+        <div class="audience-body-inner">
+          @if (showSearch()) {
+            <div class="search-row">
+              <div class="search-box">
+                <svg aria-hidden="true" lucideSearch [size]="13" class="search-icon"></svg>
+                <input
+                  #searchInput
+                  class="search-input"
+                  type="text"
+                  placeholder="Search by name or language..."
+                  [value]="searchQuery()"
+                  (input)="onSearchInput($event)"
+                  (keydown.escape)="onSearchEscape()"
+                  aria-label="Search audience members"
+                />
+                @if (searchQuery()) {
+                  <button class="search-clear-btn" type="button" (click)="clearSearch()" aria-label="Clear search">
+                    <svg aria-hidden="true" lucideX [size]="11"></svg>
+                  </button>
                 }
               </div>
             </div>
           }
-        }
 
-        @if (displayUsers().length === 0) {
-          <div class="empty-state">
-            <div class="empty-icon">
-              <svg aria-hidden="true" lucideUsers [size]="20"></svg>
-            </div>
-            @if (searchQuery()) {
-              <p class="empty-text">No matches for "{{ searchQuery() }}"</p>
-              <p class="empty-sub">Try a different name or language</p>
-              <button class="clear-search-btn" type="button" (click)="clearSearch()">Clear search</button>
+          <div class="audience-scroll">
+            @if (viewMode() === 'grid') {
+              <div class="audience-grid" role="list">
+                @for (user of displayUsers(); track user.userId) {
+                  <app-audience-user
+                    [user]="user"
+                    display="grid"
+                    [speaking]="speakingUids().includes(user.userId)"
+                    [canInvite]="canInviteToStage()"
+                    [inviteBusy]="inviteBusy() === user.userId"
+                    [currentUserId]="currentUserId()"
+                    (userClick)="onUserClick($event)"
+                    (invite)="onInviteToStage($event)"
+                  />
+                }
+              </div>
             } @else {
-              <p class="empty-text">No listeners yet</p>
-              <p class="empty-sub">Share this room to invite people to join the conversation</p>
+              @for (group of languageGroups(); track group.language) {
+                <div class="lang-group">
+                  <div class="lang-header">
+                    <span class="lang-flag">{{ group.flag }}</span>
+                    <span class="lang-name">{{ group.language }}</span>
+                    <span class="lang-count">{{ group.users.length }}</span>
+                  </div>
+                  <div class="lang-users">
+                    @for (user of group.users; track user.userId) {
+                      <app-audience-user
+                        [user]="user"
+                        display="list"
+                        [speaking]="speakingUids().includes(user.userId)"
+                        [canInvite]="canInviteToStage()"
+                        [inviteBusy]="inviteBusy() === user.userId"
+                        [currentUserId]="currentUserId()"
+                        (invite)="onInviteToStage($event)"
+                      />
+                    }
+                  </div>
+                </div>
+              }
+            }
+
+            @if (displayUsers().length === 0) {
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg aria-hidden="true" lucideUsers [size]="20"></svg>
+                </div>
+                @if (searchQuery()) {
+                  <p class="empty-text">No matches for "{{ searchQuery() }}"</p>
+                  <p class="empty-sub">Try a different name or language</p>
+                  <button class="clear-search-btn" type="button" (click)="clearSearch()">Clear search</button>
+                } @else {
+                  <p class="empty-text">No listeners yet</p>
+                  <p class="empty-sub">Share this room to invite people to join the conversation</p>
+                }
+              </div>
             }
           </div>
-        }
+        </div>
       </div>
-      }
     </div>
   `,
   styles: [`
@@ -260,6 +265,29 @@ type ViewMode = 'grid' | 'list';
     .toggle-btn.active {
       background: var(--color-card);
       color: var(--color-primary-600);
+    }
+
+    /* Collapse animation: grid-template-rows 1fr -> 0fr is the standard CSS-only
+       accordion technique — unlike height/max-height, it animates smoothly without
+       needing a known target height, and it's what lets the surrounding room-page
+       grid (whose audience row is content-sized) and the comments section (which
+       absorbs whatever audience frees up) resize smoothly in step, frame by frame,
+       with no JS coordination. */
+    .audience-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 1fr;
+      transition: grid-template-rows 0.22s ease;
+    }
+    .audience-body.collapsed {
+      grid-template-rows: 0fr;
+    }
+    .audience-body-inner {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .search-row {
