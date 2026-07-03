@@ -123,7 +123,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       display: grid;
       grid-template-areas: "header" "stage" "audience" "comments";
       grid-template-columns: 1fr;
-      grid-template-rows: auto minmax(0, 30cqh) minmax(0, min(max-content, 22cqh)) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 30cqh) fit-content(22cqh) minmax(0, 1fr);
       height: 100%;
       overflow: hidden;
     }
@@ -163,7 +163,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     }
 
     @container room-page (min-width: 480px) {
-      .room-layout { grid-template-rows: auto minmax(0, 34cqh) minmax(0, min(max-content, 22cqh)) minmax(0, 1fr); }
+      .room-layout { grid-template-rows: auto minmax(0, 34cqh) fit-content(22cqh) minmax(0, 1fr); }
     }
 
     @container room-page (min-width: 1024px) {
