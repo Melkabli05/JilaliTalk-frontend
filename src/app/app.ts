@@ -5,10 +5,12 @@ import { filter, map } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { SidenavComponent } from '@core/layout/sidenav.component';
 import { HeaderComponent } from '@core/layout/header.component';
+import { MinimizedRoomBarComponent } from '@core/layout/minimized-room-bar.component';
 import { ImBootstrapService } from '@core/realtime/im-bootstrap.service';
 import { ToastContainerComponent } from '@shared/ui/toast/toast-container.component';
 import { PwaUpdateBannerComponent } from '@shared/ui';
 import { PwaUpdateService } from '@core/services/pwa-update.service';
+import { ActiveCallStore } from '@store/active-call.store';
 
 /** Walks to the deepest activated route and reports whether it opted into immersive mode. */
 function isImmersiveRoute(root: ActivatedRouteSnapshot): boolean {
@@ -20,7 +22,7 @@ function isImmersiveRoute(root: ActivatedRouteSnapshot): boolean {
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, SidenavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent],
+  imports: [RouterOutlet, SidenavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent, MinimizedRoomBarComponent],
   template: `
     <div class="app-shell" [class.immersive]="immersive()">
       @if (!hideSidenav()) {
@@ -34,6 +36,9 @@ function isImmersiveRoute(root: ActivatedRouteSnapshot): boolean {
       </div>
     </div>
     <app-toast-container />
+    @if (activeCallStore.minimized()) {
+      <app-minimized-room-bar />
+    }
     @if (pwaUpdate.updateAvailable()) {
       <app-pwa-update-banner />
     }
@@ -121,6 +126,7 @@ export class App {
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   readonly pwaUpdate = inject(PwaUpdateService);
+  protected readonly activeCallStore = inject(ActiveCallStore);
 
   readonly immersive = toSignal(
     this.router.events.pipe(
