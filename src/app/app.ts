@@ -39,7 +39,7 @@ function isImmersiveRoute(root: ActivatedRouteSnapshot): boolean {
     @if (activeCallStore.minimized()) {
       <app-minimized-room-bar />
     }
-    @if (pwaUpdate.updateAvailable()) {
+    @if (pwaUpdate.shouldShowBanner()) {
       <app-pwa-update-banner />
     }
   `,
