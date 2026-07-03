@@ -47,6 +47,20 @@ export class RoomsApi {
     return this.http.get<ChannelListResponse>(`${this.baseUrl}/live`, { params });
   }
 
+  searchRooms(
+    type: RoomType,
+    query: string,
+    langId = 0,
+    maxPages = 5,
+  ): Observable<ChannelListResponse> {
+    const params = new HttpParams()
+      .set('query', query)
+      .set('langId', langId)
+      .set('maxPages', maxPages);
+
+    return this.http.get<ChannelListResponse>(`${this.baseUrl}/${type}/search`, { params });
+  }
+
   recommendRooms(
     type: RoomType,
     excludeCname?: string,

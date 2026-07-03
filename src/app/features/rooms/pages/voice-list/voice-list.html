@@ -201,26 +201,15 @@
   } @else if (filteredRooms().length === 0) {
     <div class="empty-state">
       <div class="empty-icon">
-        @if (isAutoSearching()) {
-          <svg aria-hidden="true" lucideRefreshCw [size]="28" class="animate-spin"></svg>
-        } @else {
-          <svg aria-hidden="true" lucideSearch [size]="28"></svg>
-        }
+        <svg aria-hidden="true" lucideSearch [size]="28"></svg>
       </div>
-      @if (isAutoSearching()) {
-        <p class="empty-title">Searching more rooms…</p>
-        <p class="empty-subtitle">
-          Looking through more results for "{{ searchQuery() }}"
-        </p>
-      } @else {
-        <p class="empty-title">No rooms found</p>
-        <p class="empty-subtitle">
-          Try adjusting your filters or search query to discover more rooms
-        </p>
-        <button type="button" class="empty-reset-btn" (click)="resetFilters()">
-          Reset Filters
-        </button>
-      }
+      <p class="empty-title">No rooms found</p>
+      <p class="empty-subtitle">
+        Try adjusting your filters or search query to discover more rooms
+      </p>
+      <button type="button" class="empty-reset-btn" (click)="resetFilters()">
+        Reset Filters
+      </button>
     </div>
   } @else {
     <div class="room-grid" [class.list-view]="viewMode() === 'list'">

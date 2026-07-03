@@ -52,7 +52,6 @@ export class LiveList {
   readonly isLoadingRecommended = this.store.isLoadingRecommended;
   readonly isLoading = this.store.isLoading;
   readonly hasMore = this.store.hasMore;
-  readonly isAutoSearching = this.store.isAutoSearching;
   readonly selectedLanguageId = this.store.selectedLanguageId;
   readonly searchQuery = this.store.searchQuery;
   readonly error = this.store.error;
