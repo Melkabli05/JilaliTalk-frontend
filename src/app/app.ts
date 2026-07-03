@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, DestroyRef, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { NavigationEnd, Router, RouterOutlet, type ActivatedRouteSnapshot } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -22,7 +23,9 @@ function isImmersiveRoute(root: ActivatedRouteSnapshot): boolean {
   imports: [RouterOutlet, SidenavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent],
   template: `
     <div class="app-shell" [class.immersive]="immersive()">
-      <app-sidenav />
+      @if (!hideSidenav()) {
+        <app-sidenav />
+      }
       <div class="main-wrapper">
         <app-header />
         <main class="app-main" id="main-content" tabindex="-1">
@@ -104,6 +107,8 @@ function isImmersiveRoute(root: ActivatedRouteSnapshot): boolean {
 export class App {
   private readonly imBootstrap = inject(ImBootstrapService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly platformId = inject(PLATFORM_ID);
   readonly pwaUpdate = inject(PwaUpdateService);
 
   readonly immersive = toSignal(
@@ -113,4 +118,26 @@ export class App {
     ),
     { initialValue: false },
   );
+
+  /**
+   * CSS alone can hide the sidenav's content on mobile, but not remove
+   * <app-sidenav> from the DOM (a @media query can't drive a template @if).
+   * Immersive routes want it not rendered at all on mobile, so this tracks
+   * viewport width directly — the one case in this shell where a
+   * structural decision (mount or not) requires knowing the viewport, not
+   * just the route.
+   */
+  private readonly isMobileViewport = signal(false);
+
+  readonly hideSidenav = computed(() => this.immersive() && this.isMobileViewport());
+
+  constructor() {
+    if (isPlatformBrowser(this.platformId)) {
+      const mql = window.matchMedia('(max-width: 1023.98px)');
+      const apply = () => this.isMobileViewport.set(mql.matches);
+      apply();
+      mql.addEventListener('change', apply);
+      this.destroyRef.onDestroy(() => mql.removeEventListener('change', apply));
+    }
+  }
 }
