@@ -18,7 +18,7 @@ import {
 } from '@lucide/angular';
 import { ImSocketService } from '@core/realtime/im-socket.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
-import { relativeTime } from '@shared/utils';
+import { relativeTime as formatRelativeTime } from '@shared/utils';
 import { MessagesSearchComponent } from '../ui/search/messages-search';
 import { MessagesStore } from '../store/messages.store';
 import type { DmConversation, DmMessage } from '../models/dm.model';
@@ -107,7 +107,7 @@ const GROUP_GAP_MS = 5 * 60 * 1000;
                 <div class="row-body">
                   <span class="row-name">{{ conv.nickname }}</span>
                   <time class="row-ts" [attr.datetime]="conv.lastTs">
-                    {{ relativeTime(conv.lastTs) }}
+                    {{ formatRelativeTime(conv.lastTs) }}
                   </time>
                   @if (conv.isTyping) {
                     <span class="row-preview typing-preview" aria-label="typing">
@@ -968,11 +968,13 @@ export class MessagesPageComponent {
     }
   }
 
-  protected relativeTime(ts: number): string {
-    return relativeTime(ts);
-  }
-
   protected fmtTime(ts: number): string {
     return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  /** Delegates to the imported `formatRelativeTime` so the Angular template can call it as
+   *  a class member. Aliased on import to avoid shadowing this method. */
+  protected formatRelativeTime(ts: number): string {
+    return formatRelativeTime(ts);
   }
 }
