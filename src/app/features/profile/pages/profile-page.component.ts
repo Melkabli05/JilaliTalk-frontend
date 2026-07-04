@@ -54,7 +54,7 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
       }
 
       <div class="tabs-section" ngTabs>
-        <ul ngTabList class="tabs" [(selectedTab)]="activeTab" (selectedTabChange)="onTabChange($event)">
+        <ul ngTabList class="tabs" [selectedTab]="activeTab()" (selectedTabChange)="onTabChange($event)">
           <li ngTab value="followers" class="tab-btn">Followers</li>
           <li ngTab value="following" class="tab-btn">Following</li>
           <li ngTab value="visitors" class="tab-btn">Visitors</li>
@@ -321,7 +321,7 @@ export class ProfilePageComponent {
     this.onTabChange(tab);
   }
 
-  protected onTabChange(tab: ProfileTab): void {
+  protected onTabChange(tab: string | undefined): void {
     switch (tab) {
       case 'followers':
         this.store.activateFollowersTab();

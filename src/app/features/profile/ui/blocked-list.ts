@@ -19,7 +19,7 @@ import { LucideShieldOff } from '@lucide/angular';
         @for (user of users(); track user.userId) {
           <li class="row">
             <app-avatar
-              [src]="user.headUrl"
+              [src]="user.headUrl ?? ''"
               [initials]="(user.nickName ?? 'U').slice(0, 2)"
               size="md"
               [alt]="user.nickName ?? 'Blocked user'"

@@ -12,7 +12,7 @@ export type UserListItemVariant = 'followers' | 'following' | 'visitors';
   imports: [AvatarComponent, CountryFlagComponent, LucideCrown, LucideUsers],
   template: `
     <div class="row">
-      <app-avatar [src]="headUrl()" [initials]="initials()" size="md" [alt]="name()" />
+      <app-avatar [src]="headUrl() ?? ''" [initials]="initials()" size="md" [alt]="name()" />
       <div class="row-main">
         <div class="row-name-line">
           <span class="row-name">{{ name() }}</span>
@@ -35,7 +35,7 @@ export type UserListItemVariant = 'followers' | 'following' | 'visitors';
             @if (visitTs(); as ts) {
               <span class="visit-meta">
                 <svg aria-hidden="true" lucideUsers [size]="11" />
-                {{ relativeTime(ts) }}
+                {{ formatRelativeTime(ts) }}
                 @if ((visitCnt() ?? 0) > 1) {
                   <span class="visit-count">&times;{{ visitCnt() }}</span>
                 }
@@ -142,4 +142,9 @@ export class UserListItemComponent {
   readonly visitCnt = input<number | null>(null);
 
   readonly initials = computed(() => this.name().slice(0, 2));
+
+  /** Template bridge: Angular templates can only call class members, not module-scope imports. */
+  protected formatRelativeTime(ts: number): string {
+    return relativeTime(ts);
+  }
 }
