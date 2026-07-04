@@ -49,22 +49,3 @@ export function paginateDedup<TSource extends { readonly offset: number; readonl
   const newItems = source.items.filter((item) => !existing.has(keyOf(item)));
   return [...previous.value, ...newItems];
 }
-
-/**
- * True when a debounced search has no local matches yet and there's more upstream data to
- * walk — drives the auto-paginate-while-searching effect in both stores.
- */
-export function computeIsAutoSearching(params: {
-  readonly debouncedQuery: string;
-  readonly filteredCount: number;
-  readonly hasMore: boolean;
-  readonly offset: number;
-  readonly maxOffset: number;
-}): boolean {
-  return (
-    params.debouncedQuery.trim().length > 0 &&
-    params.filteredCount === 0 &&
-    params.hasMore &&
-    params.offset < params.maxOffset
-  );
-}

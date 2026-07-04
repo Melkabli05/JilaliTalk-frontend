@@ -795,7 +795,7 @@ export class UserActionModalComponent {
 
   constructor() {
     const uid = this.data.userId;
-    if (uid && !this.userInfoService.getUserInfo(uid)) {
+    if (uid && (!this.userInfoService.getUserInfo(uid) || this.userInfoService.isStale(uid))) {
       void this.userInfoService.fetchUserInfo(uid);
     }
   }

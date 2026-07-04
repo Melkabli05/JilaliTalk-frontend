@@ -77,7 +77,6 @@ export class VoiceListComponent {
   readonly categories = this.store.categories;
   readonly isLoading = this.store.isLoading;
   readonly hasMore = this.store.hasMore;
-  readonly isAutoSearching = this.store.isAutoSearching;
   readonly selectedCategoryId = this.store.selectedCategoryId;
   readonly selectedLanguageId = this.store.selectedLanguageId;
   readonly searchQuery = this.store.searchQuery;

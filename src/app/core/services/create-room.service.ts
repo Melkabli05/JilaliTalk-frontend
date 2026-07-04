@@ -1,10 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
 import { RoomVisibility } from '@shared/ui/create-room-modal/create-room-modal.component';
 import { Category } from '@shared/data/categories';
+import { CategoriesService } from '@shared/data/categories.service';
 
 export interface CreateVoiceRoomRequest {
   readonly name: string;
@@ -13,10 +13,6 @@ export interface CreateVoiceRoomRequest {
   readonly notice?: string;
   readonly categoryId?: number | null;
   readonly topicId?: number | null;
-}
-
-interface CategoryTopicListResponse {
-  readonly items: Category[];
 }
 
 /** Voice rooms are busiType 2 in LiveHub. */
@@ -37,6 +33,7 @@ const VISIBLE_STATUS: Record<RoomVisibility, number> = {
 @Injectable({ providedIn: 'root' })
 export class CreateRoomService {
   private readonly http = inject(HttpClient);
+  private readonly categoriesService = inject(CategoriesService);
   private readonly baseUrl = `${inject(API_BASE_URL)}/rooms`;
 
   createVoiceRoom(request: CreateVoiceRoomRequest): Observable<CreateVoiceChannelResponse> {
@@ -52,10 +49,7 @@ export class CreateRoomService {
   }
 
   fetchCategories(busiType = VOICE_BUSI_TYPE): Observable<readonly Category[]> {
-    const params = new HttpParams().set('busiType', busiType);
-    return this.http
-      .get<CategoryTopicListResponse>(`${this.baseUrl}/categories`, { params })
-      .pipe(map((res) => res.items));
+    return this.categoriesService.fetchCategories(busiType);
   }
 
   /** Returns the user's currently active voice channel, or null if none exists. */

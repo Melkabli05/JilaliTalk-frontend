@@ -4,16 +4,15 @@ import {
   signal,
   computed,
   linkedSignal,
-  effect,
   DestroyRef,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RoomsApi } from '../data/rooms-api';
 import { ChannelListItem, Category, ChannelListResponse, RoomType, filterRooms } from '../data/rooms-model';
-import { SearchDebounce, paginateDedup, computeIsAutoSearching } from '../data/pagination-search.util';
+import { SearchDebounce, paginateDedup } from '../data/pagination-search.util';
 
 const PAGE_SIZE = 20;
-const MAX_SEARCH_OFFSET = PAGE_SIZE * 10;
+const MAX_SEARCH_PAGES = 5; // 5 × 20 = 100 rooms, same ceiling as the old MAX_SEARCH_OFFSET
 
 interface RoomsPageSource {
   readonly type: RoomType;
@@ -37,10 +36,13 @@ export class RoomsStore {
       type: this._currentType(),
       offset: this._offset(),
       langId: this._selectedLanguageId() ?? 0,
+      query: this.search.debounced(),
     }),
     defaultValue: { items: [] as ChannelListItem[], audienceTotal: 0 } as ChannelListResponse,
     stream: ({ params }) =>
-      this.api.listRooms(params.type, params.langId, PAGE_SIZE, params.offset, 1),
+      params.query.trim()
+        ? this.api.searchRooms(params.type, params.query, params.langId, MAX_SEARCH_PAGES)
+        : this.api.listRooms(params.type, params.langId, PAGE_SIZE, params.offset, 1),
   });
 
   private readonly _rooms = linkedSignal<RoomsPageSource, readonly ChannelListItem[]>({
@@ -67,19 +69,13 @@ export class RoomsStore {
 
   readonly isLoading = computed(() => this.roomsPage.isLoading());
   readonly error = computed(() => this.roomsPage.error());
-  readonly hasMore = computed(() => (this.roomsPage.value()?.items.length ?? 0) === PAGE_SIZE);
+  readonly hasMore = computed(() =>
+    this.search.debounced().trim()
+      ? false
+      : (this.roomsPage.value()?.items.length ?? 0) === PAGE_SIZE,
+  );
   readonly isEmpty = computed(
     () => this.roomsPage.status() === 'resolved' && this._rooms().length === 0,
-  );
-
-  readonly isAutoSearching = computed(() =>
-    computeIsAutoSearching({
-      debouncedQuery: this.search.debounced(),
-      filteredCount: this.filteredRooms().length,
-      hasMore: this.hasMore(),
-      offset: this._offset(),
-      maxOffset: MAX_SEARCH_OFFSET,
-    }),
   );
 
   readonly filteredRooms = computed(() =>
@@ -110,7 +106,7 @@ export class RoomsStore {
   }
 
   loadMore(): void {
-    if (this.isLoading() || !this.hasMore()) return;
+    if (this.isLoading() || !this.hasMore() || this.search.debounced().trim()) return;
     this._offset.update((o) => o + PAGE_SIZE);
   }
 
@@ -124,6 +120,7 @@ export class RoomsStore {
   }
 
   setSearchQuery(query: string): void {
+    this._offset.set(0);
     this.search.set(query);
   }
 
@@ -131,13 +128,5 @@ export class RoomsStore {
     this._offset.set(0);
     this.roomsPage.reload();
     this.recommendedResource.reload();
-  }
-
-  constructor() {
-    effect(() => {
-      if (this.isAutoSearching() && !this.isLoading()) {
-        this.loadMore();
-      }
-    });
   }
 }

@@ -345,25 +345,21 @@ export class RoomPageComponent extends RoomPageBase {
   }
 
   private async makeVisible(cname: string, busiType: number): Promise<void> {
-    let voiceInfo: VoiceRoomInfo;
-    let stage: StageUsersResponse | undefined;
-    let audience: AudienceUsersResponse | undefined;
-    try {
-      const bundle = await firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType));
-      voiceInfo = bundle.voiceRoomInfo;
-      stage = bundle.stageUsers;
-      audience = bundle.audienceUsers;
-    } catch {
+    const [bundleResult, joinResult] = await Promise.allSettled([
+      firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType)),
+      firstValueFrom(this.api.joinRoom(cname, busiType)),
+    ]);
+
+    if (bundleResult.status === 'rejected') {
       this.toast.error('Failed to rejoin — room info unavailable');
       return;
     }
-
-    try {
-      await firstValueFrom(this.api.joinRoom(cname, busiType));
-    } catch {
+    if (joinResult.status === 'rejected') {
       this.toast.error('Failed to rejoin visibly');
       return;
     }
+
+    const { voiceRoomInfo: voiceInfo, stageUsers: stage, audienceUsers: audience } = bundleResult.value;
 
     this.roomStore.setVisibility(true);
     this.syncVisibilityToUrl(true);
