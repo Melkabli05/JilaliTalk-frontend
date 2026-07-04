@@ -4,7 +4,6 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
 import { LucideCrown } from '@lucide/angular';
-
 @Component({
   selector: 'app-profile-header',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,7 +18,6 @@ import { LucideCrown } from '@lucide/angular';
         [ringColor]="vipType() === 100 ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
         [priority]="true"
       />
-
       <div class="identity-main">
         <div class="name-row">
           <span class="user-name">{{ displayName() }}</span>
@@ -34,11 +32,9 @@ import { LucideCrown } from '@lucide/angular';
         @if (username()) {
           <span class="user-handle">&#64;{{ username() }}</span>
         }
-
         @if (signature()) {
           <p class="bio">{{ signature() }}</p>
         }
-
         <div class="meta-row">
           @if (nationality()) {
             <app-country-flag [code]="nationality()" />
@@ -50,7 +46,6 @@ import { LucideCrown } from '@lucide/angular';
             <span class="meta-text muted">Member for {{ regDays() }}d</span>
           }
         </div>
-
         @if (nativeLang() || learnLangs().length) {
           <div class="lang-row">
             @if (nativeLang(); as lang) {
@@ -64,7 +59,6 @@ import { LucideCrown } from '@lucide/angular';
             }
           </div>
         }
-
         @if (tagChips().length) {
           <div class="tags-row">
             @for (chip of tagChips(); track $index) {
@@ -92,7 +86,6 @@ import { LucideCrown } from '@lucide/angular';
       background: var(--color-neutral-800);
       border-color: var(--color-neutral-700);
     }
-
     .identity-main {
       display: flex;
       flex-direction: column;
@@ -100,13 +93,11 @@ import { LucideCrown } from '@lucide/angular';
       min-width: 0;
       flex: 1;
     }
-
     .name-row {
       display: flex;
       align-items: center;
       gap: var(--space-2);
     }
-
     .user-name {
       font-size: var(--text-xl);
       font-weight: var(--font-bold);
@@ -115,7 +106,6 @@ import { LucideCrown } from '@lucide/angular';
     :host-context(.dark) .user-name {
       color: var(--color-neutral-100);
     }
-
     .user-handle {
       font-size: var(--text-sm);
       color: var(--color-text-muted);
@@ -123,7 +113,6 @@ import { LucideCrown } from '@lucide/angular';
     :host-context(.dark) .user-handle {
       color: var(--color-neutral-400);
     }
-
     .bio {
       margin: 0;
       font-size: var(--text-sm);
@@ -133,7 +122,6 @@ import { LucideCrown } from '@lucide/angular';
     :host-context(.dark) .bio {
       color: var(--color-neutral-300);
     }
-
     .meta-row,
     .lang-row,
     .tags-row {
@@ -142,7 +130,6 @@ import { LucideCrown } from '@lucide/angular';
       flex-wrap: wrap;
       gap: var(--space-2);
     }
-
     .meta-text {
       font-size: var(--text-xs);
       color: var(--color-text);
@@ -156,7 +143,6 @@ import { LucideCrown } from '@lucide/angular';
     :host-context(.dark) .meta-text.muted {
       color: var(--color-neutral-400);
     }
-
     .tag {
       font-size: var(--text-xs);
       padding: 2px 10px;
@@ -170,7 +156,6 @@ import { LucideCrown } from '@lucide/angular';
       color: var(--color-neutral-300);
       border-color: var(--color-neutral-600);
     }
-
     .chip {
       display: inline-flex;
       align-items: center;
@@ -196,7 +181,6 @@ import { LucideCrown } from '@lucide/angular';
       background: var(--color-primary-900);
       color: var(--color-primary-300);
     }
-
     @container profile-page (min-width: 640px) {
       .identity-card {
         align-items: center;
@@ -206,10 +190,8 @@ import { LucideCrown } from '@lucide/angular';
 })
 export class ProfileHeaderComponent {
   readonly info = input<UserInfo | null>(null);
-
   private readonly details = computed(() => this.info()?.details ?? null);
   private readonly base = computed(() => this.details()?.base ?? null);
-
   readonly displayName = computed(() => this.info()?.nickname ?? 'User');
   readonly avatarUrl = computed(() => this.base()?.headUrl ?? '');
   readonly initials = computed(() => this.displayName().slice(0, 2));
@@ -221,7 +203,6 @@ export class ProfileHeaderComponent {
   readonly nativeLang = computed(() => this.base()?.nativeLang ?? null);
   readonly learnLangs = computed(() => this.base()?.learnLangs ?? []);
   readonly tagChips = computed<readonly string[]>(() => this.info()?.tags ?? []);
-
   readonly location = computed(() => {
     const loc = this.details()?.location;
     const city = this.info()?.city ?? loc?.city ?? null;

@@ -1,6 +1,5 @@
-// src/app/features/profile/ui/profile-stats-bar.ts
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 
+import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 @Component({
   selector: 'app-profile-stats-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,7 +36,6 @@ import { Component, ChangeDetectionStrategy, input, output } from '@angular/core
       background: var(--color-neutral-800);
       border-color: var(--color-neutral-700);
     }
-
     .stat-cell {
       flex: 1;
       display: flex;
@@ -70,7 +68,6 @@ import { Component, ChangeDetectionStrategy, input, output } from '@angular/core
       outline: var(--focus-ring);
       outline-offset: -2px;
     }
-
     .stat-val {
       font-size: var(--text-lg);
       font-weight: var(--font-bold);
@@ -79,7 +76,6 @@ import { Component, ChangeDetectionStrategy, input, output } from '@angular/core
     :host-context(.dark) .stat-val {
       color: var(--color-neutral-100);
     }
-
     .stat-lbl {
       font-size: var(--text-2xs);
       color: var(--color-text-muted);
@@ -94,7 +90,6 @@ export class ProfileStatsBarComponent {
   readonly following = input(0);
   readonly moments = input(0);
   readonly likes = input(0);
-
   readonly followersClick = output<void>();
   readonly followingClick = output<void>();
 }

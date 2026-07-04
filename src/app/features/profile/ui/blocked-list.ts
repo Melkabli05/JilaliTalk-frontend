@@ -1,9 +1,8 @@
-// src/app/features/profile/ui/blocked-list.ts
+
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { BlockedUser } from '../models/profile.model';
 import { LucideShieldOff } from '@lucide/angular';
-
 @Component({
   selector: 'app-blocked-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,7 +49,6 @@ import { LucideShieldOff } from '@lucide/angular';
       margin: 0;
       font-size: var(--text-sm);
     }
-
     .list {
       list-style: none;
       margin: 0;
@@ -59,14 +57,12 @@ import { LucideShieldOff } from '@lucide/angular';
       flex-direction: column;
       gap: var(--space-1);
     }
-
     .row {
       display: flex;
       align-items: center;
       gap: var(--space-3);
       padding: var(--space-2) var(--space-3);
     }
-
     .row-name {
       font-size: var(--text-sm);
       font-weight: var(--font-medium);

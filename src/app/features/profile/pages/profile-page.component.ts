@@ -7,9 +7,7 @@ import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
 import { BlockedListComponent } from '../ui/blocked-list';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { ProfileBundleResponse } from '../models/profile.model';
-
 type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
-
 @Component({
   selector: 'app-profile-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,7 +41,6 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
         </div>
       } @else {
         <app-profile-header [info]="store.userInfo()" />
-
         <app-profile-stats-bar
           [followers]="store.userInfo()?.details?.relation?.followers ?? 0"
           [following]="store.userInfo()?.details?.relation?.following ?? 0"
@@ -53,7 +50,6 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
           (followingClick)="selectTab('following')"
         />
       }
-
       <div class="tabs-section" ngTabs>
         <ul ngTabList class="tabs" [selectedTab]="activeTab()" (selectedTabChange)="onTabChange($event)">
           <li ngTab value="followers" class="tab-btn">Followers</li>
@@ -61,7 +57,6 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
           <li ngTab value="visitors" class="tab-btn">Visitors</li>
           <li ngTab value="blocked" class="tab-btn">Blocked</li>
         </ul>
-
         <div ngTabPanel value="followers" class="tab-panel">
           <ng-template ngTabContent>
             @if (store.followersLoading() && store.followers().length === 0) {
@@ -92,7 +87,6 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
             }
           </ng-template>
         </div>
-
         <div ngTabPanel value="following" class="tab-panel">
           <ng-template ngTabContent>
             @if (store.followingLoading() && store.following().length === 0) {
@@ -119,7 +113,6 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
             }
           </ng-template>
         </div>
-
         <div ngTabPanel value="visitors" class="tab-panel">
           <ng-template ngTabContent>
             @if (store.visitorsLoading() && store.visitors().length === 0) {
@@ -151,7 +144,6 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
             }
           </ng-template>
         </div>
-
         <div ngTabPanel value="blocked" class="tab-panel">
           <ng-template ngTabContent>
             @if (store.blockedLoading()) {
@@ -176,7 +168,6 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
       container-type: inline-size;
       container-name: profile-page;
     }
-
     .profile-page {
       display: flex;
       flex-direction: column;
@@ -185,13 +176,11 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
       max-width: 720px;
       margin: 0 auto;
     }
-
     .tabs-section {
       display: flex;
       flex-direction: column;
       gap: var(--space-3);
     }
-
     .tabs {
       display: flex;
       gap: var(--space-1);
@@ -205,7 +194,6 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
     :host-context(.dark) .tabs {
       background: var(--color-neutral-800);
     }
-
     .tab-btn {
       padding: var(--space-2) var(--space-4);
       border-radius: var(--radius-full);
@@ -226,13 +214,11 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
       background: var(--color-neutral-700);
       color: var(--color-primary-300);
     }
-
     .tab-panel {
       display: flex;
       flex-direction: column;
       gap: var(--space-2);
     }
-
     .empty-state,
     .error-state {
       display: flex;
@@ -247,7 +233,6 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
     :host-context(.dark) .error-state {
       color: var(--color-neutral-400);
     }
-
     .header-skeleton {
       display: flex;
       gap: var(--space-4);
@@ -310,28 +295,17 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
 })
 export class ProfilePageComponent {
   protected readonly store = inject(ProfileStore);
-
-  /**
-   * Bundle prefetched by the route resolver (set by `withComponentInputBinding()`
-   * in `app.config.ts`). Null if the user is not logged in or upstream returned
-   * a slow-but-eventually-successful response after the route activated. The page
-   * seeds the store with this value in the constructor so the first render shows
-   * prefetched data instead of the header skeleton.
-   */
+  
   readonly bundle = input<ProfileBundleResponse | null>(null);
-
   protected readonly activeTab = signal<ProfileTab>('followers');
-
   constructor() {
     this.store.seedBundle(this.bundle());
     this.onTabChange(this.activeTab());
   }
-
   protected selectTab(tab: ProfileTab): void {
     this.activeTab.set(tab);
     this.onTabChange(tab);
   }
-
   protected onTabChange(tab: string | undefined): void {
     switch (tab) {
       case 'followers':
