@@ -6,11 +6,11 @@ import { Component, ChangeDetectionStrategy, input, output } from '@angular/core
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="stats-bar">
-      <button type="button" class="stat-cell" (click)="followersClick.emit()">
+      <button type="button" class="stat-cell" aria-label="View {{ followers() }} followers" (click)="followersClick.emit()">
         <span class="stat-val">{{ followers() }}</span>
         <span class="stat-lbl">Followers</span>
       </button>
-      <button type="button" class="stat-cell" (click)="followingClick.emit()">
+      <button type="button" class="stat-cell" aria-label="View {{ following() }} following" (click)="followingClick.emit()">
         <span class="stat-val">{{ following() }}</span>
         <span class="stat-lbl">Following</span>
       </button>
