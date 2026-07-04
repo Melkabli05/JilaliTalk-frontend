@@ -17,6 +17,7 @@ import { LucideCrown } from '@lucide/angular';
         size="xl"
         [alt]="displayName()"
         [ringColor]="vipType() === 100 ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
+        [priority]="true"
       />
 
       <div class="identity-main">
