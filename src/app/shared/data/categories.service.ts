@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, shareReplay } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, shareReplay, throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
 import { Category } from './categories';
 
@@ -33,6 +33,10 @@ export class CategoriesService {
         })
         .pipe(
           map((res) => res.items),
+          catchError((err) => {
+            this.cache.delete(busiType);
+            return throwError(() => err);
+          }),
           shareReplay({ bufferSize: 1, refCount: false }),
         );
       this.cache.set(busiType, cached);
