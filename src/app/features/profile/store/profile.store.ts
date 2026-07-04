@@ -23,34 +23,44 @@ export class ProfileStore {
   private readonly selfId = computed(() => this.authStore.user()?.userId ?? null);
 
   // ── Bundle (eager — the only fetch that runs on page load) ───────────────────────
+  //
+  // Two writers, one source of truth: the route resolver prefetches via
+  // `seedBundle()` (called from the page's constructor) and the rxResource is
+  // a fallback for navigations that bypass the resolver. The `_bundle` signal
+  // being non-null IS the "fetched" state — when it's set, the resource's
+  // params close over `undefined`, so no second HTTP call is fired.
+
+  private readonly _bundle = signal<ProfileBundleResponse | null>(null);
 
   private readonly bundleRef = rxResource<ProfileBundleResponse | null, number | undefined>({
-    params: () => this.selfId() ?? undefined,
+    params: () => (this._bundle() !== null ? undefined : this.selfId() ?? undefined),
     stream: ({ params }) => (params === undefined ? of(null) : this.api.bundle(params)),
     defaultValue: null,
   });
 
   /**
    * Seeds the bundle from a value the route resolver prefetched in parallel with
-   * the lazy chunk download. Called by the page component after construction —
-   * `rxResource` `defaultValue` is captured at field-initializer time (too early
-   * for the resolver's value), so the page reaches into the store to inject the
-   * prefetched value as the new baseline. Harmless if called twice (the resource
-   * will just re-resolve with the same value).
+   * the lazy chunk download. Called by the page component in its constructor.
+   * After this fires once, the rxResource's params close over `undefined` and
+   * it will not make its own network request — the resolver is the single
+   * network caller for this navigation.
    */
   seedBundle(value: ProfileBundleResponse | null): void {
     if (value !== null) {
-      this.bundleRef.set(value);
+      this._bundle.set(value);
     }
   }
 
-  readonly bundle = this.bundleRef.value;
+  readonly bundle = computed<ProfileBundleResponse | null>(() => this._bundle() ?? this.bundleRef.value());
   readonly userInfo = computed(() => this.bundle()?.userInfo ?? null);
   readonly stats = computed(() => this.bundle()?.stats ?? null);
-  readonly bundleLoading = this.bundleRef.isLoading;
+  readonly bundleLoading = computed(
+    () => this._bundle() === null && this.bundleRef.isLoading(),
+  );
   readonly bundleError = computed(() => (this.bundleRef.error() ? 'Failed to load your profile' : null));
 
   reloadBundle(): void {
+    this._bundle.set(null);
     this.bundleRef.reload();
   }
 
