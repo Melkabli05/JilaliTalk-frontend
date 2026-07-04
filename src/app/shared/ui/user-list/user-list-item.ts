@@ -16,10 +16,8 @@ export type UserListItemVariant = 'followers' | 'following' | 'visitors';
       <div class="row-main">
         <div class="row-name-line">
           <span class="row-name">{{ name() }}</span>
-          @if (vipType(); as vip) {
-            @if (vip > 0) {
-              <svg aria-hidden="true" lucideCrown [size]="11" class="vip-icon" />
-            }
+          @if ((vipType() ?? 0) > 0) {
+            <svg aria-hidden="true" lucideCrown [size]="11" class="vip-icon" />
           }
         </div>
         @if (nationality()) {
@@ -37,11 +35,9 @@ export type UserListItemVariant = 'followers' | 'following' | 'visitors';
             @if (visitTs(); as ts) {
               <span class="visit-meta">
                 <svg aria-hidden="true" lucideUsers [size]="11" />
-                {{ relativeTimeLabel(ts) }}
-                @if (visitCnt(); as cnt) {
-                  @if (cnt > 1) {
-                    <span class="visit-count">&times;{{ cnt }}</span>
-                  }
+                {{ relativeTime(ts) }}
+                @if ((visitCnt() ?? 0) > 1) {
+                  <span class="visit-count">&times;{{ visitCnt() }}</span>
                 }
               </span>
             }
@@ -146,8 +142,4 @@ export class UserListItemComponent {
   readonly visitCnt = input<number | null>(null);
 
   readonly initials = computed(() => this.name().slice(0, 2));
-
-  protected relativeTimeLabel(ts: number): string {
-    return relativeTime(ts);
-  }
 }
