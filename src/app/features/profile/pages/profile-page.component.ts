@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input, signal } from '@angular/core';
 import { Tabs, TabList, Tab, TabPanel, TabContent } from '@angular/aria/tabs';
 import { ProfileStore } from '../store/profile.store';
 import { ProfileHeaderComponent } from '../ui/profile-header';
@@ -6,6 +6,7 @@ import { ProfileStatsBarComponent } from '../ui/profile-stats-bar';
 import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
 import { BlockedListComponent } from '../ui/blocked-list';
 import { ButtonComponent } from '@shared/ui/button/button.component';
+import { ProfileBundleResponse } from '../models/profile.model';
 
 type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
 
@@ -310,9 +311,19 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
 export class ProfilePageComponent {
   protected readonly store = inject(ProfileStore);
 
+  /**
+   * Bundle prefetched by the route resolver (set by `withComponentInputBinding()`
+   * in `app.config.ts`). Null if the user is not logged in or upstream returned
+   * a slow-but-eventually-successful response after the route activated. The page
+   * seeds the store with this value in the constructor so the first render shows
+   * prefetched data instead of the header skeleton.
+   */
+  readonly bundle = input<ProfileBundleResponse | null>(null);
+
   protected readonly activeTab = signal<ProfileTab>('followers');
 
   constructor() {
+    this.store.seedBundle(this.bundle());
     this.onTabChange(this.activeTab());
   }
 

@@ -30,6 +30,20 @@ export class ProfileStore {
     defaultValue: null,
   });
 
+  /**
+   * Seeds the bundle from a value the route resolver prefetched in parallel with
+   * the lazy chunk download. Called by the page component after construction —
+   * `rxResource` `defaultValue` is captured at field-initializer time (too early
+   * for the resolver's value), so the page reaches into the store to inject the
+   * prefetched value as the new baseline. Harmless if called twice (the resource
+   * will just re-resolve with the same value).
+   */
+  seedBundle(value: ProfileBundleResponse | null): void {
+    if (value !== null) {
+      this.bundleRef.set(value);
+    }
+  }
+
   readonly bundle = this.bundleRef.value;
   readonly userInfo = computed(() => this.bundle()?.userInfo ?? null);
   readonly stats = computed(() => this.bundle()?.stats ?? null);

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { ErrorPageComponent } from '@core/error/error-page.component';
+import { profileBundleResolver } from './features/profile/data-access/profile-bundle.resolver';
 
 export const routes: Routes = [
   {
@@ -24,6 +25,11 @@ export const routes: Routes = [
     title: 'Profile',
     loadComponent: () =>
       import('./features/profile').then((m) => m.ProfilePageComponent),
+    /**
+     * Prefetch the bundle in parallel with the lazy chunk download. See
+     * `profile-bundle.resolver.ts` for the rationale.
+     */
+    resolve: { bundle: profileBundleResolver },
   },
   {
     path: 'room',
