@@ -63,12 +63,6 @@ export const appConfig: ApplicationConfig = {
             store.add(message === undefined ? { type, title } : { type, title, message }),
           notifyUserEvent: (params: Parameters<NotificationReporter['notifyUserEvent']>[0]) =>
             store.addUserEvent(params),
-          enrichUserInfo: (profile: Parameters<NotificationReporter['enrichUserInfo']>[0]) =>
-            store.enrichUserInfo({
-              userId: profile.userId,
-              nickname: profile.nickname,
-              headUrl: profile.details?.base?.headUrl ?? null,
-            }),
         };
       },
     },

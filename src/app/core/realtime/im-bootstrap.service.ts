@@ -19,16 +19,10 @@ export class ImBootstrapService {
   private readonly userInfo = inject(UserInfoService);
   /** Prefetches profiles for notification events (profile_visit/follow/gift/introduction) so
    *  UserInfoModal is warm by the time the user clicks — batched instead of one call per event,
-   *  since a burst of queued notifications can flush at once (e.g. app foregrounded).
-   *  Also backfills the just-created notification's nickname/avatar once enrichment
-   *  resolves — without that, upstream pushes that omit nickname (notably profile_visit,
-   *  where `event.nickname` is typed optional) would persist a notification whose
-   *  `message` reads "Someone visited your profile" forever, even though the BFF
-   *  subsequently returns the real nickname in /users/enrich-batch. */
-  private readonly enrichQueue = new EnrichBatchQueue(async (uids) => {
-    const profiles = await this.userInfo.enrichBatchAndCache(uids);
-    for (const profile of profiles) this.notifications.enrichUserInfo(profile);
-  });
+   *  since a burst of queued notifications can flush at once (e.g. app foregrounded). */
+  private readonly enrichQueue = new EnrichBatchQueue((uids) =>
+    this.userInfo.enrichBatchAndCache(uids).then(() => undefined),
+  );
 
   constructor() {
     effect(() => {
