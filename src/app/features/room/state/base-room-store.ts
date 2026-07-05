@@ -7,6 +7,7 @@ import { UserRole } from '@core/models/user-role';
 import { RtcInfo, RoomLevelInfo } from '../data/room-model';
 import { WATCH_LIMIT_NON_VIP_CODE, AREA_NOT_OPEN_CODE, LIVE_BANNED_CODE } from '@core/models/api-error';
 import { ToastService } from '@core/services/toast.service';
+import { ActiveCallStore } from '@store/active-call.store';
 import { VipLimitDialogComponent, VipLimitChoice } from '../ui/vip-limit-dialog';
 import { RegionBlockDialogComponent, RegionBlockChoice } from '../ui/region-block-dialog';
 
@@ -29,6 +30,7 @@ export abstract class BaseRoomStore {
   protected readonly api = inject(RoomApi);
   private readonly toast = inject(ToastService);
   private readonly dialog = inject(Dialog);
+  protected readonly activeCallStore = inject(ActiveCallStore);
 
   private readonly _cname = signal<string | null>(null);
   private readonly _busiType = signal<number>(0);
@@ -77,6 +79,27 @@ export abstract class BaseRoomStore {
   }
 
   protected abstract resetMediaState(): void;
+
+  /**
+   * Central chokepoint for the minimize→restore round-trip: if {@code cname} matches the
+   * snapshot in {@code activeCallStore}, this is a restore — returns {@code true} and
+   * has already restored {@code _isVisible} from the snapshot. Callers must skip their
+   * own {@link joinRoom} call in that case, so {@code joinRoom}'s {@code _isVisible.set}
+   * doesn't clobber the restored state. Returns {@code false} for a fresh join.
+   * <p>
+   * Both voice and video room pages funnel through this single method, so the snapshot
+   * semantics can never drift between the two again.
+   */
+  applyRestoreSnapshot(cname: string): boolean {
+    const snapshotCname = this.activeCallStore.cname();
+    if (snapshotCname !== cname) return false;
+    if (this.activeCallStore.isInvisible()) {
+      this._isVisible.set(false);
+    } else {
+      this._isVisible.set(true);
+    }
+    return true;
+  }
 
   async joinRoom(cname: string, busiType: number, visible = true): Promise<void> {
     this._cname.set(cname);
@@ -154,7 +177,8 @@ export abstract class BaseRoomStore {
     if (!this._isConnected()) return;
     const cname = this._cname();
     const busiType = this._busiType();
-    if (cname && this._isVisible()) {
+    const wasVisible = this._isVisible();
+    if (cname && wasVisible) {
       firstValueFrom(this.api.leaveRoom(cname, busiType)).then(
         () => undefined,
         (_err: unknown) => console.warn('[BaseRoomStore] leaveRoom failed:', _err),
@@ -166,7 +190,11 @@ export abstract class BaseRoomStore {
     this.resetMediaState();
     this._isHandRaised.set(false);
     this._isConnected.set(false);
-    this._isVisible.set(true);
+    // Reset to the leave-default (visible) only when the user was actually visible;
+    // an invisible leave shouldn't flip visibility for the next join to default-true
+    // and accidentally expose them. Next joinRoom() call sets _isVisible from its
+    // visible argument, which is the truth source.
+    if (wasVisible) this._isVisible.set(true);
     this._name.set('');
     this._topic.set('');
     this._userId.set(0);

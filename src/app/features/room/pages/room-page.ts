@@ -126,7 +126,10 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       display: grid;
       grid-template-areas: "header" "stage" "audience" "comments";
       grid-template-columns: 1fr;
-      grid-template-rows: auto minmax(0, 30cqh) fit-content(22cqh) minmax(0, 1fr);
+      /* Audience uses minmax(min-content, 22cqh) so a room with 2 audience
+         members gets its natural height (one row of avatars), not 22% of the
+         viewport wasted. The 22cqh cap still bounds busy rooms. */
+      grid-template-rows: auto minmax(0, 30cqh) minmax(min-content, 22cqh) minmax(0, 1fr);
       height: 100%;
       overflow: hidden;
     }
@@ -166,10 +169,14 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     }
 
     @container room-page (min-width: 480px) {
-      .room-layout { grid-template-rows: auto minmax(0, 34cqh) fit-content(22cqh) minmax(0, 1fr); }
+      .room-layout { grid-template-rows: auto minmax(0, 34cqh) minmax(min-content, 22cqh) minmax(0, 1fr); }
     }
 
-    @container room-page (min-width: 1024px) {
+    /* Two-column layout requires both enough width AND enough height —
+       landscape phones (e.g. iPhone in landscape, ~844×390) have the
+       width but not the height, and end up with the comments panel
+       squished to ~82px. Gate the desktop layout on a min-height too. */
+    @container room-page (min-width: 1024px) and (min-height: 500px) {
       .room-layout {
         grid-template-areas: "header comments" "stage comments" "audience comments";
         grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
@@ -216,14 +223,10 @@ export class RoomPageComponent extends RoomPageBase {
   }
 
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
-    // eslint-disable-next-line no-console
-    console.log('[visibility-trace] voice doEnterRoom: cname=', cname, 'urlVisible=', this.visible(), 'activeCallStore.cname=', this.activeCallStore.cname(), 'isInvisible=', this.activeCallStore.isInvisible(), 'minimized=', this.activeCallStore.minimized());
     const visible = this.visible();
     this.audienceStore.setBusiType(busiType);
 
-    const isRestore = this.activeCallStore.cname() === cname;
-    // eslint-disable-next-line no-console
-    console.log('[visibility-trace] voice isRestore=', isRestore);
+    const isRestore = this.roomStore.applyRestoreSnapshot(cname);
     if (this.activeCallStore.minimized() && !isRestore) {
       await this.rcs.leave().catch(() => {});
       this.activeCallStore.clear();
@@ -231,8 +234,6 @@ export class RoomPageComponent extends RoomPageBase {
 
     if (!isRestore) {
       try {
-        // eslint-disable-next-line no-console
-        console.log('[visibility-trace] voice calling joinRoom with visible=', visible);
         await this.roomStore.joinRoom(cname, busiType, visible);
       } catch (err) {
         if (err instanceof JoinCancelledError) {
@@ -281,13 +282,7 @@ export class RoomPageComponent extends RoomPageBase {
 
     if (isRestore) {
       this.roomStore.setMicOn(this.activeCallStore.isMicOn());
-      // _isVisible usually survives the minimize→restore round-trip because the voice path
-      // skips joinRoom() on restore, but restore it from the snapshot anyway as defense-in-depth
-      // — a stray `_isVisible.set(true)` anywhere else (e.g. a future refresh path) can't
-      // silently flip the user back to visible.
-      // eslint-disable-next-line no-console
-      console.log('[visibility-trace] voice restore setVisibility=', !this.activeCallStore.isInvisible());
-      this.roomStore.setVisibility(!this.activeCallStore.isInvisible());
+      // _isVisible was already restored from the snapshot by applyRestoreSnapshot() above.
     }
 
     const isVisible = this.roomStore.isVisible();
@@ -302,8 +297,6 @@ export class RoomPageComponent extends RoomPageBase {
     if (isVisible) this.audienceStore.setCname(cname);
     this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
     this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
-    // eslint-disable-next-line no-console
-    console.log('[visibility-trace] voice post-bundle: isVisible=', isVisible, 'isRestore=', isRestore, 'selfUid=', this.roomStore.userId(), 'audience contains self?', (audience?.list ?? []).some((u: { userId: number }) => u.userId === this.roomStore.userId()));
     this.commentsStore.updateComments([...(comments?.items ?? [])]);
 
     this.rtmStore.setCurrentUid(uid);
@@ -326,8 +319,6 @@ export class RoomPageComponent extends RoomPageBase {
     }
 
     if (isRestore) {
-      // eslint-disable-next-line no-console
-      console.log('[visibility-trace] voice restore complete, clearing activeCallStore. final isVisible=', this.roomStore.isVisible());
       this.activeCallStore.clear();
     }
   }
@@ -361,6 +352,8 @@ export class RoomPageComponent extends RoomPageBase {
     this.stageStore.reset();
     this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
     this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    // makeVisible only runs from the explicit "go visible" toggle, never from a
+    // minimize→restore. Safe to clear the snapshot's isInvisible here.
     this.activeCallStore.setInvisible(false);
     this.toast.success('You are now visible');
   }

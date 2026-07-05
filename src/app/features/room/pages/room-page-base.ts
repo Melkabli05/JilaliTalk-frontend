@@ -156,8 +156,6 @@ export abstract class RoomPageBase {
       this._destroying.set(true);
       this.typingPruneSub?.unsubscribe();
       const matchingActiveCall = this.activeCallStore.cname() !== null && this.activeCallStore.cname() === this.roomStore.cname();
-      // eslint-disable-next-line no-console
-      console.log('[visibility-trace] RoomPage destroy: matchingActiveCall=', matchingActiveCall, 'activeCallStore.cname=', this.activeCallStore.cname(), 'roomStore.cname=', this.roomStore.cname());
       if (matchingActiveCall) {
         return;
       }
@@ -300,14 +298,8 @@ export abstract class RoomPageBase {
   protected abstract makeVisible(cname: string, busiType: number): Promise<void>;
 
   protected async makeInvisible(cname: string, busiType: number): Promise<void> {
-    // eslint-disable-next-line no-console
-    console.log('[visibility-trace] makeInvisible start: cname=', cname, 'busiType=', busiType);
     await firstValueFrom(this.api.leaveRoom(cname, busiType));
-    // eslint-disable-next-line no-console
-    console.log('[visibility-trace] makeInvisible leaveRoom OK, going invisible locally');
     await this.goInvisibleLocally(cname, busiType);
-    // eslint-disable-next-line no-console
-    console.log('[visibility-trace] makeInvisible done: isVisible=', this.roomStore.isVisible(), 'activeCallStore.isInvisible=', this.activeCallStore.isInvisible());
     this.toast.info('You are now invisible');
   }
 
@@ -463,16 +455,12 @@ export abstract class RoomPageBase {
 
   /** Local-only side effects of becoming invisible — no roster leave/join REST call. */
   protected async goInvisibleLocally(cname: string, busiType: number): Promise<void> {
-    // eslint-disable-next-line no-console
-    console.log('[visibility-trace] goInvisibleLocally start');
     this.roomStore.setVisibility(false);
     this.syncVisibilityToUrl(false);
     this.activeCallStore.setInvisible(true);
     this.stageStore.reset();
     await this.rcs.stopAudio();
     this.bffWs.connect(cname, 0, busiType, null);
-    // eslint-disable-next-line no-console
-    console.log('[visibility-trace] goInvisibleLocally done: isVisible=', this.roomStore.isVisible());
   }
 
   private async handleKickedFromRoom(managerName: string): Promise<void> {
@@ -511,8 +499,6 @@ export abstract class RoomPageBase {
   onMinimize(): void {
     const cname = this.roomStore.cname();
     if (!cname) return;
-    // eslint-disable-next-line no-console
-    console.log('[visibility-trace] onMinimize: isVisible=', this.roomStore.isVisible(), '→ snapshot isInvisible=', !this.roomStore.isVisible(), 'cname=', cname);
     this.activeCallStore.minimize(
       cname,
       this.roomStore.busiType(),
