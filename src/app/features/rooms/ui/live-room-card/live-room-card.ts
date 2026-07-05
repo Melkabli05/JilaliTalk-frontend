@@ -26,6 +26,7 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
       class="live-card"
       tabindex="0"
       [attr.aria-label]="'Join live room ' + room().channel.name + ' hosted by ' + room().hostUser.nickname"
+      (click)="handleJoin()"
       (keydown.enter)="handleJoin()"
       (keydown.space)="handleJoin()"
     >

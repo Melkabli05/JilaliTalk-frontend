@@ -18,6 +18,7 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
       class="room-card"
       tabindex="0"
       [attr.aria-label]="'Join room ' + room().channel.name + ' hosted by ' + room().hostUser.nickname"
+      (click)="handleJoin()"
       (keydown.enter)="handleJoin()"
       (keydown.space)="handleJoin()"
     >
