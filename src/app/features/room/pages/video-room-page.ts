@@ -15,7 +15,7 @@ import { SigninPanelComponent } from '../feature/signin/signin-panel';
 import { GiftsStore } from '../feature/gifts/gifts-store';
 import { InRoomRtmStore } from '../feature/in-room-rtm/in-room-rtm-store';
 import { GoodieStore } from '../feature/goodie-bag/goodie-store';
-import { StageUser, AudienceUser, SendCommentPayload, LiveRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../data/room-model';
+import { StageUser, AudienceUser, LiveRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../data/room-model';
 import { SendEvent } from '../feature/comments/comment-input';
 import { environment } from '@env/environment';
 import { RoomHeaderComponent } from '../feature/room-header';
@@ -363,29 +363,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
     }
   }
 
-  override async onToggleInvisible(): Promise<void> {
-    const cname = this.roomStore.cname();
-    const busiType = this.busiType();
-    if (!cname || this.togglingVisibility()) return;
-    this.togglingVisibility.set(true);
-    try {
-      if (this.roomStore.isVisible()) {
-        await this.makeInvisible(cname, busiType);
-      } else {
-        await this.makeVisible(cname, busiType);
-      }
-    } finally {
-      this.togglingVisibility.set(false);
-    }
-  }
-
-  private async makeInvisible(cname: string, busiType: number): Promise<void> {
-    await firstValueFrom(this.api.leaveRoom(cname, busiType));
-    await this.goInvisibleLocally(cname, busiType);
-    this.toast.info('You are now invisible');
-  }
-
-  private async makeVisible(cname: string, busiType: number): Promise<void> {
+  protected override async makeVisible(cname: string, busiType: number): Promise<void> {
     let liveInfo: LiveRoomInfo;
     let stage: StageUsersResponse | undefined;
     let audience: AudienceUsersResponse | undefined;
@@ -473,31 +451,10 @@ export class VideoRoomPageComponent extends RoomPageBase {
   }
 
   override onToggleHand(): void {
-    if (!this.roomStore.isVisible()) {
-      this.toast.info('You are invisible — rejoin visibly to raise your hand');
-      return;
-    }
-    if (this.handToggleBusy()) return;
     const cname = this.roomStore.cname();
     const busiType = this.busiType();
     if (!cname) return;
-
-    const wasRaised = this.roomStore.isHandRaised();
-    const raised = !wasRaised;
-    this.roomStore.setHandRaised(raised);
-    this.handToggleBusy.set(true);
-
-    this.api.raiseHand(cname, busiType, raised ? 1 : 2).pipe(
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe({
-      next: () => this.handToggleBusy.set(false),
-      error: (err: unknown) => {
-        console.error('[video-room] raiseHand failed', err);
-        this.toast.error(httpErrorMessage(err, 'Failed to update hand'));
-        this.roomStore.setHandRaised(wasRaised);
-        this.handToggleBusy.set(false);
-      },
-    });
+    this.raiseOrLowerHand(cname, busiType);
   }
 
   override onSendComment(event: SendEvent): void {
@@ -505,26 +462,8 @@ export class VideoRoomPageComponent extends RoomPageBase {
     if (!cname) return;
     const nickname = this.roomStore.nickname() || 'Anonymous';
     const headUrl = this.roomStore.headUrl() || null;
-    const nationality = this.roomStore.nationality() || null;
 
-    const payload: SendCommentPayload = {
-      cname,
-      busiType: this.roomStore.busiType(),
-      nickname,
-      headUrl,
-      nationality,
-      role: this.roomStore.myRole(),
-      text: event.text,
-      replyInfo: event.replyInfo
-        ? {
-            msgId: event.replyInfo.msgId,
-            fromId: event.replyInfo.fromId,
-            fromNickname: event.replyInfo.nickname,
-            text: event.replyInfo.text,
-            msgType: 'text',
-          }
-        : null,
-    };
+    const payload = this.buildCommentPayload(event);
 
     this.api.sendComment(payload)
       .pipe(takeUntilDestroyed(this.destroyRef))

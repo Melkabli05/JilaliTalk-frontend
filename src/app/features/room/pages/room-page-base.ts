@@ -23,6 +23,7 @@ import { handleRealtimeEvent } from '@features/room/data/handle-realtime-event.u
 import { buildKickedFromRoomOutcome, resolveManagerIdentity } from '@features/room/data/kicked-from-room.util';
 import { GhostAudienceInputs, fetchMissingGhostInfo, buildAudienceWithGhosts, buildGhostAudienceInputs } from '@features/room/data/ghost-audience.util';
 import { buildModActionDefs } from '@features/room/data/mod-action-defs';
+import { buildSendCommentPayload } from '@features/room/data/send-comment-payload.util';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
 import { UserActionModalData } from '../feature/moderation/user-action-modal';
 import { ManagersModalComponent } from '../feature/moderation/managers-modal';
@@ -272,7 +273,80 @@ export abstract class RoomPageBase {
     this.showSignin.set(true);
   }
 
-  async onToggleInvisible(): Promise<void> {}
+  async onToggleInvisible(): Promise<void> {
+    const cname = this.roomStore.cname();
+    const busiType = this.busiType();
+    if (!cname || this.togglingVisibility()) return;
+    this.togglingVisibility.set(true);
+    try {
+      if (this.roomStore.isVisible()) {
+        await this.makeInvisible(cname, busiType);
+      } else {
+        await this.makeVisible(cname, busiType);
+      }
+    } finally {
+      this.togglingVisibility.set(false);
+    }
+  }
+
+  /**
+   * Default implementation for the "make visible" branch — voice and video
+   * each override this because they call fetchJoinBundle with their own
+   * info type. Kept abstract so the variants stay explicit at the call site.
+   */
+  protected abstract makeVisible(cname: string, busiType: number): Promise<void>;
+
+  protected async makeInvisible(cname: string, busiType: number): Promise<void> {
+    await firstValueFrom(this.api.leaveRoom(cname, busiType));
+    await this.goInvisibleLocally(cname, busiType);
+    this.toast.info('You are now invisible');
+  }
+
+  /**
+   * Shared "raise/lower hand" branch — handles the case where the user is a
+   * regular audience member (not on stage, not a moderator). Voice's
+   * onToggleHand calls this after handling its stage-leave / mod-join-stage
+   * cases; video's onToggleHand is just this.
+   */
+  protected raiseOrLowerHand(cname: string, busiType: number): void {
+    if (!this.roomStore.isVisible()) {
+      this.toast.info('You are invisible — rejoin visibly to raise your hand');
+      return;
+    }
+    if (this.handToggleBusy()) return;
+
+    const wasRaised = this.roomStore.isHandRaised();
+    const raised = !wasRaised;
+    this.roomStore.setHandRaised(raised);
+    this.handToggleBusy.set(true);
+
+    this.api.raiseHand(cname, busiType, raised ? 1 : 2).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: () => this.handToggleBusy.set(false),
+      error: (err: unknown) => {
+        console.error('[room] raiseHand failed', err);
+        this.toast.error(`Failed to update hand: ${err instanceof Error ? err.message : String(err)}`);
+        this.roomStore.setHandRaised(wasRaised);
+        this.handToggleBusy.set(false);
+      },
+    });
+  }
+
+  /** Builds the API payload for sendComment from current room store + event. */
+  protected buildCommentPayload(event: SendEvent): import('../data/room-model').SendCommentPayload {
+    return buildSendCommentPayload(
+      {
+        cname: this.roomStore.cname(),
+        busiType: this.roomStore.busiType(),
+        nickname: this.roomStore.nickname(),
+        headUrl: this.roomStore.headUrl(),
+        nationality: this.roomStore.nationality(),
+        role: this.roomStore.myRole(),
+      },
+      event,
+    );
+  }
 
   /**
    * Keeps the URL ?visible= query param in sync with the actual visibility state

@@ -13,7 +13,7 @@ import { SigninPanelComponent } from '../feature/signin/signin-panel';
 import { GiftsStore } from '../feature/gifts/gifts-store';
 import { InRoomRtmStore } from '../feature/in-room-rtm/in-room-rtm-store';
 import { GoodieStore } from '../feature/goodie-bag/goodie-store';
-import { StageUser, SendCommentPayload, VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../data/room-model';
+import { StageUser, VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../data/room-model';
 import { UserRole } from '@core/models/user-role';
 import { SendEvent } from '../feature/comments/comment-input';
 import { environment } from '@env/environment';
@@ -318,29 +318,7 @@ export class RoomPageComponent extends RoomPageBase {
     }
   }
 
-  override async onToggleInvisible(): Promise<void> {
-    const cname = this.roomStore.cname();
-    const busiType = this.busiType();
-    if (!cname || this.togglingVisibility()) return;
-    this.togglingVisibility.set(true);
-    try {
-      if (this.roomStore.isVisible()) {
-        await this.makeInvisible(cname, busiType);
-      } else {
-        await this.makeVisible(cname, busiType);
-      }
-    } finally {
-      this.togglingVisibility.set(false);
-    }
-  }
-
-  private async makeInvisible(cname: string, busiType: number): Promise<void> {
-    await firstValueFrom(this.api.leaveRoom(cname, busiType));
-    await this.goInvisibleLocally(cname, busiType);
-    this.toast.info('You are now invisible');
-  }
-
-  private async makeVisible(cname: string, busiType: number): Promise<void> {
+  protected override async makeVisible(cname: string, busiType: number): Promise<void> {
     const [bundleResult, joinResult] = await Promise.allSettled([
       firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType)),
       firstValueFrom(this.api.joinRoom(cname, busiType)),
@@ -460,11 +438,6 @@ export class RoomPageComponent extends RoomPageBase {
 
 
   override onToggleHand(): void {
-    if (!this.roomStore.isVisible()) {
-      this.toast.info('You are invisible — rejoin visibly to raise your hand');
-      return;
-    }
-    if (this.handToggleBusy()) return;
     const cname = this.roomStore.cname();
     const busiType = this.busiType();
     if (!cname) return;
@@ -473,12 +446,9 @@ export class RoomPageComponent extends RoomPageBase {
     const onStage = this.stageStore.isOnStage(uid);
     const isHost = this.roomStore.isHost();
     const isMod = this.roomStore.isModerator();
-    const wasRaised = this.roomStore.isHandRaised();
-    this.handToggleBusy.set(true);
 
     if (isHost) {
       this.toast.info('The host cannot leave the stage');
-      this.handToggleBusy.set(false);
       return;
     }
 
@@ -486,6 +456,7 @@ export class RoomPageComponent extends RoomPageBase {
       void this.rcs.stopAudio().catch(() => {});
       const stagedUser = this.stageStore.getStageUser(uid);
       this.stageStore.removeStageUser(uid);
+      this.handToggleBusy.set(true);
       this.api.leaveStage(cname, busiType).pipe(
         takeUntilDestroyed(this.destroyRef),
       ).subscribe({
@@ -520,6 +491,7 @@ export class RoomPageComponent extends RoomPageBase {
         isAiUser: false,
       };
       this.stageStore.addStageUser(myUser);
+      this.handToggleBusy.set(true);
       this.api.joinStage(cname, busiType).pipe(
         takeUntilDestroyed(this.destroyRef),
       ).subscribe({
@@ -538,19 +510,7 @@ export class RoomPageComponent extends RoomPageBase {
       return;
     }
 
-    const raised = !wasRaised;
-    this.roomStore.setHandRaised(raised);
-    this.api.raiseHand(cname, busiType, raised ? 1 : 2).pipe(
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe({
-      next: () => this.handToggleBusy.set(false),
-      error: (err: unknown) => {
-        console.error('[room] raiseHand failed', err);
-        this.toast.error(httpErrorMessage(err, 'Failed to update hand'));
-        this.roomStore.setHandRaised(wasRaised);
-        this.handToggleBusy.set(false);
-      },
-    });
+    this.raiseOrLowerHand(cname, busiType);
   }
 
 
@@ -560,36 +520,19 @@ export class RoomPageComponent extends RoomPageBase {
     const nickname = this.roomStore.nickname() || 'Anonymous';
     const headUrl = this.roomStore.headUrl() || null;
     const nationality = this.roomStore.nationality() || null;
+    const role = this.roomStore.myRole();
 
-    const payload: SendCommentPayload = {
-      cname,
-      busiType: this.roomStore.busiType(),
-      nickname,
-      headUrl,
-      nationality,
-      role: this.roomStore.myRole() as UserRole,
-      text: event.text,
-      replyInfo: event.replyInfo
-        ? {
-            msgId: event.replyInfo.msgId,
-            fromId: event.replyInfo.fromId,
-            fromNickname: event.replyInfo.nickname,
-            text: event.replyInfo.text,
-            msgType: 'text',
-          }
-        : null,
-    };
+    const payload = this.buildCommentPayload(event);
 
-    const selfUid = this.roomStore.userId();
     this.commentsStore.addComment({
-      _id: `local-${selfUid}-${Date.now()}`,
+      _id: `local-${this.roomStore.userId()}-${Date.now()}`,
       createdAtMs: Date.now(),
       updatedAtMs: Date.now(),
-      userId: selfUid,
+      userId: this.roomStore.userId(),
       nickname,
       headUrl,
       nationality,
-      role: this.roomStore.myRole() as UserRole,
+      role: role as UserRole,
       vipType: 0,
       msg: {
         text: { text: event.text },
