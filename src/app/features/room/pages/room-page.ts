@@ -220,10 +220,14 @@ export class RoomPageComponent extends RoomPageBase {
   }
 
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
+    // eslint-disable-next-line no-console
+    console.log('[visibility-trace] voice doEnterRoom: cname=', cname, 'urlVisible=', this.visible(), 'activeCallStore.cname=', this.activeCallStore.cname(), 'isInvisible=', this.activeCallStore.isInvisible(), 'minimized=', this.activeCallStore.minimized());
     const visible = this.visible();
     this.audienceStore.setBusiType(busiType);
 
     const isRestore = this.activeCallStore.cname() === cname;
+    // eslint-disable-next-line no-console
+    console.log('[visibility-trace] voice isRestore=', isRestore);
     if (this.activeCallStore.minimized() && !isRestore) {
       await this.rcs.leave().catch(() => {});
       this.activeCallStore.clear();
@@ -231,6 +235,8 @@ export class RoomPageComponent extends RoomPageBase {
 
     if (!isRestore) {
       try {
+        // eslint-disable-next-line no-console
+        console.log('[visibility-trace] voice calling joinRoom with visible=', visible);
         await this.roomStore.joinRoom(cname, busiType, visible);
       } catch (err) {
         if (err instanceof JoinCancelledError) {
@@ -283,6 +289,8 @@ export class RoomPageComponent extends RoomPageBase {
       // skips joinRoom() on restore, but restore it from the snapshot anyway as defense-in-depth
       // — a stray `_isVisible.set(true)` anywhere else (e.g. a future refresh path) can't
       // silently flip the user back to visible.
+      // eslint-disable-next-line no-console
+      console.log('[visibility-trace] voice restore setVisibility=', !this.activeCallStore.isInvisible());
       this.roomStore.setVisibility(!this.activeCallStore.isInvisible());
     }
 
@@ -298,6 +306,8 @@ export class RoomPageComponent extends RoomPageBase {
     if (isVisible) this.audienceStore.setCname(cname);
     this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
     this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    // eslint-disable-next-line no-console
+    console.log('[visibility-trace] voice post-bundle: isVisible=', isVisible, 'isRestore=', isRestore, 'selfUid=', this.roomStore.userId(), 'audience contains self?', (audience?.list ?? []).some((u: { userId: number }) => u.userId === this.roomStore.userId()));
     this.commentsStore.updateComments([...(comments?.items ?? [])]);
 
     this.rtmStore.setCurrentUid(uid);
@@ -320,6 +330,8 @@ export class RoomPageComponent extends RoomPageBase {
     }
 
     if (isRestore) {
+      // eslint-disable-next-line no-console
+      console.log('[visibility-trace] voice restore complete, clearing activeCallStore. final isVisible=', this.roomStore.isVisible());
       this.activeCallStore.clear();
     }
   }

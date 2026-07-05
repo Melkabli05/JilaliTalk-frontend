@@ -284,16 +284,26 @@ export class VideoRoomPageComponent extends RoomPageBase {
   }
 
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
+    // eslint-disable-next-line no-console
+    console.log('[visibility-trace] video doEnterRoom: cname=', cname, 'urlVisible=', this.visible(), 'activeCallStore.cname=', this.activeCallStore.cname(), 'isInvisible=', this.activeCallStore.isInvisible(), 'minimized=', this.activeCallStore.minimized());
     const isRestore = this.activeCallStore.cname() === cname;
+    // eslint-disable-next-line no-console
+    console.log('[visibility-trace] video isRestore=', isRestore);
     // On restore, the URL doesn't carry ?visible=false (minimize drops it), so the routed input
     // would default to true and joinRoom's `_isVisible.set(visible)` would wipe the user's
     // invisible state. Skip joinRoom on restore (matches voice-room-page's pattern) and restore
     // visibility from the snapshot taken at minimize time.
     const visible = isRestore ? !this.activeCallStore.isInvisible() : this.visible();
-    if (isRestore) this.roomStore.setVisibility(visible);
+    if (isRestore) {
+      // eslint-disable-next-line no-console
+      console.log('[visibility-trace] video restore setVisibility=', visible);
+      this.roomStore.setVisibility(visible);
+    }
     this.audienceStore.setBusiType(busiType);
     if (!isRestore) {
       try {
+        // eslint-disable-next-line no-console
+        console.log('[visibility-trace] video calling joinRoom with visible=', visible);
         await this.roomStore.joinRoom(cname, busiType, visible);
       } catch (err) {
         if (err instanceof JoinCancelledError) {
@@ -351,6 +361,8 @@ export class VideoRoomPageComponent extends RoomPageBase {
     if (isVisible) this.audienceStore.setCname(actualCname);
     this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
     this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    // eslint-disable-next-line no-console
+    console.log('[visibility-trace] video post-bundle: isVisible=', isVisible, 'isRestore=', isRestore, 'selfUid=', this.roomStore.userId(), 'audience contains self?', (audience?.list ?? []).some((u: { userId: number }) => u.userId === this.roomStore.userId()));
     this.commentsStore.updateComments([...(comments?.items ?? [])]);
 
 
