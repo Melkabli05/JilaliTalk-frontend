@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed, signal, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { LucideUsers, LucideCrown, LucideEye, LucideEyeOff } from '@lucide/angular';
 import { ChannelListItem } from '../../data/rooms-model';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
@@ -81,7 +82,7 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
             <div class="card-actions">
         <app-button
           variant="primary"
-          size="sm"
+          [size]="buttonSize()"
           (click)="handleJoinVisible($event)"
           [attr.aria-label]="'Join ' + room().channel.name + ' as visible'"
         >
@@ -90,7 +91,7 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
         </app-button>
         <app-button
           variant="soft-warm"
-          size="sm"
+          [size]="buttonSize()"
           (click)="handleJoinInvisible($event)"
           [attr.aria-label]="'Join ' + room().channel.name + ' as invisible'"
         >
@@ -297,6 +298,26 @@ export class RoomCardComponent {
   readonly joinRoom = output<{ room: ChannelListItem; visible: boolean }>();
 
   readonly visibleMembers = computed(() => this.room().users?.slice(0, 4) ?? []);
+
+  /** 'sm' (32px) is a fine touch target on desktop pointer input, but under
+   *  the ~44px Apple HIG/Material minimum on a touch screen — these two
+   *  buttons are the card's entire purpose, so bump to 'lg' (40px) on mobile. */
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isMobile = signal(false);
+  readonly buttonSize = computed<'sm' | 'lg'>(() => (this.isMobile() ? 'lg' : 'sm'));
+
+  constructor() {
+    if (isPlatformBrowser(this.platformId)) {
+      const mql = window.matchMedia('(max-width: 1023.98px)');
+      const apply = () => this.isMobile.set(mql.matches);
+      apply();
+      if ('addEventListener' in mql) {
+        mql.addEventListener('change', apply);
+      } else if ('addListener' in mql) {
+        (mql as unknown as { addListener: (cb: () => void) => void }).addListener(apply);
+      }
+    }
+  }
 
   handleJoin(): void {
     this.joinRoom.emit({ room: this.room(), visible: true });

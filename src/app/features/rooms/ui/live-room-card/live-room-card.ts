@@ -4,8 +4,11 @@ import {
   input,
   output,
   computed,
+  signal,
+  inject,
+  PLATFORM_ID,
 } from '@angular/core';
-import { NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage, isPlatformBrowser } from '@angular/common';
 import { LucideFlame, LucideUsers, LucideCrown, LucideEyeOff } from '@lucide/angular';
 import { ChannelListItem } from '../../data/rooms-model';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
@@ -110,7 +113,7 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
         <div class="card-actions">
           <app-button
             variant="primary"
-            size="sm"
+            [size]="buttonSize()"
             (click)="handleJoin($event)"
             [disabled]="room().channel.totalUserCount === 0"
             class="action-btn"
@@ -119,7 +122,7 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
           </app-button>
           <app-button
             variant="soft-warm"
-            size="sm"
+            [size]="buttonSize()"
             (click)="handleInvisibleJoin($event)"
             [disabled]="room().channel.totalUserCount === 0"
             aria-label="Join invisible"
@@ -423,6 +426,26 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
 export class LiveRoomCardComponent {
   readonly room = input.required<ChannelListItem>();
   readonly joinRoom = output<{ room: ChannelListItem; visible: boolean }>();
+
+  /** 'sm' (32px) is a fine touch target on desktop pointer input, but under
+   *  the ~44px Apple HIG/Material minimum on a touch screen — these two
+   *  buttons are the card's entire purpose, so bump to 'lg' (40px) on mobile. */
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isMobile = signal(false);
+  readonly buttonSize = computed<'sm' | 'lg'>(() => (this.isMobile() ? 'lg' : 'sm'));
+
+  constructor() {
+    if (isPlatformBrowser(this.platformId)) {
+      const mql = window.matchMedia('(max-width: 1023.98px)');
+      const apply = () => this.isMobile.set(mql.matches);
+      apply();
+      if ('addEventListener' in mql) {
+        mql.addEventListener('change', apply);
+      } else if ('addListener' in mql) {
+        (mql as unknown as { addListener: (cb: () => void) => void }).addListener(apply);
+      }
+    }
+  }
 
   heat = computed(() => this.room().channel.heatValue ?? 0);
 
