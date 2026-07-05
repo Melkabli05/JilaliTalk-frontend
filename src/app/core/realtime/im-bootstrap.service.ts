@@ -24,6 +24,11 @@ export class ImBootstrapService {
     this.userInfo.enrichBatchAndCache(uids).then(() => undefined),
   );
 
+  /** Read cursor into imSocket.events() — see that signal's doc for why this drains an
+   *  append-only log instead of reading a single "lastEvent" value (which could silently
+   *  skip an event coalesced away by the effect scheduler). */
+  private processedEventCount = 0;
+
   constructor() {
     effect(() => {
       if (this.auth.isAuthenticated()) {
@@ -34,8 +39,15 @@ export class ImBootstrapService {
     });
 
     effect(() => {
-      const event = this.imSocket.lastEvent();
-      if (event) this.handle(event);
+      const events = this.imSocket.events();
+      if (events.length < this.processedEventCount) {
+        // Log was reset (disconnect/reconnect) — start over from the beginning.
+        this.processedEventCount = 0;
+      }
+      for (const event of events.slice(this.processedEventCount)) {
+        this.handle(event);
+      }
+      this.processedEventCount = events.length;
     });
   }
 

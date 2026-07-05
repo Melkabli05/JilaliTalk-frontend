@@ -33,10 +33,21 @@ export class MessagesStore {
     [...this._convMap().values()].reduce((s, c) => s + c.unread, 0),
   );
 
+  /** Read cursor into imSocket.events() — see that signal's doc (im-socket.service.ts) for
+   *  why this drains an append-only log instead of reading a single "lastEvent" value. */
+  private processedEventCount = 0;
+
   constructor() {
     effect(() => {
-      const ev = this.imSocket.lastEvent();
-      if (ev) this.dispatch(ev);
+      const events = this.imSocket.events();
+      if (events.length < this.processedEventCount) {
+        // Log was reset (disconnect/reconnect) — start over from the beginning.
+        this.processedEventCount = 0;
+      }
+      for (const ev of events.slice(this.processedEventCount)) {
+        this.dispatch(ev);
+      }
+      this.processedEventCount = events.length;
     });
 
     effect(() => {

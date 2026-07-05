@@ -9,11 +9,23 @@ export type ImConnectionStatus = ConnectionStatus;
 @Injectable({ providedIn: 'root' })
 export class ImSocketService extends ReconnectingSocketBase {
   private readonly wsBaseUrl = inject(WS_BASE_URL);
-  private readonly _lastEvent = signal<ImEvent | null>(null);
+  /**
+   * Append-only log of every event received since the last connect/reset — replaces a
+   * single-slot "lastEvent" signal, which could silently drop an event whenever two WS
+   * messages arrived close enough together that Angular's effect scheduler coalesced both
+   * signal writes into one flush (a plain signal only ever exposes its latest value, so the
+   * intermediate one was never seen by anyone). Consumers track their own read cursor (see
+   * im-bootstrap.service.ts / messages.store.ts) so multiple independent subscribers can each
+   * see every event exactly once without racing each other to "consume" a shared queue.
+   * Not trimmed during a connection's lifetime — this is a personal IM channel (DMs, profile
+   * visits, follows), not a high-frequency firehose, so unbounded growth for the life of one
+   * connection is an acceptable tradeoff; disconnect/reconnect resets it to [].
+   */
+  private readonly _events = signal<readonly ImEvent[]>([]);
   private readonly _status = signal<ImConnectionStatus>('disconnected');
   private wantsConnection = false;
 
-  readonly lastEvent = this._lastEvent.asReadonly();
+  readonly events = this._events.asReadonly();
   readonly status = this._status.asReadonly();
 
   isConnected = (): boolean => this.sock?.readyState === WebSocket.OPEN;
@@ -37,11 +49,11 @@ export class ImSocketService extends ReconnectingSocketBase {
     this._status.set('disconnected');
     this.teardownSocket();
     this.sock = null;
-    this._lastEvent.set(null);
+    this._events.set([]);
   }
 
   override onGiveUpLastEvent(): void {
-    this._lastEvent.set(null);
+    this._events.set([]);
   }
 
   protected override shouldRetry(): boolean {
@@ -57,6 +69,6 @@ export class ImSocketService extends ReconnectingSocketBase {
     if (parsed.type === 'connection-state') {
       this._status.set(parsed.state);
     }
-    this._lastEvent.set(parsed);
+    this._events.update((events) => [...events, parsed]);
   }
 }
