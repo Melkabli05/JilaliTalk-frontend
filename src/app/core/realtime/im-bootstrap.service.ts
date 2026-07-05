@@ -46,18 +46,16 @@ export class ImBootstrapService {
   private handle(event: ImEvent): void {
     switch (event.type) {
       case 'profile_visit': {
-        const uid = Number(event.visitorUserId);
-        if (!Number.isFinite(uid)) break;
-        // Prefetch profile so UserInfoModal is populated by the time the user clicks the notification
-        this.enrichQueue.queue(uid);
+        // BFF enriches nickname/headUrl at the wire level; "Someone" remains a defensive fallback
+        // for the rare case the BFF enrichment lookup failed and the raw event still slipped through.
         const displayName = event.nickname?.trim() || 'Someone';
-        this.notifications.notifyUserEvent({
+        this.notifyUserLinked({
           type: 'info',
           title: 'Profile visit',
           message: `${displayName} visited your profile`,
-          userId: uid,
-          avatarUrl: event.headUrl ?? null,
+          uid: event.visitorUserId,
           nickname: event.nickname ?? null,
+          avatarUrl: event.headUrl ?? null,
         });
         break;
       }
@@ -112,21 +110,17 @@ export class ImBootstrapService {
         this.toast.success('You can speak now');
         break;
       case 'follow': {
-        const uid = Number(event.userId);
-        const message = event.status === 2 ? `${event.nickname} followed you back` : `${event.nickname} followed you`;
-        if (Number.isFinite(uid) && uid > 0) {
-          this.enrichQueue.queue(uid);
-          this.notifications.notifyUserEvent({
-            type: 'info',
-            title: 'New follower',
-            message,
-            userId: uid,
-            avatarUrl: event.headUrl ?? null,
-            nickname: event.nickname,
-          });
-        } else {
-          this.notifications.notify('info', 'New follower', message);
-        }
+        const message = event.status === 2
+          ? `${event.nickname} followed you back`
+          : `${event.nickname} followed you`;
+        this.notifyUserLinked({
+          type: 'info',
+          title: 'New follower',
+          message,
+          uid: event.userId,
+          nickname: event.nickname,
+          avatarUrl: event.headUrl ?? null,
+        });
         break;
       }
       case 'voice_room_shared':
@@ -141,42 +135,26 @@ export class ImBootstrapService {
       case 'image_message':
         this.notifications.notify('info', 'New message', 'Sent you a photo');
         break;
-      case 'gift_message': {
-        const uid = Number(event.fromUserId);
-        const message = `${event.fromNickname} sent you a gift`;
-        if (Number.isFinite(uid) && uid > 0) {
-          this.enrichQueue.queue(uid);
-          this.notifications.notifyUserEvent({
-            type: 'info',
-            title: 'Gift received',
-            message,
-            userId: uid,
-            avatarUrl: event.fromHeadUrl ?? null,
-            nickname: event.fromNickname,
-          });
-        } else {
-          this.notifications.notify('info', 'Gift received', message);
-        }
+      case 'gift_message':
+        this.notifyUserLinked({
+          type: 'info',
+          title: 'Gift received',
+          message: `${event.fromNickname} sent you a gift`,
+          uid: event.fromUserId,
+          nickname: event.fromNickname,
+          avatarUrl: event.fromHeadUrl ?? null,
+        });
         break;
-      }
-      case 'introduction_message': {
-        const uid = Number(event.fromUserId);
-        const message = `${event.fromNickname} sent you an introduction`;
-        if (Number.isFinite(uid) && uid > 0) {
-          this.enrichQueue.queue(uid);
-          this.notifications.notifyUserEvent({
-            type: 'info',
-            title: 'Introduction',
-            message,
-            userId: uid,
-            avatarUrl: event.fromHeadUrl ?? null,
-            nickname: event.fromNickname,
-          });
-        } else {
-          this.notifications.notify('info', 'Introduction', message);
-        }
+      case 'introduction_message':
+        this.notifyUserLinked({
+          type: 'info',
+          title: 'Introduction',
+          message: `${event.fromNickname} sent you an introduction`,
+          uid: event.fromUserId,
+          nickname: event.fromNickname,
+          avatarUrl: event.fromHeadUrl ?? null,
+        });
         break;
-      }
       case 'group_message':
         this.notifications.notify('info', `${event.roomName}`, `${event.senderName}: ${event.text}`);
         break;
@@ -194,6 +172,37 @@ export class ImBootstrapService {
         break;
       case 'connection-state':
         break;
+    }
+  }
+
+  /** Emits a user-linked notification when `uid` parses as a positive integer, otherwise falls
+   *  back to a plain notification (so the user still sees the event happened even without a
+   *  resolvable identity). Shared by profile_visit, follow, gift_message, and introduction_message
+   *  to deduplicate the parse/queue/fallback dance that was duplicated in each switch case.
+   *  Pre-warms the UserInfoService cache via the batched enrich queue so the click-through
+   *  UserInfoModal is populated by the time the user opens the notification — the queue already
+   *  coalesces a burst of realtime events into one /users/enrich-batch POST. */
+  private notifyUserLinked(params: {
+    type: 'info' | 'success' | 'warning' | 'error';
+    title: string;
+    message: string;
+    uid: string;
+    nickname: string | null;
+    avatarUrl: string | null;
+  }): void {
+    const uid = Number(params.uid);
+    if (Number.isFinite(uid) && uid > 0) {
+      this.enrichQueue.queue(uid);
+      this.notifications.notifyUserEvent({
+        type: params.type,
+        title: params.title,
+        message: params.message,
+        userId: uid,
+        avatarUrl: params.avatarUrl,
+        nickname: params.nickname,
+      });
+    } else {
+      this.notifications.notify(params.type, params.title, params.message);
     }
   }
 }
