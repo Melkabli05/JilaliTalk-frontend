@@ -126,10 +126,15 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       display: grid;
       grid-template-areas: "header" "stage" "audience" "comments";
       grid-template-columns: 1fr;
-      /* Audience uses minmax(min-content, 22cqh) so a room with 2 audience
-         members gets its natural height (one row of avatars), not 22% of the
-         viewport wasted. The 22cqh cap still bounds busy rooms. */
-      grid-template-rows: auto minmax(0, 30cqh) minmax(min-content, 22cqh) minmax(0, 1fr);
+      /* Audience uses fit-content(22cqh), not minmax(min-content, 22cqh):
+         minmax's growth limit is a plain length, so CSS Grid's Maximize
+         Tracks step spends available free space growing it straight to
+         22cqh regardless of actual content — collapsed on mobile or a
+         2-listener room still reserves a fixed 22% of the viewport as dead
+         space. fit-content()'s growth limit is min(max-content, 22cqh), so
+         the row only grows as far as its content actually needs, capped at
+         22cqh for busy rooms. */
+      grid-template-rows: auto minmax(0, 30cqh) fit-content(22cqh) minmax(0, 1fr);
       height: 100%;
       overflow: hidden;
     }
@@ -169,7 +174,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     }
 
     @container room-page (min-width: 480px) {
-      .room-layout { grid-template-rows: auto minmax(0, 34cqh) minmax(min-content, 22cqh) minmax(0, 1fr); }
+      .room-layout { grid-template-rows: auto minmax(0, 34cqh) fit-content(22cqh) minmax(0, 1fr); }
     }
 
     /* Two-column layout requires both enough width AND enough height —

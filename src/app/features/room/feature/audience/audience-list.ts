@@ -12,6 +12,9 @@ type ViewMode = 'grid' | 'list';
   selector: 'app-audience-list',
   imports: [AudienceUserComponent, LucideSearch, LucideX, LucideLayoutGrid, LucideList, LucideUsers, LucideChevronDown],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.is-collapsed]': 'collapsed()',
+  },
   template: `
     <div class="audience-list">
       <div class="audience-header">
@@ -174,6 +177,19 @@ type ViewMode = 'grid' | 'list';
       height: 100%;
       container-type: inline-size;
       container-name: audience-list;
+    }
+
+    /* Room-page's audience grid row is minmax(min-content, 22cqh) so a
+       collapsed (mobile) or lightly-populated list doesn't reserve a full
+       22cqh of blank space. But height: 100% above stretches this host to
+       fill whatever the row track resolved to — once collapsed drops the
+       body to 0 height, there's nothing left to size the row against except
+       that same 100%, so the browser falls back to the track's max (22cqh)
+       and leaves the difference as dead space below the header. Switching to
+       height: auto while collapsed lets the row shrink to min-content
+       (the header alone). */
+    :host.is-collapsed {
+      height: auto;
     }
 
     .audience-list {
