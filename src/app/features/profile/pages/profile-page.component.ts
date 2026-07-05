@@ -1,12 +1,16 @@
-import { Component, ChangeDetectionStrategy, inject, input, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { Tabs, TabList, Tab, TabPanel, TabContent } from '@angular/aria/tabs';
+import { Dialog } from '@angular/cdk/dialog';
 import { ProfileStore } from '../store/profile.store';
 import { ProfileHeaderComponent } from '../ui/profile-header';
 import { ProfileStatsBarComponent } from '../ui/profile-stats-bar';
 import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
 import { BlockedListComponent } from '../ui/blocked-list';
 import { ButtonComponent } from '@shared/ui/button/button.component';
-import { ProfileBundleResponse } from '../models/profile.model';
+import {
+  UserInfoModalComponent,
+  UserInfoModalData,
+} from '@shared/ui/user-info-modal/user-info-modal.component';
 type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
 @Component({
   selector: 'app-profile-page',
@@ -73,10 +77,12 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
               @for (user of store.followers(); track user.userId) {
                 <app-user-list-item
                   variant="followers"
+                  [userId]="user.userId"
                   [name]="user.nickName ?? 'User'"
                   [headUrl]="user.headUrl"
                   [nationality]="user.nationality"
                   [vipType]="user.vipType"
+                  (userClick)="onViewProfile(user.userId, user.nickName, user.headUrl, user.nationality)"
                 />
               }
               @if (store.followersMore()) {
@@ -103,11 +109,13 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
               @for (user of store.following(); track user.userId) {
                 <app-user-list-item
                   variant="following"
+                  [userId]="user.userId"
                   [name]="user.nickName ?? 'User'"
                   [headUrl]="user.headUrl"
                   [nationality]="user.nationality"
                   [vipType]="user.vipType"
                   [isMutual]="user.isMutual"
+                  (userClick)="onViewProfile(user.userId, user.nickName, user.headUrl, user.nationality)"
                 />
               }
             }
@@ -129,11 +137,13 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
               @for (user of store.visitors(); track user.userid) {
                 <app-user-list-item
                   variant="visitors"
+                  [userId]="user.userid"
                   [name]="user.nickname ?? 'User'"
                   [headUrl]="user.headUrl"
                   [nationality]="user.nationality"
                   [visitTs]="user.visitTs"
                   [visitCnt]="user.visitCnt"
+                  (userClick)="onViewProfile(user.userid, user.nickname, user.headUrl, user.nationality)"
                 />
               }
               @if (store.visitorsMore()) {
@@ -295,12 +305,21 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
 })
 export class ProfilePageComponent {
   protected readonly store = inject(ProfileStore);
-  
-  readonly bundle = input<ProfileBundleResponse | null>(null);
+  private readonly dialog = inject(Dialog);
   protected readonly activeTab = signal<ProfileTab>('followers');
   constructor() {
-    this.store.seedBundle(this.bundle());
     this.onTabChange(this.activeTab());
+  }
+  protected onViewProfile(
+    userId: number,
+    nickname: string | null,
+    headUrl: string | null,
+    nationality: string | null,
+  ): void {
+    this.dialog.open(UserInfoModalComponent, {
+      data: { userId, nickname, headUrl, nationality } satisfies UserInfoModalData,
+      backdropClass: 'app-modal-backdrop',
+    });
   }
   protected selectTab(tab: ProfileTab): void {
     this.activeTab.set(tab);

@@ -1,5 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 import { ProfileApi } from '../data-access/profile-api';
 import { AuthStore } from '@core/auth/auth.store';
@@ -17,26 +18,18 @@ const FOLLOWING_PAGE_SIZE = 20;
 export class ProfileStore {
   private readonly api = inject(ProfileApi);
   private readonly authStore = inject(AuthStore);
+  private readonly route = inject(ActivatedRoute);
   private readonly selfId = computed(() => this.authStore.user()?.userId ?? null);
-  
-  
-  
-  
-  
-  
-  
-  private readonly _bundle = signal<ProfileBundleResponse | null>(null);
+
+  private readonly _bundle = signal<ProfileBundleResponse | null>(
+    (this.route.snapshot.data['bundle'] as ProfileBundleResponse | null | undefined) ?? null,
+  );
   private readonly bundleRef = rxResource<ProfileBundleResponse | null, number | undefined>({
     params: () => (this._bundle() !== null ? undefined : this.selfId() ?? undefined),
     stream: ({ params }) => (params === undefined ? of(null) : this.api.bundle(params)),
     defaultValue: null,
   });
   
-  seedBundle(value: ProfileBundleResponse | null): void {
-    if (value !== null) {
-      this._bundle.set(value);
-    }
-  }
   readonly bundle = computed<ProfileBundleResponse | null>(() => this._bundle() ?? this.bundleRef.value());
   readonly userInfo = computed(() => this.bundle()?.userInfo ?? null);
   readonly stats = computed(() => this.bundle()?.stats ?? null);

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { relativeTime } from '@shared/utils';
@@ -11,7 +11,15 @@ export type UserListItemVariant = 'followers' | 'following' | 'visitors';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AvatarComponent, CountryFlagComponent, LucideCrown, LucideUsers],
   template: `
-    <div class="row">
+    <div
+      class="row"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="'View ' + name() + '\\'s profile'"
+      (click)="userClick.emit(userId())"
+      (keydown.enter)="userClick.emit(userId())"
+      (keydown.space)="$event.preventDefault(); userClick.emit(userId())"
+    >
       <app-avatar [src]="headUrl() ?? ''" [initials]="initials()" size="md" [alt]="name()" />
       <div class="row-main">
         <div class="row-name-line">
@@ -54,9 +62,14 @@ export type UserListItemVariant = 'followers' | 'following' | 'visitors';
       padding: var(--space-2) var(--space-3);
       border-radius: var(--radius-lg);
       transition: background-color 0.15s ease;
+      cursor: pointer;
     }
     .row:hover {
       background-color: var(--color-neutral-100);
+    }
+    .row:focus-visible {
+      outline: var(--focus-ring);
+      outline-offset: 2px;
     }
     :host-context(.dark) .row:hover {
       background-color: var(--color-neutral-800);
@@ -132,6 +145,7 @@ export type UserListItemVariant = 'followers' | 'following' | 'visitors';
   `,
 })
 export class UserListItemComponent {
+  readonly userId = input.required<number>();
   readonly name = input.required<string>();
   readonly headUrl = input<string | null>(null);
   readonly nationality = input<string | null>(null);
@@ -140,6 +154,8 @@ export class UserListItemComponent {
   readonly isMutual = input(false);
   readonly visitTs = input<number | null>(null);
   readonly visitCnt = input<number | null>(null);
+
+  readonly userClick = output<number>();
 
   readonly initials = computed(() => this.name().slice(0, 2));
 
