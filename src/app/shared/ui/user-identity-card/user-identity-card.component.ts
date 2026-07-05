@@ -107,6 +107,6 @@ export class UserIdentityCardComponent {
   readonly username = input<string | null>(null);
   readonly signature = input<string | null>(null);
   readonly ringColor = input<string | null>(null);
-  readonly crownType = input<string | null>(null);
+  readonly crownType = input<1 | 2 | null>(null);
   readonly vip = input(false);
 }
