@@ -284,19 +284,27 @@ export class VideoRoomPageComponent extends RoomPageBase {
   }
 
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
-    const visible = this.visible();
+    const isRestore = this.activeCallStore.cname() === cname;
+    // On restore, the URL doesn't carry ?visible=false (minimize drops it), so the routed input
+    // would default to true and joinRoom's `_isVisible.set(visible)` would wipe the user's
+    // invisible state. Skip joinRoom on restore (matches voice-room-page's pattern) and restore
+    // visibility from the snapshot taken at minimize time.
+    const visible = isRestore ? !this.activeCallStore.isInvisible() : this.visible();
+    if (isRestore) this.roomStore.setVisibility(visible);
     this.audienceStore.setBusiType(busiType);
-    try {
-      await this.roomStore.joinRoom(cname, busiType, visible);
-    } catch (err) {
-      if (err instanceof JoinCancelledError) {
-        await this.router.navigate(['/rooms']);
-        await this.roomStore.leaveRoom();
-        this.stageStore.reset();
-        this.audienceStore.reset();
-        return;
+    if (!isRestore) {
+      try {
+        await this.roomStore.joinRoom(cname, busiType, visible);
+      } catch (err) {
+        if (err instanceof JoinCancelledError) {
+          await this.router.navigate(['/rooms']);
+          await this.roomStore.leaveRoom();
+          this.stageStore.reset();
+          this.audienceStore.reset();
+          return;
+        }
+        throw err;
       }
-      throw err;
     }
 
     // room info + stage + audience + comments, fanned out server-side in one round-trip.

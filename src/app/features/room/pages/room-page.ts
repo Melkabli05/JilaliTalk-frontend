@@ -279,6 +279,11 @@ export class RoomPageComponent extends RoomPageBase {
 
     if (isRestore) {
       this.roomStore.setMicOn(this.activeCallStore.isMicOn());
+      // _isVisible usually survives the minimize→restore round-trip because the voice path
+      // skips joinRoom() on restore, but restore it from the snapshot anyway as defense-in-depth
+      // — a stray `_isVisible.set(true)` anywhere else (e.g. a future refresh path) can't
+      // silently flip the user back to visible.
+      this.roomStore.setVisibility(!this.activeCallStore.isInvisible());
     }
 
     const isVisible = this.roomStore.isVisible();
