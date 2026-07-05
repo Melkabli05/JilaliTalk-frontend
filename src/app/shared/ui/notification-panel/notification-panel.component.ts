@@ -116,7 +116,7 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
 
     .notification-panel {
       position: fixed;
-      top: 60px;
+      top: var(--app-header-height);
       right: var(--space-4);
       z-index: 40;
       width: 380px;
