@@ -23,7 +23,7 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
   imports: [LucideBell, LucideCheck, LucideTrash2, NotificationFilterTabsComponent, NotificationDayGroupComponent],
   template: `
     @if (store.isOpen()) {
-      <div class="notification-overlay" (click)="onOverlayClick()" role="presentation"></div>
+      <div class="notification-overlay" [class.sheet]="isMobile()" (click)="onOverlayClick()" role="presentation"></div>
       <div
         #panelRoot
         class="notification-panel"
@@ -100,6 +100,19 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
   `,
   styles: [`
     .notification-overlay { position: fixed; inset: 0; z-index: 39; background: transparent; }
+    /* Mobile only: tint and blur the page behind the sheet so it visibly recedes and
+       reads as a modal layer. Desktop panel uses the same transparent overlay because
+       a full-screen blur behind a 380px dropdown looks heavy. */
+    .notification-overlay.sheet {
+      background: color-mix(in srgb, var(--color-surface) 35%, transparent);
+      backdrop-filter: blur(8px) saturate(140%);
+      -webkit-backdrop-filter: blur(8px) saturate(140%);
+      animation: sheetFadeIn 0.2s ease-out;
+    }
+    @keyframes sheetFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
 
     .notification-panel {
       position: fixed;
@@ -234,6 +247,21 @@ export class NotificationPanelComponent {
         this.previouslyFocused.focus();
         this.previouslyFocused = null;
       }
+    });
+
+    // Soft body-scroll lock while the bottom sheet is open on mobile: stops the page
+    // underneath from scrolling when the user over-scrolls the notification list (iOS
+    // Safari rubber-band otherwise pulls the page). Desktop panel intentionally doesn't
+    // lock — it's a small dropdown over the header, the existing UX is fine.
+    effect(() => {
+      if (!this.isMobile()) return;
+      if (this.store.isOpen()) {
+        document.body.style.overflow = 'hidden';
+        return () => {
+          document.body.style.overflow = '';
+        };
+      }
+      return;
     });
   }
 
