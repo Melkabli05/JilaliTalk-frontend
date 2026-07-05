@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, CUSTOM_ELEMENTS_SCHEMA, inject, DestroyRef, AfterViewInit, viewChild, ElementRef, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { LucideSend, LucideSmile, LucideX, LucideCornerUpLeft } from '@lucide/angular';
 
 export interface ReplyTarget {
@@ -216,17 +217,39 @@ export interface SendEvent {
     }
   `],
 })
-export class CommentInputComponent {
+export class CommentInputComponent implements AfterViewInit {
   readonly replyTo = input<ReplyTarget | null>(null);
   readonly send = output<SendEvent>();
   readonly cancelReply = output<void>();
   readonly typing = output<void>();
 
   readonly showEmojiPicker = signal(false);
+  readonly inputEl = viewChild<ElementRef<HTMLTextAreaElement>>('inputEl');
   private inputRef: HTMLTextAreaElement | null = null;
   private lastTypingEmit = 0;
   private static readonly TYPING_THROTTLE_MS = 800;
   private resizeObserver: ResizeObserver | null = null;
+
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly platformId = inject(PLATFORM_ID);
+
+  ngAfterViewInit(): void {
+    const textarea = this.inputEl()?.nativeElement;
+    if (!textarea) return;
+    if (isPlatformBrowser(this.platformId)) {
+      const observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          this.autoResize(entry.target as HTMLTextAreaElement);
+        }
+      });
+      this.resizeObserver = observer;
+      observer.observe(textarea);
+    }
+    this.destroyRef.onDestroy(() => {
+      this.resizeObserver?.disconnect();
+      this.resizeObserver = null;
+    });
+  }
 
   async toggleEmojiPicker(): Promise<void> {
     if (!this.showEmojiPicker()) {
