@@ -48,6 +48,20 @@ export class CommentsStore extends CollectionStore<Comment> {
     return [...comments, ...cards].sort((a, b) => a.ts - b.ts).map((e) => e.item);
   });
 
+  // "X new messages" pill state. Increments inside addComment() for items
+  // newer than _lastReadTs; resets to (Date.now(), 0) on resetUnread() or
+  // reset(). Initialized at construction with Date.now() so the history
+  // bundle loaded by updateComments() doesn't get counted as "new".
+  private readonly _lastReadTs = signal(Date.now());
+  private readonly _unreadCount = signal(0);
+  readonly unreadCount = this._unreadCount.asReadonly();
+  readonly lastReadTs = this._lastReadTs.asReadonly();
+
+  resetUnread(): void {
+    this._lastReadTs.set(Date.now());
+    this._unreadCount.set(0);
+  }
+
   private pruneActiveUsers(): void {
     const cutoff = Date.now() - ACTIVE_USERS_TTL_MS;
     for (const [uid, ts] of this.activeJoinedUserIds) {
@@ -305,6 +319,9 @@ export class CommentsStore extends CollectionStore<Comment> {
       if (comment._id && list.some((c) => c._id === comment._id)) return list;
       return [...list, comment];
     });
+    if (comment.createdAtMs > this._lastReadTs()) {
+      this._unreadCount.update((n) => n + 1);
+    }
   }
 
   removeComment(id: string): void {
@@ -358,6 +375,8 @@ export class CommentsStore extends CollectionStore<Comment> {
     for (const timer of this.pendingQuitTimers.values()) clearTimeout(timer);
     this.pendingQuitTimers.clear();
     this._currentUserId = 0;
+    this._lastReadTs.set(Date.now());
+    this._unreadCount.set(0);
     this.enrichQueue.dispose();
   }
 }

@@ -18,7 +18,9 @@ import { UserRole } from '@core/models/user-role';
 import { Comment, CommentOrEvent, EventCard } from '../../data/room-model';
 import { EventCardComponent } from '../../ui/event-card';
 import { formatClockTime } from '@shared/utils';
+import { CommentsStore } from './comments-store';
 import {
+  LucideArrowDown,
   LucideCopy,
   LucideCheck,
   LucideCornerUpLeft,
@@ -162,6 +164,94 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
   return [...commentRows, ...eventRows].sort((a, b) => a.ts - b.ts);
 }
 
+/**
+ * Floating "X new messages ↓" pill anchored at the bottom of the comment-list
+ * scroll container. Click jumps to the bottom of the list and resets the unread
+ * count in `CommentsStore`. Always shows while count > 0; the parent uses
+ * `@if` to hide it when 0.
+ *
+ * Inline here (~60 lines including styles) per CLAUDE.md §6 — a 30-line dumb
+ * component that depends on feature-specific state belongs next to its parent.
+ * (Pattern precedent: `NotificationItemComponent` was extracted earlier because it
+ * owned a non-trivial gesture lifecycle; this pill is just a button + count + arrow.)
+ */
+@Component({
+  selector: 'app-new-messages-pill',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LucideArrowDown],
+  template: `
+    <button
+      type="button"
+      class="new-messages-pill"
+      [attr.aria-label]="ariaLabel()"
+      (click)="onClick()"
+    >
+      <span class="pill-text">{{ count() }} new {{ count() === 1 ? 'message' : 'messages' }}</span>
+      <svg aria-hidden="true" lucideArrowDown [size]="14"></svg>
+    </button>
+  `,
+  styles: [`
+    :host {
+      position: sticky;
+      bottom: var(--space-2);
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .new-messages-pill {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      border: none;
+      background: var(--color-primary-500);
+      color: var(--color-on-color);
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      cursor: pointer;
+      box-shadow: var(--shadow-md);
+      animation: pill-enter 0.2s ease-out;
+    }
+    @keyframes pill-enter {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .new-messages-pill { transition: transform 0.15s ease, background-color 0.15s ease; }
+    }
+    .new-messages-pill:hover { background: var(--color-primary-600); }
+    .new-messages-pill:active { transform: scale(0.96); }
+    .new-messages-pill:focus-visible {
+      outline: var(--focus-ring);
+      outline-offset: 2px;
+    }
+    :host-context(.dark) .new-messages-pill {
+      background: var(--color-primary-600);
+    }
+    :host-context(.dark) .new-messages-pill:hover {
+      background: var(--color-primary-700);
+    }
+    .pill-text { white-space: nowrap; }
+  `],
+})
+export class NewMessagesPillComponent {
+  readonly count = input.required<number>();
+  readonly click = output<void>();
+
+  readonly ariaLabel = computed(() =>
+    this.count() === 1
+      ? 'Scroll to newest message'
+      : `Scroll to newest messages, ${this.count()} new`,
+  );
+
+  protected onClick(): void {
+    this.click.emit();
+  }
+}
+
 @Component({
   selector: 'app-comment-list',
   imports: [
@@ -169,6 +259,8 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
     CountryFlagComponent,
     NgOptimizedImage,
     EventCardComponent,
+    NewMessagesPillComponent,
+    LucideArrowDown,
     LucideCopy,
     LucideCheck,
     LucideCornerUpLeft,
@@ -178,6 +270,12 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="comment-list" role="log" aria-live="polite" aria-label="Comments" #scrollContainer>
+      @if (unreadCount() > 0) {
+        <app-new-messages-pill
+          [count]="unreadCount()"
+          (click)="onNewMessagesPillClick()"
+        />
+      }
       @for (row of rows(); track rowKey(row)) {
         @switch (row.type) {
           @case ('comments') {
@@ -714,6 +812,7 @@ export class CommentListComponent {
   private highlightTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly clipboard = inject(Clipboard);
   private readonly scrollContainer = viewChild<ElementRef<HTMLDivElement>>('scrollContainer');
+  private readonly commentsStore = inject(CommentsStore);
 
   private readonly plainComments = computed<readonly Comment[]>(() =>
     this.items().filter((i): i is Comment => !('kind' in i)),
@@ -721,6 +820,28 @@ export class CommentListComponent {
 
   readonly rows = computed<readonly Row[]>(() => buildRows(this.items()));
   readonly rowKey = rowKey;
+
+  /** "X new messages" pill count, derived from the store's lastReadTs.
+   *  Counts Comment items newer than the last-read timestamp; EventCards
+   *  (gifts, joins, follows) are intentionally excluded — the pill is about
+   *  new conversation, not new events about people. */
+  readonly unreadCount = computed<number>(() => {
+    const list = this.items();
+    const since = this.commentsStore.lastReadTs();
+    let n = 0;
+    for (const item of list) {
+      if ('kind' in item) continue;
+      if (item.createdAtMs > since) n++;
+    }
+    return n;
+  });
+
+  onNewMessagesPillClick(): void {
+    const container = this.scrollContainer()?.nativeElement;
+    if (!container) return;
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    this.commentsStore.resetUnread();
+  }
 
   /** True when the user is near the bottom of the scroll container. */
   constructor() {
