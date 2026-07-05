@@ -155,8 +155,11 @@ export abstract class RoomPageBase {
     this.destroyRef.onDestroy(() => {
       this._destroying.set(true);
       this.typingPruneSub?.unsubscribe();
-      const matchingActiveCall = this.activeCallStore.cname() !== null && this.activeCallStore.cname() === this.roomStore.cname();
-      if (matchingActiveCall) {
+      // The room is still in the active-call snapshot, meaning the user clicked minimize
+      // and the room page is being destroyed in response — keep state alive for the restore
+      // path. (onLeave clears the snapshot before destroy fires, so a "real" leave doesn't
+      // match here and falls through to the full cleanup.)
+      if (this.activeCallStore.cname() === this.roomStore.cname()) {
         return;
       }
       this.rcs.leave().catch(() => {}).finally(() =>
@@ -304,6 +307,22 @@ export abstract class RoomPageBase {
   }
 
   /**
+   * Call at the top of doEnterRoom(), before roomStore.enterRoom(). Returns whether this
+   * entry is a minimize→restore for `cname` (same room as the active-call snapshot).
+   * If the snapshot instead points at a *different* room — the user minimized room A, then
+   * navigated straight to room B instead of restoring — room A's RTC connection is still
+   * open and its snapshot is stale, so this tears both down before B's entry proceeds.
+   */
+  protected async resolveRoomEntry(cname: string): Promise<boolean> {
+    const isRestore = this.activeCallStore.cname() === cname && this.activeCallStore.minimized();
+    if (this.activeCallStore.minimized() && !isRestore) {
+      await this.rcs.leave().catch(() => {});
+      this.activeCallStore.clear();
+    }
+    return isRestore;
+  }
+
+  /**
    * Shared "raise/lower hand" branch — handles the case where the user is a
    * regular audience member (not on stage, not a moderator). Voice's
    * onToggleHand calls this after handling its stage-leave / mod-join-stage
@@ -350,8 +369,10 @@ export abstract class RoomPageBase {
   }
 
   /**
-   * Keeps the URL ?visible= query param in sync with the actual visibility state
-   * after an in-app toggle, so that page refresh preserves the chosen state.
+   * Keeps the URL's `?visible=` query param in sync with the actual visibility state after
+   * an in-session toggle, so a page refresh (or a room-card "Join" click on return) reads
+   * back the same choice — the only durable record of visibility for anything that isn't
+   * a minimize→restore round-trip (see BaseRoomStore.enterRoom's doc comment).
    */
   protected syncVisibilityToUrl(isVisible: boolean): void {
     this.router.navigate([], {
@@ -491,6 +512,7 @@ export abstract class RoomPageBase {
       await this.rcs.leave();
       await this.roomStore.leaveRoom();
       this.bffWs.disconnect();
+      this.activeCallStore.clear();
     } finally {
       await this.router.navigate(this.leaveNavTarget);
     }
@@ -506,7 +528,7 @@ export abstract class RoomPageBase {
       this.roomStore.isMicOn(),
       !this.roomStore.isVisible(),
     );
-    this.router.navigate(this.leaveNavTarget);
+    void this.router.navigate(this.leaveNavTarget);
   }
 
 
@@ -551,10 +573,10 @@ export interface RoomStoreContract {
   setRtcInfo(v: unknown): void;
   setRoomLevelInfo(v: unknown): void;
   setHandRaised(v: boolean): void;
-  setVisibility(v: boolean): void;
   setCamOn(v: boolean): void;
   setMicOn(v: boolean): void;
   setCname(v: string): void;
-  joinRoom(cname: string, busiType: number, visible: boolean): Promise<void>;
+  setVisibility(v: boolean): void;
+  enterRoom(cname: string, busiType: number, visibleOnFreshJoin: boolean): Promise<void>;
   leaveRoom(): Promise<void>;
 }

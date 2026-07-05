@@ -290,29 +290,23 @@ export class VideoRoomPageComponent extends RoomPageBase {
   }
 
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
-    // Snapshot restore is centralized on BaseRoomStore.applyRestoreSnapshot — same path
-    // voice uses, so the snapshot semantics cannot drift between the two ever again.
-    const isRestore = this.roomStore.applyRestoreSnapshot(cname);
-    const visible = isRestore ? false : this.visible();
+    const isRestore = await this.resolveRoomEntry(cname);
     this.audienceStore.setBusiType(busiType);
-    if (!isRestore) {
-      try {
-        await this.roomStore.joinRoom(cname, busiType, visible);
-      } catch (err) {
-        if (err instanceof JoinCancelledError) {
-          await this.router.navigate(['/rooms']);
-          await this.roomStore.leaveRoom();
-          this.stageStore.reset();
-          this.audienceStore.reset();
-          return;
-        }
-        throw err;
+    try {
+      await this.roomStore.enterRoom(cname, busiType, this.visible());
+    } catch (err) {
+      if (err instanceof JoinCancelledError) {
+        await this.router.navigate(['/rooms']);
+        await this.roomStore.leaveRoom();
+        this.stageStore.reset();
+        this.audienceStore.reset();
+        return;
       }
+      throw err;
     }
+    this.activeCallStore.clear();
 
     // room info + stage + audience + comments, fanned out server-side in one round-trip.
-    // (channelInfo has no `cname` field upstream — actualCname always equals the input cname —
-    // so it's safe to key the call off `cname` before the response comes back.)
     let liveInfo: LiveRoomInfo;
     let stage: StageUsersResponse | undefined;
     let audience: AudienceUsersResponse | undefined;
@@ -346,9 +340,16 @@ export class VideoRoomPageComponent extends RoomPageBase {
     if (reqUser?.base?.headUrl) this.roomStore.setHeadUrl(reqUser.base.headUrl);
     if (reqUser?.base?.nationality) this.roomStore.setNationality(reqUser.base.nationality);
 
+    if (isRestore) {
+      this.roomStore.setMicOn(this.activeCallStore.isMicOn());
+    }
+
     const isVisible = this.roomStore.isVisible();
-    const heartbeatHostId = isVisible ? (liveInfo.hostInfo?.userId ?? 0) : 0;
-    this.bffWs.connect(actualCname, heartbeatHostId, busiType);
+    // On a minimize→restore, RTC + WebSocket stay connected from the min'd state.
+    if (!isRestore) {
+      const heartbeatHostId = isVisible ? (liveInfo.hostInfo?.userId ?? 0) : 0;
+      this.bffWs.connect(actualCname, heartbeatHostId, busiType);
+    }
     const uid = this.roomStore.userId();
 
     if (isVisible) this.audienceStore.setCname(actualCname);
@@ -356,22 +357,23 @@ export class VideoRoomPageComponent extends RoomPageBase {
     this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
     this.commentsStore.updateComments([...(comments?.items ?? [])]);
 
-
     this.rtmStore.setCurrentUid(uid);
 
-    try {
-      const rtcInfo = this.roomStore.rtcInfo();
-      const rtcToken = rtcInfo?.token ?? null;
-      const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : environment.agoraAppIdVideo;
-      await this.rcs.connect(actualCname, uid, rtcToken, appId, !isVisible);
-    } catch {
-      this.toast.error('Failed to connect to audio');
-    }
+    if (!isRestore) {
+      try {
+        const rtcInfo = this.roomStore.rtcInfo();
+        const rtcToken = rtcInfo?.token ?? null;
+        const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : environment.agoraAppIdVideo;
+        await this.rcs.connect(actualCname, uid, rtcToken, appId, !isVisible);
+      } catch {
+        this.toast.error('Failed to connect to audio');
+      }
 
-    try {
-      await this.rcs.connectRtm(uid);
-      await this.rcs.subscribeRtmChannel(actualCname);
-    } catch {
+      try {
+        await this.rcs.connectRtm(uid);
+        await this.rcs.subscribeRtmChannel(actualCname);
+      } catch {
+      }
     }
   }
 

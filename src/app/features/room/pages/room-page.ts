@@ -223,29 +223,26 @@ export class RoomPageComponent extends RoomPageBase {
   }
 
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
-    const visible = this.visible();
+    const isRestore = await this.resolveRoomEntry(cname);
     this.audienceStore.setBusiType(busiType);
-
-    const isRestore = this.roomStore.applyRestoreSnapshot(cname);
-    if (this.activeCallStore.minimized() && !isRestore) {
-      await this.rcs.leave().catch(() => {});
-      this.activeCallStore.clear();
-    }
-
-    if (!isRestore) {
-      try {
-        await this.roomStore.joinRoom(cname, busiType, visible);
-      } catch (err) {
-        if (err instanceof JoinCancelledError) {
-          await this.router.navigate(this.leaveNavTarget);
-          await this.roomStore.leaveRoom();
-          this.stageStore.reset();
-          this.audienceStore.reset();
-          return;
-        }
-        throw err;
+    try {
+      // Single call: sets _isVisible from the active-call snapshot on a minimize→restore,
+      // or from the routed ?visible= query param on any other entry, and posts upstream
+      // join exactly when visible.
+      await this.roomStore.enterRoom(cname, busiType, this.visible());
+    } catch (err) {
+      if (err instanceof JoinCancelledError) {
+        await this.router.navigate(this.leaveNavTarget);
+        await this.roomStore.leaveRoom();
+        this.stageStore.reset();
+        this.audienceStore.reset();
+        return;
       }
+      throw err;
     }
+    // Snapshot served its purpose (either consumed by enterRoom on restore, or already
+    // cleared above for a stale different-room snapshot); from here, enterRoom is the truth.
+    this.activeCallStore.clear();
 
     let voiceInfo: VoiceRoomInfo;
     let stage: StageUsersResponse | undefined;
@@ -280,13 +277,17 @@ export class RoomPageComponent extends RoomPageBase {
     if (reqUser?.base?.headUrl) this.roomStore.setHeadUrl(reqUser.base.headUrl);
     if (reqUser?.base?.nationality) this.roomStore.setNationality(reqUser.base.nationality);
 
+    // Snapshot is read but no longer authoritative for _isVisible — enterRoom already
+    // applied it before we got here. We only need the snapshot here to decide mic state
+    // (mic is captured at minimize time, then re-applied on restore).
     if (isRestore) {
       this.roomStore.setMicOn(this.activeCallStore.isMicOn());
-      // _isVisible was already restored from the snapshot by applyRestoreSnapshot() above.
     }
 
     const isVisible = this.roomStore.isVisible();
 
+    // On a minimize→restore, RTC + WebSocket + RTM stay connected from the min'd state;
+    // opening them again would tear down and re-establish those sockets for nothing.
     if (!isRestore) {
       const heartbeatHostId = isVisible ? (voiceInfo.hostInfo?.userId ?? 0) : 0;
       this.bffWs.connect(cname, heartbeatHostId, busiType, voiceInfo.configInfo?.heartbeatSecond ?? null);
@@ -316,10 +317,6 @@ export class RoomPageComponent extends RoomPageBase {
         await this.rcs.subscribeRtmChannel(cname);
       } catch {
       }
-    }
-
-    if (isRestore) {
-      this.activeCallStore.clear();
     }
   }
 
@@ -352,8 +349,9 @@ export class RoomPageComponent extends RoomPageBase {
     this.stageStore.reset();
     this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
     this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
-    // makeVisible only runs from the explicit "go visible" toggle, never from a
-    // minimize→restore. Safe to clear the snapshot's isInvisible here.
+    // Snapshot is meaningless for a "go visible" toggle (only relevant to a restore).
+    // Update it to match the new visible state so a future minimize→restore cycle
+    // doesn't capture stale invisible=true.
     this.activeCallStore.setInvisible(false);
     this.toast.success('You are now visible');
   }

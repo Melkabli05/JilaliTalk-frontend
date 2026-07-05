@@ -81,36 +81,34 @@ export abstract class BaseRoomStore {
   protected abstract resetMediaState(): void;
 
   /**
-   * Central chokepoint for the minimize→restore round-trip: if {@code cname} matches the
-   * snapshot in {@code activeCallStore}, this is a restore — returns {@code true} and
-   * has already restored {@code _isVisible} from the snapshot. Callers must skip their
-   * own {@link joinRoom} call in that case, so {@code joinRoom}'s {@code _isVisible.set}
-   * doesn't clobber the restored state. Returns {@code false} for a fresh join.
-   * <p>
-   * Both voice and video room pages funnel through this single method, so the snapshot
-   * semantics can never drift between the two again.
+   * Single entry point into a room. Two sources of truth for visibility, chosen by which
+   * kind of entry this is:
+   * - Minimize→restore (the active-call snapshot's cname matches and it's still minimized):
+   *   the snapshot wins — it's the most recent explicit decision, captured right before the
+   *   page was torn down, and the URL alone can't carry it across (minimize navigates to
+   *   `/rooms`, restore navigates to a fresh `/room/:cname/:busiType` with no query string).
+   * - Any other entry (first join, room-card "Join Invisible", deep link, or a same-URL
+   *   refresh): `visibleOnFreshJoin` wins — the caller reads this straight from the routed
+   *   `?visible=` query param, which is the durable record for this case (survives refresh
+   *   natively; the room card writes it explicitly per click).
+   *
+   * Either way, _isVisible is set to exactly one value, then `POST /users/rooms/{cname}/join`
+   * fires only when visible.
    */
-  applyRestoreSnapshot(cname: string): boolean {
-    const snapshotCname = this.activeCallStore.cname();
-    if (snapshotCname !== cname) return false;
-    if (this.activeCallStore.isInvisible()) {
-      this._isVisible.set(false);
-    } else {
-      this._isVisible.set(true);
-    }
-    return true;
-  }
-
-  async joinRoom(cname: string, busiType: number, visible = true): Promise<void> {
+  async enterRoom(cname: string, busiType: number, visibleOnFreshJoin: boolean): Promise<void> {
     this._cname.set(cname);
     this._busiType.set(busiType);
+
+    const isRestore = this.activeCallStore.cname() === cname && this.activeCallStore.minimized();
+    const visible = isRestore ? !this.activeCallStore.isInvisible() : visibleOnFreshJoin;
     this._isVisible.set(visible);
-    if (visible) {
-      await this.joinRoster(cname, busiType);
-    }
+
+    if (visible) await this.joinRoster(cname, busiType);
     this._myRole.set(UserRole.Normal);
     this._isConnected.set(true);
   }
+
+  setVisibility(visible: boolean): void { this._isVisible.set(visible); }
 
   private async joinRoster(cname: string, busiType: number): Promise<void> {
     try {
@@ -191,9 +189,10 @@ export abstract class BaseRoomStore {
     this._isHandRaised.set(false);
     this._isConnected.set(false);
     // Reset to the leave-default (visible) only when the user was actually visible;
-    // an invisible leave shouldn't flip visibility for the next join to default-true
-    // and accidentally expose them. Next joinRoom() call sets _isVisible from its
-    // visible argument, which is the truth source.
+    // an invisible leave shouldn't flip visibility for the next enterRoom() to default-true
+    // and accidentally expose them. enterRoom() re-derives _isVisible from its own
+    // visibleOnFreshJoin argument or the snapshot regardless, but this keeps this store's
+    // own state internally consistent between leaveRoom() and the next enterRoom() call.
     if (wasVisible) this._isVisible.set(true);
     this._name.set('');
     this._topic.set('');
@@ -214,7 +213,6 @@ export abstract class BaseRoomStore {
   setRoomLevelInfo(info: RoomLevelInfo | null): void { this._roomLevelInfo.set(info); }
   setHandRaised(raised: boolean): void { this._isHandRaised.set(raised); }
   setRole(role: UserRole): void { this._myRole.set(role); }
-  setVisibility(visible: boolean): void { this._isVisible.set(visible); }
   setRoomName(name: string): void { this._name.set(name); }
   setRoomTopic(topic: string): void { this._topic.set(topic); }
 }
