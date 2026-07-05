@@ -5,6 +5,7 @@ import {
   output,
   signal,
   computed,
+  effect,
   inject,
   DestroyRef,
   viewChild,
@@ -265,7 +266,7 @@ export class NewMessagesPillComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="comment-list" role="log" aria-live="polite" aria-label="Comments" #scrollContainer>
-      @if (unreadCount() > 0) {
+      @if (unreadCount() > 0 && !isAtBottom()) {
         <app-new-messages-pill
           [count]="unreadCount()"
           (click)="onNewMessagesPillClick()"
@@ -831,18 +832,90 @@ export class CommentListComponent {
     return n;
   });
 
-  onNewMessagesPillClick(): void {
+  /** True when the user is within a few pixels of the scroll container's
+   *  bottom — i.e. they've caught up to the latest comment. Updated by the
+   *  scroll listener registered in `registerScrollListener()`. Used to decide
+   *  whether new comments auto-scroll (at-bottom) or accumulate behind the
+   *  pill (scrolled up). Starts `false` so the first scroll event (whichever
+   *  side it lands on) is the source of truth, not the pre-mount default. */
+  readonly isAtBottom = signal(false);
+
+  /** Tracks whether the initial bottom-scroll has happened — runs once when
+   *  items first arrive (the history fetch may complete after the component
+   *  mounts, so we can't rely on ngAfterViewInit alone). */
+  private hasAutoScrolledToBottom = false;
+
+  /** Guards `registerScrollListener()` from being called twice — the
+   *  scrollContainer() signal can change reference identity in dev/HMR even
+   *  though the underlying element is stable, and we want exactly one listener. */
+  private scrollListenerRegistered = false;
+
+  /** Scrolls the container to the very bottom. Uses `requestAnimationFrame`
+   *  so any pending DOM mutation (new comment bubble just rendered) is in
+   *  the layout before we measure scrollHeight. */
+  private scrollToBottom(): void {
     const container = this.scrollContainer()?.nativeElement;
     if (!container) return;
-    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    requestAnimationFrame(() => {
+      const el = this.scrollContainer()?.nativeElement;
+      if (!el) return;
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    });
+  }
+
+  /** Throttled scroll listener — recomputes `isAtBottom` on every scroll event
+   *  using a 4px tolerance to absorb subpixel rounding and animation in flight. */
+  private registerScrollListener(): void {
+    if (this.scrollListenerRegistered) return;
+    const container = this.scrollContainer();
+    if (!container) return;
+    const el = container.nativeElement;
+    const handler = () => {
+      const distanceFromBottom = el.scrollHeight - (el.scrollTop + el.clientHeight);
+      this.isAtBottom.set(distanceFromBottom <= 4);
+    };
+    el.addEventListener('scroll', handler, { passive: true });
+    inject(DestroyRef).onDestroy(() => el.removeEventListener('scroll', handler));
+    this.scrollListenerRegistered = true;
+  }
+
+  onNewMessagesPillClick(): void {
+    this.scrollToBottom();
     this.commentsStore.resetUnread();
   }
 
-  /** True when the user is near the bottom of the scroll container. */
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       if (this.copyResetTimer) clearTimeout(this.copyResetTimer);
       if (this.highlightTimer) clearTimeout(this.highlightTimer);
+    });
+
+    // First non-empty `items()` → scroll to bottom once. Fires when the
+    // history fetch lands, not just at mount — history may complete async.
+    effect(() => {
+      if (this.hasAutoScrolledToBottom) return;
+      if (this.items().length === 0) return;
+      this.hasAutoScrolledToBottom = true;
+      this.scrollToBottom();
+    });
+
+    // While at the bottom, new comments auto-scroll into view silently —
+    // no pill flash, no user action needed. Only when the user has scrolled
+    // up does the pill count accumulate.
+    effect(() => {
+      if (this.unreadCount() > 0 && this.isAtBottom()) {
+        this.scrollToBottom();
+        this.commentsStore.resetUnread();
+      }
+    });
+
+    // Register the scroll listener once the viewChild resolves. Wrapped in
+    // an effect rather than ngAfterViewInit so it re-tries if the element
+    // becomes available later (e.g. inside a @if).
+    effect(() => {
+      if (this.scrollContainer()) {
+        this.registerScrollListener();
+      }
     });
   }
 
