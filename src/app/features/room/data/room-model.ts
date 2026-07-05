@@ -525,10 +525,6 @@ export interface ManagerListResponse {
   readonly managerList: readonly Manager[];
 }
 
-export interface ManagerJudgeResponse {
-  readonly isOnline: boolean;
-}
-
 export interface CaptionEntry {
   readonly id: string;
   readonly cname: string;
