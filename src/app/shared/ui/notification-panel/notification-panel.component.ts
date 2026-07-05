@@ -33,12 +33,15 @@ const MOBILE_BREAKPOINT_QUERY = '(max-width: 768px)';
         tabindex="-1"
         [style.transform]="dragY() ? 'translateY(' + dragY() + 'px)' : null"
         [style.transition]="dragging() ? 'none' : null"
-        (touchstart)="onSheetTouchStart($event)"
-        (touchmove)="onSheetTouchMove($event)"
-        (touchend)="onSheetTouchEnd($event)"
       >
         @if (isMobile()) {
-          <div class="sheet-handle" aria-hidden="true"></div>
+          <div
+            class="sheet-handle"
+            aria-hidden="true"
+            (touchstart)="onSheetTouchStart($event)"
+            (touchmove)="onSheetTouchMove($event)"
+            (touchend)="onSheetTouchEnd($event)"
+          ></div>
         }
         <header class="panel-header">
           <div class="header-title">
@@ -127,21 +130,32 @@ const MOBILE_BREAKPOINT_QUERY = '(max-width: 768px)';
       border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
       padding-bottom: env(safe-area-inset-bottom);
       animation: sheetIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-      touch-action: pan-y;
     }
     @keyframes sheetIn {
       from { opacity: 0; transform: translateY(24px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    /* Drag-to-close only engages on this handle (not the whole sheet), so the
+       scrollable list below and the horizontally-scrolling filter tabs are
+       never fought over by the two gestures. */
     .sheet-handle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: var(--space-6);
+      margin-top: calc(var(--space-2) * -1);
+      flex-shrink: 0;
+      touch-action: none;
+    }
+    .sheet-handle::after {
+      content: '';
       width: 40px;
       height: 4px;
       border-radius: 2px;
       background: var(--color-neutral-300);
-      margin: var(--space-2) auto 0;
-      flex-shrink: 0;
     }
-    :host-context(.dark) .sheet-handle { background: var(--color-neutral-600); }
+    :host-context(.dark) .sheet-handle::after { background: var(--color-neutral-600); }
 
     .panel-header {
       display: flex;
