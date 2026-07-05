@@ -166,14 +166,9 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
 
 /**
  * Floating "X new messages ↓" pill anchored at the bottom of the comment-list
- * scroll container. Click jumps to the bottom of the list and resets the unread
- * count in `CommentsStore`. Always shows while count > 0; the parent uses
- * `@if` to hide it when 0.
- *
- * Inline here (~60 lines including styles) per CLAUDE.md §6 — a 30-line dumb
- * component that depends on feature-specific state belongs next to its parent.
- * (Pattern precedent: `NotificationItemComponent` was extracted earlier because it
- * owned a non-trivial gesture lifecycle; this pill is just a button + count + arrow.)
+ * scroll container. Click bubbles up to the parent (no output indirection).
+ * Inline here per CLAUDE.md §6 — a small dumb component that depends on
+ * feature-specific state belongs next to its parent.
  */
 @Component({
   selector: 'app-new-messages-pill',
@@ -184,7 +179,6 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
       type="button"
       class="new-messages-pill"
       [attr.aria-label]="ariaLabel()"
-      (click)="onClick()"
     >
       <span class="pill-text">{{ count() }} new {{ count() === 1 ? 'message' : 'messages' }}</span>
       <svg aria-hidden="true" lucideArrowDown [size]="14"></svg>
@@ -198,6 +192,14 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
       justify-content: center;
       pointer-events: none;
       z-index: 1;
+    }
+    /* Mobile: lift the pill a touch so it clears the last comment row on
+       cramped voice-room list heights (22cqh) and adds safe-area padding
+       above the iOS home indicator. */
+    @container comments-panel (max-width: 1023.98px) {
+      :host {
+        bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+      }
     }
     .new-messages-pill {
       pointer-events: auto;
@@ -213,43 +215,37 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
       font-weight: var(--font-semibold);
       cursor: pointer;
       box-shadow: var(--shadow-md);
-      animation: pill-enter 0.2s ease-out;
     }
-    @keyframes pill-enter {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    :host-context(.dark) .new-messages-pill { background: var(--color-primary-600); }
+
+    /* Single block gates both entrance animation AND interactive transitions
+       behind the same reduced-motion preference — keeps the rules together. */
     @media (prefers-reduced-motion: no-preference) {
-      .new-messages-pill { transition: transform 0.15s ease, background-color 0.15s ease; }
+      .new-messages-pill {
+        transition: transform 0.15s ease, background-color 0.15s ease;
+        animation: pill-enter 0.2s ease-out;
+      }
+      @keyframes pill-enter {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
     }
+
     .new-messages-pill:hover { background: var(--color-primary-600); }
+    :host-context(.dark) .new-messages-pill:hover { background: var(--color-primary-700); }
     .new-messages-pill:active { transform: scale(0.96); }
-    .new-messages-pill:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: 2px;
-    }
-    :host-context(.dark) .new-messages-pill {
-      background: var(--color-primary-600);
-    }
-    :host-context(.dark) .new-messages-pill:hover {
-      background: var(--color-primary-700);
-    }
+    .new-messages-pill:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
     .pill-text { white-space: nowrap; }
   `],
 })
 export class NewMessagesPillComponent {
   readonly count = input.required<number>();
-  readonly click = output<void>();
-
   readonly ariaLabel = computed(() =>
     this.count() === 1
       ? 'Scroll to newest message'
       : `Scroll to newest messages, ${this.count()} new`,
   );
-
-  protected onClick(): void {
-    this.click.emit();
-  }
 }
 
 @Component({
@@ -260,7 +256,6 @@ export class NewMessagesPillComponent {
     NgOptimizedImage,
     EventCardComponent,
     NewMessagesPillComponent,
-    LucideArrowDown,
     LucideCopy,
     LucideCheck,
     LucideCornerUpLeft,
