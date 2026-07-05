@@ -134,6 +134,32 @@ describe('ImBootstrapService', () => {
     expect(notifyUserEvent).not.toHaveBeenCalled();
   });
 
+  it('notifies profile_visit as a user-linked notification using the visitor nickname', () => {
+    push({ type: 'profile_visit', visitorUserId: '7', nickname: 'Sam', headUrl: 'https://x/sam.jpg' });
+
+    expect(notifyUserEvent).toHaveBeenCalledWith({
+      type: 'info',
+      title: 'Profile visit',
+      message: 'Sam visited your profile',
+      userId: 7,
+      avatarUrl: 'https://x/sam.jpg',
+      nickname: 'Sam',
+    });
+  });
+
+  it('falls back to "Someone" for profile_visit when the backend omits a nickname (never shows the raw userId)', () => {
+    push({ type: 'profile_visit', visitorUserId: '169335562' });
+
+    expect(notifyUserEvent).toHaveBeenCalledWith({
+      type: 'info',
+      title: 'Profile visit',
+      message: 'Someone visited your profile',
+      userId: 169335562,
+      avatarUrl: null,
+      nickname: null,
+    });
+  });
+
   it('notifies gift_message as a user-linked notification', () => {
     push({ type: 'gift_message', fromUserId: '11', fromNickname: 'Amal', fromHeadUrl: 'https://x/amal.jpg', giftId: 5, count: 2 });
 

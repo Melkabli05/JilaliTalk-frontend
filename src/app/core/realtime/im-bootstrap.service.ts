@@ -50,7 +50,7 @@ export class ImBootstrapService {
         if (!Number.isFinite(uid)) break;
         // Prefetch profile so UserInfoModal is populated by the time the user clicks the notification
         this.enrichQueue.queue(uid);
-        const displayName = event.nickname?.trim() || event.visitorUserId;
+        const displayName = event.nickname?.trim() || 'Someone';
         this.notifications.notifyUserEvent({
           type: 'info',
           title: 'Profile visit',
