@@ -47,40 +47,43 @@ export interface UserInfoModalData {
         <svg aria-hidden="true" lucideX [size]="14"></svg>
       </button>
 
-      <app-user-identity-card
-        [avatarUrl]="avatarUrl()"
-        [initials]="initials()"
-        [displayName]="displayName()"
-        [username]="username()"
-        [signature]="signature()"
-        [ringColor]="vipType() === 100 ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
-      >
-        @if (sex() === 'male') {
-          <span nameBadge class="sex-badge sex-male">
-            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="14.5" r="5.5"/><path d="M19.5 8 12 15.5M19.5 8l-5.5 0"/></svg>
-          </span>
-        } @else if (sex() === 'female') {
-          <span nameBadge class="sex-badge sex-female">
-            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="14.5" cy="8" r="5.5"/><path d="M14.5 8 12 5.5M14.5 8h-5M12 5.5v8"/></svg>
-          </span>
-        }
-        <ng-container metaChips>
-          @if (vipType() === 100) {
-            <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
-          } @else if (vipType() > 0 && vipType() < 100) {
-            <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+      <div class="identity-wrapper">
+        <app-user-identity-card
+          [avatarUrl]="avatarUrl()"
+          [initials]="initials()"
+          [displayName]="displayName()"
+          [username]="username()"
+          [signature]="signature()"
+          [ringColor]="vipType() === 100 ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
+          [vip]="vipType() === 100"
+        >
+          @if (sex() === 'male') {
+            <span nameBadge class="sex-badge sex-male">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="14.5" r="5.5"/><path d="M19.5 8 12 15.5M19.5 8l-5.5 0"/></svg>
+            </span>
+          } @else if (sex() === 'female') {
+            <span nameBadge class="sex-badge sex-female">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="14.5" cy="8" r="5.5"/><path d="M14.5 8 12 5.5M14.5 8h-5M12 5.5v8"/></svg>
+            </span>
           }
-          @if (onlineStatus(); as status) {
-            <span class="chip" [class]="onlineChipClass()">{{ status }}</span>
-          }
-          @if (liveStatus()) {
-            <span class="chip chip-live">LIVE</span>
-          }
-          @if (streakDays(); as streak) {
-            <span class="chip chip-streak">{{ streak }}-day streak</span>
-          }
-        </ng-container>
-      </app-user-identity-card>
+          <ng-container metaChips>
+            @if (vipType() === 100) {
+              <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+            } @else if (vipType() > 0 && vipType() < 100) {
+              <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+            }
+            @if (onlineStatus(); as status) {
+              <span class="chip" [class]="onlineChipClass()">{{ status }}</span>
+            }
+            @if (liveStatus()) {
+              <span class="chip chip-live">LIVE</span>
+            }
+            @if (streakDays(); as streak) {
+              <span class="chip chip-streak">{{ streak }}-day streak</span>
+            }
+          </ng-container>
+        </app-user-identity-card>
+      </div>
 
       @if (canFollow()) {
         <div class="follow-action-row">
@@ -255,6 +258,16 @@ export interface UserInfoModalData {
       }
       @media (prefers-reduced-motion: reduce) {
         :host { animation: none; }
+      }
+
+      .identity-wrapper {
+        padding-top: calc(26px + var(--space-3));
+        background: var(--color-card);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        animation: itemIn 0.25s ease-out backwards;
+      }
+      :host-context(.dark) .identity-wrapper {
+        background: var(--color-neutral-800);
       }
 
       .close-btn {

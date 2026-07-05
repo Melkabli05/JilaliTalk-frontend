@@ -50,24 +50,26 @@ export interface UserActionModalData {
         <svg aria-hidden="true" lucideX [size]="14"></svg>
       </button>
 
-      <app-user-identity-card
-        [avatarUrl]="avatarUrl()"
-        [initials]="initials()"
-        [displayName]="displayName()"
-        [username]="username()"
-        [signature]="signature()"
-        [ringColor]="ringColor()"
-        [crownType]="crownType()"
-      >
-        <ng-container metaChips>
-          @if (vipType() === 100) {
-            <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
-          } @else if (vipType() > 0 && vipType() < 100) {
-            <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
-          }
-          <span class="chip" [class]="roleChipClass()">{{ roleLabel() }}</span>
-        </ng-container>
-      </app-user-identity-card>
+      <div class="identity-header">
+        <app-user-identity-card
+          [avatarUrl]="avatarUrl()"
+          [initials]="initials()"
+          [displayName]="displayName()"
+          [username]="username()"
+          [signature]="signature()"
+          [ringColor]="ringColor()"
+          [crownType]="crownType()"
+        >
+          <ng-container metaChips>
+            @if (vipType() === 100) {
+              <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+            } @else if (vipType() > 0 && vipType() < 100) {
+              <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+            }
+            <span class="chip" [class]="roleChipClass()">{{ roleLabel() }}</span>
+          </ng-container>
+        </app-user-identity-card>
+      </div>
 
       <div class="modal-body">
 
@@ -310,6 +312,7 @@ export interface UserActionModalData {
         --uam-text-secondary: var(--color-text-secondary);
         --uam-border:         var(--color-border);
         --uam-card:           var(--color-card);
+        --uam-header-bg:      var(--color-neutral-50);
         --uam-stats-bg:       var(--color-neutral-50);
 
         --uam-close-bg:        var(--color-neutral-100);
@@ -358,6 +361,7 @@ export interface UserActionModalData {
         --uam-text-secondary: var(--color-neutral-200);
         --uam-border:         var(--color-neutral-700);
         --uam-card:           var(--color-neutral-800);
+        --uam-header-bg:      var(--color-neutral-800);
         --uam-stats-bg:       var(--color-neutral-800);
 
         --uam-close-bg:        var(--color-neutral-700);
@@ -406,6 +410,11 @@ export interface UserActionModalData {
       }
       @media (prefers-reduced-motion: reduce) {
         :host { animation: none; }
+      }
+
+      .identity-header {
+        background: var(--uam-header-bg);
+        border-bottom: 1px solid var(--uam-border);
       }
 
       .close-btn {

@@ -15,7 +15,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
   imports: [AvatarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="identity-card">
+    <div class="identity-card" [class.identity-card--vip]="vip()">
       <app-avatar
         [src]="avatarUrl()"
         [initials]="initials()"
@@ -51,6 +51,10 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       padding: var(--space-4);
     }
 
+    .identity-card--vip {
+      border-bottom: 2px solid var(--color-gold-400);
+    }
+
     .identity-main {
       flex: 1;
       min-width: 0;
@@ -69,6 +73,10 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       font-size: var(--text-lg);
       font-weight: var(--font-semibold);
       color: var(--color-text);
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .user-handle {
@@ -100,4 +108,5 @@ export class UserIdentityCardComponent {
   readonly signature = input<string | null>(null);
   readonly ringColor = input<string | null>(null);
   readonly crownType = input<string | null>(null);
+  readonly vip = input(false);
 }
