@@ -83,7 +83,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
     if (!client) return;
     try {
       const track = await AgoraRTC.createMicrophoneAudioTrack(this.getAudioTrackOptions());
-      track.setVolume(140);
+      track.setVolume(100);
       await client.publish(track);
       await track.setEnabled(false);
       this.micTrack = track;
@@ -102,7 +102,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
     if (!this.isGhostMode) await client.setClientRole('host');
     if (publisherToken) await client.renewToken(publisherToken);
     const track = await AgoraRTC.createMicrophoneAudioTrack(this.getAudioTrackOptions());
-    track.setVolume(140);
+    track.setVolume(100);
     await client.publish(track);
     this.micTrack = track;
     this._localAudioTrack.set(track);
@@ -175,13 +175,18 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this._noiseSuppressionLevel.set(level);
   }
 
-  private getAudioTrackOptions(): { AEC: boolean; AGC: boolean; ANS: boolean; encoderConfig: 'high_quality_stereo' } {
+  private getAudioTrackOptions(): {
+    AEC: boolean;
+    AGC: boolean;
+    ANS: boolean;
+    encoderConfig: 'music_standard';
+  } {
     const level = this._noiseSuppressionLevel();
     return {
       AEC: true,
       AGC: true,
       ANS: level !== 0,
-      encoderConfig: 'high_quality_stereo',
+      encoderConfig: 'music_standard',
     };
   }
 
@@ -225,7 +230,11 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this.autoplayArmed = true;
     const resume = (): void => {
       for (const track of this.remoteAudioTracks.values()) {
-        try { track.play(); } catch { return; }
+        try {
+          track.play();
+        } catch {
+          return;
+        }
       }
       this.autoplayArmed = false;
       this.autoplayHandler = null;
@@ -249,25 +258,36 @@ export class AgoraRtcService implements RealtimeLifecycle {
     });
 
     client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
-      try { await client.subscribe(user, mediaType); } catch { return; }
+      try {
+        await client.subscribe(user, mediaType);
+      } catch {
+        return;
+      }
       if (mediaType === 'audio' && user.audioTrack) {
         this.remoteAudioTracks.set(user.uid, user.audioTrack);
-        try { user.audioTrack.play(); } catch { this.armAutoplayRecovery(); }
+        try {
+          user.audioTrack.play();
+        } catch {
+          this.armAutoplayRecovery();
+        }
       }
       this.addRemoteUser(user, mediaType);
     });
 
     client.on('user-unpublished', (user: any, mediaType: 'audio' | 'video') => {
-      this._remoteUsers.update((list) => list.map((u) => u.uid === user.uid
-        ? {
-            ...u,
-            hasAudio: mediaType === 'audio' ? false : u.hasAudio,
-            hasVideo: mediaType === 'video' ? false : u.hasVideo,
-            audioTrack: mediaType === 'audio' ? null : u.audioTrack,
-            videoTrack: mediaType === 'video' ? null : u.videoTrack,
-          }
-        : u,
-      ));
+      this._remoteUsers.update((list) =>
+        list.map((u) =>
+          u.uid === user.uid
+            ? {
+                ...u,
+                hasAudio: mediaType === 'audio' ? false : u.hasAudio,
+                hasVideo: mediaType === 'video' ? false : u.hasVideo,
+                audioTrack: mediaType === 'audio' ? null : u.audioTrack,
+                videoTrack: mediaType === 'video' ? null : u.videoTrack,
+              }
+            : u,
+        ),
+      );
     });
 
     client.on('user-joined', (user: any) => {
@@ -291,38 +311,48 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this._remoteUsers.update((list) => {
       const existing = list.find((u) => u.uid === uid);
       if (existing) {
-        return list.map((u) => u.uid === uid
-          ? {
-              ...u,
-              hasAudio: mediaType === 'audio' ? true : u.hasAudio,
-              hasVideo: mediaType === 'video' ? true : u.hasVideo,
-              audioTrack: mediaType === 'audio' ? user.audioTrack : u.audioTrack,
-              videoTrack: mediaType === 'video' ? user.videoTrack : u.videoTrack,
-              isScreenShare: isScreenShare ? true : u.isScreenShare,
-            }
-          : u,
+        return list.map((u) =>
+          u.uid === uid
+            ? {
+                ...u,
+                hasAudio: mediaType === 'audio' ? true : u.hasAudio,
+                hasVideo: mediaType === 'video' ? true : u.hasVideo,
+                audioTrack: mediaType === 'audio' ? user.audioTrack : u.audioTrack,
+                videoTrack: mediaType === 'video' ? user.videoTrack : u.videoTrack,
+                isScreenShare: isScreenShare ? true : u.isScreenShare,
+              }
+            : u,
         );
       }
-      return [...list, {
-        uid,
-        hasAudio: mediaType === 'audio',
-        hasVideo: mediaType === 'video',
-        audioTrack: mediaType === 'audio' ? user.audioTrack : null,
-        videoTrack: mediaType === 'video' ? user.videoTrack : null,
-        nickname: user.nickname ?? String(uid),
-        isScreenShare,
-      }];
+      return [
+        ...list,
+        {
+          uid,
+          hasAudio: mediaType === 'audio',
+          hasVideo: mediaType === 'video',
+          audioTrack: mediaType === 'audio' ? user.audioTrack : null,
+          videoTrack: mediaType === 'video' ? user.videoTrack : null,
+          nickname: user.nickname ?? String(uid),
+          isScreenShare,
+        },
+      ];
     });
   }
 }
 
 function mapState(s: ConnectionState): RtcConnectionState {
   switch (s) {
-    case 'CONNECTING': return 'connecting';
-    case 'CONNECTED': return 'connected';
-    case 'RECONNECTING': return 'reconnecting';
-    case 'DISCONNECTED': return 'disconnected';
-    case 'DISCONNECTING': return 'disconnected';
-    default: return 'failed';
+    case 'CONNECTING':
+      return 'connecting';
+    case 'CONNECTED':
+      return 'connected';
+    case 'RECONNECTING':
+      return 'reconnecting';
+    case 'DISCONNECTED':
+      return 'disconnected';
+    case 'DISCONNECTING':
+      return 'disconnected';
+    default:
+      return 'failed';
   }
 }
