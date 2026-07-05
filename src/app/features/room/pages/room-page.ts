@@ -116,8 +116,10 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       overflow: hidden;
       container-type: size;
       container-name: room-page;
-      padding-top: max(env(safe-area-inset-top), var(--space-1));
-      padding-bottom: max(env(safe-area-inset-bottom), var(--space-1));
+      /* The shell's .app-main padding provides the top + bottom insets in
+         every viewport (mobile-immersive safe area, desktop-immersive
+         app-header height, non-immersive standard chrome). See app.ts :host
+         for the --shell-inset-top / --shell-inset-bottom contract. */
     }
 
     .room-layout {
@@ -175,12 +177,6 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       }
     }
 
-    @media (min-width: 1024px) {
-      :host {
-        padding-top: var(--app-header-height);
-        padding-bottom: 0;
-      }
-    }
   `]
 })
 export class RoomPageComponent extends RoomPageBase {

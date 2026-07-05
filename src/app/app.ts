@@ -58,6 +58,13 @@ function isStandaloneRoute(root: ActivatedRouteSnapshot): boolean {
     `
       :host {
         display: block;
+        /* Single source of truth for the content insets. Every page that
+           mounts inside the shell consumes these via var() — no page
+           re-derives app-header-height / bottom-nav-height / safe-area
+           itself. The .app-shell.immersive ruleset (and the @media override
+           below) flip these for the immersive-route case. */
+        --shell-inset-top: var(--app-header-height);
+        --shell-inset-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
       }
 
       .app-shell {
@@ -88,7 +95,10 @@ function isStandaloneRoute(root: ActivatedRouteSnapshot): boolean {
         overflow: hidden;
       }
 
-      /* The ONLY scroll container. Fills the slot — header floats above. */
+      /* The ONLY scroll container. Fills the slot — header floats above.
+         Inset padding comes from --shell-inset-top / --shell-inset-bottom,
+         which the :host above (and the .app-shell.immersive override below)
+         compute based on whether the route hides the global chrome. */
       .app-main {
         height: 100%;
         min-height: 0;
@@ -98,14 +108,8 @@ function isStandaloneRoute(root: ActivatedRouteSnapshot): boolean {
         scrollbar-width: thin;
         scrollbar-gutter: stable;
         scrollbar-color: var(--color-neutral-300) transparent;
-        /* Reserve space for the fixed global app-header so content doesn't render
-           underneath it. The room page is the one exception — see the
-           .app-shell.immersive override below — it manages its own header offset
-           at every width (hidden header on mobile needs none; visible header on
-           desktop reserves it itself), so it must not get this twice. */
-        padding-top: var(--app-header-height);
-        /* room for the fixed mobile bottom nav */
-        padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+        padding-top: var(--shell-inset-top);
+        padding-bottom: var(--shell-inset-bottom);
       }
       .app-main::-webkit-scrollbar {
         width: 6px;
@@ -114,23 +118,20 @@ function isStandaloneRoute(root: ActivatedRouteSnapshot): boolean {
         background-color: var(--color-neutral-300);
         border-radius: 3px;
       }
-      @media (min-width: 1024px) {
-        .app-main {
-          padding-bottom: 0;
-        }
-      }
 
-      /* Immersive routes (mobile room pages) hide the global header and bottom nav —
-         see :host-context(.app-shell.immersive) in header/sidenav components — so
-         .app-main no longer needs to reserve space for either here. The room page's
-         own :host (room-page.ts) manages its own header/safe-area offsets instead,
-         at every width, so this override isn't limited to mobile. */
-      .app-shell.immersive .app-main {
-        padding-top: 0;
+      /* Immersive routes (mobile room pages) hide the global header and bottom
+         nav (see :host-context(.app-shell.immersive) in header/sidenav). The
+         insets collapse to just the safe-area (mobile) or just the still-visible
+         desktop app-header (desktop — sidenav replaces the bottom-nav on
+         desktop, so the only chrome that disappears is the bottom-nav). */
+      .app-shell.immersive {
+        --shell-inset-top: max(env(safe-area-inset-top), var(--space-3));
+        --shell-inset-bottom: env(safe-area-inset-bottom);
       }
-      @media (max-width: 1023.98px) {
-        .app-shell.immersive .app-main {
-          padding-bottom: env(safe-area-inset-bottom);
+      @media (min-width: 1024px) {
+        .app-shell.immersive {
+          --shell-inset-top: var(--app-header-height);
+          --shell-inset-bottom: env(safe-area-inset-bottom);
         }
       }
     `,

@@ -249,16 +249,14 @@ const GROUP_GAP_MS = 5 * 60 * 1000;
   `,
   styles: [
     `
-      /* This route isn't immersive, so .app-main (app.ts) already reserves header
-       space via its own padding-top — this host just needs a definite height for
-       .shell's height:100% to resolve against, not its own offset on top of that
-       (room-page.ts owns its offset because immersive routes zero out .app-main's
-       padding; standalone routes like this one don't opt out of it). */
       :host {
         display: block;
         box-sizing: border-box;
         height: 100%;
         overflow: hidden;
+        /* No own padding — the shell's .app-main provides --shell-inset-top
+           and --shell-inset-bottom, which already account for the global
+           app-header + bottom-nav (or safe-area, on immersive routes). */
       }
 
       /* ─── Shell ──────────────────────────────────────── */
