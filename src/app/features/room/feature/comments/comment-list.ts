@@ -384,8 +384,10 @@ export class NewMessagesPillComponent {
                         </button>
                         <button
                           type="button"
-                          class="action-btn"
+                          class="action-btn action-reply"
+                          [class.is-hidden]="replyDisabled()"
                           (click)="onReply(comment)"
+                          [disabled]="replyDisabled()"
                           aria-label="Reply"
                         >
                           <svg aria-hidden="true" lucideCornerUpLeft [size]="11" />
@@ -756,6 +758,10 @@ export class NewMessagesPillComponent {
         outline: var(--focus-ring);
         outline-offset: var(--focus-ring-offset);
       }
+      /* When reply is disabled (e.g. user is invisible), hide the inline
+         reply button entirely — the .is-hidden class is applied via the
+         replyDisabled() input. */
+      .action-btn.is-hidden { display: none; }
 
       /* ─── Empty state ─── */
       .empty-state {
@@ -799,6 +805,7 @@ export class NewMessagesPillComponent {
 export class CommentListComponent {
   readonly items = input<readonly CommentOrEvent[]>([]);
   readonly currentUserId = input<number>(0);
+  readonly replyDisabled = input(false);
   readonly reply = output<Comment>();
   readonly UserRole = UserRole;
 

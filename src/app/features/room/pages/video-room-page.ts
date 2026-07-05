@@ -117,6 +117,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
             [currentUserId]="roomStore.userId()"
             [refreshing]="refreshingComments()"
             [typingNames]="typingNames()"
+            [disabled]="!roomStore.isVisible()"
             (sendComment)="onSendComment($event)"
             (typing)="onTyping()"
             (refresh)="onRefreshComments()"

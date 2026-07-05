@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, input, output, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { LucideSend, LucideSmile, LucideX, LucideCornerUpLeft } from '@lucide/angular';
 
 export interface ReplyTarget {
@@ -25,7 +25,7 @@ export interface SendEvent {
         <span class="reply-text">
           Replying to <strong>{{ target.nickname }}</strong>: {{ target.text }}
         </span>
-        <button type="button" class="reply-cancel" (click)="cancelReply.emit()" aria-label="Cancel reply">
+        <button type="button" class="reply-cancel" (click)="cancelReply.emit()" [disabled]="disabled()" aria-label="Cancel reply">
           <svg aria-hidden="true" lucideX [size]="12" />
         </button>
       </div>
@@ -37,6 +37,7 @@ export interface SendEvent {
         (click)="toggleEmojiPicker()"
         aria-label="Open emoji picker"
         [class.active]="showEmojiPicker()"
+        [disabled]="disabled()"
       >
         <svg aria-hidden="true" lucideSmile [size]="16"></svg>
       </button>
@@ -56,12 +57,13 @@ export interface SendEvent {
         enterkeyhint="send"
         autocapitalize="sentences"
         autocorrect="on"
-        [placeholder]="replyTo() ? 'Reply to ' + replyTo()!.nickname + '…' : 'Say something...'"
+        [disabled]="disabled()"
+        [placeholder]="placeholder()"
         (keydown.enter)="onSend($event)"
         (input)="onInput($event)"
         #inputEl
       />
-      <button class="send-btn" (click)="onSendFromBtn(inputEl)" aria-label="Send comment">
+      <button class="send-btn" (click)="onSendFromBtn(inputEl)" aria-label="Send comment" [disabled]="disabled()">
         <svg aria-hidden="true" lucideSend [size]="14"></svg>
       </button>
     </div>
@@ -206,16 +208,24 @@ export interface SendEvent {
 })
 export class CommentInputComponent {
   readonly replyTo = input<ReplyTarget | null>(null);
+  readonly disabled = input(false);
   readonly send = output<SendEvent>();
   readonly cancelReply = output<void>();
   readonly typing = output<void>();
 
   readonly showEmojiPicker = signal(false);
+  /** Placeholder for the input — swaps to a "you're invisible" hint when disabled. */
+  protected readonly placeholder = computed(() => {
+    if (this.disabled()) return "You're invisible — rejoin visibly to comment";
+    const reply = this.replyTo();
+    return reply ? `Reply to ${reply.nickname}…` : 'Say something...';
+  });
   private inputRef: HTMLInputElement | null = null;
   private lastTypingEmit = 0;
   private static readonly TYPING_THROTTLE_MS = 800;
 
   async toggleEmojiPicker(): Promise<void> {
+    if (this.disabled()) return;
     if (!this.showEmojiPicker()) {
       await import('emoji-picker-element');
     }
@@ -223,6 +233,7 @@ export class CommentInputComponent {
   }
 
   onEmojiClick(event: Event): void {
+    if (this.disabled()) return;
     const input = this.inputRef;
     if (!input) return;
     const customEvent = event as CustomEvent<{ emoji: { unicode: string } }>;
@@ -234,12 +245,14 @@ export class CommentInputComponent {
   }
 
   onSend(event: Event): void {
+    if (this.disabled()) return;
     const input = event.target as HTMLInputElement;
     this.inputRef = input;
     this.submit(input);
   }
 
   onInput(event: Event): void {
+    if (this.disabled()) return;
     const input = event.target as HTMLInputElement;
     this.inputRef = input;
     if (!input.value) return;
@@ -250,6 +263,7 @@ export class CommentInputComponent {
   }
 
   onSendFromBtn(input: HTMLInputElement): void {
+    if (this.disabled()) return;
     this.inputRef = input;
     this.submit(input);
   }

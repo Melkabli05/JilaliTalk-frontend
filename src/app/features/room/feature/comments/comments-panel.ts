@@ -86,6 +86,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
               #commentListEl
               [items]="commentsStore.mergedItems()"
               [currentUserId]="currentUserId()"
+              [replyDisabled]="disabled()"
               (reply)="onReply($event)"
             />
 
@@ -103,6 +104,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
 
           <app-comment-input
             [replyTo]="replyTo()"
+            [disabled]="disabled()"
             (send)="onSendComment($event)"
             (typing)="typing.emit()"
             (cancelReply)="replyTarget.set(null)"
@@ -295,6 +297,8 @@ export class CommentsPanelComponent {
   readonly currentUserId = input<number>(0);
   readonly refreshing = input(false);
   readonly typingNames = input<readonly string[]>([]);
+  /** When true, the comment input is disabled and inline reply buttons are hidden. */
+  readonly disabled = input(false);
   readonly sendComment = output<SendEvent>();
   readonly refresh = output<void>();
   readonly loadCaptions = output<void>();
