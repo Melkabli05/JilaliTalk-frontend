@@ -17,7 +17,6 @@ import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { UserRole } from '@core/models/user-role';
 import { Comment, CommentOrEvent, EventCard } from '../../data/room-model';
 import { EventCardComponent } from '../../ui/event-card';
-import { SwipeableBubbleComponent } from './swipeable-bubble.component';
 import { formatClockTime } from '@shared/utils';
 import {
   LucideCopy,
@@ -170,7 +169,6 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
     CountryFlagComponent,
     NgOptimizedImage,
     EventCardComponent,
-    SwipeableBubbleComponent,
     LucideCopy,
     LucideCheck,
     LucideCornerUpLeft,
@@ -237,72 +235,70 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
                 </div>
 
                 @for (comment of row.group.messages; track comment._id) {
-                  <app-swipeable-bubble [commentId]="comment._id" (reply)="onReply(comment)">
-                    <div
-                      class="message"
-                      [class.own]="isSelfGroup(row.group)"
-                      [class.highlighted]="highlightId() === comment._id"
-                      [attr.data-comment-id]="comment._id"
-                    >
-                      @if (comment.msg.replyInfo; as ri) {
-                        <div
-                          class="reply-quote"
-                          [class.own]="isSelfGroup(row.group)"
-                          role="button"
-                          tabindex="0"
-                          [attr.aria-label]="'Jump to original message from ' + ri.fromNickname"
-                          (click)="onReplyQuoteClick(comment, ri)"
-                          (keydown.enter)="onReplyQuoteClick(comment, ri)"
-                          (keydown.space)="onReplyQuoteClick(comment, ri); $event.preventDefault()"
-                        >
-                          <span class="reply-quote__label">
-                            <svg aria-hidden="true" lucideCornerUpLeft [size]="10" />
-                            Replying to <strong>{{ ri.fromNickname }}</strong>
-                          </span>
-                          <span class="reply-quote__text">{{ ri.text }}</span>
-                        </div>
-                      }
+                  <div
+                    class="message"
+                    [class.own]="isSelfGroup(row.group)"
+                    [class.highlighted]="highlightId() === comment._id"
+                    [attr.data-comment-id]="comment._id"
+                  >
+                    @if (comment.msg.replyInfo; as ri) {
                       <div
-                        class="bubble"
+                        class="reply-quote"
                         [class.own]="isSelfGroup(row.group)"
-                        [class.skinned]="hasBubbleSkin(comment)"
+                        role="button"
+                        tabindex="0"
+                        [attr.aria-label]="'Jump to original message from ' + ri.fromNickname"
+                        (click)="onReplyQuoteClick(comment, ri)"
+                        (keydown.enter)="onReplyQuoteClick(comment, ri)"
+                        (keydown.space)="onReplyQuoteClick(comment, ri); $event.preventDefault()"
                       >
-                        {{ comment.msg.text.text }}
-                        @if (hasAnimalBadge(comment)) {
-                          <img
-                            class="bubble-animal"
-                            [ngSrc]="comment.bubbleAnimalUrl!"
-                            width="18"
-                            height="18"
-                            alt=""
-                            aria-hidden="true"
-                          />
-                        }
-                        <span class="actions">
-                          <button
-                            type="button"
-                            class="action-btn action-copy"
-                            (click)="copyText(comment.msg.text.text, comment._id)"
-                            [attr.aria-label]="copiedId() === comment._id ? 'Copied' : 'Copy'"
-                          >
-                            @if (copiedId() === comment._id) {
-                              <svg aria-hidden="true" lucideCheck [size]="11" />
-                            } @else {
-                              <svg aria-hidden="true" lucideCopy [size]="11" />
-                            }
-                          </button>
-                          <button
-                            type="button"
-                            class="action-btn action-reply"
-                            (click)="onReply(comment)"
-                            aria-label="Reply"
-                          >
-                            <svg aria-hidden="true" lucideCornerUpLeft [size]="11" />
-                          </button>
+                        <span class="reply-quote__label">
+                          <svg aria-hidden="true" lucideCornerUpLeft [size]="10" />
+                          Replying to <strong>{{ ri.fromNickname }}</strong>
                         </span>
+                        <span class="reply-quote__text">{{ ri.text }}</span>
                       </div>
+                    }
+                    <div
+                      class="bubble"
+                      [class.own]="isSelfGroup(row.group)"
+                      [class.skinned]="hasBubbleSkin(comment)"
+                    >
+                      {{ comment.msg.text.text }}
+                      @if (hasAnimalBadge(comment)) {
+                        <img
+                          class="bubble-animal"
+                          [ngSrc]="comment.bubbleAnimalUrl!"
+                          width="18"
+                          height="18"
+                          alt=""
+                          aria-hidden="true"
+                        />
+                      }
+                      <span class="actions">
+                        <button
+                          type="button"
+                          class="action-btn"
+                          (click)="copyText(comment.msg.text.text, comment._id)"
+                          [attr.aria-label]="copiedId() === comment._id ? 'Copied' : 'Copy'"
+                        >
+                          @if (copiedId() === comment._id) {
+                            <svg aria-hidden="true" lucideCheck [size]="11" />
+                          } @else {
+                            <svg aria-hidden="true" lucideCopy [size]="11" />
+                          }
+                        </button>
+                        <button
+                          type="button"
+                          class="action-btn"
+                          (click)="onReply(comment)"
+                          aria-label="Reply"
+                        >
+                          <svg aria-hidden="true" lucideCornerUpLeft [size]="11" />
+                        </button>
+                      </span>
                     </div>
-                  </app-swipeable-bubble>
+                  </div>
                 }
               </div>
             </div>
@@ -697,19 +693,6 @@ function buildRows(items: readonly CommentOrEvent[]): readonly Row[] {
         font-size: var(--text-xs);
         color: var(--cl-muted);
         margin: 0;
-      }
-
-      /* ─── Mobile chat-style alignment + action sizing ───
-         Container query matches CommentsPanelComponent's container-name.
-         Own bubbles right-align; others left-align. Reply action button
-         is hidden on mobile (swipe gesture replaces it); copy stays,
-         bumped to 32x32 for thumb-friendliness. */
-      @container comments-panel (max-width: 1023.98px) {
-        .group.own { align-items: flex-end; }
-        .group-meta.own { justify-content: flex-end; }
-        .bubble { display: block; max-width: 75%; }
-        .action-btn { width: 32px; height: 32px; }
-        .action-reply { display: none; }
       }
 
       @media (prefers-reduced-motion: reduce) {

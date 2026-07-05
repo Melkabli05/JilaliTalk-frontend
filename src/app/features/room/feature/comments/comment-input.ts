@@ -1,5 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, CUSTOM_ELEMENTS_SCHEMA, inject, DestroyRef, AfterViewInit, viewChild, ElementRef, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, ChangeDetectionStrategy, input, output, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { LucideSend, LucideSmile, LucideX, LucideCornerUpLeft } from '@lucide/angular';
 
 export interface ReplyTarget {
@@ -51,17 +50,17 @@ export interface SendEvent {
         </div>
       }
 
-      <textarea
-        #inputEl
+      <input
         class="comment-input"
-        rows="1"
+        type="text"
         enterkeyhint="send"
         autocapitalize="sentences"
         autocorrect="on"
         [placeholder]="replyTo() ? 'Reply to ' + replyTo()!.nickname + '…' : 'Say something...'"
-        (keydown.enter)="onEnter($event)"
+        (keydown.enter)="onSend($event)"
         (input)="onInput($event)"
-      ></textarea>
+        #inputEl
+      />
       <button class="send-btn" (click)="onSendFromBtn(inputEl)" aria-label="Send comment">
         <svg aria-hidden="true" lucideSend [size]="14"></svg>
       </button>
@@ -147,21 +146,9 @@ export interface SendEvent {
       --secondary-text-color: var(--ci-muted);
     }
     .comment-input {
-      flex: 1;
-      min-height: 40px;
-      max-height: 96px;       /* ~4 lines at 1.5 line-height — beyond this, the field scrolls internally */
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-full);
-      border: 1px solid var(--ci-border);
-      background: var(--ci-input);
-      font: inherit;
-      font-size: var(--text-sm);
-      line-height: var(--leading-normal);
-      color: var(--ci-text);
-      outline: none;
-      resize: none;
-      overflow-y: auto;
-      field-sizing: content;
+      flex: 1; padding: var(--space-2) var(--space-3); border-radius: var(--radius-full);
+      border: 1px solid var(--ci-border); background: var(--ci-input);
+      font-size: var(--text-sm); color: var(--ci-text); outline: none;
     }
     .comment-input:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
     .comment-input::placeholder { color: var(--ci-muted); }
@@ -217,39 +204,16 @@ export interface SendEvent {
     }
   `],
 })
-export class CommentInputComponent implements AfterViewInit {
+export class CommentInputComponent {
   readonly replyTo = input<ReplyTarget | null>(null);
   readonly send = output<SendEvent>();
   readonly cancelReply = output<void>();
   readonly typing = output<void>();
 
   readonly showEmojiPicker = signal(false);
-  readonly inputEl = viewChild<ElementRef<HTMLTextAreaElement>>('inputEl');
-  private inputRef: HTMLTextAreaElement | null = null;
+  private inputRef: HTMLInputElement | null = null;
   private lastTypingEmit = 0;
   private static readonly TYPING_THROTTLE_MS = 800;
-  private resizeObserver: ResizeObserver | null = null;
-
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly platformId = inject(PLATFORM_ID);
-
-  ngAfterViewInit(): void {
-    const textarea = this.inputEl()?.nativeElement;
-    if (!textarea) return;
-    if (isPlatformBrowser(this.platformId)) {
-      const observer = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          this.autoResize(entry.target as HTMLTextAreaElement);
-        }
-      });
-      this.resizeObserver = observer;
-      observer.observe(textarea);
-    }
-    this.destroyRef.onDestroy(() => {
-      this.resizeObserver?.disconnect();
-      this.resizeObserver = null;
-    });
-  }
 
   async toggleEmojiPicker(): Promise<void> {
     if (!this.showEmojiPicker()) {
@@ -266,26 +230,18 @@ export class CommentInputComponent implements AfterViewInit {
     if (emoji) {
       input.value = (input.value || '') + emoji;
       input.focus();
-      this.autoResize(input);
     }
   }
 
-  onEnter(event: Event): void {
-    const keyboardEvent = event as KeyboardEvent;
-    // Shift+Enter inserts a newline; Enter during IME composition also inserts a newline.
-    if (keyboardEvent.shiftKey || keyboardEvent.isComposing || keyboardEvent.keyCode === 229) {
-      return; // let the textarea handle the newline natively
-    }
-    keyboardEvent.preventDefault();
-    const input = event.target as HTMLTextAreaElement;
+  onSend(event: Event): void {
+    const input = event.target as HTMLInputElement;
     this.inputRef = input;
     this.submit(input);
   }
 
   onInput(event: Event): void {
-    const input = event.target as HTMLTextAreaElement;
+    const input = event.target as HTMLInputElement;
     this.inputRef = input;
-    this.autoResize(input);
     if (!input.value) return;
     const now = Date.now();
     if (now - this.lastTypingEmit < CommentInputComponent.TYPING_THROTTLE_MS) return;
@@ -293,28 +249,17 @@ export class CommentInputComponent implements AfterViewInit {
     this.typing.emit();
   }
 
-  onSendFromBtn(input: HTMLTextAreaElement): void {
+  onSendFromBtn(input: HTMLInputElement): void {
     this.inputRef = input;
     this.submit(input);
   }
 
-  /** Resize the textarea to fit its content. Uses native `field-sizing: content`
-   *  when supported; ResizeObserver handles legacy browsers. The 96px max-height
-   *  in CSS caps the field at ~4 lines; beyond that the textarea becomes
-   *  internally scrollable. */
-  private autoResize(textarea: HTMLTextAreaElement): void {
-    // Reset to recompute (scrollHeight would otherwise be stale).
-    textarea.style.height = 'auto';
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 96)}px`;
-  }
-
-  private submit(input: HTMLTextAreaElement): void {
+  private submit(input: HTMLInputElement): void {
     const text = input.value.trim();
     if (text) {
       this.send.emit({ text, replyInfo: this.replyTo() ?? null });
       input.value = '';
     }
     this.showEmojiPicker.set(false);
-    this.autoResize(input);
   }
 }
