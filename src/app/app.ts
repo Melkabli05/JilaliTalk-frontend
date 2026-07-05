@@ -9,6 +9,7 @@ import { MinimizedRoomBarComponent } from '@core/layout/minimized-room-bar.compo
 import { ImBootstrapService } from '@core/realtime/im-bootstrap.service';
 import { ToastContainerComponent } from '@shared/ui/toast/toast-container.component';
 import { PwaUpdateBannerComponent } from '@shared/ui';
+import { NotificationToastComponent } from '@shared/ui/notification-panel';
 import { PwaUpdateService } from '@core/services/pwa-update.service';
 import { ActiveCallStore } from '@store/active-call.store';
 
@@ -31,7 +32,7 @@ function isStandaloneRoute(root: ActivatedRouteSnapshot): boolean {
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, SidenavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent, MinimizedRoomBarComponent],
+  imports: [RouterOutlet, SidenavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent, MinimizedRoomBarComponent, NotificationToastComponent],
   template: `
     <div class="app-shell" [class.immersive]="immersive()" [class.standalone]="standalone()">
       @if (!hideSidenav()) {
@@ -45,6 +46,7 @@ function isStandaloneRoute(root: ActivatedRouteSnapshot): boolean {
       </div>
     </div>
     <app-toast-container />
+    <app-notification-toast />
     @if (activeCallStore.minimized()) {
       <app-minimized-room-bar />
     }
