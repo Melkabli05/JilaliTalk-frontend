@@ -11,6 +11,7 @@ export const roomRoutes: Routes = [
   {
     path: 'video/:cname/:busiType',
     title: 'Video Room',
+    data: { immersive: true },
     loadComponent: () =>
       import('./pages/video-room-page').then((m) => m.VideoRoomPageComponent),
   },
