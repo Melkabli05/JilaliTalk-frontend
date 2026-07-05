@@ -256,6 +256,15 @@ import { LucideChevronDown, LucideCheck, LucideTag } from '@lucide/angular';
       animation: checkPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     :host-context(.dark) .check-icon { color: var(--color-primary-300); }
+
+    /* Mobile: 44px rows are closer to a comfortably tappable target than the
+       desktop-density padding gives on its own. */
+    @media (max-width: 1023.98px) {
+      .category-option {
+        padding: var(--space-3) var(--space-2);
+        min-height: 44px;
+      }
+    }
   `],
 })
 export class CategorySelectComponent implements FormValueControl<number | null> {

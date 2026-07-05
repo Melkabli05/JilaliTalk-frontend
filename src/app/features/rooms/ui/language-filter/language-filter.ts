@@ -53,7 +53,12 @@ import { LucideGlobe, LucideSearch, LucideChevronDown, LucideX } from '@lucide/a
           <div class="lang-search">
             <svg aria-hidden="true" lucideSearch [size]="11" class="search-icon"></svg>
             <input
-              type="text"
+              type="search"
+              inputmode="search"
+              enterkeyhint="search"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
               class="lang-search-input"
               role="combobox"
               aria-autocomplete="list"
@@ -162,6 +167,7 @@ import { LucideGlobe, LucideSearch, LucideChevronDown, LucideX } from '@lucide/a
     .chevron.rotated { transform: rotate(180deg); }
     .lang-dropdown {
       width: 240px;
+      max-width: calc(100vw - 24px);
       background-color: var(--color-card);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-xl);
@@ -196,6 +202,27 @@ import { LucideGlobe, LucideSearch, LucideChevronDown, LucideX } from '@lucide/a
     }
     .lang-search-input::placeholder { color: var(--color-text-muted); }
     .lang-search-input:focus { box-shadow: 0 0 0 1px var(--color-primary-300); }
+    .lang-search-input::-webkit-search-cancel-button,
+    .lang-search-input::-webkit-search-decoration { display: none; }
+    .search-clear {
+      position: absolute;
+      right: var(--space-2);
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background-color: var(--color-neutral-200);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      padding: 0;
+      transition: background-color 0.1s ease, color 0.1s ease;
+    }
+    .search-clear:hover { background-color: var(--color-neutral-300); color: var(--color-text); }
     .lang-options {
       max-height: 208px;
       overflow-y: auto;
@@ -273,6 +300,27 @@ import { LucideGlobe, LucideSearch, LucideChevronDown, LucideX } from '@lucide/a
       .lang-empty { color: var(--color-neutral-400); }
 
       .lang-option-count { color: var(--color-neutral-400); }
+    }
+
+    /* Mobile: 16px stops iOS Safari auto-zooming the page on focus (it zooms
+       whenever a focused input's computed font-size is under 16px); larger
+       search-clear and option rows are closer to a comfortably tappable target. */
+    @media (max-width: 1023.98px) {
+      .lang-search-input {
+        font-size: var(--text-base);
+        height: 44px;
+      }
+
+      .search-clear {
+        width: 32px;
+        height: 32px;
+      }
+
+      .lang-option {
+        padding: var(--space-3);
+        font-size: var(--text-sm);
+        min-height: 44px;
+      }
     }
   `],
 })

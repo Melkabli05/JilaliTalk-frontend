@@ -11,6 +11,11 @@ import { LucideSearch, LucideX } from '@lucide/angular';
       <input
         class="search-input"
         type="search"
+        inputmode="search"
+        enterkeyhint="search"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
         [placeholder]="placeholder()"
         [value]="value()"
         (input)="onInput($event)"
@@ -172,6 +177,24 @@ import { LucideSearch, LucideX } from '@lucide/angular';
       .search,
       .search-icon,
       .search-clear { transition: none; }
+    }
+
+    /* Mobile: 16px stops iOS Safari auto-zooming the page on focus (it zooms
+       whenever a focused input's computed font-size is under 16px), and a
+       32px clear button is closer to a comfortably tappable target than 18px. */
+    @media (max-width: 1023.98px) {
+      .search {
+        height: 44px;
+      }
+
+      .search-input {
+        font-size: var(--text-base);
+      }
+
+      .search-clear {
+        width: 32px;
+        height: 32px;
+      }
     }
   `],
 })

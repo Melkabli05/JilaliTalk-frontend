@@ -53,6 +53,9 @@ export interface SendEvent {
       <input
         class="comment-input"
         type="text"
+        enterkeyhint="send"
+        autocapitalize="sentences"
+        autocorrect="on"
         [placeholder]="replyTo() ? 'Reply to ' + replyTo()!.nickname + '…' : 'Say something...'"
         (keydown.enter)="onSend($event)"
         (input)="onInput($event)"
@@ -155,6 +158,50 @@ export interface SendEvent {
       cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .send-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+
+    /* Mobile: 16px stops iOS Safari auto-zooming the page on focus (it zooms
+       whenever a focused input's computed font-size is under 16px) — this is
+       the most-typed-in field in the room, so it matters more here than
+       anywhere else. Larger buttons are closer to a comfortably tappable
+       target than the desktop 32px/18px sizes. */
+    @media (max-width: 1023.98px) {
+      .comment-input {
+        font-size: var(--text-base);
+      }
+
+      .emoji-btn,
+      .send-btn {
+        width: 40px;
+        height: 40px;
+      }
+
+      .reply-cancel {
+        width: 32px;
+        height: 32px;
+      }
+
+      /* The emoji-picker-element web component has no viewport awareness of
+         its own (fixed 400px height, ~300px min-content width) — inset it
+         from both edges so it can never render wider than the screen, and
+         cap its height so it can't extend above the visible viewport when
+         there isn't 400px of room above the input. --num-columns is one of
+         the library's documented custom properties, so it reliably crosses
+         the shadow-DOM boundary; width/height do not by default; the
+         !important pair over-anchoring is the pragmatic way to beat the
+         component's own internal :host{width:min-content;height:400px}. */
+      .emoji-picker-container {
+        left: var(--space-2);
+        right: var(--space-2);
+        max-height: min(400px, 60vh);
+      }
+
+      emoji-picker {
+        --num-columns: 6;
+        width: 100% !important;
+        height: 100% !important;
+        max-height: min(400px, 60vh) !important;
+      }
+    }
   `],
 })
 export class CommentInputComponent {

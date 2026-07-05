@@ -86,7 +86,12 @@ type ViewMode = 'grid' | 'list';
                 <input
                   #searchInput
                   class="search-input"
-                  type="text"
+                  type="search"
+                  inputmode="search"
+                  enterkeyhint="search"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
                   placeholder="Search by name or language..."
                   [value]="searchQuery()"
                   (input)="onSearchInput($event)"
@@ -483,6 +488,33 @@ type ViewMode = 'grid' | 'list';
     .clear-search-btn:focus-visible {
       outline: var(--focus-ring);
       outline-offset: var(--focus-ring-offset);
+    }
+
+    /* Mobile: 16px input font-size stops iOS Safari auto-zooming the page on
+       focus (it zooms whenever a focused input's computed font-size is under
+       16px), and 40px touch targets clear the 44pt/48dp minimum recommended
+       by Apple HIG / Material — the desktop 28px/20px sizes are too small to
+       reliably tap. */
+    @media (max-width: 1023.98px) {
+      .search-input {
+        font-size: var(--text-base);
+        padding: 10px 32px;
+      }
+
+      .tool-btn {
+        width: 40px;
+        height: 40px;
+      }
+
+      .toggle-btn {
+        width: 40px;
+        height: 40px;
+      }
+
+      .search-clear-btn {
+        width: 32px;
+        height: 32px;
+      }
     }
 
     /* Dark mode */

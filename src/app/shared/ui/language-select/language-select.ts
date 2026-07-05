@@ -56,7 +56,12 @@ import { LucideChevronDown, LucideSearch, LucideCheck, LucideX } from '@lucide/a
         <div class="lang-search">
           <svg aria-hidden="true" lucideSearch [size]="11" class="search-icon" />
           <input
-            type="text"
+            type="search"
+            inputmode="search"
+            enterkeyhint="search"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
             class="lang-search-input"
             role="combobox"
             aria-autocomplete="list"
@@ -181,6 +186,8 @@ import { LucideChevronDown, LucideSearch, LucideCheck, LucideX } from '@lucide/a
     }
     .lang-search-input::placeholder { color: var(--color-text-muted); }
     .lang-search-input:focus { box-shadow: 0 0 0 1px var(--color-primary-300); }
+    .lang-search-input::-webkit-search-cancel-button,
+    .lang-search-input::-webkit-search-decoration { display: none; }
     :host-context(.dark) .lang-search-input { background-color: var(--color-neutral-800); color: var(--color-neutral-200); }
     :host-context(.dark) .lang-search-input::placeholder { color: var(--color-neutral-500); }
 
@@ -246,6 +253,27 @@ import { LucideChevronDown, LucideSearch, LucideCheck, LucideX } from '@lucide/a
 
     .flag-icon-sm { width: 20px; height: 14px; border-radius: 2px; object-fit: cover; flex-shrink: 0; }
     .lang-empty { padding: var(--space-4) var(--space-3); text-align: center; color: var(--color-text-muted); font-size: var(--text-xs); }
+
+    /* Mobile: 16px stops iOS Safari auto-zooming the page on focus (it zooms
+       whenever a focused input's computed font-size is under 16px); larger
+       search-clear and option rows are closer to a comfortably tappable target. */
+    @media (max-width: 1023.98px) {
+      .lang-search-input {
+        font-size: var(--text-base);
+        height: 44px;
+      }
+
+      .search-clear {
+        width: 32px;
+        height: 32px;
+      }
+
+      .lang-option {
+        padding: var(--space-3);
+        font-size: var(--text-sm);
+        min-height: 44px;
+      }
+    }
   `],
 })
 export class LanguageSelectComponent implements FormValueControl<number> {
