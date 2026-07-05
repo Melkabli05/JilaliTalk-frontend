@@ -50,17 +50,17 @@ export interface SendEvent {
         </div>
       }
 
-      <input
+      <textarea
+        #inputEl
         class="comment-input"
-        type="text"
+        rows="1"
         enterkeyhint="send"
         autocapitalize="sentences"
         autocorrect="on"
         [placeholder]="replyTo() ? 'Reply to ' + replyTo()!.nickname + '…' : 'Say something...'"
-        (keydown.enter)="onSend($event)"
+        (keydown.enter)="onEnter($event)"
         (input)="onInput($event)"
-        #inputEl
-      />
+      ></textarea>
       <button class="send-btn" (click)="onSendFromBtn(inputEl)" aria-label="Send comment">
         <svg aria-hidden="true" lucideSend [size]="14"></svg>
       </button>
@@ -146,9 +146,21 @@ export interface SendEvent {
       --secondary-text-color: var(--ci-muted);
     }
     .comment-input {
-      flex: 1; padding: var(--space-2) var(--space-3); border-radius: var(--radius-full);
-      border: 1px solid var(--ci-border); background: var(--ci-input);
-      font-size: var(--text-sm); color: var(--ci-text); outline: none;
+      flex: 1;
+      min-height: 40px;
+      max-height: 96px;       /* ~4 lines at 1.5 line-height — beyond this, the field scrolls internally */
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--ci-border);
+      background: var(--ci-input);
+      font: inherit;
+      font-size: var(--text-sm);
+      line-height: var(--leading-normal);
+      color: var(--ci-text);
+      outline: none;
+      resize: none;
+      overflow-y: auto;
+      field-sizing: content;
     }
     .comment-input:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
     .comment-input::placeholder { color: var(--ci-muted); }
@@ -211,9 +223,10 @@ export class CommentInputComponent {
   readonly typing = output<void>();
 
   readonly showEmojiPicker = signal(false);
-  private inputRef: HTMLInputElement | null = null;
+  private inputRef: HTMLTextAreaElement | null = null;
   private lastTypingEmit = 0;
   private static readonly TYPING_THROTTLE_MS = 800;
+  private resizeObserver: ResizeObserver | null = null;
 
   async toggleEmojiPicker(): Promise<void> {
     if (!this.showEmojiPicker()) {
@@ -230,18 +243,26 @@ export class CommentInputComponent {
     if (emoji) {
       input.value = (input.value || '') + emoji;
       input.focus();
+      this.autoResize(input);
     }
   }
 
-  onSend(event: Event): void {
-    const input = event.target as HTMLInputElement;
+  onEnter(event: Event): void {
+    const keyboardEvent = event as KeyboardEvent;
+    // Shift+Enter inserts a newline; Enter during IME composition also inserts a newline.
+    if (keyboardEvent.shiftKey || keyboardEvent.isComposing || keyboardEvent.keyCode === 229) {
+      return; // let the textarea handle the newline natively
+    }
+    keyboardEvent.preventDefault();
+    const input = event.target as HTMLTextAreaElement;
     this.inputRef = input;
     this.submit(input);
   }
 
   onInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
+    const input = event.target as HTMLTextAreaElement;
     this.inputRef = input;
+    this.autoResize(input);
     if (!input.value) return;
     const now = Date.now();
     if (now - this.lastTypingEmit < CommentInputComponent.TYPING_THROTTLE_MS) return;
@@ -249,17 +270,28 @@ export class CommentInputComponent {
     this.typing.emit();
   }
 
-  onSendFromBtn(input: HTMLInputElement): void {
+  onSendFromBtn(input: HTMLTextAreaElement): void {
     this.inputRef = input;
     this.submit(input);
   }
 
-  private submit(input: HTMLInputElement): void {
+  /** Resize the textarea to fit its content. Uses native `field-sizing: content`
+   *  when supported; ResizeObserver handles legacy browsers. The 96px max-height
+   *  in CSS caps the field at ~4 lines; beyond that the textarea becomes
+   *  internally scrollable. */
+  private autoResize(textarea: HTMLTextAreaElement): void {
+    // Reset to recompute (scrollHeight would otherwise be stale).
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 96)}px`;
+  }
+
+  private submit(input: HTMLTextAreaElement): void {
     const text = input.value.trim();
     if (text) {
       this.send.emit({ text, replyInfo: this.replyTo() ?? null });
       input.value = '';
     }
     this.showEmojiPicker.set(false);
+    this.autoResize(input);
   }
 }
