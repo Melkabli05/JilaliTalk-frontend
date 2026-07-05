@@ -859,7 +859,11 @@ export class CommentListComponent {
 
   /** Scrolls the container to the very bottom. Uses `requestAnimationFrame`
    *  so any pending DOM mutation (new comment bubble just rendered) is in
-   *  the layout before we measure scrollHeight. */
+   *  the layout before we measure scrollHeight. After the programmatic
+   *  scroll, force `isAtBottom = true` — browsers don't reliably fire a
+   *  `scroll` event for programmatic scrollTo, so without this the
+   *  at-bottom effect can't detect that we're now at the bottom and would
+   *  keep the pill visible on every new comment. */
   private scrollToBottom(): void {
     const container = this.scrollContainer()?.nativeElement;
     if (!container) return;
@@ -867,6 +871,7 @@ export class CommentListComponent {
       const el = this.scrollContainer()?.nativeElement;
       if (!el) return;
       el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      this.isAtBottom.set(true);
     });
   }
 
