@@ -113,6 +113,7 @@ const MOBILE_BREAKPOINT_QUERY = '(max-width: 768px)';
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      overscroll-behavior: contain;
       animation: slideIn 0.2s ease-out;
     }
     @keyframes slideIn {
@@ -188,7 +189,7 @@ const MOBILE_BREAKPOINT_QUERY = '(max-width: 768px)';
     :host-context(.dark) .action-btn.danger:hover { background: color-mix(in srgb, var(--color-warm-500) 15%, transparent); color: var(--color-warm-400); }
     .action-icon { flex-shrink: 0; }
 
-    .panel-content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: var(--space-2); }
+    .panel-content { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding: var(--space-2); }
     .panel-content::-webkit-scrollbar { width: 6px; }
     .panel-content::-webkit-scrollbar-track { background: transparent; }
     .panel-content::-webkit-scrollbar-thumb { background: var(--color-neutral-300); border-radius: 3px; }

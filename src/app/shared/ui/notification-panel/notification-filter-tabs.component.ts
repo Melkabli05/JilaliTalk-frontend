@@ -43,6 +43,7 @@ const TABS: readonly TabDef[] = [
       gap: var(--space-1);
       padding: var(--space-2) var(--space-4);
       overflow-x: auto;
+      overscroll-behavior-x: contain;
       border-bottom: 1px solid var(--color-border);
       scrollbar-width: none;
     }
