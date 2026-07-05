@@ -94,10 +94,17 @@ export const appConfig: ApplicationConfig = {
         return {
           snapshot: computed(() =>
             store.minimized()
-              ? { cname: store.cname()!, busiType: store.busiType(), roomName: store.roomName(), isMicOn: store.isMicOn() }
+              ? {
+                  cname: store.cname()!,
+                  busiType: store.busiType(),
+                  roomName: store.roomName(),
+                  isMicOn: store.isMicOn(),
+                  isInvisible: store.isInvisible(),
+                }
               : null,
           ),
           updateMicState: (v: boolean) => store.updateMicState(v),
+          setInvisible: (v: boolean) => store.setInvisible(v),
           leave: async (): Promise<void> => {
             try {
               await rcs.leave();

@@ -336,11 +336,7 @@ export class RoomPageComponent extends RoomPageBase {
 
   private async makeInvisible(cname: string, busiType: number): Promise<void> {
     await firstValueFrom(this.api.leaveRoom(cname, busiType));
-    this.roomStore.setVisibility(false);
-    this.syncVisibilityToUrl(false);
-    this.stageStore.reset();
-    await this.rcs.stopAudio();
-    this.bffWs.connect(cname, 0, busiType, null);
+    await this.goInvisibleLocally(cname, busiType);
     this.toast.info('You are now invisible');
   }
 
@@ -373,6 +369,7 @@ export class RoomPageComponent extends RoomPageBase {
     this.stageStore.reset();
     this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
     this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    this.activeCallStore.setInvisible(false);
     this.toast.success('You are now visible');
   }
 

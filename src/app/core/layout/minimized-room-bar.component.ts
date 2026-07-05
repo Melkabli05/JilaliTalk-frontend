@@ -16,19 +16,21 @@ import { ACTIVE_CALL_READER } from '@core/tokens/active-call-reader.token';
           <span class="live-dot" aria-hidden="true"></span>
           <span class="room-name">{{ call.roomName }}</span>
         </button>
-        <button
-          type="button"
-          class="mic-toggle"
-          [class.is-muted]="!call.isMicOn"
-          [attr.aria-label]="call.isMicOn ? 'Mute microphone' : 'Unmute microphone'"
-          (click)="toggleMic(call.isMicOn)"
-        >
-          @if (call.isMicOn) {
-            <svg aria-hidden="true" lucideMic [size]="16"></svg>
-          } @else {
-            <svg aria-hidden="true" lucideMicOff [size]="16"></svg>
-          }
-        </button>
+        @if (!call.isInvisible) {
+          <button
+            type="button"
+            class="mic-toggle"
+            [class.is-muted]="!call.isMicOn"
+            [attr.aria-label]="call.isMicOn ? 'Mute microphone' : 'Unmute microphone'"
+            (click)="toggleMic(call.isMicOn)"
+          >
+            @if (call.isMicOn) {
+              <svg aria-hidden="true" lucideMic [size]="16"></svg>
+            } @else {
+              <svg aria-hidden="true" lucideMicOff [size]="16"></svg>
+            }
+          </button>
+        }
         <button
           type="button"
           class="leave-btn"

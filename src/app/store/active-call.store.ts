@@ -6,25 +6,33 @@ export class ActiveCallStore {
   private readonly _busiType = signal(2);
   private readonly _roomName = signal('');
   private readonly _isMicOn = signal(false);
+  private readonly _isInvisible = signal(false);
 
   readonly cname = this._cname.asReadonly();
   readonly busiType = this._busiType.asReadonly();
   readonly roomName = this._roomName.asReadonly();
   readonly isMicOn = this._isMicOn.asReadonly();
+  readonly isInvisible = this._isInvisible.asReadonly();
   readonly minimized = computed(() => this._cname() !== null);
 
-  minimize(cname: string, busiType: number, roomName: string, isMicOn: boolean): void {
+  minimize(cname: string, busiType: number, roomName: string, isMicOn: boolean, isInvisible: boolean): void {
     this._cname.set(cname);
     this._busiType.set(busiType);
     this._roomName.set(roomName);
     this._isMicOn.set(isMicOn);
+    this._isInvisible.set(isInvisible);
   }
 
   updateMicState(isMicOn: boolean): void {
     this._isMicOn.set(isMicOn);
   }
 
+  setInvisible(isInvisible: boolean): void {
+    this._isInvisible.set(isInvisible);
+  }
+
   clear(): void {
     this._cname.set(null);
+    this._isInvisible.set(false);
   }
 }

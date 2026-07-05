@@ -20,8 +20,10 @@ import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserInfoService } from '@core/services/user-info.service';
 import { handleRealtimeEvent } from '@features/room/data/handle-realtime-event.util';
+import { buildKickedFromRoomOutcome, resolveManagerIdentity } from '@features/room/data/kicked-from-room.util';
 import { GhostAudienceInputs, fetchMissingGhostInfo, buildAudienceWithGhosts, buildGhostAudienceInputs } from '@features/room/data/ghost-audience.util';
 import { buildModActionDefs } from '@features/room/data/mod-action-defs';
+import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
 import { UserActionModalData } from '../feature/moderation/user-action-modal';
 import { ManagersModalComponent } from '../feature/moderation/managers-modal';
 import { UserActionModalComponent } from '../feature/moderation/user-action-modal';
@@ -58,6 +60,7 @@ export abstract class RoomPageBase {
   readonly bffWs = inject(BffRoomSocketService);
   protected readonly userInfoService = inject(UserInfoService);
   protected readonly toast = inject(ToastService);
+  protected readonly notifications = inject(NOTIFICATION_REPORTER);
   protected readonly destroyRef = inject(DestroyRef);
   protected readonly dialog = inject(Dialog);
   protected readonly injector = inject(Injector);
@@ -127,10 +130,10 @@ export abstract class RoomPageBase {
     // connection-state fires many times/sec during reconnect — skip it
     if (event.type === 'connection-state') return;
 
-    // room_kick: self-redirect only — card display is handled by CommentsStore
+    // room_kick: stay in the room as an invisible ghost instead of leaving —
+    // card display is handled by CommentsStore.
     if (event.type === 'room_kick' && Number(event.userId) === this.roomStore.userId()) {
-      this.toast.warning(`You were removed from the room by ${event.managerName}`);
-      void this.onLeave();
+      void this.handleKickedFromRoom(event.managerName);
       return;
     }
 
@@ -375,6 +378,38 @@ export abstract class RoomPageBase {
     });
   }
 
+  /** Local-only side effects of becoming invisible — no roster leave/join REST call. */
+  protected async goInvisibleLocally(cname: string, busiType: number): Promise<void> {
+    this.roomStore.setVisibility(false);
+    this.syncVisibilityToUrl(false);
+    this.activeCallStore.setInvisible(true);
+    this.stageStore.reset();
+    await this.rcs.stopAudio();
+    this.bffWs.connect(cname, 0, busiType, null);
+  }
+
+  private async handleKickedFromRoom(managerName: string): Promise<void> {
+    const outcome = buildKickedFromRoomOutcome(managerName, this.roomStore.name(), this.roomStore.isVisible());
+    const identity = resolveManagerIdentity(managerName, this.stageStore.stageUsers(), this.audienceStore.audienceUsers());
+    const cname = this.roomStore.cname();
+    if (outcome.shouldGoInvisible && cname) {
+      await this.goInvisibleLocally(cname, this.busiType());
+    }
+    this.toast.warning(outcome.toastMessage);
+    if (identity) {
+      this.notifications.notifyUserEvent({
+        type: 'warning',
+        title: outcome.notificationTitle,
+        message: outcome.notificationMessage,
+        userId: identity.userId,
+        avatarUrl: identity.avatarUrl,
+        nickname: managerName,
+      });
+    } else {
+      this.notifications.notify('warning', outcome.notificationTitle, outcome.notificationMessage);
+    }
+  }
+
   async onLeave(): Promise<void> {
     this._destroying.set(true);
     try {
@@ -389,7 +424,13 @@ export abstract class RoomPageBase {
   onMinimize(): void {
     const cname = this.roomStore.cname();
     if (!cname) return;
-    this.activeCallStore.minimize(cname, this.roomStore.busiType(), this.roomStore.name(), this.roomStore.isMicOn());
+    this.activeCallStore.minimize(
+      cname,
+      this.roomStore.busiType(),
+      this.roomStore.name(),
+      this.roomStore.isMicOn(),
+      !this.roomStore.isVisible(),
+    );
     this.router.navigate(this.leaveNavTarget);
   }
 
