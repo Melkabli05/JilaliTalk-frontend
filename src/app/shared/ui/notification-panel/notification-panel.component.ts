@@ -450,7 +450,7 @@ export class NotificationPanelComponent {
     this.dialog.open<UserInfoModalComponent, UserInfoModalData>(UserInfoModalComponent, {
       data: { userId, nickname: nickname ?? null, headUrl: headUrl ?? null },
       backdropClass: 'app-modal-backdrop',
-      ariaLabelledBy: 'user-info-title',
+      ariaLabel: nickname ?? 'User',
     });
   }
 }
