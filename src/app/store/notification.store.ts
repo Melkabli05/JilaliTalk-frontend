@@ -11,7 +11,21 @@ import type {
 
 export type { AppNotification, NotificationType, NotificationFilter, NotificationGroup, UndoEntry };
 
-const STORAGE_KEY = 'jtl_notifications';
+/** Minimal profile shape needed by enrichUserInfo() — duplicated rather than imported
+ *  from UserInfoService so store/ doesn't reach sideways into core/. The actual consumer
+ *  in app.config.ts adapts the real UserInfo to this shape. */
+interface EnrichtedProfile {
+  readonly userId: number;
+  readonly nickname: string | null;
+  readonly headUrl: string | null;
+}
+
+// v2: dropped pre-v2 records where a profile_visit notification's `message`
+// was the raw numeric visitorUserId string (e.g. "169335562 visited your profile")
+// because the upstream push payload omitted nickname. Those records can never
+// be repaired retroactively (no profile push will fire for a historical visitor),
+// so the cleanest fix is to invalidate them and let them re-accumulate correctly.
+const STORAGE_KEY = 'jtl_notifications_v2';
 const MAX_NOTIFICATIONS = 100;
 const UNDO_WINDOW_MS = 8000;
 const TOAST_PREVIEW_MS = 4000;
@@ -105,6 +119,36 @@ export class NotificationStore {
     const full = this.buildNotification(params);
     this._notifications.update(list => this.capNotifications([full, ...list]));
     this.maybeShowToast(full);
+  }
+
+  /**
+   * Patches every stored notification whose `userId` matches `profile.userId`, filling in
+   * the freshly-resolved `nickname` and `avatarUrl`. Called from ImBootstrapService's
+   * enrichment flush so that realtime pushes whose payload omits a nickname (notably
+   * profile_visit, where the upstream may send only `visitorUserId`) still render with
+   * a proper identity once the BFF's `POST /users/enrich-batch` returns the real profile.
+   *
+   * The static `message` text is NOT rewritten — it stays as whatever the realtime push
+   * supplied ("Someone visited your profile"). That's a deliberate UX choice: the
+   * notification row already renders the avatar + nickname, so a now-correct identity
+   * appears even if the prose remains a placeholder, and we avoid maintaining a brittle
+   * title→template registry in the store.
+   */
+  enrichUserInfo(profile: EnrichtedProfile): void {
+    const nickname = profile.nickname?.trim() || null;
+    const avatarUrl = profile.headUrl ?? null;
+    let changed = false;
+    this._notifications.update(list => {
+      const next = list.map(n => {
+        if (n.userId !== profile.userId) return n;
+        const sameNick = (n.nickname ?? null) === nickname;
+        const sameAvatar = (n.avatarUrl ?? null) === avatarUrl;
+        if (sameNick && sameAvatar) return n;
+        changed = true;
+        return { ...n, nickname, avatarUrl };
+      });
+      return changed ? next : list;
+    });
   }
 
   markAllRead(): void {
