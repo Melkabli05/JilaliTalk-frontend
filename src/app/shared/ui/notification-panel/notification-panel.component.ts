@@ -260,7 +260,7 @@ export class NotificationPanelComponent {
         headUrl: notification.avatarUrl ?? null,
       },
       backdropClass: 'app-modal-backdrop',
-      ariaLabel: nickname ?? 'User',
+      ariaLabel: notification.nickname ?? 'User',
     });
   }
 
