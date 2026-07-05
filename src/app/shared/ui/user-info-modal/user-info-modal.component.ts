@@ -7,6 +7,7 @@ import { ToastService } from '@core/services/toast.service';
 import { AuthStore } from '@core/auth/auth.store';
 import { ModalComponent } from '@shared/ui/modal/modal.component';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
+import { UserIdentityCardComponent } from '@shared/ui/user-identity-card/user-identity-card.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
@@ -32,6 +33,7 @@ export interface UserInfoModalData {
     AvatarComponent,
     CountryFlagComponent,
     LanguageTagComponent,
+    UserIdentityCardComponent,
     LucideX,
     LucideCrown,
     LucideUserPlus,
@@ -45,33 +47,26 @@ export interface UserInfoModalData {
         <svg aria-hidden="true" lucideX [size]="14"></svg>
       </button>
 
-      <div class="identity-card" [class.identity-card--vip]="vipType() === 100">
-        <app-avatar
-          [src]="avatarUrl()"
+      <div class="identity-wrapper">
+        <app-user-identity-card
+          [avatarUrl]="avatarUrl()"
           [initials]="initials()"
-          size="xl"
-          [alt]="displayName()"
-          [status]="onlineStatus() === 'Online' ? 'online' : null"
+          [displayName]="displayName()"
+          [username]="username()"
+          [signature]="signature()"
           [ringColor]="vipType() === 100 ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
-        />
-
-        <div class="identity-main">
-          <div class="name-row">
-            <span class="user-name" id="user-info-title">{{ displayName() }}</span>
-            @if (sex() === 'male') {
-              <span class="sex-badge sex-male">
-                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="14.5" r="5.5"/><path d="M19.5 8 12 15.5M19.5 8l-5.5 0"/></svg>
-              </span>
-            } @else if (sex() === 'female') {
-              <span class="sex-badge sex-female">
-                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="14.5" r="5.5"/><path d="M14.5 8 12 5.5M14.5 8h-5M12 5.5v8"/></svg>
-              </span>
-            }
-          </div>
-          @if (username()) {
-            <span class="user-handle">&#64;{{ username() }}</span>
+          [vip]="vipType() === 100"
+        >
+          @if (sex() === 'male') {
+            <span nameBadge class="sex-badge sex-male">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="14.5" r="5.5"/><path d="M19.5 8 12 15.5M19.5 8l-5.5 0"/></svg>
+            </span>
+          } @else if (sex() === 'female') {
+            <span nameBadge class="sex-badge sex-female">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="14.5" cy="8" r="5.5"/><path d="M14.5 8 12 5.5M14.5 8h-5M12 5.5v8"/></svg>
+            </span>
           }
-          <div class="meta-row">
+          <ng-container metaChips>
             @if (vipType() === 100) {
               <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
             } @else if (vipType() > 0 && vipType() < 100) {
@@ -86,8 +81,8 @@ export interface UserInfoModalData {
             @if (streakDays(); as streak) {
               <span class="chip chip-streak">{{ streak }}-day streak</span>
             }
-          </div>
-        </div>
+          </ng-container>
+        </app-user-identity-card>
       </div>
 
       @if (canFollow()) {
@@ -110,10 +105,6 @@ export interface UserInfoModalData {
             {{ followBtnLabel() }}
           </button>
         </div>
-      }
-
-      @if (signature()) {
-        <p class="bio">{{ signature() }}</p>
       }
 
       @if (relationStats(); as stats) {
@@ -269,6 +260,16 @@ export interface UserInfoModalData {
         :host { animation: none; }
       }
 
+      .identity-wrapper {
+        padding-top: calc(26px + var(--space-3));
+        background: var(--color-card);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        animation: itemIn 0.25s ease-out backwards;
+      }
+      :host-context(.dark) .identity-wrapper {
+        background: var(--color-neutral-800);
+      }
+
       .close-btn {
         position: absolute;
         top: var(--space-3);
@@ -304,47 +305,6 @@ export interface UserInfoModalData {
         color: var(--color-neutral-100);
       }
 
-      .identity-card {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        padding: calc(var(--space-4) + 26px + var(--space-3)) var(--space-4) var(--space-4);
-        background: var(--color-card);
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-        animation: itemIn 0.25s ease-out backwards;
-      }
-      .identity-card--vip {
-        border-bottom: 2px solid var(--color-gold-400);
-      }
-      :host-context(.dark) .identity-card {
-        background: var(--color-neutral-800);
-      }
-
-      .identity-main {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-        min-width: 0;
-        flex: 1;
-      }
-
-      .name-row {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-      }
-
-      .user-name {
-        font-size: var(--text-base);
-        font-weight: var(--font-bold);
-        color: var(--color-text);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 140px;
-      }
-      :host-context(.dark) .user-name { color: var(--color-neutral-100); }
-
       .sex-badge {
         display: inline-flex;
         align-items: center;
@@ -370,35 +330,6 @@ export interface UserInfoModalData {
         background: hsl(10deg 20% 25%);
         color: hsl(10deg 20% 60%);
       }
-
-      .user-handle {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        display: block;
-      }
-      :host-context(.dark) .user-handle { color: var(--color-neutral-400); }
-
-      .meta-row {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        flex-wrap: wrap;
-        margin-top: 2px;
-      }
-
-      .bio {
-        margin: var(--space-2) var(--space-4) 0;
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        line-height: 1.5;
-        overflow: hidden;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        -webkit-box-orient: vertical;
-        animation: itemIn 0.25s ease-out 0.05s backwards;
-      }
-      :host-context(.dark) .bio { color: var(--color-neutral-400); }
 
       .stats-row {
         display: flex;
@@ -655,7 +586,7 @@ export interface UserInfoModalData {
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .identity-card, .bio, .detail-row, .tags-row, .links-row { animation: none; }
+        .detail-row, .tags-row, .links-row { animation: none; }
       }
 
       .follow-action-row {
@@ -717,10 +648,7 @@ export class UserInfoModalComponent {
   private readonly authStore = inject(AuthStore);
 
   constructor() {
-    const uid = this.data.userId;
-    if (uid > 0 && (!this.userInfoService.getUserInfo(uid) || this.userInfoService.isStale(uid))) {
-      void this.userInfoService.fetchUserInfo(uid);
-    }
+    this.userInfoService.ensureFresh(this.data.userId);
   }
 
   private readonly info = computed(() => this.userInfoService.getUserInfo(this.data.userId));

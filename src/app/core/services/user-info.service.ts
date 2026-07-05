@@ -274,6 +274,18 @@ export class UserInfoService {
   }
 
   /**
+   * Triggers a re-fetch only if the cached entry is missing or stale (see isStale).
+   * Fire-and-forget — callers read the result reactively via getUserInfo(), matching how
+   * fetchUserInfo() is already used at every existing call site.
+   */
+  ensureFresh(userId: number): void {
+    if (!(userId > 0)) return;
+    if (!this.getUserInfo(userId) || this.isStale(userId)) {
+      void this.fetchUserInfo(userId);
+    }
+  }
+
+  /**
    * Batch-fetches profiles for multiple uids in one round trip (`POST /users/enrich-batch`)
    * and primes the cache with the results, so a subsequent `getUserInfo()` for any of those
    * uids returns the enriched value. Callers that queue uids from bursty realtime events

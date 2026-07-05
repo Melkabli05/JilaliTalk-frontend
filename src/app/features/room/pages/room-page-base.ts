@@ -338,7 +338,7 @@ export abstract class RoomPageBase {
     const ref = this.dialog.open<ModAction | undefined>(UserActionModalComponent, {
       data: user,
       backdropClass: 'app-modal-backdrop',
-      ariaLabelledBy: 'user-action-title',
+      ariaLabel: user.nickname ?? 'User',
       injector: this.injector,
     });
     ref.closed

@@ -9,6 +9,7 @@ import { ModalComponent } from '@shared/ui/modal/modal.component';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
+import { UserIdentityCardComponent } from '@shared/ui/user-identity-card/user-identity-card.component';
 import {
   LucideCrown,
   LucideExternalLink,
@@ -36,6 +37,7 @@ export interface UserActionModalData {
     AvatarComponent,
     CountryFlagComponent,
     LanguageTagComponent,
+    UserIdentityCardComponent,
     LucideCrown,
     LucideExternalLink,
     LucideX,
@@ -44,41 +46,29 @@ export interface UserActionModalData {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal [noPadding]="true">
-      <div class="modal-header">
-        <button type="button" class="close-btn" (click)="ref.close()" aria-label="Close">
-          <svg aria-hidden="true" lucideX [size]="14"></svg>
-        </button>
+      <button type="button" class="close-btn" (click)="ref.close()" aria-label="Close">
+        <svg aria-hidden="true" lucideX [size]="14"></svg>
+      </button>
 
-        <div class="profile-row">
-          <app-avatar
-            [src]="avatarUrl()"
-            [initials]="initials()"
-            size="xl"
-            [alt]="displayName()"
-            [ringColor]="ringColor()"
-            [crownType]="crownType()"
-          />
-          <div class="profile-info">
-            <div class="name-row">
-              <span class="user-name" id="user-action-title">{{ displayName() }}</span>
-              @if (username()) {
-                <span class="user-handle">&#64;{{ username() }}</span>
-              }
-            </div>
-            <div class="meta-row">
-              @if (vipType() === 100) {
-                <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
-              } @else if (vipType() > 0 && vipType() < 100) {
-                <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
-              }
-              <span class="chip" [class]="roleChipClass()">{{ roleLabel() }}</span>
-            </div>
-          </div>
-        </div>
-
-        @if (signature()) {
-          <p class="bio">{{ signature() }}</p>
-        }
+      <div class="identity-header">
+        <app-user-identity-card
+          [avatarUrl]="avatarUrl()"
+          [initials]="initials()"
+          [displayName]="displayName()"
+          [username]="username()"
+          [signature]="signature()"
+          [ringColor]="ringColor()"
+          [crownType]="crownType()"
+        >
+          <ng-container metaChips>
+            @if (vipType() === 100) {
+              <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+            } @else if (vipType() > 0 && vipType() < 100) {
+              <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+            }
+            <span class="chip" [class]="roleChipClass()">{{ roleLabel() }}</span>
+          </ng-container>
+        </app-user-identity-card>
       </div>
 
       <div class="modal-body">
@@ -422,9 +412,7 @@ export interface UserActionModalData {
         :host { animation: none; }
       }
 
-      .modal-header {
-        position: relative;
-        padding: var(--space-5) var(--space-4) var(--space-4);
+      .identity-header {
         background: var(--uam-header-bg);
         border-bottom: 1px solid var(--uam-border);
       }
@@ -453,52 +441,6 @@ export interface UserActionModalData {
       .close-btn:focus-visible {
         outline: var(--focus-ring);
         outline-offset: 2px;
-      }
-
-      .profile-row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        margin-bottom: var(--space-2);
-      }
-
-      .profile-info {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1);
-        min-width: 0;
-      }
-
-      .name-row {
-        display: flex;
-        align-items: baseline;
-        gap: var(--space-2);
-        flex-wrap: wrap;
-      }
-
-      .user-name {
-        font-size: var(--text-base);
-        font-weight: var(--font-semibold);
-        color: var(--uam-text);
-      }
-
-      .user-handle {
-        font-size: var(--text-xs);
-        color: var(--uam-muted);
-      }
-
-      .meta-row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1);
-        flex-wrap: wrap;
-      }
-
-      .bio {
-        margin: 0;
-        font-size: var(--text-xs);
-        color: var(--uam-muted);
-        line-height: 1.5;
       }
 
       .chip {
@@ -794,10 +736,7 @@ export class UserActionModalComponent {
   readonly UserRole = UserRole;
 
   constructor() {
-    const uid = this.data.userId;
-    if (uid && (!this.userInfoService.getUserInfo(uid) || this.userInfoService.isStale(uid))) {
-      void this.userInfoService.fetchUserInfo(uid);
-    }
+    this.userInfoService.ensureFresh(this.data.userId ?? 0);
   }
 
   private readonly info = computed(() => {

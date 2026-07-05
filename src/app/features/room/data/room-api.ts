@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { StageUsersResponse, AudienceUsersResponse, AudienceUser, CommentsResponse, SendCommentPayload, VoiceSignPanelResponse, RoomLevelRewardResponse, RoomLevelConfigResponse, VoiceRoomInfo, LiveRoomInfo, ManagerListResponse, ManagerJudgeResponse, CaptionHistoryResponse, VoiceTasksResponse } from './room-model';
+import { StageUsersResponse, AudienceUsersResponse, AudienceUser, CommentsResponse, SendCommentPayload, VoiceSignPanelResponse, RoomLevelRewardResponse, RoomLevelConfigResponse, VoiceRoomInfo, LiveRoomInfo, ManagerListResponse, CaptionHistoryResponse, VoiceTasksResponse } from './room-model';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
 
 @Injectable({ providedIn: 'root' })
@@ -156,11 +156,6 @@ export class RoomApi {
         `${this.baseUrl}/managers/approve`,
         { operation_type: 'RoomManagerAgree', cname, host_id: hostId },
       );
-  }
-
-  judgeManager(cname: string, hostId: number): Observable<ManagerJudgeResponse> {
-    const params = new HttpParams().set('cname', cname).set('host_id', hostId);
-    return this.http.get<ManagerJudgeResponse>(`${this.baseUrl}/managers/judge`, { params });
   }
 
   listManagers(cname: string, hostId: number): Observable<ManagerListResponse> {
