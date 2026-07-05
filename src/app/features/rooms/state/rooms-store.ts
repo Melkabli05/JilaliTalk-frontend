@@ -4,12 +4,14 @@ import {
   signal,
   computed,
   linkedSignal,
+  effect,
   DestroyRef,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RoomsApi } from '../data/rooms-api';
 import { ChannelListItem, Category, ChannelListResponse, RoomType, filterRooms } from '../data/rooms-model';
 import { SearchDebounce, paginateDedup } from '../data/pagination-search.util';
+import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
 
 const PAGE_SIZE = 20;
 const MAX_SEARCH_PAGES = 5; // 5 × 20 = 100 rooms, same ceiling as the old MAX_SEARCH_OFFSET
@@ -24,18 +26,21 @@ interface RoomsPageSource {
 @Injectable()
 export class RoomsStore {
   private readonly api = inject(RoomsApi);
+  private readonly prefs = inject(RoomsPreferencesStore);
+  /** Page-scoped debounce on top of the persisted prefs query — the prefs
+   *  store updates synchronously on every keystroke (for cross-page persistence
+   *  and for the `<app-search-bar>` input echo), but the network request only
+   *  fires once the user stops typing for 250ms. */
   private readonly search = new SearchDebounce(inject(DestroyRef));
 
   private readonly _currentType = signal<RoomType>(RoomType.Voice);
   private readonly _offset = signal(0);
-  private readonly _selectedCategoryId = signal<number | null>(null);
-  private readonly _selectedLanguageId = signal<number | null>(null);
 
   private readonly roomsPage = rxResource({
     params: () => ({
       type: this._currentType(),
       offset: this._offset(),
-      langId: this._selectedLanguageId() ?? 0,
+      langId: this.prefs.languageId() ?? 0,
       query: this.search.debounced(),
     }),
     defaultValue: { items: [] as ChannelListItem[], audienceTotal: 0 } as ChannelListResponse,
@@ -48,7 +53,7 @@ export class RoomsStore {
   private readonly _rooms = linkedSignal<RoomsPageSource, readonly ChannelListItem[]>({
     source: () => ({
       type: this._currentType(),
-      langId: this._selectedLanguageId(),
+      langId: this.prefs.languageId(),
       offset: this._offset(),
       items: this.roomsPage.value()?.items ?? [],
     }),
@@ -63,14 +68,22 @@ export class RoomsStore {
 
   readonly rooms = this._rooms.asReadonly();
   readonly currentType = this._currentType.asReadonly();
-  readonly selectedCategoryId = this._selectedCategoryId.asReadonly();
-  readonly selectedLanguageId = this._selectedLanguageId.asReadonly();
-  readonly searchQuery = this.search.query;
+  readonly selectedCategoryId = this.prefs.categoryId;
+  readonly selectedLanguageId = this.prefs.languageId;
+  readonly searchQuery = this.prefs.searchQuery;
+
+  constructor() {
+    // Re-feed the prefs query through the page-scoped debouncer so the
+    // rxResource only re-fetches once the user stops typing for 250ms. The
+    // raw `searchQuery` signal above stays in sync instantly so the input
+    // echo doesn't lag behind the persisted value.
+    effect(() => this.search.set(this.prefs.searchQuery()));
+  }
 
   readonly isLoading = computed(() => this.roomsPage.isLoading());
   readonly error = computed(() => this.roomsPage.error());
   readonly hasMore = computed(() =>
-    this.search.debounced().trim()
+    this.prefs.searchQuery().trim()
       ? false
       : (this.roomsPage.value()?.items.length ?? 0) === PAGE_SIZE,
   );
@@ -79,7 +92,7 @@ export class RoomsStore {
   );
 
   readonly filteredRooms = computed(() =>
-    filterRooms(this._rooms(), this._selectedCategoryId(), this._selectedLanguageId(), this.search.debounced()),
+    filterRooms(this._rooms(), this.prefs.categoryId(), this.prefs.languageId(), this.prefs.searchQuery()),
   );
 
   private readonly recommendedResource = rxResource({
@@ -106,22 +119,22 @@ export class RoomsStore {
   }
 
   loadMore(): void {
-    if (this.isLoading() || !this.hasMore() || this.search.debounced().trim()) return;
+    if (this.isLoading() || !this.hasMore() || this.prefs.searchQuery().trim()) return;
     this._offset.update((o) => o + PAGE_SIZE);
   }
 
   selectCategory(categoryId: number | null): void {
-    this._selectedCategoryId.set(categoryId);
+    this.prefs.setCategory(categoryId);
   }
 
   selectLanguage(langId: number | null): void {
     this._offset.set(0);
-    this._selectedLanguageId.set(langId);
+    this.prefs.setLanguage(langId);
   }
 
   setSearchQuery(query: string): void {
     this._offset.set(0);
-    this.search.set(query);
+    this.prefs.setSearchQuery(query);
   }
 
   refresh(): void {
