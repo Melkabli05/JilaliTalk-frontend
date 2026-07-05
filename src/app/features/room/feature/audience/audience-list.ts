@@ -1,10 +1,9 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed, viewChild, ElementRef, effect, inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, ChangeDetectionStrategy, input, output, signal, computed, viewChild, ElementRef, effect } from '@angular/core';
 import { AudienceUserComponent } from '../../ui/audience-user';
 import { AudienceUser } from '../../data/room-model';
 import { UserRole } from '@core/models/user-role';
 import { getLanguageById, getLanguageFlag } from '@shared/data/languages';
-import { createSearchMatcher } from '@shared/utils';
+import { createSearchMatcher, injectIsMobileViewport } from '@shared/utils';
 import { LucideSearch, LucideX, LucideLayoutGrid, LucideList, LucideUsers, LucideChevronDown } from '@lucide/angular';
 
 type ViewMode = 'grid' | 'list';
@@ -613,21 +612,14 @@ export class AudienceListComponent {
   readonly collapsed = signal(false);
 
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
-  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isMobileViewport = injectIsMobileViewport();
 
   constructor() {
-    if (isPlatformBrowser(this.platformId)) {
-      const mql = window.matchMedia('(max-width: 1023.98px)');
-      const apply = () => this.collapsed.set(mql.matches);
-      apply();
-      // Re-evaluate on viewport changes (rotate, resize, zoom, devtools open).
-      if ('addEventListener' in mql) {
-        mql.addEventListener('change', apply);
-      } else if ('addListener' in mql) {
-        // Safari < 14 fallback
-        (mql as unknown as { addListener: (cb: () => void) => void }).addListener(apply);
-      }
-    }
+    // Re-applies on every breakpoint crossing (rotate, resize, zoom, devtools
+    // open) — same as the matchMedia listener this replaced. A manual
+    // toggleCollapsed() call in between crossings is a separate write path
+    // and isn't overridden by this effect until the next crossing.
+    effect(() => this.collapsed.set(this.isMobileViewport()));
 
     effect(() => {
       if (this.showSearch()) {

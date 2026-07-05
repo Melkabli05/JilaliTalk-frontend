@@ -1,16 +1,18 @@
-import { Component, ChangeDetectionStrategy, DestroyRef, ElementRef, PLATFORM_ID, computed, effect, inject, signal, viewChild } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, ChangeDetectionStrategy, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { Dialog } from '@angular/cdk/dialog';
 import { LucideBell, LucideCheck, LucideTrash2 } from '@lucide/angular';
 import { NotificationStore } from '@store/notification.store';
 import { UserInfoService } from '@core/services/user-info.service';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal';
+import { injectIsMobileViewport } from '@shared/utils';
 import { NotificationFilterTabsComponent } from './notification-filter-tabs.component';
 import { NotificationDayGroupComponent } from './notification-day-group.component';
 import type { AppNotification } from './notification.model';
 
 const SHEET_CLOSE_THRESHOLD_PX = 80;
-const MOBILE_BREAKPOINT_QUERY = '(max-width: 768px)';
+/** Deliberately narrower than the shell's 1024px mobile breakpoint — the panel
+ *  only switches to a bottom-sheet layout at phone width, not tablet width. */
+const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
 
 @Component({
   selector: 'app-notification-panel',
@@ -205,11 +207,8 @@ export class NotificationPanelComponent {
   readonly store = inject(NotificationStore);
   private readonly dialog = inject(Dialog);
   private readonly userInfo = inject(UserInfoService);
-  private readonly platformId = inject(PLATFORM_ID);
-  private readonly destroyRef = inject(DestroyRef);
 
-  private readonly _isMobile = signal(false);
-  readonly isMobile = this._isMobile.asReadonly();
+  readonly isMobile = injectIsMobileViewport(SHEET_BREAKPOINT_QUERY);
 
   readonly dragY = signal(0);
   readonly dragging = signal(false);
@@ -226,14 +225,6 @@ export class NotificationPanelComponent {
   });
 
   constructor() {
-    if (isPlatformBrowser(this.platformId)) {
-      const mql = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
-      const apply = () => this._isMobile.set(mql.matches);
-      apply();
-      mql.addEventListener('change', apply);
-      this.destroyRef.onDestroy(() => mql.removeEventListener('change', apply));
-    }
-
     effect(() => {
       if (this.store.isOpen()) {
         this.store.markAllRead();

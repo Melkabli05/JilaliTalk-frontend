@@ -1,5 +1,4 @@
-import { Component, ChangeDetectionStrategy, DestroyRef, PLATFORM_ID, computed, inject, signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet, type ActivatedRouteSnapshot } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -12,6 +11,7 @@ import { PwaUpdateBannerComponent } from '@shared/ui';
 import { NotificationToastComponent } from '@shared/ui/notification-panel';
 import { PwaUpdateService } from '@core/services/pwa-update.service';
 import { ActiveCallStore } from '@store/active-call.store';
+import { injectIsMobileViewport } from '@shared/utils';
 
 /** Walks to the deepest activated route and reports whether it opted into immersive mode. */
 function isImmersiveRoute(root: ActivatedRouteSnapshot): boolean {
@@ -139,8 +139,6 @@ function isStandaloneRoute(root: ActivatedRouteSnapshot): boolean {
 export class App {
   private readonly imBootstrap = inject(ImBootstrapService);
   private readonly router = inject(Router);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly platformId = inject(PLATFORM_ID);
   readonly pwaUpdate = inject(PwaUpdateService);
   protected readonly activeCallStore = inject(ActiveCallStore);
 
@@ -171,17 +169,7 @@ export class App {
    * structural decision (mount or not) requires knowing the viewport, not
    * just the route.
    */
-  private readonly isMobileViewport = signal(false);
+  private readonly isMobileViewport = injectIsMobileViewport();
 
   readonly hideSidenav = computed(() => this.immersive() && this.isMobileViewport());
-
-  constructor() {
-    if (isPlatformBrowser(this.platformId)) {
-      const mql = window.matchMedia('(max-width: 1023.98px)');
-      const apply = () => this.isMobileViewport.set(mql.matches);
-      apply();
-      mql.addEventListener('change', apply);
-      this.destroyRef.onDestroy(() => mql.removeEventListener('change', apply));
-    }
-  }
 }

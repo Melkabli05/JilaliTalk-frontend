@@ -87,7 +87,6 @@ interface NavGroup {
             routerLinkActive="active"
             class="mobile-nav-item"
             [attr.aria-label]="item.label"
-            [appTooltip]="item.label"
           >
             @switch (item.iconName) {
               @case ('globe') { <svg aria-hidden="true" lucideGlobe [size]="22"></svg> }
