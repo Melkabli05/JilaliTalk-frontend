@@ -16,6 +16,7 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
   template: `
     <article
       class="room-card"
+      [class.compact]="isMobile()"
       tabindex="0"
       [attr.aria-label]="'Join room ' + room().channel.name + ' hosted by ' + room().hostUser.nickname"
       (click)="handleJoin()"
@@ -292,6 +293,71 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
         transform: none;
       }
     }
+
+    /* Mobile: full-width single-column grid means a vertical card is
+       inherently tall no matter how tight the spacing — switching to a
+       horizontal list row (avatar + title + host info + icon-only action
+       buttons on the right) gets each item down to ~56-64px, so 6-8 rooms
+       fit per screen instead of 1-2. */
+    @media (max-width: 1023.98px) {
+      .room-card {
+        padding: var(--space-2) var(--space-3);
+        gap: var(--space-3);
+        flex-direction: row;
+        align-items: center;
+      }
+
+      .card-header {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .card-title {
+        font-size: var(--text-sm);
+      }
+
+      /* Hide topic line and member-avatar stack — the room name + count
+         (already visible inline below) is what users actually scan for. */
+      .card-topic,
+      .card-members,
+      .tags-row {
+        display: none;
+      }
+
+      .card-host {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .card-host > app-avatar {
+        flex-shrink: 0;
+      }
+
+      /* Compact action buttons: shrink to icon-only 36px circles on the
+         right — still well above the 32px minimum tap target, fits cleanly
+         in a single row. */
+      .card-actions {
+        margin-top: 0;
+        flex-shrink: 0;
+        gap: var(--space-1);
+      }
+
+      /* The shared <app-button> renders a slot — hide its text content
+         (the icon stays visible) under compact mode via ::ng-deep because
+         button.component.ts uses view encapsulation that blocks the host
+         card from reaching .btn contents directly. The button keeps its
+         label-bearing aria-label for screen readers. */
+      .card-actions ::ng-deep app-button .btn > :not(svg) {
+        display: none;
+      }
+
+      .card-actions ::ng-deep app-button .btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        font-size: 0;
+      }
+    }
   `]
 })
 export class RoomCardComponent {
@@ -304,13 +370,14 @@ export class RoomCardComponent {
    *  the ~44px Apple HIG/Material minimum on a touch screen — these two
    *  buttons are the card's entire purpose, so bump to 'lg' (40px) on mobile. */
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly isMobile = signal(false);
+  private readonly _isMobile = signal(false);
+  readonly isMobile = this._isMobile.asReadonly();
   readonly buttonSize = computed<'sm' | 'lg'>(() => (this.isMobile() ? 'lg' : 'sm'));
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
       const mql = window.matchMedia('(max-width: 1023.98px)');
-      const apply = () => this.isMobile.set(mql.matches);
+      const apply = () => this._isMobile.set(mql.matches);
       apply();
       if ('addEventListener' in mql) {
         mql.addEventListener('change', apply);
