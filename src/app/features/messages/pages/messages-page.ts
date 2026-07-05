@@ -264,6 +264,13 @@ const GROUP_GAP_MS = 5 * 60 * 1000;
         display: flex;
         height: 100%;
         overflow: hidden;
+        /* Positioning context for the mobile .sidebar/.thread panels below
+           (position: absolute; inset: 0). Without this, absolute positioning
+           resolves against .main-wrapper (app.ts) instead — which spans the
+           full viewport height because the fixed app-header doesn't consume
+           flow space — so the panels render from y=0, under/behind the
+           header, instead of filling .shell's own (correctly inset) box. */
+        position: relative;
       }
 
       /* ─── Sidebar ────────────────────────────────────── */
