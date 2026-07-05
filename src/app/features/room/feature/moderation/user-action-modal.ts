@@ -794,10 +794,7 @@ export class UserActionModalComponent {
   readonly UserRole = UserRole;
 
   constructor() {
-    const uid = this.data.userId;
-    if (uid && (!this.userInfoService.getUserInfo(uid) || this.userInfoService.isStale(uid))) {
-      void this.userInfoService.fetchUserInfo(uid);
-    }
+    this.userInfoService.ensureFresh(this.data.userId ?? 0);
   }
 
   private readonly info = computed(() => {

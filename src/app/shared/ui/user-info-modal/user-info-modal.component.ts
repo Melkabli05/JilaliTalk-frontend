@@ -717,10 +717,7 @@ export class UserInfoModalComponent {
   private readonly authStore = inject(AuthStore);
 
   constructor() {
-    const uid = this.data.userId;
-    if (uid > 0 && (!this.userInfoService.getUserInfo(uid) || this.userInfoService.isStale(uid))) {
-      void this.userInfoService.fetchUserInfo(uid);
-    }
+    this.userInfoService.ensureFresh(this.data.userId);
   }
 
   private readonly info = computed(() => this.userInfoService.getUserInfo(this.data.userId));

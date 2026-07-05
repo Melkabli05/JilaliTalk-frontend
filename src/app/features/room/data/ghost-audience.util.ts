@@ -47,7 +47,7 @@ export function fetchMissingGhostInfo(inputs: GhostAudienceInputs, userInfoServi
   if (!inputs.isVisible) uids.push(inputs.selfUserId);
 
   for (const uid of uids) {
-    if (uid > 0 && (!userInfoService.getUserInfo(uid) || userInfoService.isStale(uid))) void userInfoService.fetchUserInfo(uid);
+    userInfoService.ensureFresh(uid);
   }
 }
 
