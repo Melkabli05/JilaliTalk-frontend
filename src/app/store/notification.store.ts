@@ -11,7 +11,14 @@ import type {
 
 export type { AppNotification, NotificationType, NotificationFilter, NotificationGroup, UndoEntry };
 
-const STORAGE_KEY = 'jtl_notifications';
+// v2: drops pre-v2 records whose `message` was a raw numeric visitorUserId string
+// (e.g. "169335562 visited your profile"), a shape produced when the upstream
+// profile_visit push omitted a nickname and the frontend fell back to the raw id.
+// Those records can never be repaired retroactively (no fresh push will fire for
+// a historical visitor), so the cleanest fix is to invalidate them and let them
+// re-accumulate correctly. The BFF now enriches profile_visit at the wire level,
+// so new records always carry a real nickname.
+const STORAGE_KEY = 'jtl_notifications_v2';
 const MAX_NOTIFICATIONS = 100;
 const UNDO_WINDOW_MS = 8000;
 const TOAST_PREVIEW_MS = 4000;
