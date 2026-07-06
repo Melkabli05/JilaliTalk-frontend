@@ -210,7 +210,10 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
 
       :host-context(.dark) {
         background-color: var(--color-primary-400);
-        .avatar-flag { border-color: var(--color-neutral-700); }
+        /* On dark mode, the avatar's primary-500 fill can read flat against a dark backdrop.
+           A subtle inset gives the placeholder initials real presence without changing shape. */
+        box-shadow: inset 0 0 0 1px hsl(0deg 0% 100% / 8%);
+        .avatar-flag { border-color: var(--color-neutral-600); }
       }
 
       :host(.avatar-xs) .avatar-flag { width: 10px; height: 7px; }
