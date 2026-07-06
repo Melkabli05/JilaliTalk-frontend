@@ -1,0 +1,1 @@
+export { RoomPresenceBannerComponent } from './room-presence-banner.component';
