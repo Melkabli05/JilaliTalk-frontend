@@ -201,16 +201,17 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     @container room-page (max-width: 1023.98px) {
       .room-layout {
         grid-template-areas: "stage" "audience" "comments";
-        /* Stage cap raised from 30cqh → 45cqh: a full 8-seat stage at
-           64px tiles + 38px header is ~422px natural height, which on an
-           844px viewport needs ~50cqh just to not scroll. 45cqh shows
-           ~6 seats before scrolling, vs. the old 30cqh which only showed
-           ~3. The stage-grid host already has overflow-y: auto +
-           overscroll-behavior: contain, so when the room is busy the
-           stage scrolls inside its own row — the page itself doesn't
-           scroll. Audience stays at fit-content(22cqh) so empty rooms
-           don't waste space. */
-        grid-template-rows: minmax(0, 45cqh) fit-content(22cqh) minmax(0, 1fr);
+        /* Stage cap raised from 30cqh → 45cqh, AND switched from
+           minmax(0, 45cqh) to fit-content(45cqh). The minmax form
+           spent all 45cqh on empty rooms (no speakers = ~220px of
+           tile content + 154px of empty whitespace inside the grid
+           cell). fit-content()'s growth limit is min(max-content,
+           45cqh) — the row only grows as far as its content needs,
+           capped at 45cqh for a full 8-seat room. Same pattern as the
+           audience row below. Stage grid host's overflow-y: auto +
+           overscroll-behavior: contain still kicks in when the room
+           is busy and the row hits the 45cqh cap. */
+        grid-template-rows: fit-content(45cqh) fit-content(22cqh) minmax(0, 1fr);
       }
       /* The fixed room-header sits visually above the stage section's
          grid row. Padding the stage by the header's height keeps the
