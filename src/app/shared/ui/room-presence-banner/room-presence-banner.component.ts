@@ -67,14 +67,21 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
               </div>
             }
 
-            <div class="actions">
-              <app-button variant="primary" size="sm" (click)="onJoin(true)"
-                >Join Visible</app-button
-              >
-              <app-button variant="soft-invisible" size="sm" (click)="onJoin(false)"
-                >Join Invisible</app-button
-              >
-            </div>
+            @if (viewerInRoom()) {
+              <div class="in-room-notice" role="status">
+                <span class="in-room-dot" aria-hidden="true"></span>
+                You're in this room
+              </div>
+            } @else {
+              <div class="actions">
+                <app-button variant="primary" size="sm" (click)="onJoin(true)"
+                  >Join Visible</app-button
+                >
+                <app-button variant="soft-invisible" size="sm" (click)="onJoin(false)"
+                  >Join Invisible</app-button
+                >
+              </div>
+            }
           </div>
         </section>
       }
@@ -272,6 +279,39 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
         flex: 1;
       }
 
+      /* "You're in this room" — shown in place of the join buttons when the
+         viewer is already in the same room the banner describes. Muted
+         neutral background with a static (non-pulsing) dot to keep the
+         "you're here" state visually distinct from the action row. */
+      .in-room-notice {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 32px;
+        margin-top: var(--space-2);
+        padding: 0 var(--space-3);
+        border-radius: var(--radius-md);
+        font-size: var(--text-xs);
+        font-weight: var(--font-semibold);
+        color: var(--color-text-secondary);
+        background: var(--color-neutral-100);
+        border: 1px solid var(--color-border);
+      }
+      :host-context(.dark) .in-room-notice {
+        color: var(--color-neutral-300);
+        background: var(--color-neutral-800);
+        border-color: var(--color-neutral-700);
+      }
+      .in-room-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--color-accent-500);
+        flex-shrink: 0;
+      }
+      :host-context(.dark) .in-room-dot { background: var(--color-accent-400); }
+
       /* -------- Responsive --------
        The modal itself is 340px on desktop and ~100vw on phones, so the
        banner can shrink its outer margin + inner padding at narrow widths.
@@ -331,6 +371,9 @@ export class RoomPresenceBannerComponent {
 
   readonly presence = input<UserPresence | null>(null);
   readonly hostInfo = input<UserInfo | null>(null);
+  /** Current viewer's user id — used to compute `viewerInRoom` so the modal can hide
+   *  the join buttons when the viewer is already in the same room. */
+  readonly viewerId = input<number | null>(null);
   readonly join = output<{ visible: boolean }>();
 
   readonly shouldShow = computed(() => {
@@ -361,6 +404,28 @@ export class RoomPresenceBannerComponent {
   readonly isHostInRoom = computed(() => {
     const p = this.presence();
     return p?.statusType === 2 && !!p.cname && !p.blackened;
+  });
+
+  /** True when the *current viewer* is already in the same room the banner
+   *  describes — the modal hides the join buttons in that case (no point
+   *  re-joining your own room). Two cases:
+   *  - viewer is a guest here (statusType=2 + viewer's uid = hostId) — but in
+   *    practice the modal's viewer is the user opening another person's
+   *    profile, so the more useful case is the modal-target hosting their own
+   *    room and the viewer is already a guest there.
+   *  - viewer is the host of this room (statusType=2 + viewerId == modal-target's
+   *    uid) — also already in the room.
+   *  - viewer is the modal-target user themselves (viewerId == userId) — always
+   *    "in the room" if their statusType is 1 or 2.
+   *  We don't try to disambiguate which one; any positive match means hide
+   *  the join buttons. */
+  readonly viewerInRoom = computed(() => {
+    const p = this.presence();
+    const me = this.viewerId();
+    if (!p || !me || !p.cname) return false;
+    if (p.statusType === 1) return p.userId === me;     // modal-target hosts → I'm them → in the room
+    if (p.statusType === 2) return p.hostId === me;     // someone else hosts → I'm the host
+    return false;
   });
 
   // nickname: top-level first (BFF mapper sets it), then the nested copy, then

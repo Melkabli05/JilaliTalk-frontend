@@ -7,7 +7,6 @@ import { FollowService } from '@core/services/follow.service';
 import { ToastService } from '@core/services/toast.service';
 import { AuthStore } from '@core/auth/auth.store';
 import { ModalComponent } from '@shared/ui/modal/modal.component';
-import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { UserIdentityCardComponent } from '@shared/ui/user-identity-card/user-identity-card.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
@@ -33,7 +32,6 @@ export interface UserInfoModalData {
   selector: 'app-user-info-modal',
   imports: [
     ModalComponent,
-    AvatarComponent,
     CountryFlagComponent,
     LanguageTagComponent,
     UserIdentityCardComponent,
@@ -95,6 +93,7 @@ export interface UserInfoModalData {
       <app-room-presence-banner
         [presence]="presence()"
         [hostInfo]="hostInfo()"
+        [viewerId]="viewerId()"
         (join)="joinRoom($event.visible)"
       />
 
@@ -690,6 +689,11 @@ export class UserInfoModalComponent {
     if (p.hostId === this.data.userId) return null;
     return this.userInfoService.getUserInfo(p.hostId);
   });
+
+  /** Current viewer's user id — used by the banner to decide whether to hide
+   *  the join buttons (when the viewer is already in the same room the banner
+   *  describes). */
+  readonly viewerId = computed(() => this.authStore.user()?.userId ?? null);
 
   private readonly info = computed(() => this.userInfoService.getUserInfo(this.data.userId));
   private readonly details = computed(() => this.info()?.details ?? null);
