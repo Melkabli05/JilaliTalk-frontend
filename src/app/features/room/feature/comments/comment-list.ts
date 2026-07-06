@@ -510,6 +510,10 @@ export class NewMessagesPillComponent {
         gap: var(--space-3);
         padding: var(--space-3) var(--space-2);
         overflow-y: auto;
+        /* Stop iOS rubber-band from chaining through to the parent once the
+           list itself is scrolled to either end. Without this, scrolling
+           past the oldest comment drags the page (.app-main) behind it. */
+        overscroll-behavior: contain;
         flex: 1;
         scrollbar-width: thin;
         scrollbar-color: var(--cl-scroll) transparent;

@@ -38,6 +38,11 @@ import { LucideUserCircle } from '@lucide/angular';
         display: flex;
         flex-direction: column;
         overflow-y: auto;
+        /* Stop iOS rubber-band from chaining past the stage scroll
+           container. Matches the same rule on .comment-list and
+           .audience-scroll so all three inner scrollers are
+           contained. */
+        overscroll-behavior: contain;
 
         --sg-header-border: var(--color-border);
         --sg-title: var(--color-text);

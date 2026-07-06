@@ -382,6 +382,8 @@ type ViewMode = 'grid' | 'list';
       flex: 1;
       min-height: 0;
       overflow-y: auto;
+      /* Stop iOS rubber-band from chaining past the scroll container. */
+      overscroll-behavior: contain;
     }
 
     .audience-grid {
@@ -516,14 +518,22 @@ type ViewMode = 'grid' | 'list';
         padding: 10px 32px;
       }
 
+      /* Apple HIG 44pt minimum — 40px is close but fails the strict spec. */
       .tool-btn {
-        width: 40px;
-        height: 40px;
+        width: var(--touch-target-min);
+        height: var(--touch-target-min);
+      }
+      .tool-btn:active:not(.active):not(:disabled) {
+        background: var(--color-neutral-200);
+        transform: scale(0.92);
       }
 
       .toggle-btn {
-        width: 40px;
-        height: 40px;
+        width: var(--touch-target-min);
+        height: var(--touch-target-min);
+      }
+      .toggle-btn:active:not(.active) {
+        background: var(--color-neutral-200);
       }
 
       .search-clear-btn {

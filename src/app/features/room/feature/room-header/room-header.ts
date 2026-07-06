@@ -1106,6 +1106,24 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
       @container room-header (max-width: 699.98px) {
         .header-left { gap: var(--space-1); }
       }
+
+      /* Apple HIG / WCAG 2.3.3 — disable non-essential animations when the
+         user has prefers-reduced-motion: reduce. Covers the WS reconnecting
+         pulse, refresh spinner, room-info panel fade-in, overflow fade-in,
+         and overflow bottom-sheet slide-up. Setting duration to 0.01ms is
+         the standard reduced-motion technique (vs. animation: none) — it
+         preserves the start/end state so the panel is visible, just
+         instantly. */
+      @media (prefers-reduced-motion: reduce) {
+        .ws-status.ws-reconnecting,
+        .ws-status.ws-connecting {
+          animation: none;
+        }
+        .spinning { animation: none; }
+        .room-info-panel { animation: none; }
+        .overflow-backdrop { animation: none; }
+        .overflow-panel { animation: none; }
+      }
     `,
   ],
 })

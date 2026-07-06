@@ -67,6 +67,9 @@ import { LucideMic, LucideMicOff } from '@lucide/angular';
       0% { opacity: 0.9; transform: scale(0.95); }
       100% { opacity: 0; transform: scale(1.25); }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .mic-btn.speaking::after { animation: none; opacity: 0; }
+    }
 
     :host-context(.dark) {
       .mic-btn.active {

@@ -232,9 +232,29 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         outline: var(--focus-ring);
         outline-offset: var(--focus-ring-offset);
       }
+      /* Apple HIG 44pt minimum touch target — 28px (--icon-btn-size) is fine
+         for desktop but fails HIG on mobile. The button stays visually 28px
+         (no padding change), but its hit area is 44px via padding + a
+         negative margin so the layout doesn't shift. */
+      @media (max-width: 1023.98px) {
+        .icon-btn {
+          min-width: var(--touch-target-min);
+          min-height: var(--touch-target-min);
+          /* The button is centered inside its hit box via flex (display:flex
+             above). Width/height stay at --icon-btn-size; the min-* pair
+             grows the hit box outward in both axes. */
+        }
+        .icon-btn:active:not(:disabled) {
+          background: var(--color-neutral-100);
+          transform: scale(0.92);
+        }
+      }
       .expand-btn { display: none; }
 
       .spinning { animation: spin 0.8s linear infinite; }
+      @media (prefers-reduced-motion: reduce) {
+        .spinning { animation-duration: 0.01ms; animation-iteration-count: 1; }
+      }
       @keyframes spin { to { transform: rotate(360deg); } }
 
       /* Container query: comments-panel sits in a column that may be the
@@ -285,6 +305,11 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
       }
       :host-context(.dark) .typing-dot {
         background: var(--color-primary-300);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        :host.expanded { animation: none; }
+        .spinning { animation: none; }
       }
     `,
   ],
