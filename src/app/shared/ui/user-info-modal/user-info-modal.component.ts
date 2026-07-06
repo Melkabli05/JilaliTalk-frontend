@@ -49,96 +49,98 @@ export interface UserInfoModalData {
         <svg aria-hidden="true" lucideX [size]="14"></svg>
       </button>
 
-      <div class="identity-wrapper">
-        <app-user-identity-card
-          [avatarUrl]="avatarUrl()"
-          [initials]="initials()"
-          [displayName]="displayName()"
-          [username]="username()"
-          [signature]="signature()"
-          [ringColor]="vipType() === 100 ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
-          [vip]="vipType() === 100"
-        >
-          @if (sex() === 'male') {
-            <span nameBadge class="sex-badge sex-male">
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="14.5" r="5.5"/><path d="M19.5 8 12 15.5M19.5 8l-5.5 0"/></svg>
-            </span>
-          } @else if (sex() === 'female') {
-            <span nameBadge class="sex-badge sex-female">
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="14.5" cy="8" r="5.5"/><path d="M14.5 8 12 5.5M14.5 8h-5M12 5.5v8"/></svg>
-            </span>
-          }
-          <ng-container metaChips>
-            @if (vipType() === 100) {
-              <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
-            } @else if (vipType() > 0 && vipType() < 100) {
-              <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
-            }
-            @if (onlineStatus(); as status) {
-              <span class="chip" [class]="onlineChipClass()">{{ status }}</span>
-            }
-            @if (liveStatus()) {
-              <span class="chip chip-live">LIVE</span>
-            }
-            @if (presenceLabel(); as label) {
-              <span class="chip chip-presence">{{ label }}</span>
-            }
-            @if (streakDays(); as streak) {
-              <span class="chip chip-streak">{{ streak }}-day streak</span>
-            }
-          </ng-container>
-        </app-user-identity-card>
-      </div>
-
-      <app-room-presence-banner
-        [presence]="presence()"
-        [hostInfo]="hostInfo()"
-        [viewerCname]="viewerCname()"
-        (join)="joinRoom($event.visible)"
-      />
-
-      @if (canFollow()) {
-        <div class="follow-action-row">
-          <button
-            type="button"
-            class="follow-btn"
-            [class.follow-btn--following]="isFollowing()"
-            [disabled]="isTogglingFollow()"
-            (click)="toggleFollow()"
-            [attr.aria-label]="followBtnLabel()"
+      <div class="modal-scroll">
+        <div class="identity-wrapper">
+          <app-user-identity-card
+            [avatarUrl]="avatarUrl()"
+            [initials]="initials()"
+            [displayName]="displayName()"
+            [username]="username()"
+            [signature]="signature()"
+            [ringColor]="vipType() === 100 ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
+            [vip]="vipType() === 100"
           >
-            @if (isTogglingFollow()) {
-              <svg aria-hidden="true" lucideLoader [size]="13" class="spin"></svg>
-            } @else if (isFollowing()) {
-              <svg aria-hidden="true" lucideUserCheck [size]="13"></svg>
-            } @else {
-              <svg aria-hidden="true" lucideUserPlus [size]="13"></svg>
+            @if (sex() === 'male') {
+              <span nameBadge class="sex-badge sex-male">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="14.5" r="5.5"/><path d="M19.5 8 12 15.5M19.5 8l-5.5 0"/></svg>
+              </span>
+            } @else if (sex() === 'female') {
+              <span nameBadge class="sex-badge sex-female">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="14.5" cy="8" r="5.5"/><path d="M14.5 8 12 5.5M14.5 8h-5M12 5.5v8"/></svg>
+              </span>
             }
-            {{ followBtnLabel() }}
-          </button>
+            <ng-container metaChips>
+              @if (vipType() === 100) {
+                <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+              } @else if (vipType() > 0 && vipType() < 100) {
+                <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+              }
+              @if (onlineStatus(); as status) {
+                <span class="chip" [class]="onlineChipClass()">{{ status }}</span>
+              }
+              @if (liveStatus()) {
+                <span class="chip chip-live">LIVE</span>
+              }
+              @if (presenceLabel(); as label) {
+                <span class="chip chip-presence">{{ label }}</span>
+              }
+              @if (streakDays(); as streak) {
+                <span class="chip chip-streak">{{ streak }}-day streak</span>
+              }
+            </ng-container>
+          </app-user-identity-card>
         </div>
-      }
 
-      @if (relationStats(); as stats) {
-        <div class="stats-row">
-          <div class="stat-item">
-            <span class="stat-val">{{ stats.followers }}</span>
-            <span class="stat-lbl">Followers</span>
+        <app-room-presence-banner
+          [presence]="presence()"
+          [hostInfo]="hostInfo()"
+          [viewerCname]="viewerCname()"
+          (join)="joinRoom($event.visible)"
+        />
+
+        @if (canFollow()) {
+          <div class="follow-action-row">
+            <button
+              type="button"
+              class="follow-btn"
+              [class.follow-btn--following]="isFollowing()"
+              [disabled]="isTogglingFollow()"
+              (click)="toggleFollow()"
+              [attr.aria-label]="followBtnLabel()"
+            >
+              @if (isTogglingFollow()) {
+                <svg aria-hidden="true" lucideLoader [size]="13" class="spin"></svg>
+              } @else if (isFollowing()) {
+                <svg aria-hidden="true" lucideUserCheck [size]="13"></svg>
+              } @else {
+                <svg aria-hidden="true" lucideUserPlus [size]="13"></svg>
+              }
+              {{ followBtnLabel() }}
+            </button>
           </div>
-          <div class="stat-item">
-            <span class="stat-val">{{ stats.following }}</span>
-            <span class="stat-lbl">Following</span>
+        }
+
+        @if (relationStats(); as stats) {
+          <div class="stats-row">
+            <div class="stat-item">
+              <span class="stat-val">{{ stats.followers }}</span>
+              <span class="stat-lbl">Followers</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-val">{{ stats.following }}</span>
+              <span class="stat-lbl">Following</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-val">{{ stats.moments }}</span>
+              <span class="stat-lbl">Moments</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-val">{{ stats.likes }}</span>
+              <span class="stat-lbl">Likes</span>
+            </div>
           </div>
-          <div class="stat-item">
-            <span class="stat-val">{{ stats.moments }}</span>
-            <span class="stat-lbl">Moments</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-val">{{ stats.likes }}</span>
-            <span class="stat-lbl">Likes</span>
-          </div>
-        </div>
-      }
+        }
+      </div>
 
       <div class="modal-body">
         @if (isLoading()) {
@@ -275,11 +277,28 @@ export interface UserInfoModalData {
         :host { animation: none; }
       }
 
+      .modal-scroll {
+        /* Scrollable shell so the top section (identity card, banner, stats) can grow
+           without pushing the modal off-screen. The sticky identity-wrapper header
+           stays visible while detail content scrolls below. */
+        display: flex;
+        flex-direction: column;
+        max-height: 46dvh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scroll-padding-top: var(--space-2);
+        /* Progressively fade the bottom edge so the boundary between the scroll
+           container and the modal-body feels natural rather than abrupt. */
+        mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+      }
+
       .identity-wrapper {
         padding-top: calc(26px + var(--space-3));
         background: var(--color-card);
         border-radius: var(--radius-lg) var(--radius-lg) 0 0;
         animation: itemIn 0.25s ease-out backwards;
+        flex-shrink: 0;
       }
       :host-context(.dark) .identity-wrapper {
         background: var(--color-neutral-800);
@@ -458,9 +477,9 @@ export interface UserInfoModalData {
         display: flex;
         flex-direction: column;
         gap: var(--space-3);
-        /* Scroll inside the modal body when content overflows the 85dvh host cap. */
-        overflow-y: auto;
-        overscroll-behavior: contain;
+        /* modal-body is always visible and compact — detail content is short by nature
+           (language tags, location, links). If it ever overflows the 85dvh host cap,
+           it scrolls within its own space, independent of the identity section above. */
       }
 
       .detail-group {

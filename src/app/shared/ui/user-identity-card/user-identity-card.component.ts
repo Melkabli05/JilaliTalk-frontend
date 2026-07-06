@@ -97,10 +97,11 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       font-size: var(--text-sm);
       color: var(--color-text-muted);
       line-height: 1.4;
-      /* Clamp long bios to 3 lines so a chatty profile can't blow the modal height up. */
+      /* Clamp long bios to 2 lines — enough to show intent without blowing the modal.
+         The scrollable identity-wrapper below handles overflow if the full bio is needed. */
       display: -webkit-box;
-      -webkit-line-clamp: 3;
-      line-clamp: 3;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }

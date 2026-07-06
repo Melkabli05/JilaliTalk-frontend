@@ -233,8 +233,9 @@ type ViewMode = 'grid' | 'list';
     }
 
     .tool-btn {
-      width: var(--icon-btn-size);
-      height: var(--icon-btn-size);
+      /* Mobile-first: 44px meets WCAG 2.5.5 AAA minimum tap target */
+      width: var(--touch-target-min);
+      height: var(--touch-target-min);
       border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
@@ -250,6 +251,13 @@ type ViewMode = 'grid' | 'list';
     .tool-btn.active {
       background: var(--color-neutral-100);
       color: var(--color-text);
+    }
+
+    /* Haptic-style active feedback for touch — keeps it in base so it
+       also works on pointer devices as a click affordance. */
+    .tool-btn:active:not(.active):not(:disabled) {
+      background: var(--color-neutral-200);
+      transform: scale(0.92);
     }
 
     .collapse-btn svg {
@@ -269,8 +277,9 @@ type ViewMode = 'grid' | 'list';
     }
 
     .toggle-btn {
-      width: 26px;
-      height: 26px;
+      /* Mobile-first: 44px tap target */
+      width: var(--touch-target-min);
+      height: var(--touch-target-min);
       border-radius: 4px;
       border: none;
       display: flex;
@@ -285,6 +294,10 @@ type ViewMode = 'grid' | 'list';
     .toggle-btn.active {
       background: var(--color-card);
       color: var(--color-primary-600);
+    }
+
+    .toggle-btn:active:not(.active) {
+      background: var(--color-neutral-200);
     }
 
     /* Collapse animation: grid-template-rows 1fr -> 0fr is the standard CSS-only
@@ -330,11 +343,13 @@ type ViewMode = 'grid' | 'list';
 
     .search-input {
       width: 100%;
-      padding: var(--space-1) 28px;
+      /* Mobile-first: 16px prevents iOS Safari from auto-zooming on focus.
+         Desktop reduces this to var(--text-xs) via the min-width query below. */
+      padding: 10px 32px;
       border-radius: var(--radius-md);
       border: 1px solid var(--color-border);
       background: var(--color-neutral-50);
-      font-size: var(--text-xs);
+      font-size: var(--text-base);
       color: var(--color-text);
       outline: none;
     }
@@ -355,8 +370,9 @@ type ViewMode = 'grid' | 'list';
     .search-clear-btn {
       position: absolute;
       right: 4px;
-      width: 20px;
-      height: 20px;
+      /* Mobile-first: 32px — easier to tap than the desktop 20px */
+      width: 32px;
+      height: 32px;
       border-radius: var(--radius-full);
       display: flex;
       align-items: center;
@@ -507,38 +523,30 @@ type ViewMode = 'grid' | 'list';
       outline-offset: var(--focus-ring-offset);
     }
 
-    /* Mobile: 16px input font-size stops iOS Safari auto-zooming the page on
-       focus (it zooms whenever a focused input's computed font-size is under
-       16px), and 40px touch targets clear the 44pt/48dp minimum recommended
-       by Apple HIG / Material — the desktop 28px/20px sizes are too small to
-       reliably tap. */
-    @media (max-width: 1023.98px) {
+    /* Desktop: scale controls down now that precise pointer input is available */
+    @media (min-width: 1024px) {
       .search-input {
-        font-size: var(--text-base);
-        padding: 10px 32px;
+        font-size: var(--text-xs);
+        padding: var(--space-1) 28px;
       }
 
-      /* Apple HIG 44pt minimum — 40px is close but fails the strict spec. */
       .tool-btn {
-        width: var(--touch-target-min);
-        height: var(--touch-target-min);
+        width: var(--icon-btn-size);
+        height: var(--icon-btn-size);
       }
+
       .tool-btn:active:not(.active):not(:disabled) {
-        background: var(--color-neutral-200);
-        transform: scale(0.92);
+        transform: none;
       }
 
       .toggle-btn {
-        width: var(--touch-target-min);
-        height: var(--touch-target-min);
-      }
-      .toggle-btn:active:not(.active) {
-        background: var(--color-neutral-200);
+        width: 26px;
+        height: 26px;
       }
 
       .search-clear-btn {
-        width: 32px;
-        height: 32px;
+        width: 20px;
+        height: 20px;
       }
     }
 

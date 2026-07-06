@@ -180,8 +180,9 @@ export interface SendEvent {
 
       .emoji-btn,
       .send-btn {
-        width: 40px;
-        height: 40px;
+        /* WCAG 2.5.5 AAA: 44×44px minimum for primary interactive controls */
+        width: 44px;
+        height: 44px;
       }
 
       .reply-cancel {

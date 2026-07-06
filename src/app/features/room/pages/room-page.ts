@@ -122,112 +122,70 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
          for the --shell-inset-top / --shell-inset-bottom contract. */
     }
 
+    /* ── Mobile-first: flex column ──────────────────────────────────────────
+       The header lives in normal document flow — no position:fixed hack.
+       Stage caps at 45dvh with internal scroll for full 8-seat rooms.
+       Audience auto-sizes (the component starts collapsed on mobile).
+       Comments absorbs all remaining space via flex:1. */
     .room-layout {
-      display: grid;
-      grid-template-areas: "header" "stage" "audience" "comments";
-      grid-template-columns: 1fr;
-      /* Audience uses fit-content(22cqh), not minmax(min-content, 22cqh):
-         minmax's growth limit is a plain length, so CSS Grid's Maximize
-         Tracks step spends available free space growing it straight to
-         22cqh regardless of actual content — collapsed on mobile or a
-         2-listener room still reserves a fixed 22% of the viewport as dead
-         space. fit-content()'s growth limit is min(max-content, 22cqh), so
-         the row only grows as far as its content actually needs, capped at
-         22cqh for busy rooms. */
-      grid-template-rows: auto minmax(0, 30cqh) fit-content(22cqh) minmax(0, 1fr);
+      display: flex;
+      flex-direction: column;
       height: 100%;
       overflow: hidden;
     }
 
     .room-header {
-      grid-area: header;
+      flex-shrink: 0;
       position: relative;
       z-index: var(--z-overlay);
     }
 
     .stage-section {
-      grid-area: stage;
+      flex-shrink: 0;
+      max-height: 45dvh;
       display: flex;
       flex-direction: column;
       min-height: 0;
-      min-width: 0;
       overflow: hidden;
     }
+
     .stage-section app-stage-grid {
       flex: 1 1 auto;
       min-height: 0;
     }
 
     .audience-section {
-      grid-area: audience;
-      min-height: 0;
-      min-width: 0;
+      flex-shrink: 0;
       overflow: hidden;
     }
 
     .comments-section {
-      grid-area: comments;
+      flex: 1 1 auto;
+      min-height: 0;
       display: flex;
       flex-direction: column;
-      min-height: 0;
       overflow: hidden;
     }
 
-    @container room-page (min-width: 480px) {
-      .room-layout { grid-template-rows: auto minmax(0, 34cqh) fit-content(22cqh) minmax(0, 1fr); }
-    }
-
-    /* Two-column layout requires both enough width AND enough height —
-       landscape phones (e.g. iPhone in landscape, ~844×390) have the
-       width but not the height, and end up with the comments panel
-       squished to ~82px. Gate the desktop layout on a min-height too. */
+    /* ── Desktop: two-column sidebar layout ─────────────────────────────────
+       Gate on both width AND height — landscape phones have enough width
+       but not enough height for the sidebar to be useful (comments would
+       be squished to ~82px). */
     @container room-page (min-width: 1024px) and (min-height: 500px) {
       .room-layout {
-        grid-template-areas: "header comments" "stage comments" "audience comments";
+        display: grid;
+        grid-template-areas:
+          "header   comments"
+          "stage    comments"
+          "audience comments";
         grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
         grid-template-rows: auto auto minmax(22cqh, 1fr);
       }
-    }
 
-    /* Mobile: the immersive route hides the global header and bottom-nav,
-       so the entire viewport is available to the room. Pin the room-header
-       to the top and let the comment input pin itself to the bottom (see
-       comment-input.ts). .room-layout stays overflow:hidden — the middle
-       content (stage / audience / comment list) each have their own
-       internal scroll containers, so the room page itself is not
-       scrollable. Header row is removed from the grid (it's position:fixed,
-       outside flow) and the comments row absorbs whatever the audience
-       doesn't take. */
-    @container room-page (max-width: 1023.98px) {
-      .room-layout {
-        grid-template-areas: "stage" "audience" "comments";
-        /* Stage cap raised from 30cqh → 45cqh, AND switched from
-           minmax(0, 45cqh) to fit-content(45cqh). The minmax form
-           spent all 45cqh on empty rooms (no speakers = ~220px of
-           tile content + 154px of empty whitespace inside the grid
-           cell). fit-content()'s growth limit is min(max-content,
-           45cqh) — the row only grows as far as its content needs,
-           capped at 45cqh for a full 8-seat room. Same pattern as the
-           audience row below. Stage grid host's overflow-y: auto +
-           overscroll-behavior: contain still kicks in when the room
-           is busy and the row hits the 45cqh cap. */
-        grid-template-rows: fit-content(45cqh) fit-content(22cqh) minmax(0, 1fr);
-      }
-      /* The fixed room-header sits visually above the stage section's
-         grid row. Padding the stage by the header's height keeps the
-         stage header strip ("Stage 8") and the first row of tiles from
-         rendering behind the pinned toolbar. */
-      .stage-section {
-        padding-top: var(--room-header-height);
-      }
-      .room-header {
-        position: fixed;
-        top: var(--shell-inset-top);
-        left: 0;
-        right: 0;
-        z-index: var(--z-shell-header);
-        grid-area: auto;
-      }
+      .room-header    { grid-area: header; max-height: none; }
+      .stage-section  { grid-area: stage;  max-height: none; }
+      .audience-section { grid-area: audience; }
+      .comments-section { grid-area: comments; }
     }
 
   `]
@@ -295,9 +253,21 @@ export class RoomPageComponent extends RoomPageBase {
       }
       throw err;
     }
-    // Snapshot served its purpose (either consumed by enterRoom on restore, or already
-    // cleared above for a stale different-room snapshot); from here, enterRoom is the truth.
-    this.activeCallStore.clear();
+    // Snapshot served its purpose for restore detection — and now becomes the
+    // "I am currently in this room" live state that other consumers (e.g. the
+    // UserInfoModal's "you're already in this room" check) can read. We update
+    // the snapshot with the current room's cname + the user's visibility + mic
+    // state, then re-derive isMicOn from the result so the snapshot stays
+    // accurate after a visible join. (The previous `clear()` made cname null
+    // while the user was in a full-screen room, which broke the modal's
+    // "already in this room" detection entirely.)
+    this.activeCallStore.minimize(
+      cname,
+      busiType,
+      this.roomStore.name(),
+      this.roomStore.isMicOn(),
+      !this.roomStore.isVisible(),
+    );
 
     let voiceInfo: VoiceRoomInfo;
     let stage: StageUsersResponse | undefined;

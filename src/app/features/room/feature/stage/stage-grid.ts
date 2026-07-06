@@ -89,15 +89,13 @@ import { LucideUserCircle } from '@lucide/angular';
 
       .stage-grid {
         display: grid;
-        /* Mobile: fixed 4 columns — a predictable line of 4 items per row
-           (wrapping to a second row of 4, then a final partial row), sized to
-           the stage's narrow mobile width. Desktop reverts to size-based
-           auto-fill below, since the wider desktop stage area comfortably
-           fits more per row than a fixed 4 would use well. */
+        /* Mobile: 4 equal columns — predictable, readable tiles at any
+           phone width. Desktop switches to auto-fill so wider rooms use
+           the extra space naturally. */
         grid-template-columns: repeat(4, 1fr);
         justify-content: start;
-        gap: var(--space-2) var(--space-7);
-        padding: var(--space-2);
+        gap: var(--space-3);
+        padding: var(--space-3);
         align-content: start;
         background-color: var(--color-card);
       }

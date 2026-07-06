@@ -161,7 +161,9 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         flex-direction: column;
         height: 100%;
         background: var(--cp-bg);
-        border-left: 1px solid var(--cp-border);
+        /* Mobile: top border separates the chat zone from the audience strip.
+           Desktop restores border-left via the container query below. */
+        border-top: 1px solid var(--cp-border);
       }
 
       .panel-header {
@@ -262,6 +264,23 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
          makes sense when the panel is in the mobile slot. */
       @container comments-panel (max-width: 1023.98px) {
         .expand-btn { display: flex; }
+        /* Account for the position:fixed comment-input bar so the last
+           messages are not hidden behind it. The padding shrinks the
+           flex:1 app-comment-list by this amount, keeping content above
+           the pinned input. Matches the input bar's approximate height
+           (40px buttons + 8px top padding + 8px bottom padding) plus
+           env() for the home indicator on iOS. */
+        .comments-scroll {
+          padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+        }
+      }
+
+      /* Desktop two-column layout: switch from top border to left border. */
+      @container comments-panel (min-width: 1024px) {
+        .comments-panel {
+          border-top: none;
+          border-left: 1px solid var(--cp-border);
+        }
       }
 
       .tab-panel {

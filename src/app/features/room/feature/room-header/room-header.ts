@@ -1107,6 +1107,15 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
         .header-left { gap: var(--space-1); }
       }
 
+      /* Desktop: reveal secondary actions and separator that are hidden on
+         mobile. On wide headers the overflow trigger (c-more) is already
+         display:none, so without this the secondary action buttons are
+         permanently inaccessible on desktop. */
+      @container room-header (min-width: 1024px) {
+        .hide-mobile { display: flex; }
+        .toolbar-sep.hide-mobile { display: block; }
+      }
+
       /* Apple HIG / WCAG 2.3.3 — disable non-essential animations when the
          user has prefers-reduced-motion: reduce. Covers the WS reconnecting
          pulse, refresh spinner, room-info panel fade-in, overflow fade-in,
