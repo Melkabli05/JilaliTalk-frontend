@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
 import { LucideLoader2 } from '@lucide/angular';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'muted' | 'gold' | 'soft-primary' | 'soft-accent' | 'soft-warm' | 'soft-gold' | 'soft-neutral';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'muted' | 'gold' | 'soft-primary' | 'soft-accent' | 'soft-warm' | 'soft-gold' | 'soft-neutral' | 'soft-invisible';
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 type IconPosition = 'start' | 'end';
 
@@ -85,6 +85,7 @@ type IconPosition = 'start' | 'end';
     .btn-soft-warm    { --btn-bg: var(--color-warm-50); --btn-color: var(--color-warm-700); --btn-hover-bg: var(--color-warm-100); }
     .btn-soft-gold    { --btn-bg: var(--color-gold-50); --btn-color: var(--color-gold-700); --btn-hover-bg: var(--color-gold-100); }
     .btn-soft-neutral { --btn-bg: var(--color-neutral-100); --btn-color: var(--color-neutral-600); --btn-hover-bg: var(--color-neutral-200); }
+    .btn-soft-invisible { --btn-bg: color-mix(in srgb, var(--color-neutral-500) 12%, var(--color-card)); --btn-color: var(--color-neutral-700); --btn-border: var(--color-neutral-200); --btn-hover-bg: color-mix(in srgb, var(--color-neutral-500) 20%, var(--color-card)); }
 
     :host-context(.dark) {
       .btn-primary   { --btn-bg: var(--color-primary-600); --btn-hover-bg: var(--color-primary-500); }
@@ -98,6 +99,7 @@ type IconPosition = 'start' | 'end';
       .btn-soft-warm    { --btn-bg: var(--color-warm-900); --btn-color: var(--color-warm-200); --btn-hover-bg: var(--color-warm-800); }
       .btn-soft-gold    { --btn-bg: var(--color-gold-900); --btn-color: var(--color-gold-200); --btn-hover-bg: var(--color-gold-800); }
       .btn-soft-neutral { --btn-bg: var(--color-neutral-800); --btn-color: var(--color-neutral-200); --btn-hover-bg: var(--color-neutral-700); }
+      .btn-soft-invisible { --btn-bg: color-mix(in srgb, var(--color-neutral-400) 18%, var(--color-neutral-800)); --btn-color: var(--color-neutral-200); --btn-border: var(--color-neutral-700); --btn-hover-bg: color-mix(in srgb, var(--color-neutral-400) 28%, var(--color-neutral-800)); }
     }
 
     /* Disabled */

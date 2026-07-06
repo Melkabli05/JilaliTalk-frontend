@@ -43,7 +43,7 @@ import type { UserPresence, UserInfo } from '@core/services/user-info.service';
 
             <div class="actions">
               <app-button variant="primary" size="sm" (click)="onJoin(true)">Join Visible</app-button>
-              <app-button variant="soft-neutral" size="sm" (click)="onJoin(false)">Join as Guest</app-button>
+              <app-button variant="soft-invisible" size="sm" (click)="onJoin(false)">Join Invisible</app-button>
             </div>
           </div>
         </section>
@@ -147,9 +147,6 @@ import type { UserPresence, UserInfo } from '@core/services/user-info.service';
       70%  { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-gold-400) 0%, transparent); }
       100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-gold-400) 70%, transparent); }
     }
-    @media (prefers-reduced-motion: reduce) {
-      .live-dot { animation: none; }
-    }
 
     .header-label {
       font-size: var(--text-2xs);
@@ -231,6 +228,52 @@ import type { UserPresence, UserInfo } from '@core/services/user-info.service';
       margin-top: var(--space-2);
     }
     .actions app-button { flex: 1; }
+
+    /* ============================================================
+       Responsive — mobile-first adjustments for narrow modals.
+       The modal itself is 340px wide on desktop and ~100vw on phones,
+       so the banner's outer margin is reduced and inner padding
+       shrinks at small widths. The two CTAs always stay side-by-side
+       (they fit at the narrowest viewport — even 280px holds both
+       with their sm padding) but get tighter spacing and rounded corners
+       so the action row doesn't dominate the banner height.
+       ============================================================ */
+    @media (max-width: 380px) {
+      .presence-banner {
+        margin: 0 var(--space-3);
+        border-radius: var(--radius-md);
+      }
+      .banner-body {
+        padding: var(--space-2) var(--space-3);
+        gap: var(--space-1);
+      }
+      .room-name { font-size: var(--text-sm); }
+      .host-row { padding: 0; }
+      .header-label { letter-spacing: 0.04em; }
+    }
+
+    /* Stack the actions vertically below ~320px — the buttons' sm padding
+       plus two side-by-side plus the host row starts to feel cramped.
+       Full-width stacked buttons read as a clearer intent ladder. */
+    @media (max-width: 320px) {
+      .actions {
+        flex-direction: column;
+      }
+      .actions app-button {
+        width: 100%;
+      }
+      .host-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+      }
+      .host-prefix { font-size: var(--text-2xs); }
+    }
+
+    /* Reduced motion: keep the visual state but disable the pulse. */
+    @media (prefers-reduced-motion: reduce) {
+      .live-dot { animation: none; }
+    }
   `],
 })
 export class RoomPresenceBannerComponent {
