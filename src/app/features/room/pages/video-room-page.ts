@@ -310,11 +310,11 @@ export class VideoRoomPageComponent extends RoomPageBase {
     }
     this.activeCallStore.clear();
 
-    // room info + stage + audience + comments. For a fresh (just-created) room we
-    // skip the bundle and call liveRoomInfo alone — upstream's stage/list + comment
-    // endpoints reliably 500 on a cname created moments earlier, requiring
-    // live_room_info to have completed first. Realtime push events will populate
-    // the rosters once the websocket connects.
+    // For a fresh (just-created) room we only call liveRoomInfo; upstream's stage/list
+    // + comment endpoints reliably 500 on a cname created moments earlier, requiring
+    // live_room_info to have completed first. Realtime push events (user_join/stage_join/
+    // comment) populate the rosters once the websocket connects. stage/audience/comments
+    // intentionally stay undefined on the fresh path — code below guards on that.
     let liveInfo: LiveRoomInfo;
     let stage: StageUsersResponse | undefined;
     let audience: AudienceUsersResponse | undefined;
@@ -322,9 +322,6 @@ export class VideoRoomPageComponent extends RoomPageBase {
     try {
       if (this.fresh()) {
         liveInfo = await firstValueFrom(this.api.fetchLiveRoomInfo(cname));
-        stage = { isHostInRoom: false, list: [] };
-        audience = { list: [], audienceTotal: 0 };
-        comments = { items: [], hasNext: false, oldestId: '' };
       } else {
         const bundle = await firstValueFrom(this.api.fetchJoinBundle<LiveRoomInfo>(cname, busiType));
         liveInfo = bundle.voiceRoomInfo;
@@ -368,9 +365,13 @@ export class VideoRoomPageComponent extends RoomPageBase {
     const uid = this.roomStore.userId();
 
     if (isVisible) this.audienceStore.setCname(actualCname);
-    this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
-    this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
-    this.commentsStore.updateComments([...(comments?.items ?? [])]);
+    // Only seed the rosters from the bundle when we actually have one. On the
+    // fresh path there's no bundle and the lists stay undefined — passing an
+    // empty array would still call setCollection([]) and wipe anything the
+    // websocket already pushed between connect and HTTP response.
+    if (stage) this.stageStore.updateStageUsers([...stage.list]);
+    if (audience) this.audienceStore.updateAudienceUsers([...audience.list]);
+    if (comments) this.commentsStore.updateComments([...(comments.items ?? [])]);
 
     this.rtmStore.setCurrentUid(uid);
 

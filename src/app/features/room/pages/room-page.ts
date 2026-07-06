@@ -352,9 +352,13 @@ export class RoomPageComponent extends RoomPageBase {
     const uid = this.roomStore.userId();
 
     if (isVisible) this.audienceStore.setCname(cname);
-    this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
-    this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
-    this.commentsStore.updateComments([...(comments?.items ?? [])]);
+    // Only seed the rosters from the bundle when we actually have one. On the
+    // fresh path there's no bundle and the lists stay undefined — passing an
+    // empty array would still call setCollection([]) and wipe anything the
+    // websocket already pushed between connect and HTTP response.
+    if (stage) this.stageStore.updateStageUsers([...stage.list]);
+    if (audience) this.audienceStore.updateAudienceUsers([...audience.list]);
+    if (comments) this.commentsStore.updateComments([...(comments.items ?? [])]);
 
     this.rtmStore.setCurrentUid(uid);
 
