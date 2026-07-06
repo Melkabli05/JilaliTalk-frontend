@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { Router } from '@angular/router';
 import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
-import { UserInfoService } from '@core/services/user-info.service';
+import { UserInfoService, type UserInfo } from '@core/services/user-info.service';
 import { FollowService } from '@core/services/follow.service';
 import { ToastService } from '@core/services/toast.service';
 import { AuthStore } from '@core/auth/auth.store';
@@ -10,6 +11,8 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { UserIdentityCardComponent } from '@shared/ui/user-identity-card/user-identity-card.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
+import { RoomPresenceBannerComponent } from '@shared/ui/room-presence-banner';
+import { cnameToBusiType } from '@shared/utils';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
 import { LucideX, LucideCrown, LucideUserPlus, LucideUserCheck, LucideLoader } from '@lucide/angular';
 
@@ -34,6 +37,7 @@ export interface UserInfoModalData {
     CountryFlagComponent,
     LanguageTagComponent,
     UserIdentityCardComponent,
+    RoomPresenceBannerComponent,
     LucideX,
     LucideCrown,
     LucideUserPlus,
@@ -87,6 +91,12 @@ export interface UserInfoModalData {
           </ng-container>
         </app-user-identity-card>
       </div>
+
+      <app-room-presence-banner
+        [presence]="presence()"
+        [hostInfo]="hostInfo()"
+        (join)="joinRoom($event.visible)"
+      />
 
       @if (canFollow()) {
         <div class="follow-action-row">
@@ -663,7 +673,23 @@ export class UserInfoModalComponent {
     // Fetch presence independently — even a cached userInfo doesn't tell us where they
     // are right now. Re-fetches every 60s via the service's own staleness check.
     void this.userInfoService.fetchUserPresence(this.data.userId);
+    // When presence says we're in someone else's room (statusType=2), fetch the host's
+    // profile on demand so the banner can show their avatar + name. Reuses the existing
+    // 5-minute userInfoService cache.
+    effect(() => {
+      const p = this.presence();
+      if (p?.statusType === 2 && p.hostId > 0 && p.hostId !== this.data.userId) {
+        void this.userInfoService.fetchUserInfo(p.hostId);
+      }
+    });
   }
+
+  readonly hostInfo = computed<UserInfo | null>(() => {
+    const p = this.presence();
+    if (!p || p.statusType !== 2 || p.hostId <= 0) return null;
+    if (p.hostId === this.data.userId) return null;
+    return this.userInfoService.getUserInfo(p.hostId);
+  });
 
   private readonly info = computed(() => this.userInfoService.getUserInfo(this.data.userId));
   private readonly details = computed(() => this.info()?.details ?? null);
@@ -817,6 +843,28 @@ export class UserInfoModalComponent {
       this.toast.error(httpErrorMessage(err, 'Could not update follow status. Please try again.'));
     } finally {
       this._isTogglingFollow.set(false);
+    }
+  }
+
+  // Room-presence banner join handlers — see RoomPresenceBannerComponent for the trigger.
+  private readonly router = inject(Router);
+  private readonly isJoining = signal(false);
+
+  async joinRoom(visible: boolean): Promise<void> {
+    if (this.isJoining()) return;                  // re-entry guard: double-click safety
+    const p = this.presence();
+    if (!p?.cname) return;
+    const busiType = cnameToBusiType(p.cname);
+    if (busiType === null) return;                 // unknown prefix — refuse the navigate
+    this.isJoining.set(true);
+    try {
+      this.ref.close();                            // close modal first so the room page
+                                                  // mounts cleanly on a fresh navigation
+      const path = busiType === 1 ? '/room/video' : '/room';
+      const queryParams = visible ? {} : { visible: 'false' };
+      await this.router.navigate([path, p.cname, busiType], { queryParams });
+    } finally {
+      this.isJoining.set(false);
     }
   }
 }
