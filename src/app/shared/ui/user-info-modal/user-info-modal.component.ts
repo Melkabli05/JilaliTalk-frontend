@@ -745,7 +745,13 @@ export class UserInfoModalComponent {
   // Where this user is right now — null until the presence fetch resolves.
   readonly presence = computed(() => this.userInfoService.getUserPresence(this.data.userId));
   /** Human-readable summary: "Hosting: <room>", "In: <room>", or null if offline/blackened. */
+  readonly shouldShowBanner = computed(() => {
+    const p = this.presence();
+    return !!p && !p.blackened && (p.statusType === 1 || p.statusType === 2);
+  });
+
   readonly presenceLabel = computed(() => {
+    if (this.shouldShowBanner()) return null;  // banner takes over when present
     const p = this.presence();
     if (!p || p.blackened) return null;
     if (p.statusType === 1) {
