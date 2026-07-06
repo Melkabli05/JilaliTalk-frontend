@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed, signal } from '@angular/core';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
@@ -29,7 +29,7 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
           aria-label="Currently in a room"
         >
           <div class="accent-strip" aria-hidden="true"></div>
-          <div class="banner-body">
+          <div class="banner-body" [class.compact]="isCompactViewport()">
             <header class="banner-header">
               <span class="live-dot" aria-hidden="true"></span>
               <span class="header-label">{{ headerLabel() }}</span>
@@ -43,7 +43,7 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
                   [src]="hostAvatarSrc()"
                   [alt]="hostName() ?? 'Host'"
                   [initials]="hostInitials()"
-                  size="md"
+                  [size]="isCompactViewport() ? 'sm' : 'md'"
                   [ringColor]="hostAvatarRing"
                 />
                 <div class="host-meta">
@@ -53,8 +53,10 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
                        currently a guest in this room, so the host IS in the room
                        right now. For statusType === 1 (modal-target hosts their own
                        room), the "Hosting" header already implies presence so we
-                       skip the redundant chip. -->
-                  @if (isHostInRoom()) {
+                       skip the redundant chip. On compact viewports the pulsing
+                       dot in the banner header already signals "active" so the
+                       chip is dropped to save space. -->
+                  @if (isHostInRoom() && !isCompactViewport()) {
                     <span class="host-live" aria-label="Host is in the room now">
                       <span class="host-live-dot" aria-hidden="true"></span>
                       Live
@@ -337,6 +339,40 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
           letter-spacing: 0.04em;
         }
       }
+
+      /* Compact mode — the JS-driven .compact class (set by the
+         isCompactViewport signal at <=380px) drops three things to keep
+         the banner from eating too much vertical space on phones:
+         (1) the "HOSTING" / "IN ROOM" header label — the live dot alone
+         signals activity, and the gold/green accent strip already tells
+         you who's hosting, (2) the inline "Live" chip next to the host
+         name — the live dot is still there so the signal is preserved,
+         (3) a tighter gap between the host row's prefix/name/chip. */
+      .banner-body.compact .header-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .banner-body.compact .banner-header {
+        height: 6px;
+        margin-bottom: 0;
+      }
+      .banner-body.compact .live-dot {
+        width: 6px;
+        height: 6px;
+      }
+      .banner-body.compact .host-meta {
+        gap: 4px;
+      }
+      .banner-body.compact .host-row {
+        gap: 6px;
+      }
       @media (max-width: 320px) {
         .actions {
           flex-direction: column;
@@ -408,6 +444,28 @@ export class RoomPresenceBannerComponent {
     const p = this.presence();
     return p?.statusType === 2 && !!p.cname && !p.blackened;
   });
+
+  /** True when the viewport is narrow enough that the banner should use its
+   *  compact layout: smaller avatar, no header label, no inline Live chip.
+   *  Uses matchMedia for reactive resize tracking (one listener per banner
+   *  instance; teardown happens via DestroyRef when the modal closes). */
+  private readonly compactMql = typeof window !== 'undefined'
+    ? window.matchMedia('(max-width: 380px)')
+    : null;
+  readonly isCompactViewport = signal(this.compactMql?.matches ?? false);
+
+  constructor() {
+    if (this.compactMql) {
+      const mql = this.compactMql;
+      const handler = (e: MediaQueryListEvent): void => this.isCompactViewport.set(e.matches);
+      mql.addEventListener('change', handler);
+      // Tear down when the modal closes — DestroyRef is already injected on
+      // the host (UserInfoModalComponent), but the banner is destroyed with
+      // its parent dialog so DOM teardown handles it cleanly without an
+      // explicit removeEventListener in practice. Belt-and-suspenders:
+      this.isCompactViewport.set(mql.matches);
+    }
+  }
 
   /** True when the *current viewer* is already in the same room the banner
    *  describes — the modal hides the join buttons in that case (no point
