@@ -371,9 +371,12 @@ export class RoomPresenceBannerComponent {
 
   readonly presence = input<UserPresence | null>(null);
   readonly hostInfo = input<UserInfo | null>(null);
-  /** Current viewer's user id — used to compute `viewerInRoom` so the modal can hide
-   *  the join buttons when the viewer is already in the same room. */
-  readonly viewerId = input<number | null>(null);
+  /** Current viewer's own cname (or null if they're not in any room). The
+   *  join decision is purely cname equality — "is the viewer in the same
+   *  room the modal target is in?". This catches every case correctly:
+   *  viewer is the host, viewer is a guest, viewer is the modal target
+   *  themselves, viewer is in a totally different room. */
+  readonly viewerCname = input<string | null>(null);
   readonly join = output<{ visible: boolean }>();
 
   readonly shouldShow = computed(() => {
@@ -408,24 +411,17 @@ export class RoomPresenceBannerComponent {
 
   /** True when the *current viewer* is already in the same room the banner
    *  describes — the modal hides the join buttons in that case (no point
-   *  re-joining your own room). Two cases:
-   *  - viewer is a guest here (statusType=2 + viewer's uid = hostId) — but in
-   *    practice the modal's viewer is the user opening another person's
-   *    profile, so the more useful case is the modal-target hosting their own
-   *    room and the viewer is already a guest there.
-   *  - viewer is the host of this room (statusType=2 + viewerId == modal-target's
-   *    uid) — also already in the room.
-   *  - viewer is the modal-target user themselves (viewerId == userId) — always
-   *    "in the room" if their statusType is 1 or 2.
-   *  We don't try to disambiguate which one; any positive match means hide
-   *  the join buttons. */
+   *  re-joining your own room). The check is purely cname equality:
+   *  "is the viewer in the same room the modal target is in?". Catches
+   *  every case correctly — viewer is the host, viewer is a guest, viewer
+   *  is the modal target themselves, or viewer is in a totally different
+   *  room (different cname → false). The previous heuristic (statusType
+   *  combinations with hostId/userId) missed the guest-of-modal-target case
+   *  which is the most common "I'm already here" scenario. */
   readonly viewerInRoom = computed(() => {
     const p = this.presence();
-    const me = this.viewerId();
-    if (!p || !me || !p.cname) return false;
-    if (p.statusType === 1) return p.userId === me;     // modal-target hosts → I'm them → in the room
-    if (p.statusType === 2) return p.hostId === me;     // someone else hosts → I'm the host
-    return false;
+    const vc = this.viewerCname();
+    return !!p?.cname && !!vc && p.cname === vc;
   });
 
   // nickname: top-level first (BFF mapper sets it), then the nested copy, then

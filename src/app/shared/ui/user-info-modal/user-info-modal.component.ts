@@ -93,7 +93,7 @@ export interface UserInfoModalData {
       <app-room-presence-banner
         [presence]="presence()"
         [hostInfo]="hostInfo()"
-        [viewerId]="viewerId()"
+        [viewerCname]="viewerCname()"
         (join)="joinRoom($event.visible)"
       />
 
@@ -687,7 +687,25 @@ export class UserInfoModalComponent {
         void this.userInfoService.fetchUserInfo(p.hostId);
       }
     });
+    // Also fetch the viewer's own presence (independent of the modal target's).
+    // The banner uses this to decide whether the viewer is in the same room as
+    // the modal target — and only then hide the join buttons. The viewer's
+    // presence is cached for 60s in userInfoService so repeat modal opens are
+    // cheap; the user's auth state is the only source-of-truth for "am I in a
+    // room right now" we have at the global layer (RoomStore is component-scoped
+    // and not available from the modal).
+    const me = this.viewerId();
+    if (me) void this.userInfoService.fetchUserPresence(me);
   }
+
+  /** The viewer's own current room cname (or null if they're not in any room).
+   *  Drives the banner's "you're in this room" state — the only true
+   *  check is cname equality, regardless of role/host/guest. */
+  readonly viewerCname = computed(() => {
+    const me = this.viewerId();
+    if (!me) return null;
+    return this.userInfoService.getUserPresence(me)?.cname ?? null;
+  });
 
   readonly hostInfo = computed<UserInfo | null>(() => {
     const p = this.presence();
