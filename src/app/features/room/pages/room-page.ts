@@ -189,6 +189,30 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
       }
     }
 
+    /* Mobile: the immersive route hides the global header and bottom-nav,
+       so the entire viewport is available to the room. Pin the room-header
+       to the top and let the comment input pin itself to the bottom (see
+       comment-input.ts). .room-layout stays overflow:hidden — the middle
+       content (stage / audience / comment list) each have their own
+       internal scroll containers, so the room page itself is not
+       scrollable. Header row is removed from the grid (it's position:fixed,
+       outside flow) and the comments row absorbs whatever the audience
+       doesn't take. */
+    @container room-page (max-width: 1023.98px) {
+      .room-layout {
+        grid-template-areas: "stage" "audience" "comments";
+        grid-template-rows: minmax(0, 30cqh) fit-content(22cqh) minmax(0, 1fr);
+      }
+      .room-header {
+        position: fixed;
+        top: var(--shell-inset-top);
+        left: 0;
+        right: 0;
+        z-index: var(--z-shell-header);
+        grid-area: auto;
+      }
+    }
+
   `]
 })
 export class RoomPageComponent extends RoomPageBase {
@@ -196,6 +220,15 @@ export class RoomPageComponent extends RoomPageBase {
   readonly busiType = input(2, { transform: (v: string | number | undefined) => Number(v) || 2 });
   readonly visible = input(true, {
     transform: (v: string | boolean | undefined) => v !== 'false' && v !== false,
+  });
+  /** Set by the create-room flow to signal "skip join-bundle, we just created this cname."
+   *  Upstream's stage/audience/comment read endpoints don't reliably serve a cname
+   *  that was created moments earlier — a brand-new room 500s on join-bundle until
+   *  upstream indexing catches up. Fresh-room entries must rely on realtime
+   *  push events (user_join/stage_join/comment) to populate the lists, which they
+   *  do anyway once the websocket is connected. */
+  readonly fresh = input(false, {
+    transform: (v: string | boolean | undefined) => v === 'true' || v === true || v === '1',
   });
 
   readonly roomStore = inject(RoomStore) as unknown as RoomStoreContract;
@@ -254,11 +287,24 @@ export class RoomPageComponent extends RoomPageBase {
     let audience: AudienceUsersResponse | undefined;
     let comments: CommentsResponse | undefined;
     try {
-      const bundle = await firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType));
-      voiceInfo = bundle.voiceRoomInfo;
-      stage = bundle.stageUsers;
-      audience = bundle.audienceUsers;
-      comments = bundle.comments;
+      if (this.fresh()) {
+        // Fresh room (just created via create-room-modal): upstream's join-bundle reliably
+        // 500s on stage/list + comment for a cname created moments earlier — upstream
+        // requires voice_room_info to have completed for this room/session before the
+        // other endpoints will serve it. Fetch room info alone, and let the realtime
+        // push events (user_join/stage_join/comment) populate the lists once the
+        // websocket connects — which they will naturally.
+        voiceInfo = await firstValueFrom(this.api.fetchVoiceRoomInfo(cname));
+        stage = { isHostInRoom: false, list: [] };
+        audience = { list: [], audienceTotal: 0 };
+        comments = { items: [], hasNext: false, oldestId: '' };
+      } else {
+        const bundle = await firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType));
+        voiceInfo = bundle.voiceRoomInfo;
+        stage = bundle.stageUsers;
+        audience = bundle.audienceUsers;
+        comments = bundle.comments;
+      }
     } catch {
       await this.router.navigate(['/']);
       this.toast.error('Room not found. Please create a new one.');

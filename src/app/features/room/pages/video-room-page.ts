@@ -228,6 +228,10 @@ export class VideoRoomPageComponent extends RoomPageBase {
   readonly visible = input(true, {
     transform: (v: string | boolean | undefined) => v !== 'false' && v !== false,
   });
+  /** See RoomPageComponent.fresh for the rationale — same upstream race applies to live rooms. */
+  readonly fresh = input(false, {
+    transform: (v: string | boolean | undefined) => v === 'true' || v === true || v === '1',
+  });
 
   readonly roomStore = inject(VideoRoomStore) as unknown as RoomStoreContract;
 
@@ -306,17 +310,28 @@ export class VideoRoomPageComponent extends RoomPageBase {
     }
     this.activeCallStore.clear();
 
-    // room info + stage + audience + comments, fanned out server-side in one round-trip.
+    // room info + stage + audience + comments. For a fresh (just-created) room we
+    // skip the bundle and call liveRoomInfo alone — upstream's stage/list + comment
+    // endpoints reliably 500 on a cname created moments earlier, requiring
+    // live_room_info to have completed first. Realtime push events will populate
+    // the rosters once the websocket connects.
     let liveInfo: LiveRoomInfo;
     let stage: StageUsersResponse | undefined;
     let audience: AudienceUsersResponse | undefined;
     let comments: CommentsResponse | undefined;
     try {
-      const bundle = await firstValueFrom(this.api.fetchJoinBundle<LiveRoomInfo>(cname, busiType));
-      liveInfo = bundle.voiceRoomInfo;
-      stage = bundle.stageUsers;
-      audience = bundle.audienceUsers;
-      comments = bundle.comments;
+      if (this.fresh()) {
+        liveInfo = await firstValueFrom(this.api.fetchLiveRoomInfo(cname));
+        stage = { isHostInRoom: false, list: [] };
+        audience = { list: [], audienceTotal: 0 };
+        comments = { items: [], hasNext: false, oldestId: '' };
+      } else {
+        const bundle = await firstValueFrom(this.api.fetchJoinBundle<LiveRoomInfo>(cname, busiType));
+        liveInfo = bundle.voiceRoomInfo;
+        stage = bundle.stageUsers;
+        audience = bundle.audienceUsers;
+        comments = bundle.comments;
+      }
     } catch {
       await this.router.navigate(['/rooms']);
       this.toast.error('Room not found');

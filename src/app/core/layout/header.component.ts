@@ -409,7 +409,7 @@ export class HeaderComponent {
       tap(() => this.creatingRoom.set(true)),
       switchMap((result) =>
         this.createRoomService.createVoiceRoom(result).pipe(
-          tap({ next: (res) => this.router.navigate(['/room', res.cname, 2]) }),
+          tap({ next: (res) => this.router.navigate(['/room', res.cname, 2], { queryParams: { fresh: '1' } }) }),
           finalize(() => this.creatingRoom.set(false)),
           catchError(() => {
             this.toast.error('Failed to create room. Please try again.');
