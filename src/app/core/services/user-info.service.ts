@@ -219,7 +219,28 @@ export interface EnrichBatchResponse {
   readonly profiles: readonly UserInfo[];
 }
 
+/**
+ * Per-user presence — where this user is right now, if anywhere.
+ * Mirrors the BFF's `UserStatus` DTO shape from `GET /api/users/{userId}/status`.
+ * {@link statusType} values:
+ *   0 — not in any room
+ *   1 — hosting their own room (cname starts with {@code LS_})
+ *   2 — in someone else's room as a guest (cname starts with {@code VR_})
+ * When {@code statusType === 1 || 2}, {@link cname} identifies the room they're in and
+ * {@link roomName} is its human-readable name; otherwise both are null/empty.
+ */
+export interface UserPresence {
+  readonly userId: number;
+  readonly statusType: number;
+  readonly cname: string | null;
+  readonly roomName: string | null;
+  readonly hostId: number;
+  readonly hostName: string | null;
+  readonly blackened: boolean;
+}
+
 const STALE_AFTER_MS = 5 * 60 * 1000; // 5 minutes — matches the room heartbeat cadence's order of magnitude
+const PRESENCE_STALE_AFTER_MS = 60 * 1000; // 1 minute — presence flips every room join/leave
 
 /**
  * Caching lives on the backend only: the BFF's `/api/users/info` caches server-side for 24h
@@ -243,6 +264,10 @@ export class UserInfoService {
   // Tracks in-flight fetch promises so concurrent requests for the same uid
   // are deduplicated — only one HTTP call per uid runs at a time.
   private readonly _pendingFetches = new Map<number, Promise<UserInfo | null>>();
+  // Presence is cached separately and kept for 60s — shorter than the user-info cache
+  // because presence flips every time a user joins/leaves a room.
+  private readonly _presenceCache = signal<ReadonlyMap<number, { readonly presence: UserPresence; readonly fetchedAt: number }>>(new Map());
+  private readonly _pendingPresenceFetches = new Map<number, Promise<UserPresence | null>>();
 
   readonly loading = this._loading.asReadonly();
 
@@ -254,6 +279,30 @@ export class UserInfoService {
   isStale(userId: number): boolean {
     const entry = this._cache().get(userId);
     return !entry || Date.now() - entry.fetchedAt > STALE_AFTER_MS;
+  }
+
+  getUserPresence(userId: number): UserPresence | null {
+    return this._presenceCache().get(userId)?.presence ?? null;
+  }
+
+  /** True if presence for `userId` has never been fetched, or its cached entry is older than the TTL. */
+  isPresenceStale(userId: number): boolean {
+    const entry = this._presenceCache().get(userId);
+    return !entry || Date.now() - entry.fetchedAt > PRESENCE_STALE_AFTER_MS;
+  }
+
+  async fetchUserPresence(userId: number): Promise<UserPresence | null> {
+    if (!(userId > 0) || !Number.isFinite(userId)) return null;
+    // Deduplicate: if a presence fetch for this uid is already in flight, await it.
+    const existing = this._pendingPresenceFetches.get(userId);
+    if (existing) return existing;
+    const promise = this.doFetchPresence(userId);
+    this._pendingPresenceFetches.set(userId, promise);
+    try {
+      return await promise;
+    } finally {
+      this._pendingPresenceFetches.delete(userId);
+    }
   }
 
   async fetchUserInfo(userId: number): Promise<UserInfo | null> {
@@ -327,6 +376,39 @@ export class UserInfoService {
       return null;
     } finally {
       this._loading.set(false);
+    }
+  }
+
+  private async doFetchPresence(userId: number): Promise<UserPresence | null> {
+    try {
+      const raw = await firstValueFrom(
+        this.http.get<{
+          userStatusType: number;
+          userId: number;
+          roomId?: string | null;
+          roomName?: string | null;
+          hostId: number;
+          hostName?: string | null;
+          hostNationality?: string | null;
+          cname?: string | null;
+          headUrl?: string | null;
+          giftLevel?: number | null;
+          blackened: boolean;
+        }>(`${this.baseUrl}/${userId}/status`),
+      );
+      const presence: UserPresence = {
+        userId,
+        statusType: raw.userStatusType,
+        cname: raw.cname ?? null,
+        roomName: raw.roomName ?? null,
+        hostId: raw.hostId,
+        hostName: raw.hostName ?? null,
+        blackened: raw.blackened,
+      };
+      this._presenceCache.update((map) => new Map(map).set(userId, { presence, fetchedAt: Date.now() }));
+      return presence;
+    } catch {
+      return null;
     }
   }
 }

@@ -78,6 +78,9 @@ export interface UserInfoModalData {
             @if (liveStatus()) {
               <span class="chip chip-live">LIVE</span>
             }
+            @if (presenceLabel(); as label) {
+              <span class="chip chip-presence">{{ label }}</span>
+            }
             @if (streakDays(); as streak) {
               <span class="chip chip-streak">{{ streak }}-day streak</span>
             }
@@ -397,6 +400,10 @@ export interface UserInfoModalData {
         background: var(--color-error-50);
         color: var(--color-error-600);
       }
+      .chip-presence {
+        background: var(--color-accent-50);
+        color: var(--color-accent-700);
+      }
       .chip-streak {
         background: var(--color-gold-50);
         color: var(--color-gold-600);
@@ -408,6 +415,10 @@ export interface UserInfoModalData {
       :host-context(.dark) .chip-live {
         background: var(--color-error-900);
         color: var(--color-error-300);
+      }
+      :host-context(.dark) .chip-presence {
+        background: color-mix(in srgb, var(--color-accent-500) 18%, transparent);
+        color: var(--color-accent-300);
       }
       :host-context(.dark) .chip-neutral {
         background: var(--color-neutral-700);
@@ -649,6 +660,9 @@ export class UserInfoModalComponent {
 
   constructor() {
     this.userInfoService.ensureFresh(this.data.userId);
+    // Fetch presence independently — even a cached userInfo doesn't tell us where they
+    // are right now. Re-fetches every 60s via the service's own staleness check.
+    void this.userInfoService.fetchUserPresence(this.data.userId);
   }
 
   private readonly info = computed(() => this.userInfoService.getUserInfo(this.data.userId));
@@ -700,6 +714,21 @@ export class UserInfoModalComponent {
     const s = this.details()?.onlineState?.onlineState;
     if (s == null) return null;
     return s === 1 ? 'Online' : 'Offline';
+  });
+
+  // Where this user is right now — null until the presence fetch resolves.
+  readonly presence = computed(() => this.userInfoService.getUserPresence(this.data.userId));
+  /** Human-readable summary: "Hosting: <room>", "In: <room>", or null if offline/blackened. */
+  readonly presenceLabel = computed(() => {
+    const p = this.presence();
+    if (!p || p.blackened) return null;
+    if (p.statusType === 1) {
+      return p.roomName?.trim() ? `Hosting: ${p.roomName}` : 'Hosting a room';
+    }
+    if (p.statusType === 2) {
+      return p.roomName?.trim() ? `In: ${p.roomName}` : 'In a room';
+    }
+    return null;
   });
   readonly onlineChipClass = computed(() =>
     this.onlineStatus() === 'Online' ? 'chip-online' : 'chip-offline',
