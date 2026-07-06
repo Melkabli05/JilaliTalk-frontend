@@ -6,6 +6,7 @@ import { UserInfoService, type UserInfo } from '@core/services/user-info.service
 import { FollowService } from '@core/services/follow.service';
 import { ToastService } from '@core/services/toast.service';
 import { AuthStore } from '@core/auth/auth.store';
+import { ActiveCallStore } from '@store/active-call.store';
 import { ModalComponent } from '@shared/ui/modal/modal.component';
 import { UserIdentityCardComponent } from '@shared/ui/user-identity-card/user-identity-card.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
@@ -691,6 +692,7 @@ export class UserInfoModalComponent {
   private readonly followService = inject(FollowService);
   private readonly toast = inject(ToastService);
   private readonly authStore = inject(AuthStore);
+  private readonly activeCallStore = inject(ActiveCallStore);
 
   constructor() {
     this.userInfoService.ensureFresh(this.data.userId);
@@ -719,8 +721,15 @@ export class UserInfoModalComponent {
 
   /** The viewer's own current room cname (or null if they're not in any room).
    *  Drives the banner's "you're in this room" state — the only true
-   *  check is cname equality, regardless of role/host/guest. */
+   *  check is cname equality, regardless of role/host/guest.
+   *  Primary source is the ActiveCallStore snapshot (eagerly set on room
+   *  enter, both visible and invisible), with the /user/status fetch as
+   *  a fallback. The snapshot is the only signal that works for invisible
+   *  joins — there's no capture of an invisible user in /user/status
+   *  responses, so that endpoint can't be relied on alone. */
   readonly viewerCname = computed(() => {
+    const snap = this.activeCallStore.cname();
+    if (snap) return snap;
     const me = this.viewerId();
     if (!me) return null;
     return this.userInfoService.getUserPresence(me)?.cname ?? null;

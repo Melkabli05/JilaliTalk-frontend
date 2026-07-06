@@ -308,7 +308,20 @@ export class VideoRoomPageComponent extends RoomPageBase {
       }
       throw err;
     }
-    this.activeCallStore.clear();
+    // Snapshot served its purpose for restore detection — and now becomes the
+    // "I am currently in this room" live state that other consumers (e.g. the
+    // UserInfoModal's "you're already in this room" check) can read. We update
+    // the snapshot with the current room's cname + the user's visibility + mic
+    // state. (The previous `clear()` made cname null while the user was in
+    // a full-screen room, which broke the modal's "already in this room"
+    // detection entirely.)
+    this.activeCallStore.minimize(
+      cname,
+      busiType,
+      this.roomStore.name(),
+      this.roomStore.isMicOn(),
+      !this.roomStore.isVisible(),
+    );
 
     // For a fresh (just-created) room we only call liveRoomInfo; upstream's stage/list
     // + comment endpoints reliably 500 on a cname created moments earlier, requiring

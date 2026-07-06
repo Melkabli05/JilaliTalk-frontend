@@ -172,6 +172,14 @@
   --app-header-height: 56px;
   --room-header-height: 56px;
 
+  /* Mobile-first room-page chrome heights (used by room-mobile-toolbar and
+     the comments container's padding-bottom reservation for the pinned
+     comment input). Single source of truth — replaces magic 56px / 60px /
+     64px numbers that had to stay in sync across comment-input.ts,
+     comments-panel.ts, and comment-list.ts. */
+  --mobile-toolbar-height: 56px;
+  --mobile-input-height: 64px;
+
   /* Toolbar / icon button sizes */
   --toolbar-btn-size: var(--touch-target-min);
   --icon-btn-size: 28px;
@@ -356,6 +364,8 @@
   --avatar-label-width:     var(--avatar-label-width);
   --app-header-height:     var(--app-header-height);
   --room-header-height:    var(--room-header-height);
+  --mobile-toolbar-height: var(--mobile-toolbar-height);
+  --mobile-input-height:   var(--mobile-input-height);
   --toolbar-btn-size:      var(--toolbar-btn-size);
   --icon-btn-size:         var(--icon-btn-size);
   --touch-target-min:      var(--touch-target-min);
