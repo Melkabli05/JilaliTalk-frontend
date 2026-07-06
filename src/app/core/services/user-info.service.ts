@@ -236,6 +236,10 @@ export interface UserPresence {
   readonly roomName: string | null;
   readonly hostId: number;
   readonly hostName: string | null;
+  /** Avatar URL — present in every captured response with statusType 1 or 2. Empty/null
+   *  when statusType is 0 (offline). Lets the banner show the host's avatar without a
+   *  second HTTP round trip. */
+  readonly headUrl: string | null;
   readonly blackened: boolean;
 }
 
@@ -403,6 +407,7 @@ export class UserInfoService {
         roomName: raw.roomName ?? null,
         hostId: raw.hostId,
         hostName: raw.hostName ?? null,
+        headUrl: raw.headUrl ?? null,
         blackened: raw.blackened,
       };
       this._presenceCache.update((map) => new Map(map).set(userId, { presence, fetchedAt: Date.now() }));

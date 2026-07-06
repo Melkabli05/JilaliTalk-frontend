@@ -9,6 +9,10 @@ import type { UserPresence, UserInfo } from '@core/services/user-info.service';
  * strip so the avatar reads as a connected accent surface. The token already
  * resolves to its dark-mode variant via the avatar's own `:host-context(.dark)`
  * cascade, so a single literal is enough.
+ *
+ * Exposed as a class field too (not just module-scope const) because Angular
+ * templates can only bind to component-instance members — module-level
+ * constants get TS2339 at template-compile time.
  */
 const HOST_AVATAR_RING = 'var(--color-accent-500)';
 
@@ -19,7 +23,11 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
   template: `
     @if (presence(); as p) {
       @if (shouldShow()) {
-        <section class="presence-banner" [class.hosting]="isHosting()" aria-label="Currently in a room">
+        <section
+          class="presence-banner"
+          [class.hosting]="isHosting()"
+          aria-label="Currently in a room"
+        >
           <div class="accent-strip" aria-hidden="true"></div>
           <div class="banner-body">
             <header class="banner-header">
@@ -33,10 +41,10 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
               <div class="host-row">
                 <app-avatar
                   [src]="hostAvatarSrc()"
-                  [alt]="hostName()"
+                  [alt]="hostName() ?? 'Host'"
                   [initials]="hostInitials()"
-                  size="xs"
-                  [ringColor]="HOST_AVATAR_RING"
+                  size="md"
+                  [ringColor]="hostAvatarRing"
                 />
                 <div class="host-meta">
                   <span class="host-prefix">Hosted by</span>
@@ -49,188 +57,239 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
             }
 
             <div class="actions">
-              <app-button variant="primary" size="sm" (click)="onJoin(true)">Join Visible</app-button>
-              <app-button variant="soft-invisible" size="sm" (click)="onJoin(false)">Join Invisible</app-button>
+              <app-button variant="primary" size="sm" (click)="onJoin(true)"
+                >Join Visible</app-button
+              >
+              <app-button variant="soft-invisible" size="sm" (click)="onJoin(false)"
+                >Join Invisible</app-button
+              >
             </div>
           </div>
         </section>
       }
     }
   `,
-  styles: [`
-    /* -------- Container -------- */
-    .presence-banner {
-      position: relative;
-      display: flex;
-      align-items: stretch;
-      gap: 0;
-      margin: 0 var(--space-4);
-      background: color-mix(in srgb, var(--color-accent-500) 4%, var(--color-card));
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-elevation-1);
-      overflow: hidden;
-    }
-    :host-context(.dark) .presence-banner {
-      background: color-mix(in srgb, var(--color-accent-500) 8%, var(--color-neutral-800));
-      border-color: var(--color-neutral-700);
-      box-shadow: 0 1px 0 0 color-mix(in srgb, var(--color-accent-500) 12%, transparent) inset;
-    }
+  styles: [
+    `
+      /* -------- Container -------- */
+      .presence-banner {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        margin: 0 var(--space-4);
+        background: color-mix(in srgb, var(--color-accent-500) 4%, var(--color-card));
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-elevation-1);
+        overflow: hidden;
+      }
+      :host-context(.dark) .presence-banner {
+        background: color-mix(in srgb, var(--color-accent-500) 8%, var(--color-neutral-800));
+        border-color: var(--color-neutral-700);
+        box-shadow: 0 1px 0 0 color-mix(in srgb, var(--color-accent-500) 12%, transparent) inset;
+      }
 
-    /* -------- Accent strip --------
+      /* -------- Accent strip --------
        Vertical bar on the leading edge — soft gradient that's brighter in dark mode
        (via inner glow). When the user is hosting their own room, swap to gold so
        the visual language signals the role, not just the activity state. */
-    .accent-strip {
-      flex: 0 0 4px;
-      background: linear-gradient(180deg, var(--color-accent-400), var(--color-accent-600));
-    }
-    :host-context(.dark) .accent-strip {
-      background: linear-gradient(180deg, var(--color-accent-500), var(--color-accent-700));
-      box-shadow: 0 0 8px 0 color-mix(in srgb, var(--color-accent-500) 35%, transparent);
-    }
-    .presence-banner.hosting .accent-strip {
-      background: linear-gradient(180deg, var(--color-gold-300), var(--color-gold-500));
-    }
-    :host-context(.dark) .presence-banner.hosting .accent-strip {
-      background: linear-gradient(180deg, var(--color-gold-500), var(--color-gold-700));
-    }
+      .accent-strip {
+        flex: 0 0 4px;
+        background: linear-gradient(180deg, var(--color-accent-400), var(--color-accent-600));
+      }
+      :host-context(.dark) .accent-strip {
+        background: linear-gradient(180deg, var(--color-accent-500), var(--color-accent-700));
+        box-shadow: 0 0 8px 0 color-mix(in srgb, var(--color-accent-500) 35%, transparent);
+      }
+      .presence-banner.hosting .accent-strip {
+        background: linear-gradient(180deg, var(--color-gold-300), var(--color-gold-500));
+      }
+      :host-context(.dark) .presence-banner.hosting .accent-strip {
+        background: linear-gradient(180deg, var(--color-gold-500), var(--color-gold-700));
+      }
 
-    /* -------- Inner content (strip is the sibling, not the parent) -------- */
-    .banner-body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
-      padding: var(--space-3) var(--space-4);
-      min-width: 0;
-    }
+      /* -------- Inner content (strip is the sibling, not the parent) -------- */
+      .banner-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-4);
+        min-width: 0;
+      }
 
-    /* -------- Header row: live dot + label -------- */
-    .banner-header {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-    }
-    /* Pulsing live dot — universal "currently active" signal. The pulse keyframe
+      /* -------- Header row: live dot + label -------- */
+      .banner-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      /* Pulsing live dot — universal "currently active" signal. The pulse keyframe
        uses the dot's own background color via currentColor, so a single keyframe
        block works for all role + theme combinations (set per-combo on the dot
        itself). */
-    .live-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--color-accent-500);
-      color: var(--color-accent-500);
-      box-shadow: 0 0 0 0 currentColor;
-      animation: live-pulse 1.8s ease-out infinite;
-      flex-shrink: 0;
-    }
-    :host-context(.dark) .live-dot {
-      background: var(--color-accent-400);
-      color: var(--color-accent-400);
-    }
-    .presence-banner.hosting .live-dot {
-      background: var(--color-gold-500);
-      color: var(--color-gold-500);
-    }
-    :host-context(.dark) .presence-banner.hosting .live-dot {
-      background: var(--color-gold-400);
-      color: var(--color-gold-400);
-    }
-    @keyframes live-pulse {
-      0%   { box-shadow: 0 0 0 0 currentColor; }
-      70%  { box-shadow: 0 0 0 6px transparent; }
-      100% { box-shadow: 0 0 0 0 currentColor; }
-    }
+      .live-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--color-accent-500);
+        color: var(--color-accent-500);
+        box-shadow: 0 0 0 0 currentColor;
+        animation: live-pulse 1.8s ease-out infinite;
+        flex-shrink: 0;
+      }
+      :host-context(.dark) .live-dot {
+        background: var(--color-accent-400);
+        color: var(--color-accent-400);
+      }
+      .presence-banner.hosting .live-dot {
+        background: var(--color-gold-500);
+        color: var(--color-gold-500);
+      }
+      :host-context(.dark) .presence-banner.hosting .live-dot {
+        background: var(--color-gold-400);
+        color: var(--color-gold-400);
+      }
+      @keyframes live-pulse {
+        0% {
+          box-shadow: 0 0 0 0 currentColor;
+        }
+        70% {
+          box-shadow: 0 0 0 6px transparent;
+        }
+        100% {
+          box-shadow: 0 0 0 0 currentColor;
+        }
+      }
 
-    .header-label {
-      font-size: var(--text-2xs);
-      font-weight: var(--font-bold);
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    :host-context(.dark) .header-label { color: var(--color-neutral-400); }
+      .header-label {
+        font-size: var(--text-2xs);
+        font-weight: var(--font-bold);
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      :host-context(.dark) .header-label {
+        color: var(--color-neutral-400);
+      }
 
-    /* -------- Room name -------- */
-    .room-name {
-      font-size: var(--text-base);
-      font-weight: var(--font-bold);
-      color: var(--color-text);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      line-height: 1.2;
-    }
-    :host-context(.dark) .room-name { color: var(--color-neutral-50); }
+      /* -------- Room name -------- */
+      .room-name {
+        font-size: var(--text-base);
+        font-weight: var(--font-bold);
+        color: var(--color-text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        line-height: 1.2;
+      }
+      :host-context(.dark) .room-name {
+        color: var(--color-neutral-50);
+      }
 
-    /* -------- Host row (statusType=2 only) -------- */
-    .host-row {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-1) 0;
-    }
-    .host-meta {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-      min-width: 0;
-      flex: 1;
-      flex-wrap: wrap;
-    }
-    .host-prefix {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-    }
-    :host-context(.dark) .host-prefix { color: var(--color-neutral-400); }
-    .host-name {
-      font-size: var(--text-xs);
-      font-weight: var(--font-semibold);
-      color: var(--color-text-secondary);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 100%;
-    }
-    :host-context(.dark) .host-name { color: var(--color-neutral-200); }
+      /* -------- Host row (statusType=2 only) -------- */
+      .host-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-1) 0;
+      }
+      .host-meta {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        min-width: 0;
+        flex: 1;
+        flex-wrap: wrap;
+      }
+      .host-prefix {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+      }
+      :host-context(.dark) .host-prefix {
+        color: var(--color-neutral-400);
+      }
+      .host-name {
+        font-size: var(--text-xs);
+        font-weight: var(--font-semibold);
+        color: var(--color-text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+      }
+      :host-context(.dark) .host-name {
+        color: var(--color-neutral-200);
+      }
 
-    /* -------- Actions -------- */
-    .actions {
-      display: flex;
-      gap: var(--space-2);
-      margin-top: var(--space-2);
-    }
-    .actions app-button { flex: 1; }
+      /* -------- Actions -------- */
+      .actions {
+        display: flex;
+        gap: var(--space-2);
+        margin-top: var(--space-2);
+      }
+      .actions app-button {
+        flex: 1;
+      }
 
-    /* -------- Responsive --------
+      /* -------- Responsive --------
        The modal itself is 340px on desktop and ~100vw on phones, so the
        banner can shrink its outer margin + inner padding at narrow widths.
        Below 320px the two side-by-side buttons + host row start to feel
        cramped, so we stack vertically and align the host meta to feel like
        a single labelled row. */
-    @media (max-width: 380px) {
-      .presence-banner { margin: 0 var(--space-3); border-radius: var(--radius-md); }
-      .banner-body     { padding: var(--space-2) var(--space-3); gap: var(--space-1); }
-      .room-name      { font-size: var(--text-sm); }
-      .host-row       { padding: 0; }
-      .header-label   { letter-spacing: 0.04em; }
-    }
-    @media (max-width: 320px) {
-      .actions { flex-direction: column; }
-      .actions app-button { width: 100%; }
-      .host-meta { flex-direction: column; align-items: flex-start; gap: 0; }
-      .host-prefix { font-size: var(--text-2xs); }
-    }
+      @media (max-width: 380px) {
+        .presence-banner {
+          margin: 0 var(--space-3);
+          border-radius: var(--radius-md);
+        }
+        .banner-body {
+          padding: var(--space-2) var(--space-3);
+          gap: var(--space-1);
+        }
+        .room-name {
+          font-size: var(--text-sm);
+        }
+        .host-row {
+          padding: 0;
+        }
+        .header-label {
+          letter-spacing: 0.04em;
+        }
+      }
+      @media (max-width: 320px) {
+        .actions {
+          flex-direction: column;
+        }
+        .actions app-button {
+          width: 100%;
+        }
+        .host-meta {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0;
+        }
+        .host-prefix {
+          font-size: var(--text-2xs);
+        }
+      }
 
-    /* -------- Reduced motion: keep the visual, drop the pulse -------- */
-    @media (prefers-reduced-motion: reduce) {
-      .live-dot { animation: none; }
-    }
-  `],
+      /* -------- Reduced motion: keep the visual, drop the pulse -------- */
+      @media (prefers-reduced-motion: reduce) {
+        .live-dot {
+          animation: none;
+        }
+      }
+    `,
+  ],
 })
 export class RoomPresenceBannerComponent {
+  /** Exposed as a class field (mirrors the module-scope const) so Angular's template
+   *  compiler can resolve the `[ringColor]` binding. Module-scope consts aren't
+   *  accessible from templates — they trigger TS2339 at compile time. */
+  readonly hostAvatarRing = HOST_AVATAR_RING;
+
   readonly presence = input<UserPresence | null>(null);
   readonly hostInfo = input<UserInfo | null>(null);
   readonly join = output<{ visible: boolean }>();
@@ -260,17 +319,19 @@ export class RoomPresenceBannerComponent {
   // the string from /livehub/user/status as a last resort.
   readonly hostName = computed(() => {
     const info = this.hostInfo();
-    return (
-      info?.nickname ??
-      info?.details?.base?.nickname ??
-      this.presence()?.hostName ??
-      null
-    );
+    return info?.nickname ?? info?.details?.base?.nickname ?? this.presence()?.hostName ?? null;
   });
 
-  // headUrl is populated only inside details.base.headUrl — the BFF mapper never
-  // sets a top-level one. Fall back to initials-only when empty.
-  readonly hostAvatarSrc = computed(() => this.hostInfo()?.details?.base?.headUrl ?? '');
+  // Avatar URL — prefer the top-level headUrl that comes back with /user/status
+  // (instant on first paint), fall through to the nested user-info fetch (which
+  // may not have resolved yet). Top-level UserInfo.headUrl is intentionally NOT
+  // checked here — the BFF never populates it; the only correct paths are
+  // presence.headUrl and hostInfo.details.base.headUrl.
+  readonly hostAvatarSrc = computed(() => {
+    const fromPresence = this.presence()?.headUrl;
+    if (fromPresence) return fromPresence;
+    return this.hostInfo()?.details?.base?.headUrl ?? '';
+  });
 
   readonly hostInitials = computed(() => {
     const n = this.hostName();
