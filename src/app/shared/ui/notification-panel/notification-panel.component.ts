@@ -99,7 +99,7 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
     }
   `,
   styles: [`
-    .notification-overlay { position: fixed; inset: 0; z-index: 39; background: transparent; }
+    .notification-overlay { position: fixed; inset: 0; z-index: var(--z-notification-backdrop); background: transparent; }
     /* Mobile only: tint and blur the page behind the sheet so it visibly recedes and
        reads as a modal layer. Desktop panel uses the same transparent overlay because
        a full-screen blur behind a 380px dropdown looks heavy. */
@@ -118,7 +118,7 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
       position: fixed;
       top: var(--app-header-height);
       right: var(--space-4);
-      z-index: 40;
+      z-index: var(--z-notification-panel);
       width: 380px;
       max-height: 520px;
       background: var(--color-card);

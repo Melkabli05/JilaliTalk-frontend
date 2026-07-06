@@ -814,6 +814,7 @@ export class CommentListComponent {
   private copyResetTimer: ReturnType<typeof setTimeout> | null = null;
   private highlightTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly clipboard = inject(Clipboard);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly scrollContainer = viewChild<ElementRef<HTMLDivElement>>('scrollContainer');
   private readonly commentsStore = inject(CommentsStore);
 
@@ -887,7 +888,7 @@ export class CommentListComponent {
       this.isAtBottom.set(distanceFromBottom <= 4);
     };
     el.addEventListener('scroll', handler, { passive: true });
-    inject(DestroyRef).onDestroy(() => el.removeEventListener('scroll', handler));
+    this.destroyRef.onDestroy(() => el.removeEventListener('scroll', handler));
     this.scrollListenerRegistered = true;
   }
 
@@ -897,7 +898,7 @@ export class CommentListComponent {
   }
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => {
+    this.destroyRef.onDestroy(() => {
       if (this.copyResetTimer) clearTimeout(this.copyResetTimer);
       if (this.highlightTimer) clearTimeout(this.highlightTimer);
     });

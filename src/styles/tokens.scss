@@ -187,6 +187,14 @@
   --z-modal-backdrop: 60;
   --z-modal: 70;
   --z-toast: 100;
+  /* Above --z-toast: the notification panel is a persistent, user-opened
+     overlay (not a transient toast), and must stay above the minimized
+     room bar (which sits at --z-toast) so it's never hidden behind it.
+     Set well clear of every other value in the scale (the highest other
+     user-facing overlay is 101), leaving --z-skip-link's 9999 as the only
+     thing above it. */
+  --z-notification-backdrop: 9000;
+  --z-notification-panel: 9010;
   --z-skip-link: 9999;
 
   /* Focus Ring */
@@ -358,6 +366,8 @@
   --z-modal-backdrop:      var(--z-modal-backdrop);
   --z-modal:               var(--z-modal);
   --z-toast:               var(--z-toast);
+  --z-notification-backdrop: var(--z-notification-backdrop);
+  --z-notification-panel:  var(--z-notification-panel);
 }
 
 /* ─── Animations ─────────────────────────────────────────────── */
