@@ -513,6 +513,18 @@ export abstract class RoomPageBase {
       await this.roomStore.leaveRoom();
       this.bffWs.disconnect();
       this.activeCallStore.clear();
+      // Clear the OS-level "Call in progress" tile so iOS stops showing the
+      // room name in Control Center / lock-screen. Set in room-page.ts on
+      // successful rcs.connect(); clear is best-effort — the metadata will
+      // also clear on page navigation away from the room anyway.
+      if ('mediaSession' in navigator) {
+        try {
+          navigator.mediaSession.metadata = null;
+          navigator.mediaSession.playbackState = 'none';
+        } catch {
+          // Safari < 14 throws on null assignment — fail silent.
+        }
+      }
     } finally {
       await this.router.navigate(this.leaveNavTarget);
     }

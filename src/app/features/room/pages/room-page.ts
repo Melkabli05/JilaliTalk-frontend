@@ -368,6 +368,26 @@ export class RoomPageComponent extends RoomPageBase {
         const rtcToken = rtcInfo?.token ?? null;
         const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : environment.agoraAppIdVoice;
         await this.rcs.connect(cname, uid, rtcToken, appId, !isVisible);
+        // Populate the OS-level "Call in progress" tile so iOS shows the
+        // room name in Control Center / lock-screen instead of a generic
+        // "JilaliTalk" line. Cleared in onLeave() (and destroyRef.onDestroy
+        // covers the minimize→destroy path). Guarded by `'mediaSession' in
+        // navigator` because Safari < 14 and some embedded webviews don't
+        // expose it.
+        if ('mediaSession' in navigator) {
+          const hostName = voiceInfo.hostInfo?.base?.nickname?.trim() || 'Voice room';
+          const roomTitle = (voiceInfo.channelInfo?.name?.trim()) || cname;
+          try {
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: roomTitle,
+              artist: hostName,
+              album: 'JilaliTalk',
+            });
+            navigator.mediaSession.playbackState = 'playing';
+          } catch {
+            // Older Safari throws on MediaMetadata construction — fail silent.
+          }
+        }
       } catch {
         this.toast.error('Failed to connect to audio');
       }
