@@ -49,6 +49,17 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
                 <div class="host-meta">
                   <span class="host-prefix">Hosted by</span>
                   <span class="host-name">{{ hostName() }}</span>
+                  <!-- Live indicator: presence.statusType === 2 means the user is
+                       currently a guest in this room, so the host IS in the room
+                       right now. For statusType === 1 (modal-target hosts their own
+                       room), the "Hosting" header already implies presence so we
+                       skip the redundant chip. -->
+                  @if (isHostInRoom()) {
+                    <span class="host-live" aria-label="Host is in the room now">
+                      <span class="host-live-dot" aria-hidden="true"></span>
+                      Live
+                    </span>
+                  }
                   @if (hostNationality(); as code) {
                     <app-country-flag [code]="code" />
                   }
@@ -222,6 +233,34 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
       :host-context(.dark) .host-name {
         color: var(--color-neutral-200);
       }
+      /* Live indicator — answers "is the host in the room right now?". Static
+         green dot+label is scannable without competing with the header's
+         pulsing dot. Shows for statusType=2 (guest in someone else's room),
+         where the host's actual presence is the meaningful question; statusType=1
+         self-hosts the room so the banner header itself implies "here now". */
+      .host-live {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: var(--text-2xs);
+        font-weight: var(--font-semibold);
+        color: var(--color-accent-700);
+        padding: 1px 6px;
+        border-radius: var(--radius-full);
+        background: color-mix(in srgb, var(--color-accent-500) 14%, transparent);
+      }
+      :host-context(.dark) .host-live {
+        color: var(--color-accent-300);
+        background: color-mix(in srgb, var(--color-accent-500) 22%, transparent);
+      }
+      .host-live-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--color-accent-500);
+        flex-shrink: 0;
+      }
+      :host-context(.dark) .host-live-dot { background: var(--color-accent-400); }
 
       /* -------- Actions -------- */
       .actions {
@@ -314,6 +353,15 @@ export class RoomPresenceBannerComponent {
   });
 
   readonly hostRowVisible = computed(() => this.presence()?.statusType === 2);
+
+  /** The host is in the room when the user is a guest (statusType=2): the captured
+   *  upstream data shows hostId + cname, so the host is actively hosting. We can't
+   *  double-check via a streaming signal — there's no per-user presence event on
+   *  the BFF socket — but statusType=2 with cname set is authoritative. */
+  readonly isHostInRoom = computed(() => {
+    const p = this.presence();
+    return p?.statusType === 2 && !!p.cname && !p.blackened;
+  });
 
   // nickname: top-level first (BFF mapper sets it), then the nested copy, then
   // the string from /livehub/user/status as a last resort.
