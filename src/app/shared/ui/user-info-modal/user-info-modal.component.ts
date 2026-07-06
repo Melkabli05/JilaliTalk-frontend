@@ -257,9 +257,12 @@ export interface UserInfoModalData {
   styles: [
     `
       :host {
-        display: block;
+        display: flex;
+        flex-direction: column;
         width: 340px;
         max-width: calc(100vw - var(--space-8));
+        /* Cap the modal so a long bio + many tags can't push it off-screen. */
+        max-height: 85dvh;
         --_modal-radius: var(--radius-xl);
         box-shadow: var(--shadow-modal);
         animation: slideUp 0.2s ease-out;
@@ -455,6 +458,9 @@ export interface UserInfoModalData {
         display: flex;
         flex-direction: column;
         gap: var(--space-3);
+        /* Scroll inside the modal body when content overflows the 85dvh host cap. */
+        overflow-y: auto;
+        overscroll-behavior: contain;
       }
 
       .detail-group {
