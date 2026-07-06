@@ -4,3 +4,4 @@ export { normalizeForSearch, createSearchMatcher, initialsFrom, formatClockTime 
 export * from './http-error-message.util';
 export { relativeTime } from './relative-time.util';
 export { injectIsMobileViewport, MOBILE_BREAKPOINT_QUERY } from './viewport.util';
+export { cnameToBusiType, type RoomBusiType } from './room-busi-type';
