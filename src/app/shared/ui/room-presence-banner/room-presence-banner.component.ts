@@ -315,33 +315,46 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
       :host-context(.dark) .in-room-dot { background: var(--color-accent-400); }
 
       /* -------- Responsive --------
-       The modal itself is 340px on desktop and ~100vw on phones, so the
-       banner can shrink its outer margin + inner padding at narrow widths.
-       Below 320px the two side-by-side buttons + host row start to feel
-       cramped, so we stack vertically and align the host meta to feel like
-       a single labelled row. */
-      @media (max-width: 380px) {
+        The modal itself is 340px on desktop and ~100vw on phones, so the
+        banner can shrink its outer margin + inner padding at narrow widths. */
+      @media (max-width: 768px) {
         .presence-banner {
           margin: 0 var(--space-3);
           border-radius: var(--radius-md);
         }
         .banner-body {
           padding: var(--space-2) var(--space-3);
-          gap: var(--space-1);
+          gap: 2px;
         }
         .room-name {
           font-size: var(--text-sm);
         }
         .host-row {
           padding: 0;
+          gap: var(--space-1);
         }
         .header-label {
           letter-spacing: 0.04em;
         }
+        .actions {
+          margin-top: var(--space-1);
+          gap: var(--space-1);
+        }
+        .in-room-notice {
+          margin-top: var(--space-1);
+          height: 28px;
+          font-size: var(--text-2xs);
+        }
+        /* Override sm button sizes to be compact (xs) on mobile so they fit side-by-side */
+        .actions ::ng-deep .btn-sm {
+          padding: 0 var(--space-2) !important;
+          font-size: var(--text-2xs) !important;
+          height: 28px !important;
+        }
       }
 
       /* Compact mode — the JS-driven .compact class (set by the
-         isCompactViewport signal at <=380px) drops three things to keep
+         isCompactViewport signal at <=768px) drops three things to keep
          the banner from eating too much vertical space on phones:
          (1) the "HOSTING" / "IN ROOM" header label — the live dot alone
          signals activity, and the gold/green accent strip already tells
@@ -373,7 +386,7 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
       .banner-body.compact .host-row {
         gap: 6px;
       }
-      @media (max-width: 320px) {
+      @media (max-width: 340px) {
         .actions {
           flex-direction: column;
         }
@@ -450,7 +463,7 @@ export class RoomPresenceBannerComponent {
    *  Uses matchMedia for reactive resize tracking (one listener per banner
    *  instance; teardown happens via DestroyRef when the modal closes). */
   private readonly compactMql = typeof window !== 'undefined'
-    ? window.matchMedia('(max-width: 380px)')
+    ? window.matchMedia('(max-width: 768px)')
     : null;
   readonly isCompactViewport = signal(this.compactMql?.matches ?? false);
 
