@@ -203,6 +203,13 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
         grid-template-areas: "stage" "audience" "comments";
         grid-template-rows: minmax(0, 30cqh) fit-content(22cqh) minmax(0, 1fr);
       }
+      /* The fixed room-header sits visually above the stage section's
+         grid row. Padding the stage by the header's height keeps the
+         stage header strip ("Stage 8") and the first row of tiles from
+         rendering behind the pinned toolbar. */
+      .stage-section {
+        padding-top: var(--room-header-height);
+      }
       .room-header {
         position: fixed;
         top: var(--shell-inset-top);
@@ -288,16 +295,14 @@ export class RoomPageComponent extends RoomPageBase {
     let comments: CommentsResponse | undefined;
     try {
       if (this.fresh()) {
-        // Fresh room (just created via create-room-modal): upstream's join-bundle reliably
-        // 500s on stage/list + comment for a cname created moments earlier — upstream
-        // requires voice_room_info to have completed for this room/session before the
-        // other endpoints will serve it. Fetch room info alone, and let the realtime
-        // push events (user_join/stage_join/comment) populate the lists once the
-        // websocket connects — which they will naturally.
+        // Fresh room (just created via create-room-modal): upstream's stage/list + comment
+        // endpoints reliably 500 on a cname created moments earlier — they require
+        // voice_room_info to have completed for this room/session first. Only fetch
+        // room info; let the realtime push events (user_join/stage_join/comment) populate
+        // the lists once the websocket connects, which they will naturally as the first
+        // audience member (us) and any other joiners/chat arrive. stage/audience/comments
+        // intentionally stay undefined here — code below guards on that.
         voiceInfo = await firstValueFrom(this.api.fetchVoiceRoomInfo(cname));
-        stage = { isHostInRoom: false, list: [] };
-        audience = { list: [], audienceTotal: 0 };
-        comments = { items: [], hasNext: false, oldestId: '' };
       } else {
         const bundle = await firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType));
         voiceInfo = bundle.voiceRoomInfo;

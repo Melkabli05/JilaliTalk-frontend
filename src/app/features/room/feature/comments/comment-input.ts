@@ -203,6 +203,23 @@ export interface SendEvent {
         height: 100% !important;
         max-height: min(400px, 60vh) !important;
       }
+
+      /* Pin the input to the bottom of the viewport for the immersive mobile
+         room (where the global bottom-nav is hidden, so this slot is
+         free). The room-header at the top is pinned by room-page.ts using
+         the same shell-inset contract. z-shell-sidenav (40) sits above
+         z-shell-header (30) and below every room-header overlay
+         (.info-backdrop @ z-overlay=50, .overflow-panel @ z-toast+1=101,
+         .expanded-comments @ z-modal=70), so all of those still cover the
+         input when they open. */
+      :host {
+        position: fixed;
+        bottom: var(--shell-inset-bottom);
+        left: 0;
+        right: 0;
+        z-index: var(--z-shell-sidenav);
+        isolation: auto;
+      }
     }
   `],
 })
