@@ -12,7 +12,7 @@ import { CommentListComponent } from './comment-list';
 import { CommentInputComponent, ReplyTarget, SendEvent } from './comment-input';
 import { CaptionListComponent } from './caption-list';
 import { Comment } from '../../data/room-model';
-import { CommentsStore } from './comments-store';
+import { COMMENTS_READER } from './comments-store';
 import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, LucideRefreshCw } from '@lucide/angular';
 
 @Component({
@@ -334,7 +334,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
   ],
 })
 export class CommentsPanelComponent {
-  readonly commentsStore = inject(CommentsStore);
+  readonly commentsStore = inject(COMMENTS_READER);
 
   readonly comments = input<readonly Comment[]>([]);
   readonly captions = input<readonly import('../../data/room-model').CaptionEntry[]>([]);

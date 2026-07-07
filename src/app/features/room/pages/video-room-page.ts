@@ -6,16 +6,16 @@ import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RoomStore } from '../state/room-store';
 import { JoinCancelledError } from '../state/base-room-store';
-import { StageStore } from '../state/stage-store';
-import { AudienceStore } from '../state/audience-store';
-import { CommentsStore } from '../feature/comments/comments-store';
+import { StageStore, STAGE_READER, STAGE_WRITER } from '../state/stage-store';
+import { AudienceStore, AUDIENCE_READER, AUDIENCE_WRITER } from '../state/audience-store';
+import { CommentsStore, COMMENTS_READER, COMMENTS_WRITER } from '../feature/comments/comments-store';
 import { EventFeedStore } from '../feature/comments/event-feed-store';
-import { ModStore, ModAction } from '../feature/moderation/mod-store';
-import { ManagersStore } from '../feature/moderation/managers-store';
+import { ModStore, ModAction, MOD_READER, MOD_WRITER } from '../feature/moderation/mod-store';
+import { ManagersStore, MANAGERS_READER, MANAGERS_WRITER } from '../feature/moderation/managers-store';
 import { SigninPanelComponent } from '../feature/signin/signin-panel';
-import { GiftsStore } from '../feature/gifts/gifts-store';
-import { InRoomRtmStore } from '../feature/in-room-rtm/in-room-rtm-store';
-import { GoodieStore } from '../feature/goodie-bag/goodie-store';
+import { GiftsStore, GIFTS_READER, GIFTS_WRITER } from '../feature/gifts/gifts-store';
+import { InRoomRtmStore, IN_ROOM_RTM_READER, IN_ROOM_RTM_WRITER } from '../feature/in-room-rtm/in-room-rtm-store';
+import { GoodieStore, GOODIE_READER, GOODIE_WRITER } from '../feature/goodie-bag/goodie-store';
 import { StageUser, AudienceUser, LiveRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../data/room-model';
 import { SendEvent } from '../feature/comments/comment-input';
 import { environment } from '@env/environment';
@@ -45,14 +45,30 @@ import { RoomPageBase } from './room-page-base';
   providers: [
     RoomStore,
     StageStore,
+    { provide: STAGE_READER, useExisting: StageStore },
+    { provide: STAGE_WRITER, useExisting: StageStore },
     AudienceStore,
+    { provide: AUDIENCE_READER, useExisting: AudienceStore },
+    { provide: AUDIENCE_WRITER, useExisting: AudienceStore },
     EventFeedStore,
     CommentsStore,
+    { provide: COMMENTS_READER, useExisting: CommentsStore },
+    { provide: COMMENTS_WRITER, useExisting: CommentsStore },
     ModStore,
+    { provide: MOD_READER, useExisting: ModStore },
+    { provide: MOD_WRITER, useExisting: ModStore },
     GiftsStore,
+    { provide: GIFTS_READER, useExisting: GiftsStore },
+    { provide: GIFTS_WRITER, useExisting: GiftsStore },
     InRoomRtmStore,
+    { provide: IN_ROOM_RTM_READER, useExisting: InRoomRtmStore },
+    { provide: IN_ROOM_RTM_WRITER, useExisting: InRoomRtmStore },
     GoodieStore,
+    { provide: GOODIE_READER, useExisting: GoodieStore },
+    { provide: GOODIE_WRITER, useExisting: GoodieStore },
     ManagersStore,
+    { provide: MANAGERS_READER, useExisting: ManagersStore },
+    { provide: MANAGERS_WRITER, useExisting: ManagersStore },
     RoomConnectionService,
   ],
   template: `
@@ -341,15 +357,26 @@ export class VideoRoomPageComponent extends RoomPageBase {
     let comments: CommentsResponse | undefined;
     try {
       if (this.fresh()) {
-        liveInfo = await firstValueFrom(this.api.fetchLiveRoomInfo(cname));
+        liveInfo = await firstValueFrom(
+          this.api.fetchLiveRoomInfo(cname).pipe(takeUntilDestroyed(this.destroyRef)),
+        );
       } else {
-        const bundle = await firstValueFrom(this.api.fetchJoinBundle<LiveRoomInfo>(cname, busiType));
+        // Cancels the actual in-flight HTTP request (not just the continuation guarded
+        // below) if the page is destroyed mid-fetch — the largest payload in the join
+        // flow, so the one most worth not letting complete for nothing on the wire.
+        const bundle = await firstValueFrom(
+          this.api.fetchJoinBundle<LiveRoomInfo>(cname, busiType).pipe(takeUntilDestroyed(this.destroyRef)),
+        );
         liveInfo = bundle.voiceRoomInfo;
         stage = bundle.stageUsers;
         audience = bundle.audienceUsers;
         comments = bundle.comments;
       }
     } catch {
+      // Also reached when takeUntilDestroyed cancelled the request above (not just a
+      // real fetch failure) — don't force-navigate a user who has already left this
+      // page to somewhere else entirely.
+      if (this._destroying()) return;
       await this.router.navigate(['/rooms']);
       this.toast.error('Room not found');
       return;

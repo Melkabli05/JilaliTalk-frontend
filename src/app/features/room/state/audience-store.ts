@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, inject, signal, DestroyRef } from '@angular/core';
+import { Injectable, InjectionToken, Signal, computed, effect, inject, signal, DestroyRef } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AudienceUser } from '../data/room-model';
 import { CollectionStore, EnrichBatchQueue } from '@shared/utils';
@@ -8,6 +8,27 @@ import { RoomApi } from '../data/room-api';
 import { StageStore } from './stage-store';
 
 const AUDIENCE_RECONCILE_MS = 30_000;
+
+/** No narrower consumer currently injects AudienceStore than room-page-base.ts —
+ *  see the note on StageReader/StageWriter above; same rationale applies here. */
+export interface AudienceReader {
+  readonly cname: Signal<string | null>;
+  readonly audienceUsers: Signal<readonly AudienceUser[]>;
+  readonly audienceCount: Signal<number>;
+}
+
+export interface AudienceWriter {
+  setBusiType(busiType: number): void;
+  setCname(cname: string): void;
+  updateAudienceUsers(users: AudienceUser[]): void;
+  addAudienceUser(user: AudienceUser): void;
+  removeAudienceUser(uid: number): void;
+  setUserHandRaised(uid: number, raised: boolean): void;
+  reset(): void;
+}
+
+export const AUDIENCE_READER = new InjectionToken<AudienceReader>('AUDIENCE_READER');
+export const AUDIENCE_WRITER = new InjectionToken<AudienceWriter>('AUDIENCE_WRITER');
 
 @Injectable()
 export class AudienceStore extends CollectionStore<AudienceUser> {

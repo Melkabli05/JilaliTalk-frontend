@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, InjectionToken, Signal, signal } from '@angular/core';
 import { CollectionStore } from '@shared/utils/collection-store';
 
 export interface Gift {
@@ -12,6 +12,21 @@ export interface WalletInfo {
   readonly balance: number;
   readonly currency: string;
 }
+
+/** Read-only surface for gift-grid.ts / wallet-popup.ts — they only display the
+ *  catalog and balance, never mutate them (that happens via room-page-base.ts). */
+export interface GiftsReader {
+  readonly gifts: Signal<readonly Gift[]>;
+  readonly wallet: Signal<WalletInfo | null>;
+}
+
+export interface GiftsWriter {
+  setGifts(gifts: Gift[]): void;
+  setWallet(info: WalletInfo): void;
+}
+
+export const GIFTS_READER = new InjectionToken<GiftsReader>('GIFTS_READER');
+export const GIFTS_WRITER = new InjectionToken<GiftsWriter>('GIFTS_WRITER');
 
 @Injectable()
 export class GiftsStore extends CollectionStore<Gift> {

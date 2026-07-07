@@ -26,6 +26,18 @@ function hasUpstreamCode(err: unknown): err is { error: { upstreamCode?: unknown
   );
 }
 
+/**
+ * Connection + visibility as one atomic transition instead of two signals that could
+ * drift out of sync. `visible` is carried on both variants (not just 'connected') so the
+ * pre-join default — visible defaults true, matching the old _isVisible(true) default,
+ * so nothing that reads isVisible() before enterRoom() resolves sees a flipped default —
+ * and the post-leave value (leaveRoom() intentionally preserves an invisible leave's
+ * visible:false, per its own doc comment) both round-trip exactly as before.
+ */
+export type RoomPresence =
+  | { readonly status: 'disconnected'; readonly visible: boolean }
+  | { readonly status: 'connected'; readonly visible: boolean };
+
 export abstract class BaseRoomStore {
   protected readonly api = inject(RoomApi);
   private readonly toast = inject(ToastService);
@@ -36,8 +48,7 @@ export abstract class BaseRoomStore {
   private readonly _busiType = signal<number>(0);
   private readonly _myRole = signal<UserRole>(UserRole.Normal);
   private readonly _isHandRaised = signal(false);
-  private readonly _isConnected = signal(false);
-  private readonly _isVisible = signal(true);
+  private readonly _presence = signal<RoomPresence>({ status: 'disconnected', visible: true });
   private readonly _name = signal<string>('');
   private readonly _topic = signal<string>('');
 
@@ -53,8 +64,8 @@ export abstract class BaseRoomStore {
   readonly busiType = this._busiType.asReadonly();
   readonly myRole = this._myRole.asReadonly();
   readonly isHandRaised = this._isHandRaised.asReadonly();
-  readonly isConnected = this._isConnected.asReadonly();
-  readonly isVisible = this._isVisible.asReadonly();
+  readonly isConnected = computed(() => this._presence().status === 'connected');
+  readonly isVisible = computed(() => this._presence().visible);
   readonly name = this._name.asReadonly();
   readonly topic = this._topic.asReadonly();
   readonly userId = this._userId.asReadonly();
@@ -101,14 +112,20 @@ export abstract class BaseRoomStore {
 
     const isRestore = this.activeCallStore.cname() === cname && this.activeCallStore.minimized();
     const visible = isRestore ? !this.activeCallStore.isInvisible() : visibleOnFreshJoin;
-    this._isVisible.set(visible);
+    this._presence.set({ status: 'disconnected', visible });
 
+    // joinRoster()'s watch-limit / region-block handlers may downgrade visible to false
+    // (ghost listener) via setVisibility() while this await is in flight — read the
+    // signal's current value below rather than the local `visible`, so that override
+    // isn't clobbered by this final transition.
     if (visible) await this.joinRoster(cname, busiType);
     this._myRole.set(UserRole.Normal);
-    this._isConnected.set(true);
+    this._presence.update((p) => ({ status: 'connected', visible: p.visible }));
   }
 
-  setVisibility(visible: boolean): void { this._isVisible.set(visible); }
+  setVisibility(visible: boolean): void {
+    this._presence.update((p) => ({ ...p, visible }));
+  }
 
   private async joinRoster(cname: string, busiType: number): Promise<void> {
     try {
@@ -136,7 +153,7 @@ export abstract class BaseRoomStore {
     const choice = (await firstValueFrom(ref.closed)) ?? 'leave';
 
     if (choice === 'continue') {
-      this._isVisible.set(false);
+      this.setVisibility(false);
       this.toast.info('Joining as Ghost Listener. You will not be visible and get no updates.');
       return;
     }
@@ -163,7 +180,7 @@ export abstract class BaseRoomStore {
     const choice = (await firstValueFrom(ref.closed)) ?? 'leave';
 
     if (choice === 'ghost') {
-      this._isVisible.set(false);
+      this.setVisibility(false);
       this.toast.info('Joining as Ghost Listener. You will not be visible and get no updates.');
       return;
     }
@@ -172,10 +189,10 @@ export abstract class BaseRoomStore {
   }
 
   async leaveRoom(): Promise<void> {
-    if (!this._isConnected()) return;
+    if (!this.isConnected()) return;
     const cname = this._cname();
     const busiType = this._busiType();
-    const wasVisible = this._isVisible();
+    const wasVisible = this.isVisible();
     if (cname && wasVisible) {
       firstValueFrom(this.api.leaveRoom(cname, busiType)).then(
         () => undefined,
@@ -187,13 +204,11 @@ export abstract class BaseRoomStore {
     this._myRole.set(UserRole.Normal);
     this.resetMediaState();
     this._isHandRaised.set(false);
-    this._isConnected.set(false);
-    // Reset to the leave-default (visible) only when the user was actually visible;
-    // an invisible leave shouldn't flip visibility for the next enterRoom() to default-true
-    // and accidentally expose them. enterRoom() re-derives _isVisible from its own
-    // visibleOnFreshJoin argument or the snapshot regardless, but this keeps this store's
-    // own state internally consistent between leaveRoom() and the next enterRoom() call.
-    if (wasVisible) this._isVisible.set(true);
+    // wasVisible round-trips unchanged: an invisible leave stays invisible (no reset to
+    // true), a visible leave stays visible — enterRoom() re-derives visibility from its
+    // own visibleOnFreshJoin argument or the snapshot regardless, but this keeps this
+    // store's own state internally consistent between leaveRoom() and the next enterRoom().
+    this._presence.set({ status: 'disconnected', visible: wasVisible });
     this._name.set('');
     this._topic.set('');
     this._userId.set(0);

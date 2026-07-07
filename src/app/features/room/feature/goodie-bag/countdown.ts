@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { GoodieStore } from './goodie-store';
+import { GOODIE_READER } from './goodie-store';
 
 @Component({
   selector: 'app-countdown',
@@ -33,5 +33,5 @@ import { GoodieStore } from './goodie-store';
   `]
 })
 export class CountdownComponent {
-  readonly store = inject(GoodieStore);
+  readonly store = inject(GOODIE_READER);
 }

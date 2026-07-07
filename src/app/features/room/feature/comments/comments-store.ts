@@ -1,6 +1,6 @@
-import { Injectable, signal, effect, inject, computed } from '@angular/core';
+import { Injectable, InjectionToken, Signal, signal, effect, inject, computed } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Comment, CaptionEntry, CommentOrEvent } from '../../data/room-model';
+import { Comment, CaptionEntry, CommentOrEvent, EventCard } from '../../data/room-model';
 import { CollectionStore } from '@shared/utils';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserRole } from '@core/models/user-role';
@@ -8,6 +8,27 @@ import { RoomApi } from '../../data/room-api';
 import { EventFeedStore } from './event-feed-store';
 
 type MergedEntry = { readonly item: CommentOrEvent; readonly ts: number };
+
+/** Read-only surface for components that only display comments (comments-panel.ts,
+ *  comment-list.ts) — narrower than the full CommentsStore so they can't reach
+ *  addComment/mergeComments/reset by mistake. */
+export interface CommentsReader {
+  readonly comments: Signal<readonly Comment[]>;
+  readonly captions: Signal<readonly CaptionEntry[]>;
+  readonly eventCards: Signal<readonly EventCard[]>;
+  readonly mergedItems: Signal<readonly CommentOrEvent[]>;
+  readonly unreadCount: Signal<number>;
+  readonly lastReadTs: Signal<number>;
+}
+
+/** Write surface for the one legitimate non-page mutation: clearing the unread
+ *  pill when comment-list.ts detects the user has scrolled to the bottom. */
+export interface CommentsWriter {
+  resetUnread(): void;
+}
+
+export const COMMENTS_READER = new InjectionToken<CommentsReader>('COMMENTS_READER');
+export const COMMENTS_WRITER = new InjectionToken<CommentsWriter>('COMMENTS_WRITER');
 
 @Injectable()
 export class CommentsStore extends CollectionStore<Comment> {

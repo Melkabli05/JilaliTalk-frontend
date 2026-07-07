@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, effect, untracked } from '@angular/core';
+import { Injectable, InjectionToken, Signal, inject, signal, effect, untracked } from '@angular/core';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { CollectionStore } from '@shared/utils/collection-store';
 
@@ -19,6 +19,25 @@ export interface RtmMessage {
   readonly timestamp: number;
   readonly isOwn: boolean;
 }
+
+/** No narrower consumer currently injects InRoomRtmStore than room-page-base.ts —
+ *  see the note on StageReader/StageWriter above; same rationale applies here. */
+export interface InRoomRtmReader {
+  readonly messages: Signal<readonly RtmMessage[]>;
+  readonly unreadCount: Signal<number>;
+  readonly currentUid: Signal<number>;
+}
+
+export interface InRoomRtmWriter {
+  setCurrentUid(uid: number): void;
+  addMessage(msg: RtmMessage): void;
+  clearUnread(): void;
+  incrementUnread(): void;
+  reset(): void;
+}
+
+export const IN_ROOM_RTM_READER = new InjectionToken<InRoomRtmReader>('IN_ROOM_RTM_READER');
+export const IN_ROOM_RTM_WRITER = new InjectionToken<InRoomRtmWriter>('IN_ROOM_RTM_WRITER');
 
 @Injectable()
 export class InRoomRtmStore extends CollectionStore<RtmMessage> {

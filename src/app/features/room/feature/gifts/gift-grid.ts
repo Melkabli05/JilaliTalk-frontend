@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, output } from '@angular/core';
-import { GiftsStore, Gift } from './gifts-store';
+import { GIFTS_READER, Gift } from './gifts-store';
 
 @Component({
   selector: 'app-gift-grid',
@@ -46,6 +46,6 @@ import { GiftsStore, Gift } from './gifts-store';
   `]
 })
 export class GiftGridComponent {
-  readonly store = inject(GiftsStore);
+  readonly store = inject(GIFTS_READER);
   readonly select = output<Gift>();
 }

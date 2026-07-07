@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, InjectionToken, Signal, signal } from '@angular/core';
 
 export interface GoodieQuestion {
   readonly id: string;
@@ -6,6 +6,24 @@ export interface GoodieQuestion {
   readonly options: readonly string[];
   readonly answer: number;
 }
+
+/** Read-only surface for countdown.ts / chibi.ts — they only render the current
+ *  question/timer, never start or end the game (that's room-page-base.ts's job). */
+export interface GoodieReader {
+  readonly isPlaying: Signal<boolean>;
+  readonly currentQuestion: Signal<GoodieQuestion | null>;
+  readonly timeLeft: Signal<number>;
+}
+
+export interface GoodieWriter {
+  startGame(): void;
+  setQuestion(q: GoodieQuestion): void;
+  setTimeLeft(t: number): void;
+  endGame(): void;
+}
+
+export const GOODIE_READER = new InjectionToken<GoodieReader>('GOODIE_READER');
+export const GOODIE_WRITER = new InjectionToken<GoodieWriter>('GOODIE_WRITER');
 
 @Injectable()
 export class GoodieStore {

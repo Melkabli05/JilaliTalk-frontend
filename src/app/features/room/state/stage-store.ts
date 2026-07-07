@@ -1,8 +1,32 @@
-import { Injectable, computed, effect, inject } from '@angular/core';
+import { Injectable, InjectionToken, Signal, computed, effect, inject } from '@angular/core';
 import { StageUser } from '../data/room-model';
 import { CollectionStore, EnrichBatchQueue } from '@shared/utils';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserInfoService } from '@core/services/user-info.service';
+
+/** No narrower consumer currently injects StageStore than room-page-base.ts (which
+ *  needs full read+write access to orchestrate the room), so this split has no
+ *  enforcement effect yet — provided for consistency with the other room stores and
+ *  in case a future stage-only UI component needs read-only access. */
+export interface StageReader {
+  readonly stageUsers: Signal<readonly StageUser[]>;
+  readonly stageCount: Signal<number>;
+  isOnStage(uid: number): boolean;
+  getStageUser(uid: number): StageUser | undefined;
+}
+
+export interface StageWriter {
+  updateStageUsers(users: StageUser[]): void;
+  updateUserMicStatus(uid: number, isTurnOnMic: boolean): void;
+  updateUserCamStatus(uid: number, isTurnOnCam: boolean): void;
+  removeStageUser(uid: number): void;
+  revertRemoveStageUser(user: StageUser): void;
+  addStageUser(user: StageUser): void;
+  reset(): void;
+}
+
+export const STAGE_READER = new InjectionToken<StageReader>('STAGE_READER');
+export const STAGE_WRITER = new InjectionToken<StageWriter>('STAGE_WRITER');
 
 @Injectable()
 export class StageStore extends CollectionStore<StageUser> {

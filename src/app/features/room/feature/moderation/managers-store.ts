@@ -1,8 +1,8 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, InjectionToken, Signal, inject, signal, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
 import { RoomApi } from '../../data/room-api';
-import { ManagerListResponse } from '../../data/room-model';
+import { Manager, ManagerListResponse } from '../../data/room-model';
 import { UserRole } from '@core/models/user-role';
 
 const EMPTY_MANAGER_LIST: ManagerListResponse = { managerList: [] };
@@ -11,6 +11,24 @@ interface ManagersParams {
   readonly cname: string;
   readonly hostId: number;
 }
+
+/** Read-only surface for managers-modal.ts's list rendering. */
+export interface ManagersReader {
+  readonly managers: Signal<readonly Manager[]>;
+  readonly loading: Signal<boolean>;
+  readonly error: Signal<string | null>;
+}
+
+/** managers-modal.ts also needs setParams/reload (it drives its own params from
+ *  dialog data and reloads after a mutation), unlike the other narrow consumers
+ *  which are purely read-only. */
+export interface ManagersWriter {
+  setParams(cname: string, hostId: number): void;
+  reload(): void;
+}
+
+export const MANAGERS_READER = new InjectionToken<ManagersReader>('MANAGERS_READER');
+export const MANAGERS_WRITER = new InjectionToken<ManagersWriter>('MANAGERS_WRITER');
 
 @Injectable()
 export class ManagersStore {
@@ -41,5 +59,10 @@ export class ManagersStore {
 
   reload(): void {
     this.managersRef.reload();
+  }
+
+  reset(): void {
+    this._cname.set(null);
+    this._hostId.set(null);
   }
 }

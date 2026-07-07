@@ -199,17 +199,31 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
         return;
       }
       this.rcs.leave().catch(() => {}).finally(() =>
-        this.roomStore.leaveRoom().finally(() => {
-          this.stageStore.reset();
-          this.audienceStore.reset();
-          this.commentsStore.reset();
-          this.rtmStore.reset();
-          this.giftsStore.reset();
-          this.modStore.reset();
-          this.goodieStore.endGame();
-        }),
+        this.roomStore.leaveRoom().finally(() => this.resetAllRoomStores()),
       );
     });
+  }
+
+  /**
+   * Every store this page provides, reset in one named place. Kept here rather than
+   * on BaseRoomStore itself — centralizing it onto the store would mean BaseRoomStore
+   * has to inject every other room store, recreating exactly the kind of cross-store
+   * coupling the CommentsStore/EventFeedStore split (see event-feed-store.ts) was
+   * meant to break up. The page already injects all of these to orchestrate the room,
+   * so it's the natural single place this belongs — this method just gives that
+   * existing chain a name and one addition: managersStore.reset() was previously
+   * missing entirely (harmless today, since managers-modal.ts always calls
+   * setParams() fresh on open — but a real gap if that ever changes).
+   */
+  private resetAllRoomStores(): void {
+    this.stageStore.reset();
+    this.audienceStore.reset();
+    this.commentsStore.reset();
+    this.rtmStore.reset();
+    this.giftsStore.reset();
+    this.modStore.reset();
+    this.managersStore.reset();
+    this.goodieStore.endGame();
   }
 
   async onRefreshRoom(): Promise<void> {

@@ -19,7 +19,7 @@ import { UserRole } from '@core/models/user-role';
 import { Comment, CommentOrEvent, EventCard } from '../../data/room-model';
 import { EventCardComponent } from '../../ui/event-card';
 import { formatClockTime } from '@shared/utils';
-import { CommentsStore } from './comments-store';
+import { COMMENTS_READER, COMMENTS_WRITER } from './comments-store';
 import {
   LucideArrowDown,
   LucideCopy,
@@ -830,7 +830,8 @@ export class CommentListComponent {
   private readonly clipboard = inject(Clipboard);
   private readonly destroyRef = inject(DestroyRef);
   private readonly scrollContainer = viewChild<ElementRef<HTMLDivElement>>('scrollContainer');
-  private readonly commentsStore = inject(CommentsStore);
+  private readonly commentsReader = inject(COMMENTS_READER);
+  private readonly commentsWriter = inject(COMMENTS_WRITER);
 
   private readonly plainComments = computed<readonly Comment[]>(() =>
     this.items().filter((i): i is Comment => !('kind' in i)),
@@ -845,7 +846,7 @@ export class CommentListComponent {
    *  new conversation, not new events about people. */
   readonly unreadCount = computed<number>(() => {
     const list = this.items();
-    const since = this.commentsStore.lastReadTs();
+    const since = this.commentsReader.lastReadTs();
     let n = 0;
     for (const item of list) {
       if ('kind' in item) continue;
@@ -908,7 +909,7 @@ export class CommentListComponent {
 
   onNewMessagesPillClick(): void {
     this.scrollToBottom();
-    this.commentsStore.resetUnread();
+    this.commentsWriter.resetUnread();
   }
 
   constructor() {
@@ -932,7 +933,7 @@ export class CommentListComponent {
     effect(() => {
       if (this.unreadCount() > 0 && this.isAtBottom()) {
         this.scrollToBottom();
-        this.commentsStore.resetUnread();
+        this.commentsWriter.resetUnread();
       }
     });
 

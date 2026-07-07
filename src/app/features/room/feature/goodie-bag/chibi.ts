@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { GoodieStore } from './goodie-store';
+import { GOODIE_READER } from './goodie-store';
 
 @Component({
   selector: 'app-chibi',
@@ -65,7 +65,7 @@ import { GoodieStore } from './goodie-store';
   `]
 })
 export class ChibiComponent {
-  readonly store = inject(GoodieStore);
+  readonly store = inject(GOODIE_READER);
 
   onOption(index: number): void {
   }

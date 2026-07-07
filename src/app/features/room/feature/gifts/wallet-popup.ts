@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { GiftsStore } from './gifts-store';
+import { GIFTS_READER } from './gifts-store';
 
 @Component({
   selector: 'app-wallet-popup',
@@ -42,5 +42,5 @@ import { GiftsStore } from './gifts-store';
   `]
 })
 export class WalletPopupComponent {
-  readonly store = inject(GiftsStore);
+  readonly store = inject(GIFTS_READER);
 }

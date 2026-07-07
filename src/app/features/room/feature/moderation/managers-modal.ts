@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { Dialog, DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 import { Listbox, Option } from '@angular/aria/listbox';
-import { ManagersStore } from './managers-store';
+import { MANAGERS_READER, MANAGERS_WRITER } from './managers-store';
 import { RoomApi } from '../../data/room-api';
 import { Manager } from '../../data/room-model';
 import { ToastService } from '@core/services/toast.service';
@@ -32,8 +32,8 @@ export interface ManagersModalData {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal [title]="'Room Managers'" [count]="store.managers().length > 0 ? store.managers().length : null">
-      @if (store.loading()) {
+    <app-modal [title]="'Room Managers'" [count]="reader.managers().length > 0 ? reader.managers().length : null">
+      @if (reader.loading()) {
         <div class="loading-list">
           @for (i of [1,2,3]; track i) {
             <div class="skeleton-item">
@@ -42,18 +42,18 @@ export interface ManagersModalData {
             </div>
           }
         </div>
-      } @else if (store.error()) {
+      } @else if (reader.error()) {
         <div class="empty-state">
           <span class="empty-icon-circle error">
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </span>
-          <p class="empty-text">{{ store.error() }}</p>
-          <button type="button" class="retry-btn" (click)="store.reload()">
+          <p class="empty-text">{{ reader.error() }}</p>
+          <button type="button" class="retry-btn" (click)="writer.reload()">
             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 5.51 19"/></svg>
             Retry
           </button>
         </div>
-      } @else if (store.managers().length === 0) {
+      } @else if (reader.managers().length === 0) {
         <div class="empty-state">
           <span class="empty-icon-circle">
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -63,7 +63,7 @@ export interface ManagersModalData {
         </div>
       } @else {
         <ul ngListbox [readonly]="true" [multi]="false" aria-label="Room managers" class="managers-list">
-          @for (manager of store.managers(); track manager.userId; let i = $index) {
+          @for (manager of reader.managers(); track manager.userId; let i = $index) {
             <li
               ngOption
               [value]="manager.userId"
@@ -351,7 +351,8 @@ export interface ManagersModalData {
 export class ManagersModalComponent {
   readonly ref = inject(DialogRef<void>);
   readonly data = inject<ManagersModalData>(DIALOG_DATA);
-  readonly store = inject(ManagersStore);
+  readonly reader = inject(MANAGERS_READER);
+  protected readonly writer = inject(MANAGERS_WRITER);
   private readonly api = inject(RoomApi);
   private readonly toast = inject(ToastService);
   private readonly dialog = inject(Dialog);
@@ -359,7 +360,7 @@ export class ManagersModalComponent {
   readonly removingId = signal<number | null>(null);
 
   constructor() {
-    this.store.setParams(this.data.cname, this.data.hostId);
+    this.writer.setParams(this.data.cname, this.data.hostId);
   }
 
   onViewProfile(manager: Manager): void {
@@ -379,7 +380,7 @@ export class ManagersModalComponent {
     if (this.removingId() !== null) return;
     this.removingId.set(userId);
     firstValueFrom(this.api.setManager(this.data.cname, this.data.busiType, userId, 2))
-      .then(() => this.store.reload())
+      .then(() => this.writer.reload())
       .catch(() => this.toast.error('Could not remove manager. Try again.'))
       .finally(() => this.removingId.set(null));
   }
