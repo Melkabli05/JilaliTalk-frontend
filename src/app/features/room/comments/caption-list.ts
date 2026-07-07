@@ -12,7 +12,7 @@ const formatTime = formatClockTime;
   imports: [AvatarComponent, CountryFlagComponent, LucideCaptions],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="caption-list" role="log" aria-live="polite" aria-label="Captions">
+    <div class="caption-list" role="log" aria-label="Captions">
       @for (caption of captions(); track caption.id) {
         <div class="entry">
           <app-avatar
@@ -125,7 +125,11 @@ const formatTime = formatClockTime;
 
     .empty-state {
       display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: var(--space-6) var(--space-4); text-align: center;
+      justify-content: center;
+      /* flex: 1 lets the empty-state fill remaining column height so
+         justify-content: center actually centers it vertically. */
+      flex: 1;
+      padding: var(--space-6) var(--space-4); text-align: center;
     }
     .empty-icon {
       width: 40px; height: 40px; border-radius: var(--radius-xl);
