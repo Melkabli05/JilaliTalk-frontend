@@ -1,3 +1,10 @@
+@if (showInvisibleBanner()) {
+  <div class="invisible-banner" role="status">
+    <svg aria-hidden="true" lucideEyeOff [size]="13"></svg>
+    You're listening invisibly.
+    <button type="button" class="banner-dismiss" (click)="roomsPrefs.markInvisibleBannerSeen()">OK</button>
+  </div>
+}
 <div class="room-layout">
   <div class="room-header">
     <app-room-header

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, input, effect, DestroyRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input, effect, DestroyRef, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { RoomStore } from '../../store/room-store';
@@ -13,6 +13,7 @@ import { VoiceRoomInfo } from '../../models/room-model';
 import { SendEvent } from '../../comments/comment-input';
 import { AGORA_APP_ID_VOICE } from '@core/tokens/agora-app-id.token';
 import { RoomHeaderComponent } from '../../room-header';
+import { LucideEyeOff } from '@lucide/angular';
 import { StageGridComponent } from '../../stage/stage-grid';
 import { AudienceListComponent } from '../../audience/audience-list';
 import { CommentsPanelComponent } from '../../comments/comments-panel';
@@ -27,6 +28,7 @@ import { toggleMic } from '../../commands/toggle-mic.command';
 import { leaveStage, joinStageAsModerator } from '../../commands/toggle-stage-membership.command';
 import { enterVoiceRoom } from '../../commands/enter-room.command';
 import { makeVoiceRoomVisible } from '../../commands/make-room-visible.command';
+import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
 
 @Component({
   selector: 'app-room-page',
@@ -37,6 +39,7 @@ import { makeVoiceRoomVisible } from '../../commands/make-room-visible.command';
     AudienceListComponent,
     CommentsPanelComponent,
     SigninPanelComponent,
+    LucideEyeOff,
   ],
   providers: [
     RoomStore,
@@ -57,6 +60,7 @@ import { makeVoiceRoomVisible } from '../../commands/make-room-visible.command';
     { provide: MANAGERS_READER, useExisting: ManagersStore },
     { provide: MANAGERS_WRITER, useExisting: ManagersStore },
     RoomFacade,
+    RoomsPreferencesStore,
   ],
   templateUrl: './room-page.html',
   styleUrl: './room-page.scss',
@@ -92,6 +96,11 @@ export class RoomPageComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly facade = inject(RoomFacade);
+  protected readonly roomsPrefs = inject(RoomsPreferencesStore);
+
+  readonly showInvisibleBanner = computed(() =>
+    !this.roomsPrefs.hasSeenInvisibleBanner() && !this.roomStore.isVisible(),
+  );
 
   protected readonly leaveNavTarget = ['/rooms'];
 

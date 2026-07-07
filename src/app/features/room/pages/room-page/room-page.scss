@@ -76,3 +76,18 @@
   .audience-section { grid-area: audience; }
   .comments-section { grid-area: comments; }
 }
+
+.invisible-banner {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-neutral-800); color: var(--color-neutral-100);
+  font-size: var(--text-xs); border-bottom: 1px solid var(--color-neutral-700);
+}
+.banner-dismiss {
+  margin-left: auto; background: none; border: none; color: var(--color-primary-400);
+  cursor: pointer; font-size: var(--text-xs); font-weight: var(--font-medium);
+  &:hover { color: var(--color-primary-300); }
+}
+:host-context(.dark) .invisible-banner {
+  background: var(--color-neutral-900); border-color: var(--color-neutral-700);
+}
