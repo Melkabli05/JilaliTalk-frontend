@@ -9,6 +9,7 @@ import { JoinCancelledError } from '../state/base-room-store';
 import { StageStore } from '../state/stage-store';
 import { AudienceStore } from '../state/audience-store';
 import { CommentsStore } from '../feature/comments/comments-store';
+import { EventFeedStore } from '../feature/comments/event-feed-store';
 import { ModStore, ModAction } from '../feature/moderation/mod-store';
 import { ManagersStore } from '../feature/moderation/managers-store';
 import { SigninPanelComponent } from '../feature/signin/signin-panel';
@@ -45,6 +46,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     VideoRoomStore,
     StageStore,
     AudienceStore,
+    EventFeedStore,
     CommentsStore,
     ModStore,
     GiftsStore,

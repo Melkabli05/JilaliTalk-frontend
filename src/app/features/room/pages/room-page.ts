@@ -7,6 +7,7 @@ import { JoinCancelledError } from '../state/base-room-store';
 import { StageStore } from '../state/stage-store';
 import { AudienceStore } from '../state/audience-store';
 import { CommentsStore } from '../feature/comments/comments-store';
+import { EventFeedStore } from '../feature/comments/event-feed-store';
 import { ModStore } from '../feature/moderation/mod-store';
 import { ManagersStore } from '../feature/moderation/managers-store';
 import { SigninPanelComponent } from '../feature/signin/signin-panel';
@@ -34,7 +35,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
     CommentsPanelComponent,
     SigninPanelComponent,
   ],
-  providers: [RoomStore, StageStore, AudienceStore, CommentsStore, ModStore, GiftsStore, InRoomRtmStore, GoodieStore, ManagersStore],
+  providers: [RoomStore, StageStore, AudienceStore, EventFeedStore, CommentsStore, ModStore, GiftsStore, InRoomRtmStore, GoodieStore, ManagersStore],
   template: `
 <div class="room-layout">
       <div class="room-header">
