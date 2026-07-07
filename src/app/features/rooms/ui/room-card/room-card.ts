@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed, inject } from '@angular/core';
 import { LucideUsers, LucideCrown, LucideEye, LucideEyeOff } from '@lucide/angular';
 import { ChannelListItem } from '../../data/rooms-model';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
@@ -6,6 +6,7 @@ import { ButtonComponent } from '@shared/ui/button/button.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
+import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
 
 @Component({
   selector: 'app-room-card',
@@ -95,14 +96,19 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
         </app-button>
 
         <!-- Secondary: invisible join — small icon button -->
-        <button
-          type="button"
-          class="invisible-btn"
-          aria-label="Join invisible"
-          (click)="handleJoinInvisible($event)"
-        >
-          <svg aria-hidden="true" lucideEyeOff [size]="13"></svg>
-        </button>
+        <div class="invisible-btn-wrap">
+          <button
+            type="button"
+            class="invisible-btn"
+            aria-label="Join invisible"
+            (click)="handleJoinInvisible($event)"
+          >
+            <svg aria-hidden="true" lucideEyeOff [size]="13"></svg>
+          </button>
+          @if (showInvisibleTooltip()) {
+            <span class="invisible-hint">Hidden listen</span>
+          }
+        </div>
       </div>
     </article>
   `,
@@ -287,6 +293,17 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
 
     .join-visible-btn { flex: 1; }
 
+    .invisible-btn-wrap {
+      position: relative; display: flex; align-items: center;
+    }
+    .invisible-hint {
+      position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+      white-space: nowrap; background: var(--color-neutral-800); color: var(--color-neutral-100);
+      font-size: 10px; padding: 2px 6px; border-radius: var(--radius-sm);
+      pointer-events: none; z-index: 10;
+      :host-context(.dark) & { background: var(--color-neutral-700); color: var(--color-neutral-100); }
+    }
+
         :host-context(.dark) {
       .room-card {
         background-color: var(--color-neutral-800);
@@ -327,7 +344,13 @@ export class RoomCardComponent {
   readonly room = input.required<ChannelListItem>();
   readonly joinRoom = output<{ room: ChannelListItem; visible: boolean }>();
 
+  readonly prefs = inject(RoomsPreferencesStore);
+
   readonly visibleMembers = computed(() => this.room().users?.slice(0, 4) ?? []);
+
+  readonly showInvisibleTooltip = computed(() =>
+    !this.prefs.seenInvisibleTooltip(),
+  );
 
   readonly isActive = computed(() => (this.room().channel.totalUserCount ?? 0) > 5);
 
@@ -342,6 +365,7 @@ export class RoomCardComponent {
 
   handleJoinInvisible(event: Event): void {
     event.stopPropagation();
+    this.prefs.markInvisibleTooltipSeen();
     this.joinRoom.emit({ room: this.room(), visible: false });
   }
 }
