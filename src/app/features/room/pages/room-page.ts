@@ -255,6 +255,11 @@ export class RoomPageComponent extends RoomPageBase {
       }
       throw err;
     }
+    // The user may have navigated away while enterRoom's join-roster request was
+    // in flight — the page's destroyRef.onDestroy has already run rcs.leave() by
+    // now, so continuing here would open a fresh WS/RTC connection nothing will
+    // ever tear down. Bail before any further side effects.
+    if (this._destroying()) return;
     this.activeCallStore.syncCurrentRoom(
       cname,
       busiType,
@@ -293,6 +298,8 @@ export class RoomPageComponent extends RoomPageBase {
       this.toast.error('Room not found. Please create a new one.');
       return;
     }
+    // Same race as above: bail if the page was destroyed while this fetch was in flight.
+    if (this._destroying()) return;
 
     const ch = voiceInfo.channelInfo;
     this.roomStore.setCname(cname);
@@ -384,6 +391,10 @@ export class RoomPageComponent extends RoomPageBase {
       this.toast.error('Failed to rejoin visibly');
       return;
     }
+    // The user may have left the room (or the page been destroyed) while these
+    // requests were in flight — don't reconnect WS/reset stores for a page no
+    // longer showing.
+    if (this._destroying()) return;
 
     const bundleOk = bundleResult.status === 'fulfilled' ? bundleResult.value : null;
     if (!bundleOk) {
@@ -418,6 +429,7 @@ export class RoomPageComponent extends RoomPageBase {
     const { voiceRoomInfo: voiceInfo, stageUsers: stage, audienceUsers: audience } = await firstValueFrom(
       this.api.fetchJoinBundle<VoiceRoomInfo>(cname, this.busiType()),
     );
+    if (this._destroying()) return;
     const ch = voiceInfo.channelInfo;
     this.roomStore.setRoomName(ch?.name?.trim() ?? '');
     this.roomStore.setRoomTopic(ch?.topic ?? '');
@@ -443,6 +455,7 @@ export class RoomPageComponent extends RoomPageBase {
 
     if (isOn) {
       await this.rcs.setMicEnabled(false);
+      if (this._destroying()) return;
       this.roomStore.setMicOn(false);
       this.stageStore.updateUserMicStatus(uid, false);
       this.notifyStageMicState(uid, true);
@@ -462,6 +475,7 @@ export class RoomPageComponent extends RoomPageBase {
         } else {
           await this.rcs.setMicEnabled(true);
         }
+        if (this._destroying()) return;
         this.roomStore.setMicOn(true);
         this.stageStore.updateUserMicStatus(uid, true);
         this.notifyStageMicState(uid, false);

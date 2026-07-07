@@ -315,6 +315,11 @@ export class VideoRoomPageComponent extends RoomPageBase {
       }
       throw err;
     }
+    // The user may have navigated away while enterRoom's join-roster request was
+    // in flight — the page's destroyRef.onDestroy has already run rcs.leave() by
+    // now, so continuing here would open a fresh WS/RTC connection nothing will
+    // ever tear down. Bail before any further side effects.
+    if (this._destroying()) return;
     // Snapshot served its purpose for restore detection — and now becomes the
     // "I am currently in this room" live state that other consumers (e.g. the
     // UserInfoModal's "you're already in this room" check) can read. We update
@@ -354,6 +359,8 @@ export class VideoRoomPageComponent extends RoomPageBase {
       this.toast.error('Room not found');
       return;
     }
+    // Same race as above: bail if the page was destroyed while this fetch was in flight.
+    if (this._destroying()) return;
 
     const ch = liveInfo.channelInfo;
     const actualCname = ch?.cname || cname;
@@ -422,6 +429,10 @@ export class VideoRoomPageComponent extends RoomPageBase {
       this.toast.error('Failed to rejoin visibly');
       return;
     }
+    // The user may have left the room (or the page been destroyed) while this
+    // request was in flight — don't reconnect WS/reset stores for a page no
+    // longer showing.
+    if (this._destroying()) return;
 
     let liveInfo: LiveRoomInfo | undefined;
     let stage: StageUsersResponse | undefined;
@@ -434,6 +445,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
     } catch {
       this.toast.error('Failed to rejoin — room info unavailable');
     }
+    if (this._destroying()) return;
 
     this.roomStore.setVisibility(true);
     this.syncVisibilityToUrl(true);
@@ -452,6 +464,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
     const { voiceRoomInfo: liveInfo, stageUsers: stage, audienceUsers: audience } = await firstValueFrom(
       this.api.fetchJoinBundle<LiveRoomInfo>(cname, this.busiType()),
     );
+    if (this._destroying()) return;
     const ch = liveInfo.channelInfo;
     this.roomStore.setRoomName(ch?.name?.trim() ?? '');
     this.roomStore.setRoomTopic(ch?.topic ?? '');
@@ -475,6 +488,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
 
     if (isOn) {
       await this.rcs.setCamEnabled(false);
+      if (this._destroying()) return;
       this.videoRoomStore.setCamOn(false);
       this.stageStore.updateUserCamStatus(uid, false);
     } else {
@@ -488,6 +502,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
         } else {
           await this.rcs.setCamEnabled(true);
         }
+        if (this._destroying()) return;
         this.videoRoomStore.setCamOn(true);
         this.stageStore.updateUserCamStatus(uid, true);
       } catch (err) {
