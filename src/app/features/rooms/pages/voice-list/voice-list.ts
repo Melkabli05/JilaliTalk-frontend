@@ -10,6 +10,7 @@ import {
 import { Router } from '@angular/router';
 import { RoomsStore } from '../../state/rooms-store';
 import { ChannelListItem } from '../../data/rooms-model';
+import { joinRoom as joinRoomCommand } from '../../data/join-room.util';
 import { CategoryFilterComponent } from '../../ui/category-filter/category-filter';
 import { LanguageFilterComponent } from '../../ui/language-filter/language-filter';
 import { SearchBarComponent } from '../../ui/search-bar/search-bar';
@@ -127,22 +128,7 @@ export class VoiceListComponent {
   }
 
   async joinRoom(room: ChannelListItem, visible: boolean, event?: Event): Promise<void> {
-    event?.stopPropagation();
-    if (event?.type === 'keydown') event.preventDefault();
-
-    const cname = room.channel.cname;
-    const busiType = room.channel.busiType;
-
-    try {
-      // Video rooms (busiType=1) use the /room/video/:cname/:busiType route;
-      // voice rooms (busiType=2) use /room/:cname/:busiType.
-      // Invisible entry is carried as a query param.
-      const path = busiType === 1 ? '/room/video' : '/room';
-      const queryParams = visible ? {} : { visible: 'false' };
-      await this.router.navigate([path, cname, busiType], { queryParams });
-    } catch (err) {
-      console.error('Failed to join room', err);
-    }
+    await joinRoomCommand(this.router, room, visible, event);
   }
 
   onJoinRoom(payload: { room: ChannelListItem; visible: boolean }): void {
