@@ -171,11 +171,25 @@
               @if (isGroupEnd(conv.messages, i)) {
                 <time class="bubble-time">{{ fmtTime(msg.ts) }}</time>
                 @if (msg.delivery) {
-                  <span
-                    class="bubble-delivery"
-                    [attr.aria-label]="msg.delivery === 'delivered' ? 'Delivered' : 'Sent'"
-                    [title]="msg.delivery === 'delivered' ? 'Delivered' : 'Sent'"
-                  >{{ msg.delivery === 'delivered' ? '✓✓' : '✓' }}</span>
+                  @if (msg.delivery === 'delivered') {
+                    <svg
+                      aria-hidden="true"
+                      lucideCheckCheck
+                      [size]="12"
+                      class="bubble-delivery"
+                      aria-label="Delivered"
+                      title="Delivered"
+                    ></svg>
+                  } @else {
+                    <svg
+                      aria-hidden="true"
+                      lucideCheck
+                      [size]="12"
+                      class="bubble-delivery"
+                      aria-label="Sent"
+                      title="Sent"
+                    ></svg>
+                  }
                 }
               }
             </div>

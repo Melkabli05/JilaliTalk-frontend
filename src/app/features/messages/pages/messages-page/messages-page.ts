@@ -13,6 +13,8 @@ import {
   LucideInbox,
   LucideMessageCircle,
   LucideGift,
+  LucideCheck,
+  LucideCheckCheck,
 } from '@lucide/angular';
 import { ImSocketService } from '@core/realtime/im-socket.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
@@ -33,6 +35,8 @@ import { isGroupStart, isGroupEnd, dateLabel, preview, fmtTime } from '../../uti
     LucideInbox,
     LucideMessageCircle,
     LucideGift,
+    LucideCheck,
+    LucideCheckCheck,
   ],
   templateUrl: './messages-page.html',
   styleUrl: './messages-page.scss',
