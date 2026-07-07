@@ -66,7 +66,7 @@ export class MessageNewContactPanelComponent {
     visitors: false,
     byId: false,
   });
-  protected readonly cursor = signal<{ following?: string | undefined; visitors?: number | undefined }>({});
+  protected readonly cursor = signal<{ visitors?: number | undefined }>({});
 
   protected readonly error = signal<ErrorMap>({
     following: null,
@@ -196,7 +196,7 @@ export class MessageNewContactPanelComponent {
   private refetchTab(tab: TabId, append = false): void {
     // Reset state on a fresh (non-append) refetch — loadMore keeps existing list.
     if (!append) {
-      if (tab === 'following') { this.following.set([]); this.cursor.update(c => ({ ...c, following: undefined })); }
+      if (tab === 'following') { this.following.set([]); }
       if (tab === 'followers') { this.followers.set([]); }
       if (tab === 'visitors')  { this.visitors.set([]);  this.cursor.update(c => ({ ...c, visitors: undefined })); }
       if (tab === 'byId')      { this.byIdResult.set(null); }
@@ -210,14 +210,12 @@ export class MessageNewContactPanelComponent {
     // byId has nothing to fetch on tab change.
   }
 
-  private fetchFollowing(append: boolean): void {
+  private fetchFollowing(_append: boolean): void {
     // Tied to the "Following" tab — call api.following and write to the following signal.
-    const pageIndex = append ? (this.cursor().following ?? '1') : '1';
     this.loading.update(l => ({ ...l, following: true }));
     this.api.following(50).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (page) => {
-        this.following.update(curr => append ? [...curr, ...page.list] : [...page.list]);
-        this.cursor.update(c => ({ ...c, following: page.pageIndex ?? c.following }));
+        this.following.update(curr => curr.length ? [...curr, ...page.list] : [...page.list]);
         this.more.update(m => ({ ...m, following: page.more }));
         this.loading.update(l => ({ ...l, following: false }));
       },
