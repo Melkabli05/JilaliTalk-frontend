@@ -157,15 +157,6 @@ export class MessagesPageComponent {
     }
   }
 
-  /** Enter sends, Shift+Enter newlines. KeyboardEvent#preventDefault on Enter keeps the
-   *  text in place per the legacy sendTextMessage API contract. */
-  protected onSendKey(event: Event): void {
-    const ke = event as KeyboardEvent;
-    if (ke.shiftKey) return; // newline
-    ke.preventDefault();
-    this.onSend();
-  }
-
   /** Decode the selected conversation's userId-string into a number for the API call.
    *  Returns null when the conversation key isn't a clean int (defensive). */
   private selectedPeerNumericId(): number | null {

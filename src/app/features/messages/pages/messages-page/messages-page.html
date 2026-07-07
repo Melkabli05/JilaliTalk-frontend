@@ -213,16 +213,16 @@
 
       <!-- compose -->
       <form class="compose" (submit)="$event.preventDefault(); onSend()">
-        <textarea
+        <input
           class="compose-field"
-          rows="1"
+          type="text"
+          autocomplete="off"
           [placeholder]="composePlaceholder()"
           [value]="draft()"
           (input)="onInput($any($event.target).value)"
-          (keydown.enter)="onSendKey($event)"
           (blur)="onTyping(false)"
           aria-label="Message body"
-        ></textarea>
+        />
         <button
           type="submit"
           class="compose-send"
