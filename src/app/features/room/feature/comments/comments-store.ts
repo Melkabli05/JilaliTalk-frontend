@@ -1,4 +1,5 @@
-import { Injectable, InjectionToken, Signal, signal, effect, inject, computed } from '@angular/core';
+import { Injectable, InjectionToken, Signal, signal, inject, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { Comment, CaptionEntry, CommentOrEvent, EventCard } from '../../data/room-model';
 import { CollectionStore } from '@shared/utils';
@@ -73,10 +74,7 @@ export class CommentsStore extends CollectionStore<Comment> {
 
   constructor() {
     super();
-    effect(() => {
-      const event = this.bffWs.lastEvent();
-      if (!event) return;
-      if (event.type !== 'comment') return;
+    this.bffWs.event$('comment').pipe(takeUntilDestroyed()).subscribe((event) => {
       this.addComment({
         _id: event.comment.id,
         createdAtMs: event.comment.ts,

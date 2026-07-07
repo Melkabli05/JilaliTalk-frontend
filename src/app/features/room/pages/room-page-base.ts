@@ -159,32 +159,38 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
   );
 
 
-  private readonly bffEventEffect = effect(() => {
+  /**
+   * Subscribes only to the event types this page actually reacts to, instead of an
+   * effect() reading bffWs.lastEvent() and switching on the full RoomRealtimeEvent
+   * union (connection-state alone fires many times/sec during reconnect, so that
+   * switch ran constantly for events this page ignores).
+   */
+  private readonly bffRoomKickSub = this.bffWs.event$('room_kick').pipe(takeUntilDestroyed()).subscribe((event) => {
     if (this._destroying()) return;
-    const event = this.bffWs.lastEvent();
-    if (!event) return;
-
-    // connection-state fires many times/sec during reconnect — skip it
-    if (event.type === 'connection-state') return;
-
-    // room_kick: stay in the room as an invisible ghost instead of leaving —
-    // card display is handled by CommentsStore.
-    if (event.type === 'room_kick' && Number(event.userId) === this.roomStore.userId()) {
-      void this.handleKickedFromRoom(event.managerName);
-      return;
-    }
-
-    void handleRealtimeEvent(
-      event,
-      this.api,
-      this.toast,
-      this.roomStore.cname() ?? '',
-      this.busiType(),
-      this.roomStore.userId(),
-      this.roomStore.isHost(),
-      (uid) => this.resolveNickname(uid),
-    ).catch((err) => console.warn('[bffEventEffect]', err));
+    // Stay in the room as an invisible ghost instead of leaving — card display is
+    // handled by CommentsStore/EventFeedStore.
+    if (Number(event.userId) !== this.roomStore.userId()) return;
+    void this.handleKickedFromRoom(event.managerName);
   });
+
+  /** The 4 event types handleRealtimeEvent actually switches on. */
+  private readonly bffDelegatedEventTypes = ['stage_raisehand', 'stage_kick', 'stage_device_control', 'lucky_bag'] as const;
+
+  private readonly bffDelegatedEventSubs = this.bffDelegatedEventTypes.map((type) =>
+    this.bffWs.event$(type).pipe(takeUntilDestroyed()).subscribe((event) => {
+      if (this._destroying()) return;
+      void handleRealtimeEvent(
+        event,
+        this.api,
+        this.toast,
+        this.roomStore.cname() ?? '',
+        this.busiType(),
+        this.roomStore.userId(),
+        this.roomStore.isHost(),
+        (uid) => this.resolveNickname(uid),
+      ).catch((err) => console.warn('[bffDelegatedEventSubs]', err));
+    }),
+  );
 
 
   constructor() {

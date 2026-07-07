@@ -1,4 +1,5 @@
-import { Injectable, InjectionToken, Signal, computed, effect, inject, signal, DestroyRef } from '@angular/core';
+import { Injectable, InjectionToken, Signal, computed, inject, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { AudienceUser } from '../data/room-model';
 import { CollectionStore, EnrichBatchQueue } from '@shared/utils';
@@ -128,78 +129,65 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
         this.reconcileTimer = null;
       }
     });
-    effect(() => {
-      const event = this.bffWs.lastEvent();
-      if (!event) return;
-      switch (event.type) {
-        case 'user_join': {
-          if (event.isBannedComment) break;
-          if (this.stageStore.isOnStage(Number(event.userId))) break;
-          const uid = Number(event.userId);
-          this.addAudienceUser({
-            userId: uid,
-            isOnMic: false,
-            isRaiseHand: false,
-            isTurnOnMic: false,
-            isTurnOnCam: false,
-            role: 3,
-            busiType: this.busiType(),
-            isBannedComment: false,
-            isBannedMic: false,
-            dailyCostCoins: 0,
-            giftLevel: 0,
-            vipType: 0,
-            fgLevel: 0,
-            fgName: '',
-            fgIsActive: false,
-            base: {
-              nickname: event.nickname,
-              signature: null,
-              headUrl: event.headUrl,
-              nationality: event.nationality,
-              nativeLang: -1,
-              timeZone: 0,
-            },
-          });
-          // Queue for batch enrichment — flushed after a quiet-time window (see EnrichBatchQueue).
-          if (!event.headUrl || !event.nationality) this.enrichQueue.queue(uid);
-          break;
-        }
-        case 'user_quit':
-          this.removeAudienceUser(Number(event.userId));
-          break;
-        case 'stage_raisehand':
-          this.setUserHandRaised(Number(event.userId), event.raisehandType === 1);
-          break;
-        case 'stage_join':
-          this.removeAudienceUser(Number(event.stageUser.userId));
-          break;
-        case 'stage_invite':
-        case 'mod_invite':
-          break;
-        case 'gift':
-          break;
-        case 'room_kick':
-          this.removeAudienceUser(Number(event.userId));
-          break;
-        case 'mod_accepted':
-          this.collection.update((list) =>
-            list.map((u) => u.userId === Number(event.userId) ? { ...u, role: 2 } : u),
-          );
-          break;
-        case 'mod_removed':
-          this.collection.update((list) =>
-            list.map((u) => u.userId === Number(event.userId) ? { ...u, role: 3 } : u),
-          );
-          break;
-        case 'follow':
-        case 'whiteboard_activated':
-        case 'whiteboard_deactivated':
-        case 'raw':
-          break;
-        case 'error':
-          break;
-      }
+    this.bffWs.event$('user_join').pipe(takeUntilDestroyed()).subscribe((event) => {
+      if (event.isBannedComment) return;
+      if (this.stageStore.isOnStage(Number(event.userId))) return;
+      const uid = Number(event.userId);
+      this.addAudienceUser({
+        userId: uid,
+        isOnMic: false,
+        isRaiseHand: false,
+        isTurnOnMic: false,
+        isTurnOnCam: false,
+        role: 3,
+        busiType: this.busiType(),
+        isBannedComment: false,
+        isBannedMic: false,
+        dailyCostCoins: 0,
+        giftLevel: 0,
+        vipType: 0,
+        fgLevel: 0,
+        fgName: '',
+        fgIsActive: false,
+        base: {
+          nickname: event.nickname,
+          signature: null,
+          headUrl: event.headUrl,
+          nationality: event.nationality,
+          nativeLang: -1,
+          timeZone: 0,
+        },
+      });
+      // Queue for batch enrichment — flushed after a quiet-time window (see EnrichBatchQueue).
+      if (!event.headUrl || !event.nationality) this.enrichQueue.queue(uid);
+    });
+
+    this.bffWs.event$('user_quit').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.removeAudienceUser(Number(event.userId));
+    });
+
+    this.bffWs.event$('stage_raisehand').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.setUserHandRaised(Number(event.userId), event.raisehandType === 1);
+    });
+
+    this.bffWs.event$('stage_join').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.removeAudienceUser(Number(event.stageUser.userId));
+    });
+
+    this.bffWs.event$('room_kick').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.removeAudienceUser(Number(event.userId));
+    });
+
+    this.bffWs.event$('mod_accepted').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.collection.update((list) =>
+        list.map((u) => u.userId === Number(event.userId) ? { ...u, role: 2 } : u),
+      );
+    });
+
+    this.bffWs.event$('mod_removed').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.collection.update((list) =>
+        list.map((u) => u.userId === Number(event.userId) ? { ...u, role: 3 } : u),
+      );
     });
   }
 

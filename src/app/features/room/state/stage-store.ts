@@ -1,4 +1,5 @@
-import { Injectable, InjectionToken, Signal, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, InjectionToken, Signal, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { StageUser } from '../data/room-model';
 import { CollectionStore, EnrichBatchQueue } from '@shared/utils';
@@ -92,82 +93,85 @@ export class StageStore extends CollectionStore<StageUser> {
 
   constructor() {
     super();
-    effect(() => {
-      const event = this.bffWs.lastEvent();
-      if (!event) return;
-      switch (event.type) {
-        case 'user_quit':
-          if (this.isOnStage(Number(event.userId))) {
-            this.collection.update((list) =>
-              list.map((u) => u.userId === Number(event.userId) ? { ...u, isAway: true } : u),
-            );
-          }
-          break;
-        case 'user_join':
-          if (this.isOnStage(Number(event.userId))) {
-            this.collection.update((list) =>
-              list.map((u) => u.userId === Number(event.userId) ? { ...u, isAway: false } : u),
-            );
-          }
-          break;
-        case 'stage_join': {
-          const uid = Number(event.stageUser.userId);
-          const isNewJoiner = !this.isOnStage(uid);
-          this.addStageUser({
-            userId: uid,
-            nickname: event.stageUser.nickname ?? 'Anonymous',
-            headUrl: event.stageUser.headUrl ?? null,
-            nationality: null,
-            role: 3,
-            isTurnOnMic: false,
-            isTurnOnCam: false,
-            isBannedComment: false,
-            rippleId: -1,
-            rippleUrl: null,
-            rippleAnimalType: 0,
-            rippleAnimalUrl: null,
-            isAiUser: false,
-          });
-          // StageUserEvent carries userId/nickname/headUrl only — no nationality — so the
-          // gate reduces to "missing avatar". Backend batch endpoint will fill the rest.
-          if (!event.stageUser.headUrl) {
-            this.enrichQueue.queue(uid);
-          }
-          // Only for a genuinely new joiner — the optimistic self-join case is already
-          // correct (see reconcileRoster's doc comment) and isOnStage(uid) is already
-          // true by the time that echo arrives, so this doesn't double-fetch for it.
-          if (isNewJoiner) void this.reconcileRoster();
-          break;
-        }
-        case 'stage_quit':
-          this.removeStageUser(Number(event.userId));
-          break;
-        case 'stage_device_control':
-          if (event.deviceType === 1) {
-            const muted = event.switchType === 1;
-            this.updateUserMicStatus(Number(event.userId), !muted);
-          }
-          break;
-        case 'mic_opened':
-          this.updateUserMicStatus(Number(event.userId), true);
-          break;
-        case 'mic_closed':
-          this.updateUserMicStatus(Number(event.userId), false);
-          break;
-        case 'stage_kick':
-          this.removeStageUser(Number(event.userId));
-          break;
-        case 'mod_accepted':
-          this.collection.update((list) =>
-            list.map((u) => u.userId === Number(event.userId) ? { ...u, role: 2 } : u),
-          );
-          break;
-        case 'mod_removed':
-          this.collection.update((list) =>
-            list.map((u) => u.userId === Number(event.userId) ? { ...u, role: 3 } : u),
-          );
-          break;
+
+    this.bffWs.event$('user_quit').pipe(takeUntilDestroyed()).subscribe((event) => {
+      if (this.isOnStage(Number(event.userId))) {
+        this.collection.update((list) =>
+          list.map((u) => u.userId === Number(event.userId) ? { ...u, isAway: true } : u),
+        );
       }
+    });
+
+    this.bffWs.event$('user_join').pipe(takeUntilDestroyed()).subscribe((event) => {
+      if (this.isOnStage(Number(event.userId))) {
+        this.collection.update((list) =>
+          list.map((u) => u.userId === Number(event.userId) ? { ...u, isAway: false } : u),
+        );
+      }
+    });
+
+    this.bffWs.event$('stage_join').pipe(takeUntilDestroyed()).subscribe((event) => {
+      const uid = Number(event.stageUser.userId);
+      const isNewJoiner = !this.isOnStage(uid);
+      this.addStageUser({
+        userId: uid,
+        nickname: event.stageUser.nickname ?? 'Anonymous',
+        headUrl: event.stageUser.headUrl ?? null,
+        nationality: null,
+        role: 3,
+        isTurnOnMic: false,
+        isTurnOnCam: false,
+        isBannedComment: false,
+        rippleId: -1,
+        rippleUrl: null,
+        rippleAnimalType: 0,
+        rippleAnimalUrl: null,
+        isAiUser: false,
+      });
+      // StageUserEvent carries userId/nickname/headUrl only — no nationality — so the
+      // gate reduces to "missing avatar". Backend batch endpoint will fill the rest.
+      if (!event.stageUser.headUrl) {
+        this.enrichQueue.queue(uid);
+      }
+      // Only for a genuinely new joiner — the optimistic self-join case is already
+      // correct (see reconcileRoster's doc comment) and isOnStage(uid) is already
+      // true by the time that echo arrives, so this doesn't double-fetch for it.
+      if (isNewJoiner) void this.reconcileRoster();
+    });
+
+    this.bffWs.event$('stage_quit').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.removeStageUser(Number(event.userId));
+    });
+
+    this.bffWs.event$('stage_device_control').pipe(takeUntilDestroyed()).subscribe((event) => {
+      if (event.deviceType === 1) {
+        const muted = event.switchType === 1;
+        this.updateUserMicStatus(Number(event.userId), !muted);
+      }
+    });
+
+    this.bffWs.event$('mic_opened').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.updateUserMicStatus(Number(event.userId), true);
+    });
+
+    this.bffWs.event$('mic_closed').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.updateUserMicStatus(Number(event.userId), false);
+    });
+
+    this.bffWs.event$('stage_kick').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.removeStageUser(Number(event.userId));
+    });
+
+    this.bffWs.event$('mod_accepted').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.collection.update((list) =>
+        list.map((u) => u.userId === Number(event.userId) ? { ...u, role: 2 } : u),
+      );
+    });
+
+    this.bffWs.event$('mod_removed').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.collection.update((list) =>
+        list.map((u) => u.userId === Number(event.userId) ? { ...u, role: 3 } : u),
+      );
     });
   }
 

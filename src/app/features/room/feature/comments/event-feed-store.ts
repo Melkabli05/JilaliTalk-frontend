@@ -1,4 +1,5 @@
-import { Injectable, signal, effect, inject } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EventCard } from '../../data/room-model';
 import { EnrichBatchQueue } from '@shared/utils';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
@@ -147,115 +148,102 @@ export class EventFeedStore {
   }
 
   constructor() {
-    effect(() => {
-      const event = this.bffWs.lastEvent();
-      if (!event) return;
-      switch (event.type) {
-        case 'gift':
-          for (const g of event.gifts) this.addOrComboGift(g);
-          break;
+    this.bffWs.event$('gift').pipe(takeUntilDestroyed()).subscribe((event) => {
+      for (const g of event.gifts) this.addOrComboGift(g);
+    });
 
-        case 'follow':
-          this._eventCards.update((cards) => [
-            ...cards,
-            {
-              kind: 'follow',
-              id: `follow-${event.nickname}-${Date.now()}`,
-              ts: Date.now(),
-              userId: Number(event.userId) || 0,
-              nickname: event.nickname,
-              headUrl: event.headUrl,
-              isFollowBack: event.status === 2,
-            } satisfies EventCard,
-          ]);
-          break;
+    this.bffWs.event$('follow').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this._eventCards.update((cards) => [
+        ...cards,
+        {
+          kind: 'follow',
+          id: `follow-${event.nickname}-${Date.now()}`,
+          ts: Date.now(),
+          userId: Number(event.userId) || 0,
+          nickname: event.nickname,
+          headUrl: event.headUrl,
+          isFollowBack: event.status === 2,
+        } satisfies EventCard,
+      ]);
+    });
 
-        case 'user_join': {
-          this.pruneActiveUsers();
-          const userId = Number(event.userId);
-          if (this.cancelPendingQuit(userId)) {
-            this.activeJoinedUserIds.set(userId, Date.now());
-            break;
-          }
-          if (this.activeJoinedUserIds.has(userId)) break;
-          this.activeJoinedUserIds.set(userId, Date.now());
-          this.pushUserEventCard('user_join', userId, 'join', {
-            nickname: event.nickname,
-            headUrl: event.headUrl,
-            nationality: event.nationality,
-          });
-          break;
-        }
+    this.bffWs.event$('user_join').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.pruneActiveUsers();
+      const userId = Number(event.userId);
+      if (this.cancelPendingQuit(userId)) {
+        this.activeJoinedUserIds.set(userId, Date.now());
+        return;
+      }
+      if (this.activeJoinedUserIds.has(userId)) return;
+      this.activeJoinedUserIds.set(userId, Date.now());
+      this.pushUserEventCard('user_join', userId, 'join', {
+        nickname: event.nickname,
+        headUrl: event.headUrl,
+        nationality: event.nationality,
+      });
+    });
 
-        case 'user_quit': {
-          this.pruneActiveUsers();
-          const userId = Number(event.userId);
-          this.activeJoinedUserIds.delete(userId);
-          this.scheduleQuitCard(userId, event.userId);
-          this.enrichQueue.queue(userId);
-          break;
-        }
+    this.bffWs.event$('user_quit').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.pruneActiveUsers();
+      const userId = Number(event.userId);
+      this.activeJoinedUserIds.delete(userId);
+      this.scheduleQuitCard(userId, event.userId);
+      this.enrichQueue.queue(userId);
+    });
 
-        case 'stage_raisehand': {
-          const userId = Number(event.userId);
-          this.pushUserEventCard('stage_raisehand', userId, 'hand', { isRaised: event.raisehandType === 1 });
-          break;
-        }
+    this.bffWs.event$('stage_raisehand').pipe(takeUntilDestroyed()).subscribe((event) => {
+      const userId = Number(event.userId);
+      this.pushUserEventCard('stage_raisehand', userId, 'hand', { isRaised: event.raisehandType === 1 });
+    });
 
-        case 'whiteboard_activated':
-          this._eventCards.update((cards) => [
-            ...cards,
-            {
-              kind: 'whiteboard_activated',
-              id: `wb-on-${Date.now()}`,
-              ts: Date.now(),
-              activated: true,
-            } satisfies EventCard,
-          ]);
-          break;
+    this.bffWs.event$('whiteboard_activated').pipe(takeUntilDestroyed()).subscribe(() => {
+      this._eventCards.update((cards) => [
+        ...cards,
+        {
+          kind: 'whiteboard_activated',
+          id: `wb-on-${Date.now()}`,
+          ts: Date.now(),
+          activated: true,
+        } satisfies EventCard,
+      ]);
+    });
 
-        case 'whiteboard_deactivated':
-          this._eventCards.update((cards) => [
-            ...cards,
-            {
-              kind: 'whiteboard_deactivated',
-              id: `wb-off-${Date.now()}`,
-              ts: Date.now(),
-              activated: false,
-            } satisfies EventCard,
-          ]);
-          break;
+    this.bffWs.event$('whiteboard_deactivated').pipe(takeUntilDestroyed()).subscribe(() => {
+      this._eventCards.update((cards) => [
+        ...cards,
+        {
+          kind: 'whiteboard_deactivated',
+          id: `wb-off-${Date.now()}`,
+          ts: Date.now(),
+          activated: false,
+        } satisfies EventCard,
+      ]);
+    });
 
-        case 'mod_accepted': {
-          const userId = Number(event.userId);
-          this.pushUserEventCard('mod_accepted', userId, 'mod', { isAccepted: true });
-          break;
-        }
+    this.bffWs.event$('mod_accepted').pipe(takeUntilDestroyed()).subscribe((event) => {
+      const userId = Number(event.userId);
+      this.pushUserEventCard('mod_accepted', userId, 'mod', { isAccepted: true });
+    });
 
-        case 'mod_removed': {
-          const userId = Number(event.userId);
-          this.pushUserEventCard('mod_removed', userId, 'modr', { isAccepted: false });
-          break;
-        }
+    this.bffWs.event$('mod_removed').pipe(takeUntilDestroyed()).subscribe((event) => {
+      const userId = Number(event.userId);
+      this.pushUserEventCard('mod_removed', userId, 'modr', { isAccepted: false });
+    });
 
-        case 'stage_kick': {
-          const userId = Number(event.userId);
-          this.pushUserEventCard('stage_kick', userId, 'stagekick', { managerName: event.managerName });
-          break;
-        }
+    this.bffWs.event$('stage_kick').pipe(takeUntilDestroyed()).subscribe((event) => {
+      const userId = Number(event.userId);
+      this.pushUserEventCard('stage_kick', userId, 'stagekick', { managerName: event.managerName });
+    });
 
-        case 'room_kick': {
-          const userId = Number(event.userId);
-          this.activeJoinedUserIds.delete(userId);
-          // Only show card for the kicked user — others see the toast + redirect from RoomPageBase
-          if (userId === this._currentUserId) {
-            this.pushUserEventCard('room_kick', userId, 'roomkick', {
-              nickname: event.nickname,
-              managerName: event.managerName,
-            });
-          }
-          break;
-        }
+    this.bffWs.event$('room_kick').pipe(takeUntilDestroyed()).subscribe((event) => {
+      const userId = Number(event.userId);
+      this.activeJoinedUserIds.delete(userId);
+      // Only show card for the kicked user — others see the toast + redirect from RoomPageBase
+      if (userId === this._currentUserId) {
+        this.pushUserEventCard('room_kick', userId, 'roomkick', {
+          nickname: event.nickname,
+          managerName: event.managerName,
+        });
       }
     });
   }
