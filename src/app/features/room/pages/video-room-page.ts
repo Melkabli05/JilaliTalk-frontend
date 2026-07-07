@@ -27,6 +27,7 @@ import { RoomApi } from '../api/room-api';
 import { ActiveCallStore } from '@store/active-call.store';
 import { RoomFacade } from '../facade/room-facade';
 import { sendVideoComment } from '../commands/send-comment.command';
+import { toggleCam } from '../commands/toggle-cam.command';
 
 @Component({
   selector: 'app-video-room-page',
@@ -531,37 +532,8 @@ export class VideoRoomPageComponent {
     }
     if (this.facade.mediaToggleBusy()) return;
     this.facade.mediaToggleBusy.set(true);
-    this.doToggleCam().finally(() => this.facade.mediaToggleBusy.set(false));
-  }
-
-  private async doToggleCam(): Promise<void> {
-    const isOn = this.roomStore.isCamOn();
-    const uid = this.roomStore.userId();
-
-    if (isOn) {
-      await this.rcs.setCamEnabled(false);
-      if (this.facade.destroying()) return;
-      this.roomStore.setCamOn(false);
-      this.rosterStore.updateUserCamStatus(uid, false);
-    } else {
-      try {
-        if (!this.rcs.localVideoTrack()) {
-          const cname = this.roomStore.cname();
-          const publisherToken = cname
-            ? (await firstValueFrom(this.api.fetchPublisherToken(cname))).token
-            : null;
-          await this.rcs.startVideo(publisherToken);
-        } else {
-          await this.rcs.setCamEnabled(true);
-        }
-        if (this.facade.destroying()) return;
-        this.roomStore.setCamOn(true);
-        this.rosterStore.updateUserCamStatus(uid, true);
-      } catch (err) {
-        const reason = err instanceof Error ? err.message : String(err);
-        this.toast.error(`Failed to start camera: ${reason}`);
-      }
-    }
+    toggleCam(this.roomStore, this.rosterStore, this.rcs, this.api, () => this.facade.destroying(), this.toast)
+      .finally(() => this.facade.mediaToggleBusy.set(false));
   }
 
   onToggleCamOrShare(): void {

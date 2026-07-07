@@ -1,7 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, input, effect, DestroyRef } from '@angular/core';
 import { Router } from '@angular/router';
-import { EMPTY, firstValueFrom } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { firstValueFrom } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RoomStore } from '../store/room-store';
 import { JoinCancelledError } from '../store/base-room-store';
@@ -12,15 +11,13 @@ import { ModStore, MOD_READER, MOD_WRITER } from '../moderation/mod-store';
 import { ManagersStore, MANAGERS_READER, MANAGERS_WRITER } from '../moderation/managers-store';
 import { SigninPanelComponent } from '../signin/signin-panel';
 import { InRoomRtmStore, IN_ROOM_RTM_READER, IN_ROOM_RTM_WRITER } from '../in-room-rtm/in-room-rtm-store';
-import { StageUser, VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../models/room-model';
-import { UserRole } from '@core/models/user-role';
+import { VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../models/room-model';
 import { SendEvent } from '../comments/comment-input';
 import { AGORA_APP_ID_VOICE } from '@core/tokens/agora-app-id.token';
 import { RoomHeaderComponent } from '../room-header';
 import { StageGridComponent } from '../stage/stage-grid';
 import { AudienceListComponent } from '../audience/audience-list';
 import { CommentsPanelComponent } from '../comments/comments-panel';
-import { httpErrorMessage } from '@shared/utils/http-error-message.util';
 import { RoomApi } from '../api/room-api';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
@@ -28,6 +25,8 @@ import { ToastService } from '@core/services/toast.service';
 import { ActiveCallStore } from '@store/active-call.store';
 import { RoomFacade } from '../facade/room-facade';
 import { sendVoiceComment } from '../commands/send-comment.command';
+import { toggleMic } from '../commands/toggle-mic.command';
+import { leaveStage, joinStageAsModerator } from '../commands/toggle-stage-membership.command';
 
 @Component({
   selector: 'app-room-page',
@@ -536,65 +535,16 @@ export class RoomPageComponent {
     }
     if (this.facade.mediaToggleBusy()) return;
     this.facade.mediaToggleBusy.set(true);
-    this.doToggleMic().finally(() => this.facade.mediaToggleBusy.set(false));
-  }
-
-  private async doToggleMic(): Promise<void> {
-    const isOn = this.roomStore.isMicOn();
-    const uid = this.roomStore.userId();
-
-    if (isOn) {
-      await this.rcs.setMicEnabled(false);
-      if (this.facade.destroying()) return;
-      this.roomStore.setMicOn(false);
-      this.rosterStore.updateUserMicStatus(uid, false);
-      this.notifyStageMicState(uid, true);
-    } else {
-      try {
-        await this.rcs.stopAudio();
-        if (!this.rcs.localAudioTrack()) {
-          if (this.rosterStore.isOnStage(uid)) {
-            const cname = this.roomStore.cname();
-            const publisherToken = cname
-              ? (await firstValueFrom(this.api.fetchPublisherToken(cname))).token
-              : null;
-            await this.rcs.startAudio(publisherToken);
-          } else {
-            await this.talkFromUnderstage();
-          }
-        } else {
-          await this.rcs.setMicEnabled(true);
-        }
-        if (this.facade.destroying()) return;
-        this.roomStore.setMicOn(true);
-        this.rosterStore.updateUserMicStatus(uid, true);
-        this.notifyStageMicState(uid, false);
-      } catch {
-        this.toast.error('Failed to start microphone');
-      }
-    }
-  }
-
-  private async talkFromUnderstage(): Promise<void> {
-    const cname = this.roomStore.cname();
-    if (!cname) throw new Error('No active room');
-    const uid = this.roomStore.userId();
-    const rtcInfo = this.roomStore.rtcInfo();
-    const token = rtcInfo?.token ?? null;
-    const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : this.agoraAppId;
-    await this.rcs.agora.disconnect();
-    await this.rcs.agora.connect(cname, uid, token, appId, true);
-    await this.rcs.setMicEnabled(true);
-  }
-
-  private notifyStageMicState(uid: number, mute: boolean): void {
-    const cname = this.roomStore.cname();
-    if (!cname || !this.rosterStore.isOnStage(uid)) return;
-    this.api.muteUser(cname, this.roomStore.busiType(), uid, mute).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tap({ error: (err: unknown) => console.warn('[RoomPage] notifyStageMicState failed', err) }),
-      catchError(() => EMPTY),
-    ).subscribe();
+    toggleMic(
+      this.roomStore,
+      this.rosterStore,
+      this.rcs,
+      this.api,
+      this.agoraAppId,
+      this.destroyRef,
+      () => this.facade.destroying(),
+      this.toast,
+    ).finally(() => this.facade.mediaToggleBusy.set(false));
   }
 
   onToggleCamOrShare(): void {
@@ -618,60 +568,12 @@ export class RoomPageComponent {
     }
 
     if (onStage) {
-      void this.rcs.stopAudio().catch(() => {});
-      const stagedUser = this.rosterStore.getStageUser(uid);
-      this.rosterStore.removeStageUser(uid);
-      this.facade.handToggleBusy.set(true);
-      this.api.leaveStage(cname, busiType).pipe(
-        takeUntilDestroyed(this.destroyRef),
-      ).subscribe({
-        next: () => {
-          this.toast.info('You left the stage');
-          this.facade.handToggleBusy.set(false);
-        },
-        error: (err: unknown) => {
-          if (stagedUser) this.rosterStore.revertRemoveStageUser(stagedUser);
-          console.error('[room] leaveStage failed', err);
-          this.toast.error(httpErrorMessage(err, 'Failed to leave stage'));
-          this.facade.handToggleBusy.set(false);
-        },
-      });
+      leaveStage(cname, busiType, uid, this.rosterStore, this.rcs, this.api, this.toast, this.facade.handToggleBusy, this.destroyRef);
       return;
     }
 
     if (isMod) {
-      const myUser: StageUser = {
-        userId: uid,
-        nickname: this.roomStore.nickname() || 'You',
-        headUrl: this.roomStore.headUrl() || null,
-        nationality: this.roomStore.nationality() || null,
-        role: this.roomStore.myRole() as UserRole,
-        isTurnOnMic: false,
-        isTurnOnCam: false,
-        isBannedComment: false,
-        rippleId: 0,
-        rippleUrl: null,
-        rippleAnimalType: 0,
-        rippleAnimalUrl: null,
-        isAiUser: false,
-      };
-      this.rosterStore.addStageUser(myUser);
-      this.facade.handToggleBusy.set(true);
-      this.api.joinStage(cname, busiType).pipe(
-        takeUntilDestroyed(this.destroyRef),
-      ).subscribe({
-        next: () => {
-          this.toast.info('You joined the stage');
-          void this.rcs.startAudio().catch(() => {});
-          this.facade.handToggleBusy.set(false);
-        },
-        error: (err: unknown) => {
-          this.rosterStore.removeStageUser(uid);
-          console.error('[room] joinStage failed', err);
-          this.toast.error(httpErrorMessage(err, 'Failed to join stage'));
-          this.facade.handToggleBusy.set(false);
-        },
-      });
+      joinStageAsModerator(cname, busiType, uid, this.roomStore, this.rosterStore, this.rcs, this.api, this.toast, this.facade.handToggleBusy, this.destroyRef);
       return;
     }
 
