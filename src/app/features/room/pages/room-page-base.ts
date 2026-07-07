@@ -25,6 +25,7 @@ import { buildKickedFromRoomOutcome, resolveManagerIdentity } from '@features/ro
 import { GhostAudienceInputs, fetchMissingGhostInfo, buildAudienceWithGhosts, buildGhostAudienceInputs } from '@features/room/utils/ghost-audience.util';
 import { buildModActionDefs } from '@features/room/utils/mod-action-defs';
 import { buildSendCommentPayload } from '@features/room/utils/send-comment-payload.util';
+import { canModerateUser } from '@features/room/rules/permission.rules';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
 import { UserActionModalData } from '../moderation/user-action-modal';
 import { ManagersModalComponent } from '../moderation/managers-modal';
@@ -483,7 +484,7 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
    * card (with follow) instead.
    */
   protected openUserActions(user: UserActionModalData): void {
-    const canModerate = (this.roomStore.isHost() || this.roomStore.isModerator()) && !user.isGhost;
+    const canModerate = canModerateUser(this.roomStore.isHost(), this.roomStore.isModerator(), !!user.isGhost);
     if (!canModerate) {
       this.dialog.open(UserInfoModalComponent, {
         data: {
