@@ -37,6 +37,20 @@ export class ActiveCallStore {
     this._minimized.set(false);
   }
 
+  /** Re-syncs the snapshot with the current room's live state without
+   *  flipping _minimized. Called from doEnterRoom() on every successful
+   *  room entry — including minimize→restore, where the snapshot must
+   *  stay populated (for "already in this room" detection) but
+   *  minimized() must stay false. minify() can't be used here because
+   *  it always sets _minimized to true. */
+  syncCurrentRoom(cname: string, busiType: number, roomName: string, isMicOn: boolean, isInvisible: boolean): void {
+    this._cname.set(cname);
+    this._busiType.set(busiType);
+    this._roomName.set(roomName);
+    this._isMicOn.set(isMicOn);
+    this._isInvisible.set(isInvisible);
+  }
+
   updateMicState(isMicOn: boolean): void {
     this._isMicOn.set(isMicOn);
   }

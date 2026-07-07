@@ -261,7 +261,10 @@ export class RoomPageComponent extends RoomPageBase {
     // accurate after a visible join. (The previous `clear()` made cname null
     // while the user was in a full-screen room, which broke the modal's
     // "already in this room" detection entirely.)
-    this.activeCallStore.minimize(
+    // Use syncCurrentRoom() (not minimize()) so the _minimized flag stays
+    // false when this is a minimize→restore — otherwise the minimized bar
+    // would re-appear on top of the just-restored room page.
+    this.activeCallStore.syncCurrentRoom(
       cname,
       busiType,
       this.roomStore.name(),
