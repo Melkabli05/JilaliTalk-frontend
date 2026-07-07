@@ -517,9 +517,5 @@ export class VideoRoomPageComponent extends RoomPageBase {
           this.toast.error(httpErrorMessage(err, 'Failed to send message'));
         },
       });
-
-    void this.rcs
-      .sendRtmMessage(this.roomStore.userId(), cname, event.text, nickname, headUrl ?? '')
-      .catch(() => {});
   }
 }

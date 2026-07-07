@@ -1,4 +1,4 @@
-import { Component, inject, input, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input, effect } from '@angular/core';
 import { EMPTY, firstValueFrom } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -26,6 +26,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
 
 @Component({
   selector: 'app-room-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RoomHeaderComponent,
     StageGridComponent,
@@ -620,7 +621,5 @@ export class RoomPageComponent extends RoomPageBase {
     this.api.sendComment(payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ error: (err: unknown) => console.warn('[RoomPage] sendComment failed', err) });
-
-    void this.rcs.sendRtmMessage(this.roomStore.userId(), cname, event.text, nickname, headUrl ?? '').catch(() => {});
   }
 }

@@ -31,9 +31,6 @@ export class RoomConnectionService {
     await this.rtm.login(environment.agoraAppIdRtm, String(uid));
   }
   async subscribeRtmChannel(ch: string): Promise<void> { await this.rtm.subscribe(ch); }
-  async sendRtmMessage(uid: number, ch: string, text: string, nick = 'Anonymous', avatar = ''): Promise<void> {
-    await this.rtm.publish(ch, JSON.stringify({ kind: 'chat', uid: String(uid), sender: nick, avatar, text, ts: Date.now() }));
-  }
   sendRtmTyping(uid: number, ch: string, nick = 'Anonymous'): void {
     this.rtm.publishTyping(ch, String(uid), nick);
   }
