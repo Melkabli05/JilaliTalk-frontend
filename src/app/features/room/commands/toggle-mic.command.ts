@@ -70,7 +70,13 @@ export async function toggleMic(
     notifyStageMicState(uid, true, roomStore, rosterStore, api, destroyRef);
   } else {
     try {
-      await rcs.stopAudio();
+      // Deliberately NOT calling rcs.stopAudio() here first — a track already exists after
+      // a prior publish (the common mute→unmute case), and destroying + recreating it on
+      // every unmute forces a full getUserMedia() re-acquisition and RTC renegotiation each
+      // time, which is exactly the kind of repeated teardown/rebuild that produces audio
+      // artifacts. The existing-track branch below (setMicEnabled(true)) is the intended
+      // lightweight path; only actually missing a track (first publish this session) goes
+      // through the create-and-publish branch.
       if (!rcs.localAudioTrack()) {
         if (rosterStore.isOnStage(uid)) {
           const cname = roomStore.cname();
