@@ -1,11 +1,11 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { Tabs, TabList, Tab, TabPanel, TabContent } from '@angular/aria/tabs';
 import { Dialog } from '@angular/cdk/dialog';
-import { ProfileStore } from '../store/profile.store';
-import { ProfileHeaderComponent } from '../ui/profile-header';
-import { ProfileStatsBarComponent } from '../ui/profile-stats-bar';
+import { ProfileStore } from '../../store/profile.store';
+import { ProfileHeaderComponent } from '../../ui/profile-header';
+import { ProfileStatsBarComponent } from '../../ui/profile-stats-bar';
 import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
-import { BlockedListComponent } from '../ui/blocked-list';
+import { BlockedListComponent } from '../../ui/blocked-list';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import {
   UserInfoModalComponent,

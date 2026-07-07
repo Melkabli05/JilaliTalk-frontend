@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { ErrorPageComponent } from '@core/error/error-page.component';
+import { ErrorPageComponent } from '@core/error/error-page/error-page.component';
 import { profileBundleResolver } from './features/profile/data-access/profile-bundle.resolver';
 
 export const routes: Routes = [

@@ -19,10 +19,10 @@ import {
 import { ImSocketService } from '@core/realtime/im-socket.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { relativeTime as formatRelativeTime } from '@shared/utils';
-import { MessagesSearchComponent } from '../ui/search/messages-search';
-import { MessagesStore } from '../store/messages.store';
-import type { DmConversation, DmMessage } from '../models/dm.model';
-import { isGroupStart, isGroupEnd, dateLabel, preview, fmtTime } from '../utils/dm-formatting.util';
+import { MessagesSearchComponent } from '../../ui/search/messages-search';
+import { MessagesStore } from '../../store/messages.store';
+import type { DmConversation, DmMessage } from '../../models/dm.model';
+import { isGroupStart, isGroupEnd, dateLabel, preview, fmtTime } from '../../utils/dm-formatting.util';
 
 @Component({
   selector: 'app-messages',
