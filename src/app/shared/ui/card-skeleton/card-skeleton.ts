@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 
 @Component({
-  selector: 'app-room-skeleton',
+  selector: 'app-card-skeleton',
 
   imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -226,7 +226,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
     }
   `]
 })
-export class RoomSkeletonComponent {
+export class CardSkeletonComponent {
   readonly count = input<number>(6);
 
   get items() {

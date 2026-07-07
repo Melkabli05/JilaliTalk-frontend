@@ -10,10 +10,10 @@ import { LiveRoomsStore } from '../../state/live-rooms-store';
 import { ChannelListItem } from '../../data/rooms-model';
 import { joinRoom as joinRoomCommand } from '../../data/join-room.util';
 import { LanguageFilterComponent } from '../../ui/language-filter/language-filter';
-import { SearchBarComponent } from '../../ui/search-bar/search-bar';
 import { LiveRoomCardComponent } from '../../ui/live-room-card/live-room-card';
-import { RoomSkeletonComponent } from '../../ui/room-skeleton/room-skeleton';
 import { InfiniteScrollDirective } from '@shared/directives/infinite-scroll.directive';
+import { SearchBarComponent } from '@shared/ui/search-bar/search-bar';
+import { CardSkeletonComponent } from '@shared/ui/card-skeleton/card-skeleton';
 import {
   LucideLayoutGrid,
   LucideList,
@@ -30,7 +30,7 @@ type ViewMode = 'grid' | 'list';
     LanguageFilterComponent,
     SearchBarComponent,
     LiveRoomCardComponent,
-    RoomSkeletonComponent,
+    CardSkeletonComponent,
     InfiniteScrollDirective,
     LucideLayoutGrid,
     LucideList,

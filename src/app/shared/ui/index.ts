@@ -14,3 +14,5 @@ export { OptionCardComponent } from './option-card/option-card.component';
 export { ToastContainerComponent } from './toast/toast-container.component';
 export { PwaUpdateBannerComponent } from './pwa-update-banner/pwa-update-banner.component';
 export { UserListItemComponent, type UserListItemVariant } from './user-list/user-list-item';
+export { SearchBarComponent } from './search-bar/search-bar';
+export { CardSkeletonComponent } from './card-skeleton/card-skeleton';

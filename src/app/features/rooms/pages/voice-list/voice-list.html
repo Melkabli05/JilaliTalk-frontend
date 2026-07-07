@@ -136,7 +136,7 @@
     <section class="recommended-rooms" aria-label="Loading recommendations">
       <div class="recommended-rooms-scroll">
         @for (item of recommendedSkeletons(); track $index) {
-          <app-room-skeleton />
+          <app-card-skeleton />
         }
       </div>
     </section>
@@ -195,7 +195,7 @@
   @if (isLoading() && filteredRooms().length === 0) {
     <div class="room-grid" [class.list-view]="viewMode() === 'list'">
       @for (item of skeletonItems(); track $index) {
-        <app-room-skeleton />
+        <app-card-skeleton />
       }
     </div>
   } @else if (filteredRooms().length === 0) {

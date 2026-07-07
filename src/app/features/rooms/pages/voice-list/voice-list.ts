@@ -13,13 +13,13 @@ import { ChannelListItem } from '../../data/rooms-model';
 import { joinRoom as joinRoomCommand } from '../../data/join-room.util';
 import { CategoryFilterComponent } from '../../ui/category-filter/category-filter';
 import { LanguageFilterComponent } from '../../ui/language-filter/language-filter';
-import { SearchBarComponent } from '../../ui/search-bar/search-bar';
 import { RoomCardComponent } from '../../ui/room-card/room-card';
-import { RoomSkeletonComponent } from '../../ui/room-skeleton/room-skeleton';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
+import { SearchBarComponent } from '@shared/ui/search-bar/search-bar';
+import { CardSkeletonComponent } from '@shared/ui/card-skeleton/card-skeleton';
 import { InfiniteScrollDirective } from '@shared/directives/infinite-scroll.directive';
 import {
   LucideLayoutGrid,
@@ -45,7 +45,7 @@ type ViewMode = 'grid' | 'list';
     LanguageTagComponent,
     SearchBarComponent,
     RoomCardComponent,
-    RoomSkeletonComponent,
+    CardSkeletonComponent,
     AvatarComponent,
     ButtonComponent,
     InfiniteScrollDirective,
