@@ -14,10 +14,7 @@ import { joinRoom as joinRoomCommand } from '../../data/join-room.util';
 import { CategoryFilterComponent } from '../../ui/category-filter/category-filter';
 import { LanguageFilterComponent } from '../../ui/language-filter/language-filter';
 import { RoomCardComponent } from '../../ui/room-card/room-card';
-import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
-import { ButtonComponent } from '@shared/ui/button/button.component';
-import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
-import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
+import { RecommendedRoomCardComponent } from '../../ui/recommended-room-card/recommended-room-card';
 import { SearchBarComponent } from '@shared/ui/search-bar/search-bar';
 import { CardSkeletonComponent } from '@shared/ui/card-skeleton/card-skeleton';
 import { InfiniteScrollDirective } from '@shared/directives/infinite-scroll.directive';
@@ -25,9 +22,6 @@ import {
   LucideLayoutGrid,
   LucideList,
   LucideFlame,
-  LucideTrendingUp,
-  LucideEye,
-  LucideEyeOff,
   LucideRefreshCw,
   LucideSearch,
   LucideChevronLeft,
@@ -40,21 +34,15 @@ type ViewMode = 'grid' | 'list';
   selector: 'app-voice-list',
   imports: [
     CategoryFilterComponent,
-    CountryFlagComponent,
     LanguageFilterComponent,
-    LanguageTagComponent,
     SearchBarComponent,
     RoomCardComponent,
+    RecommendedRoomCardComponent,
     CardSkeletonComponent,
-    AvatarComponent,
-    ButtonComponent,
     InfiniteScrollDirective,
     LucideLayoutGrid,
     LucideList,
     LucideFlame,
-    LucideTrendingUp,
-    LucideEye,
-    LucideEyeOff,
     LucideRefreshCw,
     LucideSearch,
     LucideChevronLeft,
@@ -132,6 +120,10 @@ export class VoiceListComponent {
   }
 
   onJoinRoom(payload: { room: ChannelListItem; visible: boolean }): void {
+    void this.joinRoom(payload.room, payload.visible);
+  }
+
+  onRecommendedJoin(payload: { room: ChannelListItem; visible: boolean }): void {
     void this.joinRoom(payload.room, payload.visible);
   }
 
