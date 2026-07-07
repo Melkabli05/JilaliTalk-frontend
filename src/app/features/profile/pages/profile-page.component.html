@@ -1,0 +1,142 @@
+<div class="profile-page">
+  @if (store.bundleLoading() && !store.userInfo()) {
+    <div class="header-skeleton">
+      <div class="skeleton-avatar"></div>
+      <div class="skeleton-lines">
+        <div class="skeleton-line skeleton-line--wide"></div>
+        <div class="skeleton-line"></div>
+      </div>
+    </div>
+  } @else if (store.bundleError(); as err) {
+    <div class="error-state">
+      <p>{{ err }}</p>
+      <app-button variant="soft-neutral" size="sm" (click)="store.reloadBundle()">Retry</app-button>
+    </div>
+  } @else {
+    <app-profile-header [info]="store.userInfo()" />
+    <app-profile-stats-bar
+      [followers]="store.userInfo()?.details?.relation?.followers ?? 0"
+      [following]="store.userInfo()?.details?.relation?.following ?? 0"
+      [moments]="store.stats()?.totalMntCount ?? 0"
+      [likes]="store.userInfo()?.details?.relation?.likes ?? 0"
+      (followersClick)="selectTab('followers')"
+      (followingClick)="selectTab('following')"
+    />
+  }
+  <div class="tabs-section" ngTabs>
+    <ul ngTabList class="tabs" [selectedTab]="activeTab()" (selectedTabChange)="onTabChange($event)">
+      <li ngTab value="followers" class="tab-btn">Followers</li>
+      <li ngTab value="following" class="tab-btn">Following</li>
+      <li ngTab value="visitors" class="tab-btn">Visitors</li>
+      <li ngTab value="blocked" class="tab-btn">Blocked</li>
+    </ul>
+    <div ngTabPanel value="followers" class="tab-panel">
+      <ng-template ngTabContent>
+        @if (store.followersLoading() && store.followers().length === 0) {
+          <div class="list-skeleton">
+            @for (i of [1, 2, 3]; track i) {
+              <div class="skeleton-row"></div>
+            }
+          </div>
+        } @else if (store.followersError(); as err) {
+          <div class="error-state"><p>{{ err }}</p></div>
+        } @else if (store.followers().length === 0) {
+          <div class="empty-state"><p>No followers yet</p></div>
+        } @else {
+          @for (user of store.followers(); track user.userId) {
+            <app-user-list-item
+              variant="followers"
+              [userId]="user.userId"
+              [name]="user.nickName ?? 'User'"
+              [headUrl]="user.headUrl"
+              [nationality]="user.nationality"
+              [vipType]="user.vipType"
+              (userClick)="onViewProfile(user.userId, user.nickName, user.headUrl, user.nationality)"
+            />
+          }
+          @if (store.followersMore()) {
+            <app-button variant="soft-neutral" size="sm" (click)="store.loadMoreFollowers()">
+              Load more
+            </app-button>
+          }
+        }
+      </ng-template>
+    </div>
+    <div ngTabPanel value="following" class="tab-panel">
+      <ng-template ngTabContent>
+        @if (store.followingLoading() && store.following().length === 0) {
+          <div class="list-skeleton">
+            @for (i of [1, 2, 3]; track i) {
+              <div class="skeleton-row"></div>
+            }
+          </div>
+        } @else if (store.followingError(); as err) {
+          <div class="error-state"><p>{{ err }}</p></div>
+        } @else if (store.following().length === 0) {
+          <div class="empty-state"><p>You're not following anyone yet</p></div>
+        } @else {
+          @for (user of store.following(); track user.userId) {
+            <app-user-list-item
+              variant="following"
+              [userId]="user.userId"
+              [name]="user.nickName ?? 'User'"
+              [headUrl]="user.headUrl"
+              [nationality]="user.nationality"
+              [vipType]="user.vipType"
+              [isMutual]="user.isMutual"
+              (userClick)="onViewProfile(user.userId, user.nickName, user.headUrl, user.nationality)"
+            />
+          }
+        }
+      </ng-template>
+    </div>
+    <div ngTabPanel value="visitors" class="tab-panel">
+      <ng-template ngTabContent>
+        @if (store.visitorsLoading() && store.visitors().length === 0) {
+          <div class="list-skeleton">
+            @for (i of [1, 2, 3]; track i) {
+              <div class="skeleton-row"></div>
+            }
+          </div>
+        } @else if (store.visitorsError(); as err) {
+          <div class="error-state"><p>{{ err }}</p></div>
+        } @else if (store.visitors().length === 0) {
+          <div class="empty-state"><p>No visitors yet</p></div>
+        } @else {
+          @for (user of store.visitors(); track user.userid) {
+            <app-user-list-item
+              variant="visitors"
+              [userId]="user.userid"
+              [name]="user.nickname ?? 'User'"
+              [headUrl]="user.headUrl"
+              [nationality]="user.nationality"
+              [visitTs]="user.visitTs"
+              [visitCnt]="user.visitCnt"
+              (userClick)="onViewProfile(user.userid, user.nickname, user.headUrl, user.nationality)"
+            />
+          }
+          @if (store.visitorsMore()) {
+            <app-button variant="soft-neutral" size="sm" (click)="store.loadMoreVisitors()">
+              Load more
+            </app-button>
+          }
+        }
+      </ng-template>
+    </div>
+    <div ngTabPanel value="blocked" class="tab-panel">
+      <ng-template ngTabContent>
+        @if (store.blockedLoading()) {
+          <div class="list-skeleton">
+            @for (i of [1, 2]; track i) {
+              <div class="skeleton-row"></div>
+            }
+          </div>
+        } @else if (store.blockedError(); as err) {
+          <div class="error-state"><p>{{ err }}</p></div>
+        } @else {
+          <app-blocked-list [users]="store.blocked()" />
+        }
+      </ng-template>
+    </div>
+  </div>
+</div>

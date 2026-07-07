@@ -1,0 +1,72 @@
+<div class="room-layout">
+  <div class="room-header">
+    <app-room-header
+      [name]="roomStore.name()"
+      [topic]="roomStore.topic()"
+      [cname]="roomStore.cname() ?? ''"
+      [isMicOn]="roomStore.isMicOn()"
+      [micSpeaking]="facade.selfSpeaking()"
+      [micBusy]="facade.mediaToggleBusy()"
+      [isHandRaised]="roomStore.isHandRaised()"
+      [isOnStage]="rosterStore.isOnStage(roomStore.userId())"
+      [isModerator]="roomStore.isModerator()"
+      [invisible]="!roomStore.isVisible()"
+      [refreshing]="facade.refreshingRoom()"
+      [captionEnabled]="facade.captionEnabled()"
+      [wsStatus]="bffWs.wsStatus()"
+      (toggleMic)="onMediaToggle()"
+      (toggleCamOrShare)="onToggleCamOrShare()"
+      (toggleHand)="onToggleHand()"
+      (gift)="facade.onGift()"
+      (pitch)="facade.onPitch()"
+      (managers)="facade.onManagers()"
+      (reward)="facade.onReward()"
+      (toggleCaption)="facade.onToggleCaption()"
+      (toggleInvisible)="onToggleInvisible()"
+      (refresh)="onRefreshRoom()"
+      (leave)="onLeave()"
+      (minimize)="onMinimize()"
+    />
+  </div>
+
+  <section class="stage-section">
+    <app-stage-grid [users]="rosterStore.stageUsers()" [speakingUids]="rcs.speakingUids()" (userClick)="facade.onStageUserClick($event)" />
+  </section>
+
+  <section class="audience-section">
+    <app-audience-list
+      [users]="facade.audienceWithGhosts()"
+      [speakingUids]="rcs.speakingUids()"
+      [currentUserId]="roomStore.userId()"
+      [canInviteToStage]="roomStore.isHost()"
+      [inviteBusy]="facade.inviteBusy()"
+      (userClick)="facade.onAudienceUserClick($event)"
+      (inviteToStage)="facade.onInviteToStage($event)"
+    />
+  </section>
+
+  <aside class="comments-section">
+    <app-comments-panel
+      [comments]="commentsStore.comments()"
+      [captions]="commentsStore.captions()"
+      [currentUserId]="roomStore.userId()"
+      [refreshing]="facade.refreshingComments()"
+      [typingNames]="facade.typingNames()"
+      [disabled]="!roomStore.isVisible()"
+      (sendComment)="onSendComment($event)"
+      (typing)="facade.onTyping()"
+      (refresh)="onRefreshComments()"
+      (loadCaptions)="facade.onLoadCaptions()"
+    />
+  </aside>
+</div>
+
+@if (facade.showSignin()) {
+  <app-signin-panel
+    [cname]="roomStore.cname() ?? ''"
+    [hostId]="roomStore.userId()"
+    [roomLevel]="roomStore.roomLevelInfo()?.level ?? 1"
+    [roomLevelIcon]="roomStore.roomLevelInfo()?.levelIconV2 ?? roomStore.roomLevelInfo()?.levelIcon ?? null"
+    (onClose)="facade.showSignin.set(false)"
+  />
+}

@@ -1,0 +1,77 @@
+/* Container queries: parent (.app-main) owns viewport height and
+   bottom-nav padding. The room page must NOT compute its own vh.
+   Layout adapts to the slot width via @container, not viewport. */
+:host {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  container-type: inline-size;
+  container-name: video-room;
+}
+
+.room-layout {
+  display: grid;
+  grid-template-rows: 1fr;
+  height: 100%;
+  overflow: hidden;
+}
+
+.room-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.left-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: var(--room-header-height) minmax(0, 1fr) auto;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.room-header {
+  overflow: visible;
+  position: relative;
+  z-index: var(--z-overlay);
+}
+
+.stage-section {
+  overflow: hidden;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 1fr;
+  border-radius: var(--radius-xl);
+}
+.stage-section app-video-stage-grid {
+  height: 100%;
+  overflow: hidden;
+}
+.audience-section {
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+  flex-shrink: 0;
+}
+.comments-section {
+  height: 100%;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Mobile: single-column body. Comments are visible (matches the voice
+   room's mobile shape) so users can read and post on mobile. The
+   comments section gets the remaining flex space; the stage and
+   audience use their natural heights. */
+@container video-room (max-width: 1023.98px) {
+  .room-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  .comments-section {
+    height: auto;
+    min-height: 240px;
+    max-height: 50%;
+  }
+}

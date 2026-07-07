@@ -1,0 +1,78 @@
+:host {
+  display: block;
+  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden;
+  container-type: size;
+  container-name: room-page;
+  /* The shell's .app-main padding provides the top + bottom insets in
+     every viewport (mobile-immersive safe area, desktop-immersive
+     app-header height, non-immersive standard chrome). See app.ts :host
+     for the --shell-inset-top / --shell-inset-bottom contract. */
+}
+
+/* ── Mobile-first: flex column ──────────────────────────────────────────
+   The header lives in normal document flow — no position:fixed hack.
+   Stage caps at 45dvh with internal scroll for full 8-seat rooms.
+   Audience auto-sizes (the component starts collapsed on mobile).
+   Comments absorbs all remaining space via flex:1. */
+.room-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.room-header {
+  flex-shrink: 0;
+  position: relative;
+  z-index: var(--z-overlay);
+}
+
+.stage-section {
+  flex-shrink: 0;
+  max-height: 45dvh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.stage-section app-stage-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.audience-section {
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.comments-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Desktop: two-column sidebar layout ─────────────────────────────────
+   Gate on both width AND height — landscape phones have enough width
+   but not enough height for the sidebar to be useful (comments would
+   be squished to ~82px). */
+@container room-page (min-width: 1024px) and (min-height: 500px) {
+  .room-layout {
+    display: grid;
+    grid-template-areas:
+      "header   comments"
+      "stage    comments"
+      "audience comments";
+    grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
+    grid-template-rows: auto auto minmax(22cqh, 1fr);
+  }
+
+  .room-header    { grid-area: header; max-height: none; }
+  .stage-section  { grid-area: stage;  max-height: none; }
+  .audience-section { grid-area: audience; }
+  .comments-section { grid-area: comments; }
+}
