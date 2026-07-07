@@ -301,6 +301,12 @@
   background: var(--rh-btn-gold-hover-bg);
   border-color: var(--rh-btn-gold-hover-border);
 }
+.toolbar-btn.c-hand span {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  margin-left: var(--space-1);
+  white-space: nowrap;
+}
 .toolbar-btn.c-hand-join {
   color: var(--rh-btn-primary-fg);
   background: var(--rh-btn-primary-bg);

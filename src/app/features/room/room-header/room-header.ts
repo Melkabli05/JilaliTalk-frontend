@@ -36,6 +36,7 @@ import {
   LucideMinimize2,
 } from '@lucide/angular';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
+import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
 import { MicButtonComponent } from '../ui/mic-button';
 import { AvSettingsComponent } from '../audio-settings/av-settings';
 
@@ -209,6 +210,9 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
                 @default {
                   <svg aria-hidden="true" lucideHand [size]="18"></svg>
                 }
+              }
+              @if (showHandLabel()) {
+                <span>Raise Hand</span>
               }
             </button>
           </div>
@@ -486,6 +490,7 @@ export class RoomHeaderComponent {
 
   private copyResetTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly clipboard = inject(Clipboard);
+  private readonly roomsPrefs = inject(RoomsPreferencesStore);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
@@ -522,6 +527,8 @@ export class RoomHeaderComponent {
 
   readonly visibilityTooltip = computed(() => (this.invisible() ? 'Go visible' : 'Go invisible'));
 
+  readonly showHandLabel = computed(() => !this.roomsPrefs.hasSeenRaiseHandHint());
+
   copyCname(): void {
     const c = this.cname();
     if (!c || !this.clipboard.copy(c)) return;
@@ -541,6 +548,9 @@ export class RoomHeaderComponent {
   }
   onToggleHand(): void {
     this.toggleHand.emit();
+    if (!this.roomsPrefs.hasSeenRaiseHandHint()) {
+      this.roomsPrefs.markRaiseHandHintSeen();
+    }
   }
   onGift(): void {
     this.gift.emit();
