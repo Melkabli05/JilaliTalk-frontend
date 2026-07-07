@@ -2,7 +2,7 @@ import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
-import { UserInfo } from '@core/services/user-info.service';
+import type { UserInfo } from '@core/services/user-info.service';
 import {
   ProfileBundleResponse,
   SocialListEnvelope,
