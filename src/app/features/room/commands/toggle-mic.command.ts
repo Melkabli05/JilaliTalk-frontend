@@ -8,20 +8,22 @@ import { RoomRosterStore } from '../roster/roster-store';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { ToastService } from '@core/services/toast.service';
 
+/**
+ * A moderator/host who isn't visually on the stage grid taps the mic button directly (it's
+ * shown to every visible room member, not gated by stage status). Previously this disconnected
+ * and fully reconnected the RTC session in ghost mode before calling setMicEnabled(true) — but
+ * disconnect() nulls out the mic track, ghost-mode reconnect skips the setClientRole('host')
+ * promotion needed to publish, and setMicEnabled() only toggles an *existing* track, so this
+ * was a guaranteed no-op at best. Fixed to match Agora's own recommended flow: stay in the same
+ * RTC session and publish directly — the client is already in non-ghost mode from the initial
+ * room join, so startAudio() correctly promotes it to host and creates+publishes the track.
+ */
 async function talkFromUnderstage(
   roomStore: RoomStore,
   rcs: RoomConnectionService,
-  agoraAppId: string,
 ): Promise<void> {
-  const cname = roomStore.cname();
-  if (!cname) throw new Error('No active room');
-  const uid = roomStore.userId();
   const rtcInfo = roomStore.rtcInfo();
-  const token = rtcInfo?.token ?? null;
-  const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : agoraAppId;
-  await rcs.agora.disconnect();
-  await rcs.agora.connect(cname, uid, token, appId, true);
-  await rcs.setMicEnabled(true);
+  await rcs.startAudio(rtcInfo?.token ?? null);
 }
 
 function notifyStageMicState(
@@ -43,8 +45,8 @@ function notifyStageMicState(
 
 /**
  * Voice-room mic toggle: manages the underlying RTC track (publisher token fetch for an
- * on-stage user, "understage" reconnect for a moderator who isn't yet on stage) and
- * notifies other stage members' mute state. Video's equivalent is toggle-cam.command.ts —
+ * on-stage user, direct publish for a moderator talking without being on the visual stage)
+ * and notifies other stage members' mute state. Video's equivalent is toggle-cam.command.ts —
  * kept separate rather than merged since the two media types have different RTC track
  * setup (audio-only publisher flow here vs video here has no "understage" concept).
  */
@@ -53,7 +55,6 @@ export async function toggleMic(
   rosterStore: RoomRosterStore,
   rcs: RoomConnectionService,
   api: RoomApi,
-  agoraAppId: string,
   destroyRef: DestroyRef,
   destroying: () => boolean,
   toast: ToastService,
@@ -78,7 +79,7 @@ export async function toggleMic(
             : null;
           await rcs.startAudio(publisherToken);
         } else {
-          await talkFromUnderstage(roomStore, rcs, agoraAppId);
+          await talkFromUnderstage(roomStore, rcs);
         }
       } else {
         await rcs.setMicEnabled(true);

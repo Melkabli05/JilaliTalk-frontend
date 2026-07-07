@@ -223,7 +223,6 @@ export class RoomPageComponent {
       this.rosterStore,
       this.rcs,
       this.api,
-      this.agoraAppId,
       this.destroyRef,
       () => this.facade.destroying(),
       this.toast,

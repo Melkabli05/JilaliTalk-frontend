@@ -179,14 +179,19 @@ export class AgoraRtcService implements RealtimeLifecycle {
     AEC: boolean;
     AGC: boolean;
     ANS: boolean;
-    encoderConfig: 'music_standard';
+    encoderConfig: 'speech_standard';
   } {
     const level = this._noiseSuppressionLevel();
     return {
       AEC: true,
       AGC: true,
       ANS: level !== 0,
-      encoderConfig: 'music_standard',
+      // speech_standard (32kHz mono, 24Kbps) is Agora's recommended profile for
+      // voice-chat call quality/smooth transmission under real network conditions —
+      // music_standard (48kHz, 32Kbps, tuned for high-fidelity/no-quality-change-on-
+      // device-switch) is the wrong tool for a multi-participant voice room and is
+      // more prone to artifacts under jitter/packet loss.
+      encoderConfig: 'speech_standard',
     };
   }
 
