@@ -79,24 +79,27 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
       }
 
             <div class="card-actions">
+        <!-- Primary: visible join (most common case) -->
         <app-button
           variant="primary"
           size="sm"
+          class="join-visible-btn"
           (click)="handleJoinVisible($event)"
-          [attr.aria-label]="'Join ' + room().channel.name + ' as visible'"
+          [attr.aria-label]="'Join ' + room().channel.name"
         >
           <svg aria-hidden="true" lucideEye [size]="11"></svg>
-          Visible
+          Join
         </app-button>
-        <app-button
-          variant="soft-warm"
-          size="sm"
+
+        <!-- Secondary: invisible join — small icon button -->
+        <button
+          type="button"
+          class="invisible-btn"
+          aria-label="Join invisible"
           (click)="handleJoinInvisible($event)"
-          [attr.aria-label]="'Join ' + room().channel.name + ' as invisible'"
         >
-          <svg aria-hidden="true" lucideEyeOff [size]="11"></svg>
-          Invisible
-        </app-button>
+          <svg aria-hidden="true" lucideEyeOff [size]="13"></svg>
+        </button>
       </div>
     </article>
   `,
@@ -252,9 +255,24 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
 
         .card-actions {
       display: flex;
-      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-2);
       margin-top: auto;
     }
+
+        .invisible-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      border: 1.5px solid var(--color-border); border-radius: var(--radius-lg);
+      background: transparent; color: var(--color-text-muted); cursor: pointer; flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+      &:hover { border-color: var(--color-primary-200); color: var(--color-primary-600); background-color: var(--color-primary-50); }
+      &:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+      :host-context(.dark) & { border-color: var(--color-neutral-600); color: var(--color-neutral-400); background: transparent;
+        &:hover { border-color: var(--color-primary-700); color: var(--color-primary-300); background-color: var(--color-primary-900); } }
+    }
+
+    .join-visible-btn { flex: 1; }
 
         :host-context(.dark) {
       .room-card {

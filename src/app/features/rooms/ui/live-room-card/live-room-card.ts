@@ -111,22 +111,21 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
           <app-button
             variant="primary"
             size="sm"
+            class="join-visible-btn"
             (click)="handleJoin($event)"
             [disabled]="room().channel.totalUserCount === 0"
-            class="action-btn"
           >
             Join
           </app-button>
-          <app-button
-            variant="soft-warm"
-            size="sm"
-            (click)="handleInvisibleJoin($event)"
-            [disabled]="room().channel.totalUserCount === 0"
+          <button
+            type="button"
+            class="invisible-btn"
             aria-label="Join invisible"
+            [disabled]="room().channel.totalUserCount === 0"
+            (click)="handleInvisibleJoin($event)"
           >
-            <svg aria-hidden="true" lucideEyeOff [size]="11"></svg>
-            Invisible
-          </app-button>
+            <svg aria-hidden="true" lucideEyeOff [size]="13"></svg>
+          </button>
         </div>
       </div>
     </article>
@@ -338,13 +337,24 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
 
     .card-actions {
       display: flex;
+      align-items: center;
       gap: var(--space-2);
       margin-top: auto;
     }
 
-    .action-btn {
-      flex: 1;
+    .invisible-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      border: 1.5px solid var(--color-border); border-radius: var(--radius-lg);
+      background: transparent; color: var(--color-text-muted); cursor: pointer; flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+      &:hover { border-color: var(--color-primary-200); color: var(--color-primary-600); background-color: var(--color-primary-50); }
+      &:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+      :host-context(.dark) & { border-color: var(--color-neutral-600); color: var(--color-neutral-400); background: transparent;
+        &:hover { border-color: var(--color-primary-700); color: var(--color-primary-300); background-color: var(--color-primary-900); } }
     }
+
+    .join-visible-btn { flex: 1; }
 
     .tag {
       display: inline-flex;
