@@ -11,9 +11,7 @@ import { EventFeedStore } from '../comments/event-feed-store';
 import { ModStore, MOD_READER, MOD_WRITER } from '../moderation/mod-store';
 import { ManagersStore, MANAGERS_READER, MANAGERS_WRITER } from '../moderation/managers-store';
 import { SigninPanelComponent } from '../signin/signin-panel';
-import { GiftsStore, GIFTS_READER, GIFTS_WRITER } from '../gifts/gifts-store';
 import { InRoomRtmStore, IN_ROOM_RTM_READER, IN_ROOM_RTM_WRITER } from '../in-room-rtm/in-room-rtm-store';
-import { GoodieStore, GOODIE_READER, GOODIE_WRITER } from '../goodie-bag/goodie-store';
 import { StageUser, VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../models/room-model';
 import { UserRole } from '@core/models/user-role';
 import { SendEvent } from '../comments/comment-input';
@@ -50,15 +48,9 @@ import { RoomPageBase } from './room-page-base';
     ModStore,
     { provide: MOD_READER, useExisting: ModStore },
     { provide: MOD_WRITER, useExisting: ModStore },
-    GiftsStore,
-    { provide: GIFTS_READER, useExisting: GiftsStore },
-    { provide: GIFTS_WRITER, useExisting: GiftsStore },
     InRoomRtmStore,
     { provide: IN_ROOM_RTM_READER, useExisting: InRoomRtmStore },
     { provide: IN_ROOM_RTM_WRITER, useExisting: InRoomRtmStore },
-    GoodieStore,
-    { provide: GOODIE_READER, useExisting: GoodieStore },
-    { provide: GOODIE_WRITER, useExisting: GoodieStore },
     ManagersStore,
     { provide: MANAGERS_READER, useExisting: ManagersStore },
     { provide: MANAGERS_WRITER, useExisting: ManagersStore },

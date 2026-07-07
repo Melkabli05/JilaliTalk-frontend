@@ -1,8 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject, signal, input, effect, computed, DestroyRef } from '@angular/core';
-import { Router } from '@angular/router';
-import { Dialog } from '@angular/cdk/dialog';
-import { EMPTY, firstValueFrom } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { Component, ChangeDetectionStrategy, inject, signal, input, effect, computed } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RoomStore } from '../store/room-store';
 import { JoinCancelledError } from '../store/base-room-store';
@@ -10,13 +7,11 @@ import { StageStore, STAGE_READER, STAGE_WRITER } from '../stage/stage-store';
 import { AudienceStore, AUDIENCE_READER, AUDIENCE_WRITER } from '../audience/audience-store';
 import { CommentsStore, COMMENTS_READER, COMMENTS_WRITER } from '../comments/comments-store';
 import { EventFeedStore } from '../comments/event-feed-store';
-import { ModStore, ModAction, MOD_READER, MOD_WRITER } from '../moderation/mod-store';
+import { ModStore, MOD_READER, MOD_WRITER } from '../moderation/mod-store';
 import { ManagersStore, MANAGERS_READER, MANAGERS_WRITER } from '../moderation/managers-store';
 import { SigninPanelComponent } from '../signin/signin-panel';
-import { GiftsStore, GIFTS_READER, GIFTS_WRITER } from '../gifts/gifts-store';
 import { InRoomRtmStore, IN_ROOM_RTM_READER, IN_ROOM_RTM_WRITER } from '../in-room-rtm/in-room-rtm-store';
-import { GoodieStore, GOODIE_READER, GOODIE_WRITER } from '../goodie-bag/goodie-store';
-import { StageUser, AudienceUser, LiveRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../models/room-model';
+import { LiveRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../models/room-model';
 import { SendEvent } from '../comments/comment-input';
 import { AGORA_APP_ID_VIDEO } from '@core/tokens/agora-app-id.token';
 import { RoomHeaderComponent } from '../room-header';
@@ -26,7 +21,6 @@ import { CommentsPanelComponent } from '../comments/comments-panel';
 import { ManagersModalComponent } from '../moderation/managers-modal';
 import { AvSettingsComponent } from '../audio-settings/av-settings';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
 import { RoomPageBase } from './room-page-base';
 
@@ -57,15 +51,9 @@ import { RoomPageBase } from './room-page-base';
     ModStore,
     { provide: MOD_READER, useExisting: ModStore },
     { provide: MOD_WRITER, useExisting: ModStore },
-    GiftsStore,
-    { provide: GIFTS_READER, useExisting: GiftsStore },
-    { provide: GIFTS_WRITER, useExisting: GiftsStore },
     InRoomRtmStore,
     { provide: IN_ROOM_RTM_READER, useExisting: InRoomRtmStore },
     { provide: IN_ROOM_RTM_WRITER, useExisting: InRoomRtmStore },
-    GoodieStore,
-    { provide: GOODIE_READER, useExisting: GoodieStore },
-    { provide: GOODIE_WRITER, useExisting: GoodieStore },
     ManagersStore,
     { provide: MANAGERS_READER, useExisting: ManagersStore },
     { provide: MANAGERS_WRITER, useExisting: ManagersStore },

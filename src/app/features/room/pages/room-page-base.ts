@@ -1,16 +1,14 @@
-import { Component, ChangeDetectionStrategy, inject, signal, input, effect, computed, DestroyRef, Injector, Type } from '@angular/core';
+import { inject, signal, input, effect, computed, DestroyRef, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
-import { EMPTY, firstValueFrom, forkJoin } from 'rxjs';
+import { EMPTY, firstValueFrom } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { StageStore } from '../stage/stage-store';
 import { AudienceStore } from '../audience/audience-store';
 import { CommentsStore } from '../comments/comments-store';
 import { ModStore, ModAction } from '../moderation/mod-store';
-import { GiftsStore } from '../gifts/gifts-store';
 import { InRoomRtmStore } from '../in-room-rtm/in-room-rtm-store';
-import { GoodieStore } from '../goodie-bag/goodie-store';
 import { ManagersStore } from '../moderation/managers-store';
 import { RoomApi } from '../api/room-api';
 import { RoomStore } from '../store/room-store';
@@ -59,8 +57,6 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
   protected readonly commentsStore = inject(CommentsStore);
   protected readonly modStore = inject(ModStore);
   protected readonly rtmStore = inject(InRoomRtmStore);
-  protected readonly giftsStore = inject(GiftsStore);
-  protected readonly goodieStore = inject(GoodieStore);
   protected readonly managersStore = inject(ManagersStore);
   protected readonly router = inject(Router);
   protected readonly activeCallStore = inject(ActiveCallStore);
@@ -234,10 +230,8 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
     this.audienceStore.reset();
     this.commentsStore.reset();
     this.rtmStore.reset();
-    this.giftsStore.reset();
     this.modStore.reset();
     this.managersStore.reset();
-    this.goodieStore.endGame();
   }
 
   async onRefreshRoom(): Promise<void> {
