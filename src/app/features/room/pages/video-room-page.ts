@@ -403,7 +403,20 @@ export class VideoRoomPageComponent extends RoomPageBase {
   }
 
   protected override async makeVisible(cname: string, busiType: number): Promise<void> {
-    let liveInfo: LiveRoomInfo;
+    // joinRoom is the authoritative call — if it fails the user isn't
+    // server-side joined, so we must NOT flip local state to visible
+    // (would leave the user in an inconsistent "visible" state with
+    // no upstream record). The bundle fetch is best-effort: if it
+    // fails we still flip visible and connect WS, but the toast warns
+    // and the stage/audience lists stay empty until the next reconcile.
+    try {
+      await firstValueFrom(this.api.joinRoom(cname, busiType));
+    } catch {
+      this.toast.error('Failed to rejoin visibly');
+      return;
+    }
+
+    let liveInfo: LiveRoomInfo | undefined;
     let stage: StageUsersResponse | undefined;
     let audience: AudienceUsersResponse | undefined;
     try {
@@ -413,23 +426,15 @@ export class VideoRoomPageComponent extends RoomPageBase {
       audience = bundle.audienceUsers;
     } catch {
       this.toast.error('Failed to rejoin — room info unavailable');
-      return;
-    }
-
-    try {
-      await firstValueFrom(this.api.joinRoom(cname, busiType));
-    } catch {
-      this.toast.error('Failed to rejoin visibly');
-      return;
     }
 
     this.roomStore.setVisibility(true);
     this.syncVisibilityToUrl(true);
-    this.bffWs.connect(cname, liveInfo.hostInfo?.userId ?? 0, busiType);
+    this.bffWs.connect(cname, liveInfo?.hostInfo?.userId ?? 0, busiType);
     this.audienceStore.setCname(cname);
     this.stageStore.reset();
-    this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
-    this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    if (stage?.list) this.stageStore.updateStageUsers([...stage.list]);
+    if (audience?.list) this.audienceStore.updateAudienceUsers([...audience.list]);
     this.activeCallStore.setInvisible(false);
     this.toast.success('You are now visible');
   }

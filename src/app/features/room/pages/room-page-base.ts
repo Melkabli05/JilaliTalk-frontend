@@ -358,7 +358,7 @@ export abstract class RoomPageBase {
   }
 
   /** Builds the API payload for sendComment from current room store + event. */
-  protected buildCommentPayload(event: SendEvent): import('../data/room-model').SendCommentPayload {
+  protected buildCommentPayload(event: SendEvent, clientNonce?: string): import('../data/room-model').SendCommentPayload {
     return buildSendCommentPayload(
       {
         cname: this.roomStore.cname(),
@@ -369,6 +369,7 @@ export abstract class RoomPageBase {
         role: this.roomStore.myRole(),
       },
       event,
+      clientNonce,
     );
   }
 

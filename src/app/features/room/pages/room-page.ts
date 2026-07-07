@@ -378,29 +378,31 @@ export class RoomPageComponent extends RoomPageBase {
       firstValueFrom(this.api.joinRoom(cname, busiType)),
     ]);
 
-    if (bundleResult.status === 'rejected') {
-      this.toast.error('Failed to rejoin — room info unavailable');
-      return;
-    }
     if (joinResult.status === 'rejected') {
       this.toast.error('Failed to rejoin visibly');
       return;
     }
 
-    const { voiceRoomInfo: voiceInfo, stageUsers: stage, audienceUsers: audience } = bundleResult.value;
+    const bundleOk = bundleResult.status === 'fulfilled' ? bundleResult.value : null;
+    if (!bundleOk) {
+      this.toast.error('Failed to rejoin — room info unavailable');
+    }
+    const voiceInfo = bundleOk?.voiceRoomInfo;
+    const stage = bundleOk?.stageUsers;
+    const audience = bundleOk?.audienceUsers;
 
     this.roomStore.setVisibility(true);
     this.syncVisibilityToUrl(true);
     this.bffWs.connect(
       cname,
-      voiceInfo.hostInfo?.userId ?? 0,
+      voiceInfo?.hostInfo?.userId ?? 0,
       busiType,
-      voiceInfo.configInfo?.heartbeatSecond ?? null,
+      voiceInfo?.configInfo?.heartbeatSecond ?? null,
     );
     this.audienceStore.setCname(cname);
     this.stageStore.reset();
-    this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
-    this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    if (stage?.list) this.stageStore.updateStageUsers([...stage.list]);
+    if (audience?.list) this.audienceStore.updateAudienceUsers([...audience.list]);
     // Snapshot is meaningless for a "go visible" toggle (only relevant to a restore).
     // Update it to match the new visible state so a future minimize→restore cycle
     // doesn't capture stale invisible=true.
@@ -579,10 +581,15 @@ export class RoomPageComponent extends RoomPageBase {
     const nationality = this.roomStore.nationality() || null;
     const role = this.roomStore.myRole();
 
-    const payload = this.buildCommentPayload(event);
+    const clientNonce = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID()
+      : `local-${this.roomStore.userId()}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    const payload = this.buildCommentPayload(event, clientNonce);
 
     this.commentsStore.addComment({
       _id: `local-${this.roomStore.userId()}-${Date.now()}`,
+      clientNonce,
       createdAtMs: Date.now(),
       updatedAtMs: Date.now(),
       userId: this.roomStore.userId(),

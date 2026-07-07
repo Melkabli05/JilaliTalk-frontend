@@ -20,6 +20,9 @@ export interface CommentEvent {
   readonly text: string;
   readonly ts: number;
   readonly replyInfo: ReplyInfoEvent | null;
+  /** Echoed back from the sendComment request payload when the BFF
+   *  supports it. Lets the sender dedup the optimistic insert. */
+  readonly clientNonce?: string;
   readonly nationality: string | null;
   readonly role: number;
   readonly vipType: number;

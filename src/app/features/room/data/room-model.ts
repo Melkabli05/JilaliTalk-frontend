@@ -199,6 +199,13 @@ export type CommentOrEvent = Comment | EventCard;
 
 export interface Comment {
   readonly _id: string;
+  /**
+   * Client-generated nonce for optimistic-insert dedup. Present on
+   * locally-inserted comments (before the server echo), then cleared
+   * once the echo lands and the temp row is replaced. Never sent
+   * over the wire to other clients.
+   */
+  readonly clientNonce?: string;
   /** Server-side Unix→milliseconds converted value — no client transform needed. */
   readonly createdAtMs: number;
   readonly updatedAtMs: number;
@@ -245,6 +252,10 @@ export interface SendCommentPayload {
   readonly nationality: string | null;
   readonly role: number;
   readonly text: string;
+  /** Client-generated UUID; echoed back on the WS comment event so the
+   *  sender can replace the optimistic row with the server-authoritative
+   *  one (dedup-by-clientNonce). */
+  readonly clientNonce?: string;
   readonly replyInfo?: {
     readonly msgId: string;
     readonly fromId: number;

@@ -15,6 +15,7 @@ interface CommentAuthorContext {
 export function buildSendCommentPayload(
   ctx: CommentAuthorContext,
   event: SendEvent,
+  clientNonce?: string,
 ): SendCommentPayload {
   return {
     cname: ctx.cname ?? '',
@@ -24,6 +25,7 @@ export function buildSendCommentPayload(
     nationality: ctx.nationality || null,
     role: ctx.role,
     text: event.text,
+    ...(clientNonce ? { clientNonce } : {}),
     replyInfo: event.replyInfo
       ? {
           msgId: event.replyInfo.msgId,

@@ -202,6 +202,7 @@ export class CommentsStore extends CollectionStore<Comment> {
             hitBad: event.comment.hitBad,
             bubbleAnimalType: event.comment.bubbleAnimalType,
             bubbleAnimalUrl: event.comment.bubbleAnimalUrl,
+            ...(event.comment.clientNonce ? { clientNonce: event.comment.clientNonce } : {}),
           });
           break;
 
@@ -316,6 +317,14 @@ export class CommentsStore extends CollectionStore<Comment> {
 
   addComment(comment: Comment): void {
     this.collection.update((list) => {
+      if (comment.clientNonce) {
+        const idx = list.findIndex((c) => c.clientNonce === comment.clientNonce);
+        if (idx >= 0) {
+          const next = list.slice();
+          next[idx] = comment;
+          return next;
+        }
+      }
       if (comment._id && list.some((c) => c._id === comment._id)) return list;
       return [...list, comment];
     });
