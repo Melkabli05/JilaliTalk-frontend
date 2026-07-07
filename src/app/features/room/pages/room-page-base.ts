@@ -13,7 +13,8 @@ import { InRoomRtmStore } from '../feature/in-room-rtm/in-room-rtm-store';
 import { GoodieStore } from '../feature/goodie-bag/goodie-store';
 import { ManagersStore } from '../feature/moderation/managers-store';
 import { RoomApi } from '../data/room-api';
-import { AudienceUser, StageUser, RoomLevelInfo, RtcInfo } from '../data/room-model';
+import { RoomStore } from '../state/room-store';
+import { AudienceUser, StageUser } from '../data/room-model';
 import { SendEvent } from '../feature/comments/comment-input';
 import { ToastService } from '@core/services/toast.service';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
@@ -31,9 +32,15 @@ import { UserActionModalComponent } from '../feature/moderation/user-action-moda
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal/user-info-modal.component';
 import { ActiveCallStore } from '@store/active-call.store';
 
-export abstract class RoomPageBase {
+/**
+ * Generic over the concrete room store so voice and video pages both extend
+ * this without a separate RoomStoreContract duck-type — both now inject the
+ * same unified RoomStore (see state/room-store.ts), so the abstract property
+ * can be typed directly against it instead of a structural interface.
+ */
+export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
 
-  protected abstract readonly roomStore: RoomStoreContract;
+  protected abstract readonly roomStore: TStore;
 
   protected abstract readonly cname: { (): string };
 
@@ -601,42 +608,4 @@ export abstract class RoomPageBase {
     if (fromStage) return fromStage;
     return this.userInfoService.getUserInfo(userId)?.nickname ?? 'Someone';
   }
-}
-
-export interface RoomStoreContract {
-  userId(): number;
-  cname(): string | null;
-  busiType(): number;
-  nickname(): string | null;
-  headUrl(): string | null;
-  nationality(): string | null;
-  myRole(): number;
-  isHost(): boolean;
-  isModerator(): boolean;
-  isVisible(): boolean;
-  isMicOn(): boolean;
-  /** Voice rooms have no camera concept — only VideoRoomStore implements this. */
-  isCamOn?(): boolean;
-  isHandRaised(): boolean;
-  name(): string;
-  topic(): string;
-  roomLevelInfo(): RoomLevelInfo | null;
-  rtcInfo(): RtcInfo | null;
-  setUserId(v: number): void;
-  setRole(v: number): void;
-  setNickname(v: string): void;
-  setHeadUrl(v: string): void;
-  setNationality(v: string): void;
-  setRoomName(v: string): void;
-  setRoomTopic(v: string): void;
-  setRtcInfo(v: RtcInfo | null): void;
-  setRoomLevelInfo(v: RoomLevelInfo | null): void;
-  setHandRaised(v: boolean): void;
-  /** Voice rooms have no camera concept — only VideoRoomStore implements this. */
-  setCamOn?(v: boolean): void;
-  setMicOn(v: boolean): void;
-  setCname(v: string): void;
-  setVisibility(v: boolean): void;
-  enterRoom(cname: string, busiType: number, visibleOnFreshJoin: boolean): Promise<void>;
-  leaveRoom(): Promise<void>;
 }

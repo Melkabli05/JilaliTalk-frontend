@@ -23,7 +23,7 @@ import { StageGridComponent } from '../feature/stage/stage-grid';
 import { AudienceListComponent } from '../feature/audience/audience-list';
 import { CommentsPanelComponent } from '../feature/comments/comments-panel';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
-import { RoomPageBase, RoomStoreContract } from './room-page-base';
+import { RoomPageBase } from './room-page-base';
 
 @Component({
   selector: 'app-room-page',
@@ -208,7 +208,7 @@ export class RoomPageComponent extends RoomPageBase {
     transform: (v: string | boolean | undefined) => v === 'true' || v === true || v === '1',
   });
 
-  readonly roomStore: RoomStoreContract = inject(RoomStore);
+  readonly roomStore = inject(RoomStore);
 
   protected readonly leaveNavTarget = ['/rooms'];
 

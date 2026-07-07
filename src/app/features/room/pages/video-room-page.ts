@@ -4,7 +4,7 @@ import { Dialog } from '@angular/cdk/dialog';
 import { EMPTY, firstValueFrom } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { VideoRoomStore } from '../state/video-room-store';
+import { RoomStore } from '../state/room-store';
 import { JoinCancelledError } from '../state/base-room-store';
 import { StageStore } from '../state/stage-store';
 import { AudienceStore } from '../state/audience-store';
@@ -28,7 +28,7 @@ import { AvSettingsComponent } from '../feature/audio-settings/av-settings';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
-import { RoomPageBase, RoomStoreContract } from './room-page-base';
+import { RoomPageBase } from './room-page-base';
 
 @Component({
   selector: 'app-video-room-page',
@@ -43,7 +43,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    VideoRoomStore,
+    RoomStore,
     StageStore,
     AudienceStore,
     EventFeedStore,
@@ -65,7 +65,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
               [topic]="roomStore.topic()"
               [cname]="roomStore.cname() ?? ''"
               [isMicOn]="false"
-              [isCamOn]="videoRoomStore.isCamOn()"
+              [isCamOn]="roomStore.isCamOn()"
               [camBusy]="mediaToggleBusy()"
               [micSpeaking]="selfSpeaking()"
               [isHandRaised]="roomStore.isHandRaised()"
@@ -235,12 +235,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
     transform: (v: string | boolean | undefined) => v === 'true' || v === true || v === '1',
   });
 
-  readonly roomStore: RoomStoreContract = inject(VideoRoomStore);
-  /** Same singleton as `roomStore` above, injected again with its concrete
-   *  type for the camera-specific calls below — VideoRoomStore always
-   *  implements isCamOn/setCamOn (unlike the shared RoomStoreContract,
-   *  where they're optional because voice rooms have no camera). */
-  protected readonly videoRoomStore = inject(VideoRoomStore);
+  readonly roomStore = inject(RoomStore);
 
   readonly showSettings = signal(false);
 
@@ -483,13 +478,13 @@ export class VideoRoomPageComponent extends RoomPageBase {
   }
 
   private async doToggleCam(): Promise<void> {
-    const isOn = this.videoRoomStore.isCamOn();
+    const isOn = this.roomStore.isCamOn();
     const uid = this.roomStore.userId();
 
     if (isOn) {
       await this.rcs.setCamEnabled(false);
       if (this._destroying()) return;
-      this.videoRoomStore.setCamOn(false);
+      this.roomStore.setCamOn(false);
       this.stageStore.updateUserCamStatus(uid, false);
     } else {
       try {
@@ -503,7 +498,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
           await this.rcs.setCamEnabled(true);
         }
         if (this._destroying()) return;
-        this.videoRoomStore.setCamOn(true);
+        this.roomStore.setCamOn(true);
         this.stageStore.updateUserCamStatus(uid, true);
       } catch (err) {
         const reason = err instanceof Error ? err.message : String(err);

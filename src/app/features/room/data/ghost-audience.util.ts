@@ -7,8 +7,8 @@ import type { StageStore } from '../state/stage-store';
 import type { AudienceStore } from '../state/audience-store';
 
 /** Minimal shape this util needs from the room store — satisfied
- *  structurally by RoomStoreContract, so callers never need to cast
- *  down to a concrete BaseRoomStore subtype. */
+ *  structurally by RoomStore, so callers never need to pass more than
+ *  they actually use. */
 interface RoomIdentitySource {
   userId(): number;
   isVisible(): boolean;
