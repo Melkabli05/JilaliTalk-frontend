@@ -239,10 +239,10 @@ export class RoomPageComponent extends RoomPageBase {
     const isRestore = await this.resolveRoomEntry(cname);
     this.audienceStore.setBusiType(busiType);
     try {
-      // Single call: sets _isVisible from the active-call snapshot on a minimize→restore,
-      // or from the routed ?visible= query param on any other entry, and posts upstream
-      // join exactly when visible.
-      await this.roomStore.enterRoom(cname, busiType, this.visible());
+      const visibleOnFreshJoin = isRestore
+        ? !this.activeCallStore.isInvisible()
+        : this.visible();
+      await this.roomStore.enterRoom(cname, busiType, visibleOnFreshJoin);
     } catch (err) {
       if (err instanceof JoinCancelledError) {
         await this.router.navigate(this.leaveNavTarget);
@@ -253,17 +253,6 @@ export class RoomPageComponent extends RoomPageBase {
       }
       throw err;
     }
-    // Snapshot served its purpose for restore detection — and now becomes the
-    // "I am currently in this room" live state that other consumers (e.g. the
-    // UserInfoModal's "you're already in this room" check) can read. We update
-    // the snapshot with the current room's cname + the user's visibility + mic
-    // state, then re-derive isMicOn from the result so the snapshot stays
-    // accurate after a visible join. (The previous `clear()` made cname null
-    // while the user was in a full-screen room, which broke the modal's
-    // "already in this room" detection entirely.)
-    // Use syncCurrentRoom() (not minimize()) so the _minimized flag stays
-    // false when this is a minimize→restore — otherwise the minimized bar
-    // would re-appear on top of the just-restored room page.
     this.activeCallStore.syncCurrentRoom(
       cname,
       busiType,
@@ -271,6 +260,10 @@ export class RoomPageComponent extends RoomPageBase {
       this.roomStore.isMicOn(),
       !this.roomStore.isVisible(),
     );
+
+    if (isRestore) {
+      this.activeCallStore.restore();
+    }
 
     let voiceInfo: VoiceRoomInfo;
     let stage: StageUsersResponse | undefined;

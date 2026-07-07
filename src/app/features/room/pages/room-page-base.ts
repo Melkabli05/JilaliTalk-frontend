@@ -322,12 +322,6 @@ export abstract class RoomPageBase {
     if (this.activeCallStore.minimized() && !isRestore) {
       await this.rcs.leave().catch(() => {});
       this.activeCallStore.clear();
-    } else if (isRestore) {
-      // Minimize→restore: hide the minimized bar by clearing the
-      // minimized flag, but keep the snapshot populated so the
-      // user-info-modal's "already in this room" check still works.
-      // Without this, the bar would stay rendered after maximize.
-      this.activeCallStore.restore();
     }
     return isRestore;
   }
