@@ -1,5 +1,4 @@
-
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
@@ -14,22 +13,22 @@ import {
 } from '../models/profile.model';
 const EMPTY_SOCIAL_PAGE: SocialListPage = { pageIndex: null, more: false, count: 0, list: [] };
 const EMPTY_VISITORS_PAGE: VisitorsPage = { index: null, more: false, list: [] };
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ProfileApi {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${inject(API_BASE_URL)}/profile`;
-  
+
   bundle(userId: number): Observable<ProfileBundleResponse> {
     return this.http.get<ProfileBundleResponse>(`${this.baseUrl}/${userId}/bundle`);
   }
-  
+
   followers(pageIndex: string, pageSize: number): Observable<SocialListPage> {
     const params = new HttpParams().set('pageIndex', pageIndex).set('pageSize', pageSize);
     return this.http
       .get<SocialListEnvelope>(`${this.baseUrl}/followers`, { params })
       .pipe(map((res) => res.data ?? EMPTY_SOCIAL_PAGE));
   }
-  
+
   following(pageSize: number, title = ''): Observable<SocialListPage> {
     const params = new HttpParams()
       .set('focusTab', 0)
@@ -39,7 +38,7 @@ export class ProfileApi {
       .get<SocialListEnvelope>(`${this.baseUrl}/following`, { params })
       .pipe(map((res) => res.data ?? EMPTY_SOCIAL_PAGE));
   }
-  
+
   visitors(index: number): Observable<VisitorsPage> {
     const body = {
       device_type: 'Web',
@@ -55,7 +54,7 @@ export class ProfileApi {
       .post<VisitorsEnvelope>(`${this.baseUrl}/visitors`, body)
       .pipe(map((res) => res.data ?? EMPTY_VISITORS_PAGE));
   }
-  
+
   blocklist(): Observable<readonly BlockedUser[]> {
     return this.http
       .get<BlockListEnvelope>(`${this.baseUrl}/blocklist`)

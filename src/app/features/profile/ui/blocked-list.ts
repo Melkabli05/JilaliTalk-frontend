@@ -1,4 +1,3 @@
-
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { BlockedUser } from '../models/profile.model';

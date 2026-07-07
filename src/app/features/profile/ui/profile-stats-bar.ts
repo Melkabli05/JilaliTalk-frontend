@@ -1,4 +1,3 @@
-
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 @Component({
   selector: 'app-profile-stats-bar',

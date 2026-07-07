@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Service, inject, signal, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
@@ -14,7 +14,9 @@ const EMPTY_SOCIAL_PAGE: SocialListPage = { pageIndex: null, more: false, count:
 const EMPTY_VISITORS_PAGE: VisitorsPage = { index: null, more: false, list: [] };
 const FOLLOWERS_PAGE_SIZE = 20;
 const FOLLOWING_PAGE_SIZE = 20;
-@Injectable()
+// Page-scoped: only profile-page.component.ts injects this, via its own
+// `providers: [ProfileStore]` (see CLAUDE.md §7).
+@Service({ autoProvided: false })
 export class ProfileStore {
   private readonly api = inject(ProfileApi);
   private readonly authStore = inject(AuthStore);
@@ -29,7 +31,7 @@ export class ProfileStore {
     stream: ({ params }) => (params === undefined ? of(null) : this.api.bundle(params)),
     defaultValue: null,
   });
-  
+
   readonly bundle = computed<ProfileBundleResponse | null>(() => this._bundle() ?? this.bundleRef.value());
   readonly userInfo = computed(() => this.bundle()?.userInfo ?? null);
   readonly stats = computed(() => this.bundle()?.stats ?? null);
@@ -41,7 +43,7 @@ export class ProfileStore {
     this._bundle.set(null);
     this.bundleRef.reload();
   }
-  
+
   private readonly _followersTabActive = signal(false);
   private readonly _followersCursor = signal<string>('');
   private readonly followersRef = rxResource<SocialListPage, { cursor: string } | undefined>({
@@ -61,7 +63,7 @@ export class ProfileStore {
     const next = this.followersRef.value().pageIndex;
     if (next) this._followersCursor.set(next);
   }
-  
+
   private readonly _followingTabActive = signal(false);
   private readonly followingRef = rxResource<SocialListPage, true | undefined>({
     params: () => (this._followingTabActive() ? true : undefined),
@@ -76,12 +78,7 @@ export class ProfileStore {
   activateFollowingTab(): void {
     this._followingTabActive.set(true);
   }
-  
-  
-  
-  
-  
-  
+
   private readonly _visitorsTabActive = signal(false);
   private readonly _visitorsCursor = signal(0);
   private readonly visitorsRef = rxResource<VisitorsPage, { index: number } | undefined>({
@@ -101,7 +98,7 @@ export class ProfileStore {
     const next = this.visitorsRef.value().index;
     if (next != null) this._visitorsCursor.set(next);
   }
-  
+
   private readonly _blockedTabActive = signal(false);
   private readonly blockedRef = rxResource<readonly BlockedUser[], true | undefined>({
     params: () => (this._blockedTabActive() ? true : undefined),
