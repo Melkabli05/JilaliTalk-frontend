@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   HostListener,
   computed,
@@ -11,6 +12,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LucideX, LucideUserPlus } from '@lucide/angular';
 import { ProfileApi } from '@features/profile/data-access/profile-api';
 import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
@@ -119,6 +121,8 @@ export class MessageNewContactPanelComponent {
   // ── View children ─────────────────────────────────────────────
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
 
+  private readonly destroyRef = inject(DestroyRef);
+
   private readonly api = inject(ProfileApi);
 
   constructor() {
@@ -164,7 +168,7 @@ export class MessageNewContactPanelComponent {
     }
     this.loading.update(l => ({ ...l, byId: true }));
     this.byIdResult.set(null);
-    this.api.userInfo(userId).subscribe({
+    this.api.userInfo(userId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (info) => {
         this.byIdResult.set(info);
         this.idError.set(null);
@@ -207,27 +211,13 @@ export class MessageNewContactPanelComponent {
   }
 
   private fetchFollowing(append: boolean): void {
+    // Tied to the "Following" tab — call api.following and write to the following signal.
     const pageIndex = append ? (this.cursor().following ?? '1') : '1';
     this.loading.update(l => ({ ...l, following: true }));
-    this.api.followers(pageIndex, 50).subscribe({
-      next: (page) => {
-        this.followers.update(curr => append ? [...curr, ...page.list] : [...page.list]);
-        this.cursor.update(c => ({ ...c, following: page.pageIndex ?? c.following }));
-        this.more.update(m => ({ ...m, followers: page.more }));
-        this.loading.update(l => ({ ...l, followers: false }));
-      },
-      error: () => {
-        this.loading.update(l => ({ ...l, followers: false }));
-        this.error.update(e => ({ ...e, followers: 'Could not load followers.' }));
-      },
-    });
-  }
-
-  private fetchFollowers(append: boolean): void {
-    this.loading.update(l => ({ ...l, following: true }));
-    this.api.following(50).subscribe({
+    this.api.following(50).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (page) => {
         this.following.update(curr => append ? [...curr, ...page.list] : [...page.list]);
+        this.cursor.update(c => ({ ...c, following: page.pageIndex ?? c.following }));
         this.more.update(m => ({ ...m, following: page.more }));
         this.loading.update(l => ({ ...l, following: false }));
       },
@@ -238,10 +228,26 @@ export class MessageNewContactPanelComponent {
     });
   }
 
+  private fetchFollowers(append: boolean): void {
+    // Tied to the "Followers" tab — call api.followers and write to the followers signal.
+    this.loading.update(l => ({ ...l, followers: true }));
+    this.api.followers('1', 50).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (page) => {
+        this.followers.update(curr => append ? [...curr, ...page.list] : [...page.list]);
+        this.more.update(m => ({ ...m, followers: page.more }));
+        this.loading.update(l => ({ ...l, followers: false }));
+      },
+      error: () => {
+        this.loading.update(l => ({ ...l, followers: false }));
+        this.error.update(e => ({ ...e, followers: 'Could not load followers.' }));
+      },
+    });
+  }
+
   private fetchVisitors(append: boolean): void {
     const idx = append ? (this.cursor().visitors ?? 0) : 0;
     this.loading.update(l => ({ ...l, visitors: true }));
-    this.api.visitors(idx).subscribe({
+    this.api.visitors(idx).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (page) => {
         this.visitors.update(curr => append ? [...curr, ...page.list] : [...page.list]);
         this.cursor.update(c => ({ ...c, visitors: idx + 1 }));
