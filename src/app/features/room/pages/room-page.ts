@@ -207,7 +207,7 @@ export class RoomPageComponent extends RoomPageBase {
     transform: (v: string | boolean | undefined) => v === 'true' || v === true || v === '1',
   });
 
-  readonly roomStore = inject(RoomStore) as unknown as RoomStoreContract;
+  readonly roomStore: RoomStoreContract = inject(RoomStore);
 
   protected readonly leaveNavTarget = ['/rooms'];
 

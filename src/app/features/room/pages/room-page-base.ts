@@ -13,7 +13,7 @@ import { InRoomRtmStore } from '../feature/in-room-rtm/in-room-rtm-store';
 import { GoodieStore } from '../feature/goodie-bag/goodie-store';
 import { ManagersStore } from '../feature/moderation/managers-store';
 import { RoomApi } from '../data/room-api';
-import { AudienceUser, StageUser } from '../data/room-model';
+import { AudienceUser, StageUser, RoomLevelInfo, RtcInfo } from '../data/room-model';
 import { SendEvent } from '../feature/comments/comment-input';
 import { ToastService } from '@core/services/toast.service';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
@@ -124,7 +124,7 @@ export abstract class RoomPageBase {
     return buildGhostAudienceInputs(
       this.rcs,
       this.reqUserId(),
-      this.roomStore as unknown as import('../state/room-store').RoomStore,
+      this.roomStore,
       this.stageStore,
       this.audienceStore,
     );
@@ -615,12 +615,13 @@ export interface RoomStoreContract {
   isModerator(): boolean;
   isVisible(): boolean;
   isMicOn(): boolean;
-  isCamOn(): boolean;
+  /** Voice rooms have no camera concept — only VideoRoomStore implements this. */
+  isCamOn?(): boolean;
   isHandRaised(): boolean;
   name(): string;
   topic(): string;
-  roomLevelInfo(): { level: number; levelIconV2?: string; levelIcon?: string } | null;
-  rtcInfo(): { token?: string | null; appId?: string | null } | null;
+  roomLevelInfo(): RoomLevelInfo | null;
+  rtcInfo(): RtcInfo | null;
   setUserId(v: number): void;
   setRole(v: number): void;
   setNickname(v: string): void;
@@ -628,10 +629,11 @@ export interface RoomStoreContract {
   setNationality(v: string): void;
   setRoomName(v: string): void;
   setRoomTopic(v: string): void;
-  setRtcInfo(v: unknown): void;
-  setRoomLevelInfo(v: unknown): void;
+  setRtcInfo(v: RtcInfo | null): void;
+  setRoomLevelInfo(v: RoomLevelInfo | null): void;
   setHandRaised(v: boolean): void;
-  setCamOn(v: boolean): void;
+  /** Voice rooms have no camera concept — only VideoRoomStore implements this. */
+  setCamOn?(v: boolean): void;
   setMicOn(v: boolean): void;
   setCname(v: string): void;
   setVisibility(v: boolean): void;

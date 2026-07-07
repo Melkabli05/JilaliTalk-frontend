@@ -50,7 +50,7 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
           fill
           [ngSrc]="src()"
           [alt]="alt()"
-          loading="eager"
+          loading="lazy"
           (error)="onImageError()"
         />
       }

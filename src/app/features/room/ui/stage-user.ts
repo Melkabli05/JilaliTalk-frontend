@@ -26,6 +26,7 @@ import { LucideMicOff, LucideMic } from '@lucide/angular';
           [speaking]="isSpeaking() && user().isTurnOnMic"
           [flagCode]="user().nationality"
           [crownType]="user().role === UserRole.Host ? 1 : user().role === UserRole.Moderator ? 2 : null"
+          [priority]="true"
         />
         @if (!user().isTurnOnMic) {
           <div class="status-badge muted">

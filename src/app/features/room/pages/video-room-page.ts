@@ -63,7 +63,7 @@ import { RoomPageBase, RoomStoreContract } from './room-page-base';
               [topic]="roomStore.topic()"
               [cname]="roomStore.cname() ?? ''"
               [isMicOn]="false"
-              [isCamOn]="roomStore.isCamOn()"
+              [isCamOn]="videoRoomStore.isCamOn()"
               [camBusy]="mediaToggleBusy()"
               [micSpeaking]="selfSpeaking()"
               [isHandRaised]="roomStore.isHandRaised()"
@@ -233,7 +233,12 @@ export class VideoRoomPageComponent extends RoomPageBase {
     transform: (v: string | boolean | undefined) => v === 'true' || v === true || v === '1',
   });
 
-  readonly roomStore = inject(VideoRoomStore) as unknown as RoomStoreContract;
+  readonly roomStore: RoomStoreContract = inject(VideoRoomStore);
+  /** Same singleton as `roomStore` above, injected again with its concrete
+   *  type for the camera-specific calls below — VideoRoomStore always
+   *  implements isCamOn/setCamOn (unlike the shared RoomStoreContract,
+   *  where they're optional because voice rooms have no camera). */
+  protected readonly videoRoomStore = inject(VideoRoomStore);
 
   readonly showSettings = signal(false);
 
@@ -463,12 +468,12 @@ export class VideoRoomPageComponent extends RoomPageBase {
   }
 
   private async doToggleCam(): Promise<void> {
-    const isOn = this.roomStore.isCamOn();
+    const isOn = this.videoRoomStore.isCamOn();
     const uid = this.roomStore.userId();
 
     if (isOn) {
       await this.rcs.setCamEnabled(false);
-      this.roomStore.setCamOn(false);
+      this.videoRoomStore.setCamOn(false);
       this.stageStore.updateUserCamStatus(uid, false);
     } else {
       try {
@@ -481,7 +486,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
         } else {
           await this.rcs.setCamEnabled(true);
         }
-        this.roomStore.setCamOn(true);
+        this.videoRoomStore.setCamOn(true);
         this.stageStore.updateUserCamStatus(uid, true);
       } catch (err) {
         const reason = err instanceof Error ? err.message : String(err);
