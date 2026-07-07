@@ -28,10 +28,17 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "assets": [{ "glob": "**/*", "input": "public" }],
+            "assets": [
+              { "glob": "**/*", "input": "public" },
+              {
+                "glob": "**/*",
+                "input": "node_modules/agora-extension-ai-denoiser/external",
+                "output": "external"
+              }
+            ],
             "styles": ["src/styles.scss"],
             "stylePreprocessorOptions": { "includePaths": ["src/styles"] },
-            "allowedCommonJsDependencies": ["agora-rtc-sdk-ng", "agora-rtm-sdk"]
+            "allowedCommonJsDependencies": ["agora-rtc-sdk-ng", "agora-rtm-sdk", "agora-extension-ai-denoiser"]
           },
           "configurations": {
             "production": {

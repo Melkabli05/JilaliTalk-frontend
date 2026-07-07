@@ -5,6 +5,7 @@ import AgoraRTC, {
   type ILocalVideoTrack,
   type ConnectionState,
 } from 'agora-rtc-sdk-ng';
+import { AIDenoiserExtension, type IAIDenoiserProcessor } from 'agora-extension-ai-denoiser';
 import type { RtcConnectionState, RealtimeLifecycle } from './realtime-events';
 
 export type AudioNoiseSuppressionLevel = 0 | 1 | 2 | 3;
@@ -25,6 +26,8 @@ export class AgoraRtcService implements RealtimeLifecycle {
   private micTrack: ILocalAudioTrack | null = null;
   private videoTrack: ILocalVideoTrack | null = null;
   private isGhostMode = false;
+  private denoiserExtension: AIDenoiserExtension | null = null;
+  private denoiserProcessor: IAIDenoiserProcessor | null = null;
 
   private readonly _state = signal<RtcConnectionState>('disconnected');
   private readonly _remoteUsers = signal<readonly RemoteUser[]>([]);
@@ -103,11 +106,54 @@ export class AgoraRtcService implements RealtimeLifecycle {
     if (publisherToken) await client.renewToken(publisherToken);
     const track = await AgoraRTC.createMicrophoneAudioTrack(this.getAudioTrackOptions());
     track.setVolume(100);
+    await this.attachDenoiser(track);
     await client.publish(track);
     this.micTrack = track;
     this._localAudioTrack.set(track);
     this._isPublishing.set(true);
     this._isMuted.set(false);
+  }
+
+  /**
+   * Agora's AI Noise Suppression — a deep-learning denoiser, well beyond the basic ANS flag's
+   * simple DSP filtering. Best-effort: unsupported browsers or a failed WASM load just mean the
+   * track publishes without it (still using the AEC/AGC/ANS/speech_standard config already set),
+   * not a broken mic.
+   */
+  private async attachDenoiser(track: ILocalAudioTrack): Promise<void> {
+    try {
+      if (!this.denoiserExtension) {
+        const extension = new AIDenoiserExtension({ assetsPath: '/external' });
+        AgoraRTC.registerExtensions([extension]);
+        this.denoiserExtension = extension;
+      }
+      if (!this.denoiserExtension.checkCompatibility()) return;
+
+      const processor = this.denoiserExtension.createProcessor();
+      processor.on('pipeerror', (err: Error) => {
+        console.warn('[AgoraRtc] denoiser pipe error, falling back to unprocessed audio:', err);
+        processor.unpipe();
+        track.unpipe();
+        track.pipe(track.processorDestination);
+      });
+      track.pipe(processor).pipe(track.processorDestination);
+      await processor.enable();
+      this.denoiserProcessor = processor;
+    } catch (err) {
+      console.warn('[AgoraRtc] AI denoiser unavailable, publishing without it:', err);
+    }
+  }
+
+  private async detachDenoiser(): Promise<void> {
+    if (!this.denoiserProcessor) return;
+    const processor = this.denoiserProcessor;
+    this.denoiserProcessor = null;
+    try {
+      processor.unpipe();
+      await processor.destroy();
+    } catch {
+      // best-effort cleanup — the track itself is being torn down regardless
+    }
   }
 
   async startVideo(publisherToken?: string | null): Promise<void> {
@@ -123,6 +169,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
 
   async stopAudio(): Promise<void> {
     if (!this.micTrack) return;
+    await this.detachDenoiser();
     await this.client?.unpublish(this.micTrack).catch(() => {});
     this.micTrack.stop();
     this.micTrack.close();
@@ -198,6 +245,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
   async disconnect(): Promise<void> {
     try {
       if (this.micTrack) {
+        await this.detachDenoiser();
         await this.client?.unpublish(this.micTrack).catch(() => {});
         this.micTrack.stop();
         this.micTrack.close();
