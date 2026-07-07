@@ -9,9 +9,8 @@ import {
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RoomsApi } from '../data/rooms-api';
-import { ChannelListItem, Category, ChannelListResponse, RoomType } from '../data/rooms-model';
+import { ChannelListItem, ChannelListResponse, RoomType } from '../data/rooms-model';
 import { filterRooms } from '../data/room-filter.util';
-import { ROOM_CATEGORIES } from '../data/room-categories';
 import { SearchDebounce, paginateDedup } from '../data/pagination-search.util';
 import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
 
@@ -63,7 +62,6 @@ export class LiveRoomsStore {
   });
 
   readonly rooms = this._rooms.asReadonly();
-  readonly selectedCategoryId = this.prefs.categoryId;
   readonly selectedLanguageId = this.prefs.languageId;
   readonly searchQuery = this.prefs.searchQuery;
 
@@ -82,8 +80,11 @@ export class LiveRoomsStore {
     () => this.roomsPage.status() === 'resolved' && this._rooms().length === 0,
   );
 
+  // Live Rooms has no category-filter UI (unlike Voice Rooms) — always pass null so a
+  // category selected on the Voice Rooms page doesn't silently carry over and filter
+  // this list with no visible indication or way to clear it from this page.
   readonly filteredRooms = computed(() =>
-    filterRooms(this._rooms(), this.prefs.categoryId(), this.prefs.languageId(), this.prefs.searchQuery()),
+    filterRooms(this._rooms(), null, this.prefs.languageId(), this.prefs.searchQuery()),
   );
 
   private readonly recommendedResource = rxResource({
@@ -96,15 +97,9 @@ export class LiveRoomsStore {
   readonly isLoadingRecommended = computed(() => this.recommendedResource.isLoading());
   readonly recommendedError = computed(() => this.recommendedResource.error());
 
-  readonly categories = computed<readonly Category[]>(() => ROOM_CATEGORIES);
-
   loadMore(): void {
     if (this.isLoading() || !this.hasMore() || this.prefs.searchQuery().trim()) return;
     this._offset.update((o) => o + PAGE_SIZE);
-  }
-
-  selectCategory(categoryId: number | null): void {
-    this.prefs.setCategory(categoryId);
   }
 
   selectLanguage(langId: number | null): void {
