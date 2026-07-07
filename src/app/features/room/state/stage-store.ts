@@ -1,4 +1,4 @@
-import { Injectable, InjectionToken, Signal, computed, inject, signal } from '@angular/core';
+import { Service, InjectionToken, Signal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { StageUser } from '../data/room-model';
@@ -32,7 +32,7 @@ export interface StageWriter {
 export const STAGE_READER = new InjectionToken<StageReader>('STAGE_READER');
 export const STAGE_WRITER = new InjectionToken<StageWriter>('STAGE_WRITER');
 
-@Injectable()
+@Service({ autoProvided: false })
 export class StageStore extends CollectionStore<StageUser> {
   private readonly bffWs = inject(BffRoomSocketService);
   private readonly userInfoService = inject(UserInfoService);

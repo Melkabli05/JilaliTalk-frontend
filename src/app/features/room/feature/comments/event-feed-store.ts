@@ -1,4 +1,4 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Service, signal, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EventCard } from '../../data/room-model';
 import { EnrichBatchQueue } from '@shared/utils';
@@ -19,7 +19,7 @@ const QUIT_GRACE_MS = 4_000;
  * handling, same card-building logic, same timers, just relocated so
  * CommentsStore isn't a catch-all for every BFF event type.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class EventFeedStore {
   private readonly bffWs = inject(BffRoomSocketService);
   private readonly userInfoService = inject(UserInfoService);

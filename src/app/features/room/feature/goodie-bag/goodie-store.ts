@@ -1,4 +1,4 @@
-import { Injectable, InjectionToken, Signal, signal } from '@angular/core';
+import { Service, InjectionToken, Signal, signal } from '@angular/core';
 
 export interface GoodieQuestion {
   readonly id: string;
@@ -25,7 +25,7 @@ export interface GoodieWriter {
 export const GOODIE_READER = new InjectionToken<GoodieReader>('GOODIE_READER');
 export const GOODIE_WRITER = new InjectionToken<GoodieWriter>('GOODIE_WRITER');
 
-@Injectable()
+@Service({ autoProvided: false })
 export class GoodieStore {
   private readonly _isPlaying = signal(false);
   private readonly _currentQuestion = signal<GoodieQuestion | null>(null);

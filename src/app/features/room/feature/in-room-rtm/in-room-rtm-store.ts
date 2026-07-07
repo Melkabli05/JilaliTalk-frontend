@@ -1,4 +1,4 @@
-import { Injectable, InjectionToken, Signal, inject, signal, effect, untracked } from '@angular/core';
+import { Service, InjectionToken, Signal, inject, signal, effect, untracked } from '@angular/core';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { CollectionStore } from '@shared/utils/collection-store';
 
@@ -39,7 +39,7 @@ export interface InRoomRtmWriter {
 export const IN_ROOM_RTM_READER = new InjectionToken<InRoomRtmReader>('IN_ROOM_RTM_READER');
 export const IN_ROOM_RTM_WRITER = new InjectionToken<InRoomRtmWriter>('IN_ROOM_RTM_WRITER');
 
-@Injectable()
+@Service({ autoProvided: false })
 export class InRoomRtmStore extends CollectionStore<RtmMessage> {
   readonly messages = this.items;
   readonly unreadCount = signal(0);

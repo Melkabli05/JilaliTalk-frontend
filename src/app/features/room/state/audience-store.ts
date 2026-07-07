@@ -1,4 +1,4 @@
-import { Injectable, InjectionToken, Signal, computed, inject, signal, DestroyRef } from '@angular/core';
+import { Service, InjectionToken, Signal, computed, inject, signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { AudienceUser } from '../data/room-model';
@@ -31,7 +31,7 @@ export interface AudienceWriter {
 export const AUDIENCE_READER = new InjectionToken<AudienceReader>('AUDIENCE_READER');
 export const AUDIENCE_WRITER = new InjectionToken<AudienceWriter>('AUDIENCE_WRITER');
 
-@Injectable()
+@Service({ autoProvided: false })
 export class AudienceStore extends CollectionStore<AudienceUser> {
   private readonly bffWs = inject(BffRoomSocketService);
   private readonly userInfoService = inject(UserInfoService);

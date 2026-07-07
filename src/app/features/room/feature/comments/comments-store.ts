@@ -1,4 +1,4 @@
-import { Injectable, InjectionToken, Signal, signal, inject, computed } from '@angular/core';
+import { Service, InjectionToken, Signal, signal, inject, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { Comment, CaptionEntry, CommentOrEvent, EventCard } from '../../data/room-model';
@@ -31,7 +31,7 @@ export interface CommentsWriter {
 export const COMMENTS_READER = new InjectionToken<CommentsReader>('COMMENTS_READER');
 export const COMMENTS_WRITER = new InjectionToken<CommentsWriter>('COMMENTS_WRITER');
 
-@Injectable()
+@Service({ autoProvided: false })
 export class CommentsStore extends CollectionStore<Comment> {
   private readonly bffWs = inject(BffRoomSocketService);
   private readonly api = inject(RoomApi);

@@ -1,4 +1,4 @@
-import { Injectable, InjectionToken, Signal, signal } from '@angular/core';
+import { Service, InjectionToken, Signal, signal } from '@angular/core';
 import { CollectionStore } from '@shared/utils/collection-store';
 
 export interface Gift {
@@ -28,7 +28,7 @@ export interface GiftsWriter {
 export const GIFTS_READER = new InjectionToken<GiftsReader>('GIFTS_READER');
 export const GIFTS_WRITER = new InjectionToken<GiftsWriter>('GIFTS_WRITER');
 
-@Injectable()
+@Service({ autoProvided: false })
 export class GiftsStore extends CollectionStore<Gift> {
   readonly gifts = this.items;
   readonly wallet = signal<WalletInfo | null>(null);

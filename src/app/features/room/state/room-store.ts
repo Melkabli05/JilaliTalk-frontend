@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Service, signal } from '@angular/core';
 import { BaseRoomStore } from './base-room-store';
 
 /**
@@ -7,7 +7,7 @@ import { BaseRoomStore } from './base-room-store';
  * which is set by enterRoom() long before anything reads it, so one store
  * covers both instead of near-duplicate RoomStore/VideoRoomStore classes.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class RoomStore extends BaseRoomStore {
   private readonly _isMicOn = signal(false);
   private readonly _isCamOn = signal(false);

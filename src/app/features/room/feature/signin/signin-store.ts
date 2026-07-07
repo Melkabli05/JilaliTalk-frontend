@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Service, inject, signal, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { map, of } from 'rxjs';
 import { RoomApi } from '../../data/room-api';
@@ -25,7 +25,7 @@ interface RewardsParams {
   readonly level: number;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class SigninStore {
   private readonly api = inject(RoomApi);
 

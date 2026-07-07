@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Service, signal } from '@angular/core';
 
 /**
  * Base for stores that manage a single read-only collection.
@@ -7,7 +7,8 @@ import { Injectable, signal } from '@angular/core';
  *
  * @example
  * ```ts
- * @Injectable()
+ * // Page-scoped subclass (the common case — see CLAUDE.md §7):
+ * @Service({ autoProvided: false })
  * export class MyStore extends CollectionStore<MyItem> {
  *   readonly items = this.collection;
  *
@@ -17,7 +18,7 @@ import { Injectable, signal } from '@angular/core';
  * }
  * ```
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class CollectionStore<T> {
   protected readonly collection = signal<readonly T[]>([]);
 

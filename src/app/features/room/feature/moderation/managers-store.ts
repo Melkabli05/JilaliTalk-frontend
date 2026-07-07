@@ -1,4 +1,4 @@
-import { Injectable, InjectionToken, Signal, inject, signal, computed } from '@angular/core';
+import { Service, InjectionToken, Signal, inject, signal, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
 import { RoomApi } from '../../data/room-api';
@@ -30,7 +30,7 @@ export interface ManagersWriter {
 export const MANAGERS_READER = new InjectionToken<ManagersReader>('MANAGERS_READER');
 export const MANAGERS_WRITER = new InjectionToken<ManagersWriter>('MANAGERS_WRITER');
 
-@Injectable()
+@Service({ autoProvided: false })
 export class ManagersStore {
   private readonly api = inject(RoomApi);
 

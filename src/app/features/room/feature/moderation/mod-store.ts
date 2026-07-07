@@ -1,4 +1,4 @@
-import { Injectable, InjectionToken, Signal, signal } from '@angular/core';
+import { Service, InjectionToken, Signal, signal } from '@angular/core';
 
 export type ModAction = 'mute' | 'ban' | 'kick' | 'raise_hand' | 'remove_manager' | 'approve_raise_hand' | 'reject_raise_hand' | 'add_manager' | 'invite_to_stage';
 
@@ -17,7 +17,7 @@ export interface ModWriter {
 export const MOD_READER = new InjectionToken<ModReader>('MOD_READER');
 export const MOD_WRITER = new InjectionToken<ModWriter>('MOD_WRITER');
 
-@Injectable()
+@Service({ autoProvided: false })
 export class ModStore {
   private readonly _selectedUserId = signal<number | null>(null);
 
