@@ -3,8 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RoomStore } from '../store/room-store';
 import { JoinCancelledError } from '../store/base-room-store';
-import { StageStore, STAGE_READER, STAGE_WRITER } from '../stage/stage-store';
-import { AudienceStore, AUDIENCE_READER, AUDIENCE_WRITER } from '../audience/audience-store';
+import { RoomRosterStore, ROSTER_READER, ROSTER_WRITER } from '../roster/roster-store';
 import { CommentsStore, COMMENTS_READER, COMMENTS_WRITER } from '../comments/comments-store';
 import { EventFeedStore } from '../comments/event-feed-store';
 import { ModStore, MOD_READER, MOD_WRITER } from '../moderation/mod-store';
@@ -38,12 +37,9 @@ import { RoomPageBase } from './room-page-base';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     RoomStore,
-    StageStore,
-    { provide: STAGE_READER, useExisting: StageStore },
-    { provide: STAGE_WRITER, useExisting: StageStore },
-    AudienceStore,
-    { provide: AUDIENCE_READER, useExisting: AudienceStore },
-    { provide: AUDIENCE_WRITER, useExisting: AudienceStore },
+    RoomRosterStore,
+    { provide: ROSTER_READER, useExisting: RoomRosterStore },
+    { provide: ROSTER_WRITER, useExisting: RoomRosterStore },
     EventFeedStore,
     CommentsStore,
     { provide: COMMENTS_READER, useExisting: CommentsStore },
@@ -73,7 +69,7 @@ import { RoomPageBase } from './room-page-base';
               [camBusy]="mediaToggleBusy()"
               [micSpeaking]="selfSpeaking()"
               [isHandRaised]="roomStore.isHandRaised()"
-              [isOnStage]="stageStore.isOnStage(roomStore.userId())"
+              [isOnStage]="rosterStore.isOnStage(roomStore.userId())"
               [isModerator]="roomStore.isModerator()"
               [invisible]="!roomStore.isVisible()"
               [refreshing]="refreshingRoom()"
@@ -96,7 +92,7 @@ import { RoomPageBase } from './room-page-base';
 
           <section class="stage-section">
             <app-video-stage-grid
-              [users]="stageStore.stageUsers()"
+              [users]="rosterStore.stageUsers()"
               [videoTracks]="remoteVideoTracks()"
               [speakingUids]="rcs.speakingUids()"
               (userClick)="onStageUserClick($event)"
@@ -302,16 +298,14 @@ export class VideoRoomPageComponent extends RoomPageBase {
 
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
     const isRestore = await this.resolveRoomEntry(cname);
-    this.audienceStore.setBusiType(busiType);
-    this.stageStore.setRoomContext(cname, busiType);
+    this.rosterStore.setRoomContext(cname, busiType);
     try {
       await this.roomStore.enterRoom(cname, busiType, this.visible());
     } catch (err) {
       if (err instanceof JoinCancelledError) {
         await this.router.navigate(['/rooms']);
         await this.roomStore.leaveRoom();
-        this.stageStore.reset();
-        this.audienceStore.reset();
+        this.rosterStore.reset();
         return;
       }
       throw err;
@@ -403,9 +397,9 @@ export class VideoRoomPageComponent extends RoomPageBase {
     }
     const uid = this.roomStore.userId();
 
-    if (isVisible) this.audienceStore.setCname(actualCname);
-    if (stage?.list) this.stageStore.updateStageUsers([...stage.list]);
-    if (audience?.list) this.audienceStore.updateAudienceUsers([...audience.list]);
+    if (isVisible) this.rosterStore.setCname(actualCname);
+    if (stage?.list) this.rosterStore.updateStageUsers([...stage.list]);
+    if (audience?.list) this.rosterStore.updateAudienceUsers([...audience.list]);
     if (comments?.items) this.commentsStore.updateComments([...comments.items]);
 
     this.rtmStore.setCurrentUid(uid);
@@ -462,10 +456,12 @@ export class VideoRoomPageComponent extends RoomPageBase {
     this.roomStore.setVisibility(true);
     this.syncVisibilityToUrl(true);
     this.bffWs.connect(cname, liveInfo?.hostInfo?.userId ?? 0, busiType);
-    this.audienceStore.setCname(cname);
-    this.stageStore.reset();
-    if (stage?.list) this.stageStore.updateStageUsers([...stage.list]);
-    if (audience?.list) this.audienceStore.updateAudienceUsers([...audience.list]);
+    this.rosterStore.setCname(cname);
+    // Clears only the stage list (pre-merge, this was rosterStore.reset() alone) — not
+    // the full rosterStore.reset(), which would also wipe the cname just set above.
+    this.rosterStore.updateStageUsers([]);
+    if (stage?.list) this.rosterStore.updateStageUsers([...stage.list]);
+    if (audience?.list) this.rosterStore.updateAudienceUsers([...audience.list]);
     this.activeCallStore.setInvisible(false);
     this.toast.success('You are now visible');
   }
@@ -480,8 +476,8 @@ export class VideoRoomPageComponent extends RoomPageBase {
     const ch = liveInfo.channelInfo;
     this.roomStore.setRoomName(ch?.name?.trim() ?? '');
     this.roomStore.setRoomTopic(ch?.topic ?? '');
-    this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
-    this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    this.rosterStore.updateStageUsers([...(stage?.list ?? [])]);
+    this.rosterStore.updateAudienceUsers([...(audience?.list ?? [])]);
   }
 
   override onMediaToggle(): void {
@@ -502,7 +498,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
       await this.rcs.setCamEnabled(false);
       if (this._destroying()) return;
       this.roomStore.setCamOn(false);
-      this.stageStore.updateUserCamStatus(uid, false);
+      this.rosterStore.updateUserCamStatus(uid, false);
     } else {
       try {
         if (!this.rcs.localVideoTrack()) {
@@ -516,7 +512,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
         }
         if (this._destroying()) return;
         this.roomStore.setCamOn(true);
-        this.stageStore.updateUserCamStatus(uid, true);
+        this.rosterStore.updateUserCamStatus(uid, true);
       } catch (err) {
         const reason = err instanceof Error ? err.message : String(err);
         this.toast.error(`Failed to start camera: ${reason}`);

@@ -4,8 +4,7 @@ import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RoomStore } from '../store/room-store';
 import { JoinCancelledError } from '../store/base-room-store';
-import { StageStore, STAGE_READER, STAGE_WRITER } from '../stage/stage-store';
-import { AudienceStore, AUDIENCE_READER, AUDIENCE_WRITER } from '../audience/audience-store';
+import { RoomRosterStore, ROSTER_READER, ROSTER_WRITER } from '../roster/roster-store';
 import { CommentsStore, COMMENTS_READER, COMMENTS_WRITER } from '../comments/comments-store';
 import { EventFeedStore } from '../comments/event-feed-store';
 import { ModStore, MOD_READER, MOD_WRITER } from '../moderation/mod-store';
@@ -35,12 +34,9 @@ import { RoomPageBase } from './room-page-base';
   ],
   providers: [
     RoomStore,
-    StageStore,
-    { provide: STAGE_READER, useExisting: StageStore },
-    { provide: STAGE_WRITER, useExisting: StageStore },
-    AudienceStore,
-    { provide: AUDIENCE_READER, useExisting: AudienceStore },
-    { provide: AUDIENCE_WRITER, useExisting: AudienceStore },
+    RoomRosterStore,
+    { provide: ROSTER_READER, useExisting: RoomRosterStore },
+    { provide: ROSTER_WRITER, useExisting: RoomRosterStore },
     EventFeedStore,
     CommentsStore,
     { provide: COMMENTS_READER, useExisting: CommentsStore },
@@ -66,7 +62,7 @@ import { RoomPageBase } from './room-page-base';
           [micSpeaking]="selfSpeaking()"
           [micBusy]="mediaToggleBusy()"
           [isHandRaised]="roomStore.isHandRaised()"
-          [isOnStage]="stageStore.isOnStage(roomStore.userId())"
+          [isOnStage]="rosterStore.isOnStage(roomStore.userId())"
           [isModerator]="roomStore.isModerator()"
           [invisible]="!roomStore.isVisible()"
           [refreshing]="refreshingRoom()"
@@ -88,7 +84,7 @@ import { RoomPageBase } from './room-page-base';
       </div>
 
       <section class="stage-section">
-        <app-stage-grid [users]="stageStore.stageUsers()" [speakingUids]="rcs.speakingUids()" (userClick)="onStageUserClick($event)" />
+        <app-stage-grid [users]="rosterStore.stageUsers()" [speakingUids]="rcs.speakingUids()" (userClick)="onStageUserClick($event)" />
       </section>
 
       <section class="audience-section">
@@ -275,8 +271,7 @@ export class RoomPageComponent extends RoomPageBase {
 
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
     const isRestore = await this.resolveRoomEntry(cname);
-    this.audienceStore.setBusiType(busiType);
-    this.stageStore.setRoomContext(cname, busiType);
+    this.rosterStore.setRoomContext(cname, busiType);
     try {
       const visibleOnFreshJoin = isRestore
         ? !this.activeCallStore.isInvisible()
@@ -286,8 +281,7 @@ export class RoomPageComponent extends RoomPageBase {
       if (err instanceof JoinCancelledError) {
         await this.router.navigate(this.leaveNavTarget);
         await this.roomStore.leaveRoom();
-        this.stageStore.reset();
-        this.audienceStore.reset();
+        this.rosterStore.reset();
         return;
       }
       throw err;
@@ -384,9 +378,9 @@ export class RoomPageComponent extends RoomPageBase {
 
     const uid = this.roomStore.userId();
 
-    if (isVisible) this.audienceStore.setCname(cname);
-    if (stage?.list) this.stageStore.updateStageUsers([...stage.list]);
-    if (audience?.list) this.audienceStore.updateAudienceUsers([...audience.list]);
+    if (isVisible) this.rosterStore.setCname(cname);
+    if (stage?.list) this.rosterStore.updateStageUsers([...stage.list]);
+    if (audience?.list) this.rosterStore.updateAudienceUsers([...audience.list]);
     if (comments?.items) this.commentsStore.updateComments([...comments.items]);
 
     this.rtmStore.setCurrentUid(uid);
@@ -460,10 +454,12 @@ export class RoomPageComponent extends RoomPageBase {
       busiType,
       voiceInfo?.configInfo?.heartbeatSecond ?? null,
     );
-    this.audienceStore.setCname(cname);
-    this.stageStore.reset();
-    if (stage?.list) this.stageStore.updateStageUsers([...stage.list]);
-    if (audience?.list) this.audienceStore.updateAudienceUsers([...audience.list]);
+    this.rosterStore.setCname(cname);
+    // Clears only the stage list (pre-merge, this was rosterStore.reset() alone) — not
+    // the full rosterStore.reset(), which would also wipe the cname just set above.
+    this.rosterStore.updateStageUsers([]);
+    if (stage?.list) this.rosterStore.updateStageUsers([...stage.list]);
+    if (audience?.list) this.rosterStore.updateAudienceUsers([...audience.list]);
     // Snapshot is meaningless for a "go visible" toggle (only relevant to a restore).
     // Update it to match the new visible state so a future minimize→restore cycle
     // doesn't capture stale invisible=true.
@@ -482,8 +478,8 @@ export class RoomPageComponent extends RoomPageBase {
     this.roomStore.setRoomName(ch?.name?.trim() ?? '');
     this.roomStore.setRoomTopic(ch?.topic ?? '');
     this.roomStore.setRoomLevelInfo(voiceInfo.roomLevelInfo ?? null);
-    this.stageStore.updateStageUsers([...(stage?.list ?? [])]);
-    this.audienceStore.updateAudienceUsers([...(audience?.list ?? [])]);
+    this.rosterStore.updateStageUsers([...(stage?.list ?? [])]);
+    this.rosterStore.updateAudienceUsers([...(audience?.list ?? [])]);
   }
 
 
@@ -505,13 +501,13 @@ export class RoomPageComponent extends RoomPageBase {
       await this.rcs.setMicEnabled(false);
       if (this._destroying()) return;
       this.roomStore.setMicOn(false);
-      this.stageStore.updateUserMicStatus(uid, false);
+      this.rosterStore.updateUserMicStatus(uid, false);
       this.notifyStageMicState(uid, true);
     } else {
       try {
         await this.rcs.stopAudio();
         if (!this.rcs.localAudioTrack()) {
-          if (this.stageStore.isOnStage(uid)) {
+          if (this.rosterStore.isOnStage(uid)) {
             const cname = this.roomStore.cname();
             const publisherToken = cname
               ? (await firstValueFrom(this.api.fetchPublisherToken(cname))).token
@@ -525,7 +521,7 @@ export class RoomPageComponent extends RoomPageBase {
         }
         if (this._destroying()) return;
         this.roomStore.setMicOn(true);
-        this.stageStore.updateUserMicStatus(uid, true);
+        this.rosterStore.updateUserMicStatus(uid, true);
         this.notifyStageMicState(uid, false);
       } catch {
         this.toast.error('Failed to start microphone');
@@ -547,7 +543,7 @@ export class RoomPageComponent extends RoomPageBase {
 
   private notifyStageMicState(uid: number, mute: boolean): void {
     const cname = this.roomStore.cname();
-    if (!cname || !this.stageStore.isOnStage(uid)) return;
+    if (!cname || !this.rosterStore.isOnStage(uid)) return;
     this.api.muteUser(cname, this.roomStore.busiType(), uid, mute).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap({ error: (err: unknown) => console.warn('[RoomPage] notifyStageMicState failed', err) }),
@@ -566,7 +562,7 @@ export class RoomPageComponent extends RoomPageBase {
     if (!cname) return;
 
     const uid = this.roomStore.userId();
-    const onStage = this.stageStore.isOnStage(uid);
+    const onStage = this.rosterStore.isOnStage(uid);
     const isHost = this.roomStore.isHost();
     const isMod = this.roomStore.isModerator();
 
@@ -577,8 +573,8 @@ export class RoomPageComponent extends RoomPageBase {
 
     if (onStage) {
       void this.rcs.stopAudio().catch(() => {});
-      const stagedUser = this.stageStore.getStageUser(uid);
-      this.stageStore.removeStageUser(uid);
+      const stagedUser = this.rosterStore.getStageUser(uid);
+      this.rosterStore.removeStageUser(uid);
       this.handToggleBusy.set(true);
       this.api.leaveStage(cname, busiType).pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -588,7 +584,7 @@ export class RoomPageComponent extends RoomPageBase {
           this.handToggleBusy.set(false);
         },
         error: (err: unknown) => {
-          if (stagedUser) this.stageStore.revertRemoveStageUser(stagedUser);
+          if (stagedUser) this.rosterStore.revertRemoveStageUser(stagedUser);
           console.error('[room] leaveStage failed', err);
           this.toast.error(httpErrorMessage(err, 'Failed to leave stage'));
           this.handToggleBusy.set(false);
@@ -613,7 +609,7 @@ export class RoomPageComponent extends RoomPageBase {
         rippleAnimalUrl: null,
         isAiUser: false,
       };
-      this.stageStore.addStageUser(myUser);
+      this.rosterStore.addStageUser(myUser);
       this.handToggleBusy.set(true);
       this.api.joinStage(cname, busiType).pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -624,7 +620,7 @@ export class RoomPageComponent extends RoomPageBase {
           this.handToggleBusy.set(false);
         },
         error: (err: unknown) => {
-          this.stageStore.removeStageUser(uid);
+          this.rosterStore.removeStageUser(uid);
           console.error('[room] joinStage failed', err);
           this.toast.error(httpErrorMessage(err, 'Failed to join stage'));
           this.handToggleBusy.set(false);

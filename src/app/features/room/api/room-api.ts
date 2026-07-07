@@ -42,7 +42,7 @@ export class RoomApi {
    * upstream calls out concurrently server-side instead of the browser making four separate
    * ones. Comments already have createdAtMs/updatedAtMs in milliseconds (server-side converted).
    *
-   * Not used by AudienceStore's revision-triggered reconciliation poll — that only needs a
+   * Not used by RoomRosterStore's revision-triggered reconciliation poll — that only needs a
    * roster refresh, so it deliberately uses fetchAudienceReconcile instead of pulling in room
    * info/stage/comments on every drift check.
    */

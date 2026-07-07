@@ -3,8 +3,7 @@ import type { UserInfoService } from '@core/services/user-info.service';
 import type { AudienceUser } from '@features/room/models/room-model';
 import { createGhostAudienceUser } from '@features/room/models/room-model';
 import type { RoomConnectionService } from '@core/realtime/room-connection.service';
-import type { StageStore } from '../stage/stage-store';
-import type { AudienceStore } from '../audience/audience-store';
+import type { RoomRosterStore } from '../roster/roster-store';
 
 /** Minimal shape this util needs from the room store — satisfied
  *  structurally by RoomStore, so callers never need to pass more than
@@ -36,15 +35,14 @@ export function buildGhostAudienceInputs(
   rcs: RoomConnectionService,
   reqUserId: number,
   roomStore: RoomIdentitySource,
-  stageStore: StageStore,
-  audienceStore: AudienceStore,
+  rosterStore: RoomRosterStore,
 ): GhostAudienceInputs {
   return {
     remoteUsers: rcs.remoteUsers,
     reqUserId,
     selfUserId: roomStore.userId(),
-    stageUserIds: stageStore.stageUsers().map((u) => u.userId),
-    audienceUserIds: audienceStore.audienceUsers().map((u) => u.userId),
+    stageUserIds: rosterStore.stageUsers().map((u) => u.userId),
+    audienceUserIds: rosterStore.audienceUsers().map((u) => u.userId),
     isVisible: roomStore.isVisible(),
   };
 }

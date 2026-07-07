@@ -4,8 +4,7 @@ import { Dialog } from '@angular/cdk/dialog';
 import { EMPTY, firstValueFrom } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { StageStore } from '../stage/stage-store';
-import { AudienceStore } from '../audience/audience-store';
+import { RoomRosterStore } from '../roster/roster-store';
 import { CommentsStore } from '../comments/comments-store';
 import { ModStore, ModAction } from '../moderation/mod-store';
 import { InRoomRtmStore } from '../in-room-rtm/in-room-rtm-store';
@@ -52,8 +51,7 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
   protected abstract commentsRefreshMode(): 'merge' | 'replace';
 
 
-  protected readonly stageStore = inject(StageStore);
-  protected readonly audienceStore = inject(AudienceStore);
+  protected readonly rosterStore = inject(RoomRosterStore);
   protected readonly commentsStore = inject(CommentsStore);
   protected readonly modStore = inject(ModStore);
   protected readonly rtmStore = inject(InRoomRtmStore);
@@ -136,8 +134,7 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
       this.rcs,
       this.reqUserId(),
       this.roomStore,
-      this.stageStore,
-      this.audienceStore,
+      this.rosterStore,
     ),
   );
 
@@ -151,7 +148,7 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
       this.ghostAudienceInputs(),
       this.roomStore.busiType(),
       this.userInfoService,
-      this.audienceStore.audienceUsers(),
+      this.rosterStore.audienceUsers(),
     ),
   );
 
@@ -226,8 +223,7 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
    * setParams() fresh on open — but a real gap if that ever changes).
    */
   private resetAllRoomStores(): void {
-    this.stageStore.reset();
-    this.audienceStore.reset();
+    this.rosterStore.reset();
     this.commentsStore.reset();
     this.rtmStore.reset();
     this.modStore.reset();
@@ -541,14 +537,18 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
     this.roomStore.setVisibility(false);
     this.syncVisibilityToUrl(false);
     this.activeCallStore.setInvisible(true);
-    this.stageStore.reset();
+    // Clears only the stage list (matching this call site's pre-merge behavior of
+    // resetting just StageStore) — not the full rosterStore.reset(), which would also
+    // wipe the cname the audience-reconcile poll depends on and pause it unnecessarily
+    // while the user is merely invisible, not actually leaving the room.
+    this.rosterStore.updateStageUsers([]);
     await this.rcs.stopAudio();
     this.bffWs.connect(cname, 0, busiType, null);
   }
 
   private async handleKickedFromRoom(managerName: string): Promise<void> {
     const outcome = buildKickedFromRoomOutcome(managerName, this.roomStore.name(), this.roomStore.isVisible());
-    const identity = resolveManagerIdentity(managerName, this.stageStore.stageUsers(), this.audienceStore.audienceUsers());
+    const identity = resolveManagerIdentity(managerName, this.rosterStore.stageUsers(), this.rosterStore.audienceUsers());
     const cname = this.roomStore.cname();
     if (outcome.shouldGoInvisible && cname) {
       await this.goInvisibleLocally(cname, this.busiType());
@@ -620,11 +620,11 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
 
 
   protected resolveNickname(userId: number): string {
-    const fromAudience = this.audienceStore.audienceUsers().find(
+    const fromAudience = this.rosterStore.audienceUsers().find(
       (u) => u.userId === userId,
     )?.base?.nickname;
     if (fromAudience) return fromAudience;
-    const fromStage = this.stageStore.stageUsers().find(
+    const fromStage = this.rosterStore.stageUsers().find(
       (u) => u.userId === userId,
     )?.nickname;
     if (fromStage) return fromStage;

@@ -1,7 +1,7 @@
 /**
  * Collects user IDs and flushes them as one batch call after a quiet period, instead of one
  * HTTP call per ID. Shared by every store that enriches partial realtime data (missing avatar,
- * nationality, etc.) against `POST /users/enrich-batch` — AudienceStore, StageStore,
+ * nationality, etc.) against `POST /users/enrich-batch` — RoomRosterStore,
  * CommentsStore, and ImBootstrapService all queue IDs from realtime events at unpredictable
  * rates, so the debounce-then-batch shape is identical even though what each caller does with
  * the response differs.

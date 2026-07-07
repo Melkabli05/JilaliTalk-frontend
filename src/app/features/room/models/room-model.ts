@@ -28,7 +28,7 @@ export interface StageUser {
   readonly isAway?: boolean;
 }
 
-export interface RoomUser {
+export interface AudienceUser {
   readonly userId: number;
   readonly isOnMic: boolean;
   readonly isRaiseHand: boolean;
@@ -47,8 +47,6 @@ export interface RoomUser {
   readonly base: RoomUserBase | null;
   readonly isGhost?: boolean;
 }
-
-export type AudienceUser = RoomUser;
 
 export function createGhostAudienceUser(
   uid: number,

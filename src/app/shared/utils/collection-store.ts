@@ -3,7 +3,8 @@ import { Service, signal } from '@angular/core';
 /**
  * Base for stores that manage a single read-only collection.
  * Provides the common signal + setter + reset pattern shared by
- * {@link StageStore}, {@link AudienceStore}, {@link CommentsStore}, and others.
+ * {@link CommentsStore}, {@link InRoomRtmStore}, and others (see also RoomRosterStore, which
+ * manages two collections directly rather than extending this single-collection base).
  *
  * @example
  * ```ts
