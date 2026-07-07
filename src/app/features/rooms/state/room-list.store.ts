@@ -33,12 +33,12 @@ export abstract class RoomListStore {
    *  store updates synchronously on every keystroke (for cross-page persistence
    *  and for the `<app-search-bar>` input echo), but the network request only
    *  fires once the user stops typing for 250ms. */
-  private readonly search = new SearchDebounce(inject(DestroyRef));
+  protected readonly search = new SearchDebounce(inject(DestroyRef));
 
   private readonly _currentType = signal<RoomType>(RoomType.Voice);
-  private readonly _offset = signal(0);
+  protected readonly _offset = signal(0);
 
-  private readonly roomsPage = rxResource({
+  protected readonly roomsPage = rxResource({
     params: () => ({
       type: this._currentType(),
       offset: this._offset(),
@@ -48,11 +48,11 @@ export abstract class RoomListStore {
     defaultValue: { items: [] as ChannelListItem[], audienceTotal: 0 } as ChannelListResponse,
     stream: ({ params }) =>
       params.query.trim()
-        ? this.searchRooms(params.query, params.type, MAX_SEARCH_PAGES)
+        ? this.searchRooms(params.query, params.langId, MAX_SEARCH_PAGES)
         : this.listRooms(params.type, params.langId, PAGE_SIZE, params.offset, 1),
   });
 
-  private readonly _rooms = linkedSignal<RoomsPageSource, readonly ChannelListItem[]>({
+  protected readonly _rooms = linkedSignal<RoomsPageSource, readonly ChannelListItem[]>({
     source: () => ({
       type: this._currentType(),
       langId: this.prefs.languageId(),
@@ -102,7 +102,7 @@ export abstract class RoomListStore {
     ),
   );
 
-  private readonly recommendedResource = rxResource({
+  protected readonly recommendedResource = rxResource({
     params: () => this._currentType(),
     defaultValue: { items: [] as ChannelListItem[], audienceTotal: 0 } as ChannelListResponse,
     stream: ({ params }) => this.recommendRooms(),
@@ -163,7 +163,7 @@ export abstract class RoomListStore {
 
   protected abstract searchRooms(
     query: string,
-    type: RoomType,
+    langId: number,
     maxPages: number,
   ): Observable<ChannelListResponse>;
 

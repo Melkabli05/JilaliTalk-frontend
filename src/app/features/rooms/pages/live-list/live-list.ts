@@ -6,7 +6,7 @@ import {
   computed,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { LiveRoomsStore } from '../../state/live-rooms-store';
+import { LiveRoomsStore } from '../../state/live-rooms.store';
 import { ChannelListItem } from '../../data/rooms-model';
 import { joinRoom as joinRoomCommand } from '../../data/join-room.util';
 import { LanguageFilterComponent } from '../../ui/language-filter/language-filter';

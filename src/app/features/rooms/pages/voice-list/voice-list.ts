@@ -8,7 +8,7 @@ import {
   ElementRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { RoomsStore } from '../../state/rooms-store';
+import { VoiceRoomsStore } from '../../state/voice-rooms.store';
 import { ChannelListItem } from '../../data/rooms-model';
 import { joinRoom as joinRoomCommand } from '../../data/join-room.util';
 import { CategoryFilterComponent } from '../../ui/category-filter/category-filter';
@@ -49,12 +49,12 @@ type ViewMode = 'grid' | 'list';
     LucideChevronRight,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [RoomsStore],
+  providers: [VoiceRoomsStore],
   templateUrl: './voice-list.html',
   styleUrls: ['./voice-list.scss'],
 })
 export class VoiceListComponent {
-  private readonly store = inject(RoomsStore);
+  private readonly store = inject(VoiceRoomsStore);
   private readonly router = inject(Router);
 
   private readonly carousel = viewChild<ElementRef<HTMLElement>>('carouselScroll');
