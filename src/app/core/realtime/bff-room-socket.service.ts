@@ -1,4 +1,5 @@
 import { Injectable, signal, inject } from '@angular/core';
+import type { WritableSignal } from '@angular/core';
 import { ReconnectingSocketBase } from './reconnecting-socket-base';
 import type { RoomRealtimeEvent } from './room-realtime-events';
 import { WS_BASE_URL } from '@core/tokens/ws-base-url.token';
@@ -17,6 +18,15 @@ export class BffRoomSocketService extends ReconnectingSocketBase {
   private readonly _wsStatus = signal<WsConnectionStatus>('disconnected');
   readonly lastEvent = this._lastEvent.asReadonly();
   readonly wsStatus = this._wsStatus.asReadonly();
+
+  /** Cnames whose WebSocket has permanently given up (5 reconnect attempts
+   *  exhausted). Consumed by the room page on maximize-restore: if the
+   *  snapshot's cname is in this set, skip the "is restore" shortcut
+   *  and force a fresh full connect. Cleared by a successful
+   *  reconnect (in onMessage) or an explicit disconnect(). */
+  private readonly _gaveUpCnames = signal<ReadonlySet<string>>(new Set());
+  readonly gaveUpCnames: WritableSignal<ReadonlySet<string>> = this._gaveUpCnames;
+  gaveUp(cname: string): boolean { return this._gaveUpCnames().has(cname); }
 
   isConnected = (): boolean => this.sock?.readyState === WebSocket.OPEN;
 
@@ -44,6 +54,7 @@ export class BffRoomSocketService extends ReconnectingSocketBase {
     }
     this.connecting = false;
     this._wsStatus.set('disconnected');
+    this._gaveUpCnames.set(new Set());
     this.teardownSocket();
     this.sock = null;
     this._lastEvent.set(null);
@@ -70,10 +81,19 @@ export class BffRoomSocketService extends ReconnectingSocketBase {
       this._wsStatus.set(parsed.state);
     }
     this._lastEvent.set(parsed);
+    if (this._gaveUpCnames().has(this.reconnectCname)) {
+      const next = new Set(this._gaveUpCnames());
+      next.delete(this.reconnectCname);
+      this._gaveUpCnames.set(next);
+    }
   }
 
   protected override onGiveUp(): void {
+    const cname = this.reconnectCname;
     this.reconnectCname = '';
+    if (cname) {
+      this._gaveUpCnames.set(new Set(this._gaveUpCnames()).add(cname));
+    }
   }
 
   protected override onGiveUpLastEvent(): void {

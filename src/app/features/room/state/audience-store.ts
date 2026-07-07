@@ -58,8 +58,14 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
   }
 
   setCname(cname: string): void {
-    this.lastAudienceRevision = -1;
-    this._cname.set(cname);
+    // Reset revision only on a real cname change — calling setCname() with
+    // the same value repeatedly (e.g. on every room-page entry) used to
+    // force a full audience refetch on the next 30s reconcile, wasting a
+    // round-trip per page mount.
+    if (this._cname() !== cname) {
+      this.lastAudienceRevision = -1;
+      this._cname.set(cname);
+    }
   }
 
   private startReconciliation(): void {

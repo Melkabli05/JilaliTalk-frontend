@@ -318,10 +318,20 @@ export abstract class RoomPageBase {
    * open and its snapshot is stale, so this tears both down before B's entry proceeds.
    */
   protected async resolveRoomEntry(cname: string): Promise<boolean> {
-    const isRestore = this.activeCallStore.cname() === cname && this.activeCallStore.minimized();
+    const snapshotMatch = this.activeCallStore.cname() === cname;
+    const isRestore = snapshotMatch && this.activeCallStore.minimized();
     if (this.activeCallStore.minimized() && !isRestore) {
       await this.rcs.leave().catch(() => {});
       this.activeCallStore.clear();
+    }
+    // If the WS gave up while the user was minimized (5 reconnect attempts
+    // failed), the restore path would otherwise skip bffWs.connect() and
+    // leave the user in a "restored" room with a permanently dead socket.
+    // Force a fresh full connect in that case by flipping isRestore=false;
+    // doEnterRoom() then re-enters the WS + RTC + RTM branches.
+    if (isRestore && this.bffWs.gaveUp(cname)) {
+      this.bffWs.disconnect().catch(() => {});
+      return false;
     }
     return isRestore;
   }
