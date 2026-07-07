@@ -95,7 +95,6 @@ export class MessageNewContactPanelComponent {
   }
 
   // ── View children ─────────────────────────────────────────────
-  private readonly host = viewChild<ElementRef<HTMLElement>>('host');
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
 
   private readonly api = inject(ProfileApi);
@@ -243,10 +242,9 @@ export class MessageNewContactPanelComponent {
   @HostListener('document:click', ['$event'])
   protected onDocumentClick(ev: MouseEvent): void {
     if (!this.open()) return;
-    const host = this.host()?.nativeElement;
     const panel = this.panel()?.nativeElement;
     const target = ev.target as Node | null;
-    if (!host || !target || !panel) return;
+    if (!panel || !target) return;
     // Click inside the panel: do nothing.
     if (panel.contains(target)) return;
     // Otherwise, close.
