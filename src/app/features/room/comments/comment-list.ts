@@ -394,16 +394,15 @@ export class NewMessagesPillComponent {
         flex-direction: column;
         gap: var(--space-3);
         padding: var(--space-3) var(--space-2);
-        /* Bottom padding matches the fixed comment-input's total height
-           (visible content + iOS home-indicator safe-area). The input host
-           is pinned to bottom:0 and pushes its inner content above the
-           home indicator via padding-bottom on .comment-input-wrapper, so
-           the visible content of the bar is ~59px but its full box height
-           is 59px + env(safe-area-inset-bottom). Reserve that height here
-           so the last comment can scroll fully into view above the bar.
-           Without the safe-area term, the last message disappears under
-           the home indicator on iPhones that report inset-bottom > 0. */
-        padding-bottom: calc(64px + var(--space-3) + env(safe-area-inset-bottom, 0px));
+        /* Reserve space for the pinned comment-input bar. The bar's minimum
+           height is --mobile-input-height; when a .reply-preview is mounted
+           (inside comment-input.ts), the bar grows by ~28px -- var(--space-4)
+           is ~24px which covers it. Safe-area inset is the iOS home-indicator. */
+        padding-bottom: calc(
+          var(--mobile-input-height) +
+          var(--space-4) +
+          env(safe-area-inset-bottom, 0px)
+        );
         overflow-y: auto;
         /* Stop iOS rubber-band from chaining through to the parent once the
            list itself is scrolled to either end. Without this, scrolling
