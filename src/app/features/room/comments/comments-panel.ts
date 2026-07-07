@@ -6,6 +6,7 @@ import {
   signal,
   computed,
   inject,
+  effect,
 } from '@angular/core';
 import { Tabs, TabList, Tab, TabPanel, TabContent } from '@angular/aria/tabs';
 import { CommentListComponent } from './comment-list';
@@ -109,6 +110,10 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
             (typing)="typing.emit()"
             (cancelReply)="replyTarget.set(null)"
           />
+
+          <div class="sr-only" aria-live="polite" aria-atomic="true">
+            {{ unreadAnnouncement() }}
+          </div>
         </ng-template>
       </div>
       <div ngTabPanel value="captions" class="tab-panel">
@@ -262,7 +267,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
       /* Container query: comments-panel sits in a column that may be the
          mobile bottom slot or the desktop sidebar; expand affordance only
          makes sense when the panel is in the mobile slot. */
-      @container comments-panel (max-width: 1023.98px) {
+      @container room-page (max-width: 1023.98px) and (min-height: 500px) {
         .expand-btn { display: flex; }
         /* Account for the position:fixed comment-input bar so the last
            messages are not hidden behind it. The padding shrinks the
@@ -271,12 +276,12 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
            (40px buttons + 8px top padding + 8px bottom padding) plus
            env() for the home indicator on iOS. */
         .comments-scroll {
-          padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+          padding-bottom: calc(var(--mobile-input-height) + env(safe-area-inset-bottom, 0px));
         }
       }
 
       /* Desktop two-column layout: switch from top border to left border. */
-      @container comments-panel (min-width: 1024px) {
+      @container room-page (min-width: 1024px) and (min-height: 500px) {
         .comments-panel {
           border-top: none;
           border-left: 1px solid var(--cp-border);
@@ -330,6 +335,18 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         :host.expanded { animation: none; }
         .spinning { animation: none; }
       }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
     `,
   ],
 })
@@ -371,6 +388,29 @@ export class CommentsPanelComponent {
     if (names.length === 2) return `${names[0]} & ${names[1]} are writing...`;
     return 'Several people are writing...';
   });
+
+  /**
+   * SR-only announcement for unread-count transitions. Reads the store's
+   * unread count and only emits a new label when the count changes —
+   * TalkBack/VoiceOver hear "5 new messages" once per transition instead
+   * of every individual comment text.
+   */
+  private readonly _announcement = signal('');
+  protected readonly unreadAnnouncement = this._announcement.asReadonly();
+
+  constructor() {
+    effect(() => {
+      const count = this.commentsStore.unreadCount();
+      if (count === 0) {
+        // Only emit "No new messages" when transitioning away from > 0.
+        if (this._announcement() !== '') this._announcement.set('No new messages');
+      } else if (count === 1) {
+        this._announcement.set('1 new message');
+      } else {
+        this._announcement.set(`${count} new messages`);
+      }
+    });
+  }
 
   onTabChange(tab: string | undefined): void {
     if (tab === 'captions') {
