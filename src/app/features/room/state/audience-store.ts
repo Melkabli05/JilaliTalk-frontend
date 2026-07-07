@@ -1,6 +1,4 @@
 import { Injectable, computed, effect, inject, signal, DestroyRef } from '@angular/core';
-import { interval } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { AudienceUser } from '../data/room-model';
 import { CollectionStore, EnrichBatchQueue } from '@shared/utils';
@@ -68,10 +66,23 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
     }
   }
 
+  private reconcileTimer: ReturnType<typeof setTimeout> | null = null;
+  private destroyed = false;
+
+  /**
+   * Self-rescheduling timeout, not a fixed-cadence interval() — the next
+   * poll is armed only after the current one completes (success or
+   * failure), so a slow or hung request can't pile up overlapping polls.
+   * The previous interval(30_000) also kept ticking even while the
+   * store had no cname (every early-return in reconcileAudience was a
+   * wasted tick); this only runs while a cname is set.
+   */
   private startReconciliation(): void {
-    interval(AUDIENCE_RECONCILE_MS)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => void this.reconcileAudience());
+    if (this.destroyed || this.reconcileTimer) return;
+    this.reconcileTimer = setTimeout(() => {
+      this.reconcileTimer = null;
+      void this.reconcileAudience().finally(() => this.startReconciliation());
+    }, AUDIENCE_RECONCILE_MS);
   }
 
   private async reconcileAudience(): Promise<void> {
@@ -89,6 +100,13 @@ export class AudienceStore extends CollectionStore<AudienceUser> {
   constructor() {
     super();
     this.startReconciliation();
+    this.destroyRef.onDestroy(() => {
+      this.destroyed = true;
+      if (this.reconcileTimer) {
+        clearTimeout(this.reconcileTimer);
+        this.reconcileTimer = null;
+      }
+    });
     effect(() => {
       const event = this.bffWs.lastEvent();
       if (!event) return;

@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, input, effect, computed, DestroyRef, Injector, Type } from '@angular/core';
 import { Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
-import { EMPTY, firstValueFrom, forkJoin, interval, type Subscription } from 'rxjs';
+import { EMPTY, firstValueFrom, forkJoin } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { StageStore } from '../state/stage-store';
@@ -88,13 +88,35 @@ export abstract class RoomPageBase {
 
 
   private readonly typingUsers = signal<ReadonlyMap<number, { name: string; ts: number }>>(new Map());
-  private readonly typingTick = signal(0);
   readonly typingNames = computed<readonly string[]>(() => {
-    this.typingTick();
     const now = Date.now();
     return [...this.typingUsers().entries()]
       .filter(([, info]) => now - info.ts <= 1000)
       .map(([, info]) => info.name);
+  });
+
+  private typingPruneTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Self-arming prune, not an unconditional interval. Runs only while
+   * typingUsers has entries — schedules one setTimeout, prunes stale
+   * entries when it fires, and re-arms only if entries remain. When
+   * the map is empty (the common case — no one is typing), no timer
+   * runs at all, unlike the previous interval(1_000) which ticked
+   * forever for the entire lifetime of every room page.
+   */
+  private readonly typingPruneEffect = effect(() => {
+    const map = this.typingUsers();
+    if (this._destroying()) return;
+    if (map.size === 0 || this.typingPruneTimer) return;
+    this.typingPruneTimer = setTimeout(() => {
+      this.typingPruneTimer = null;
+      const now = Date.now();
+      this.typingUsers.update((m) => {
+        const next = new Map([...m].filter(([, info]) => now - info.ts <= 1000));
+        return next.size === m.size ? m : next;
+      });
+    }, 1000);
   });
 
 
@@ -154,7 +176,10 @@ export abstract class RoomPageBase {
   constructor() {
     this.destroyRef.onDestroy(() => {
       this._destroying.set(true);
-      this.typingPruneSub?.unsubscribe();
+      if (this.typingPruneTimer) {
+        clearTimeout(this.typingPruneTimer);
+        this.typingPruneTimer = null;
+      }
       // The room is still in the active-call snapshot, meaning the user clicked minimize
       // and the room page is being destroyed in response — keep state alive for the restore
       // path. (onLeave clears the snapshot before destroy fires, so a "real" leave doesn't
@@ -178,14 +203,7 @@ export abstract class RoomPageBase {
         }),
       );
     });
-
-    this.typingPruneSub = interval(1_000)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.typingTick.update((n) => n + 1));
   }
-
-  protected typingPruneSub: Subscription | null = null;
-
 
   async onRefreshRoom(): Promise<void> {
     const cname = this.roomStore.cname();
