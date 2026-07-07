@@ -31,18 +31,18 @@ export interface TypingBody {
 
 export interface SendDmBody {
   kind: DmKind;
-  msgId?: string;
-  fromId?: number;
-  fromNickname?: string;
-  fromProfileTs?: number;
-  text?: string;
+  msgId?: string | undefined;
+  fromId?: number | undefined;
+  fromNickname?: string | undefined;
+  fromProfileTs?: number | undefined;
+  text?: string | undefined;
   // image fields
-  url?: string;
-  localPath?: string;
-  size?: number;
-  width?: number;
-  height?: number;
-  mimeType?: string;
+  url?: string | undefined;
+  localPath?: string | undefined;
+  size?: number | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
+  mimeType?: string | undefined;
   // voice_room / live_link / introduction
   roomData?: unknown;
   // send_gift

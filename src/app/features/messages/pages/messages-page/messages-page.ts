@@ -104,7 +104,7 @@ export class MessagesPageComponent {
   // on each keystroke (debounced), accepts Enter to send a `text` DM and Shift+Enter for
   // newlines. Read-receipt fires automatically when a conversation becomes selected.
 
-  private readonly draft = signal('');
+  protected readonly draft = signal('');
   private typingTimer: ReturnType<typeof setTimeout> | null = null;
   private lastTypingFireTs = 0;
   private typingActive = false;

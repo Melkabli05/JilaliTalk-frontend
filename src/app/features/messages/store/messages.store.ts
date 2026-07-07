@@ -94,7 +94,7 @@ export class MessagesStore {
   markLastRead(peerId: number): void {
     const msgId = this.lastInboundMsgId(peerId);
     if (msgId == null) return;
-    this.api.postReadReceipt(peerId, msgId).subscribe({ error: () => {});
+    this.api.postReadReceipt(peerId, msgId).subscribe({ error: () => {} });
   }
 
   // ── outbound (matches prvgmsgpacket.js's sendReadReceipt / sendTypingIndicator / sendTextMessage) ──
@@ -118,7 +118,7 @@ export class MessagesStore {
   /** Fire a typing-state packet. Caller is expected to debounce this to ~1Hz while input is
    *  non-empty and emit a one-shot {@code false} on input clear or blur. */
   sendTyping(peerId: number, isTyping: boolean): void {
-    this.api.postTyping(peerId, isTyping).subscribe({ error: () => {});
+    this.api.postTyping(peerId, isTyping).subscribe({ error: () => {} });
   }
 
   /** Fire a 1:1 DM. Used by the composer for any of the six shapes the legacy client emitted. */
@@ -245,7 +245,7 @@ export class MessagesStore {
       let touched = false;
       const next = new Map<string, DmConversation>();
       for (const [k, c] of m) {
-        const idx = c.messages.findIndex(x => x.id === msgId);
+        const idx = c.messages.findIndex((x: DmMessage) => x.id === msgId);
         if (idx === -1 || c.messages[idx].delivery === 'delivered') {
           next.set(k, c);
           continue;

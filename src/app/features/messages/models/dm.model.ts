@@ -17,7 +17,7 @@ export interface DmMessage {
   /** For room_share messages: the {@code cname} identifying the room. */
   readonly cname?: string;
   /** For {@code voice_room_shared}: how many listeners the room has right now. */
-  readonly voiceCount?: number;
+  readonly voiceCount?: number | undefined;
   readonly ts: number;
   /**
    * Send-state for DMs the local user composed (mirrors WhatsApp-style ✓ / ✓✓). Defaults
