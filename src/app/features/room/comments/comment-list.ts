@@ -82,7 +82,7 @@ const NAME_COLORS_LIGHT = [
     /* Mobile: lift the pill a touch so it clears the last comment row on
        cramped voice-room list heights (22cqh) and adds safe-area padding
        above the iOS home indicator. */
-    @container comments-panel (max-width: 1023.98px) {
+    @container room-page (max-width: 1023.98px) and (min-height: 500px) {
       :host {
         bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
       }
@@ -150,7 +150,7 @@ export class NewMessagesPillComponent {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="comment-list" role="log" aria-live="polite" aria-label="Comments" #scrollContainer>
+    <div class="comment-list" role="log" aria-label="Comments" #scrollContainer>
       @if (unreadCount() > 0 && !isAtBottom()) {
         <app-new-messages-pill
           [count]="unreadCount()"
@@ -662,12 +662,41 @@ export class NewMessagesPillComponent {
          replyDisabled() input. */
       .action-btn.is-hidden { display: none; }
 
+      @container room-page (max-width: 1023.98px) and (min-height: 500px) {
+        /* WCAG 2.5.5 AAA — primary interactive controls must hit 44×44. The
+           visual size stays compact so the layout doesn't reflow; the hit area
+           grows outward without changing the rendered icon. */
+        .action-btn {
+          min-width: 44px;
+          min-height: 44px;
+        }
+
+        /* The "X new messages ↓" pill is the user's only backlog signal while
+           scrolled up; under-sized touch targets miss-thumb into adjacent
+           comments. Same hit-area growth trick. */
+        .new-messages-pill {
+          min-height: 44px;
+        }
+
+        /* Jump-to-original quote — short quoted messages ("ok", "yes") render
+           smaller than the AAA target. Set a min-height so even a one-word quote
+           is reachable. */
+        .reply-quote {
+          min-height: 44px;
+        }
+      }
+
       /* ─── Empty state ─── */
       .empty-state {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        /* flex: 1 makes the empty-state consume the remaining column height so
+           justify-content: center actually centers vertically. Without it,
+           the empty-state is a regular flex-column item with intrinsic height
+           and sits at the top of the column. */
+        flex: 1;
         padding: var(--space-6) var(--space-4);
         text-align: center;
       }
