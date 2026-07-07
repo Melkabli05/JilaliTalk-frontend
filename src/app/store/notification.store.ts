@@ -104,10 +104,11 @@ export class NotificationStore {
     this.maybeShowToast(full);
   }
 
-  addUserEvent(params: Omit<AppNotification, 'id' | 'timestamp' | 'read' | 'userId' | 'avatarUrl' | 'nickname'> & {
+  addUserEvent(params: Omit<AppNotification, 'id' | 'timestamp' | 'read' | 'userId' | 'avatarUrl' | 'nickname' | 'action'> & {
     userId: number;
     avatarUrl?: string | null;
     nickname?: string | null;
+    action?: AppNotification['action'];
   }): void {
     const full = this.buildNotification(params);
     this._notifications.update(list => this.capNotifications([full, ...list]));

@@ -16,6 +16,7 @@ export interface NotificationReporter {
     userId: number;
     avatarUrl?: string | null;
     nickname?: string | null;
+    action?: { type: 'navigate_to_conversation'; userId: number } | { type: 'open_user_profile'; userId: number };
   }): void;
 }
 

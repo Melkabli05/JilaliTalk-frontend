@@ -1,11 +1,12 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { NotificationStore } from '@store/notification.store';
 import { LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, LucideInfo } from '@lucide/angular';
+import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 
 @Component({
   selector: 'app-notification-toast',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, LucideInfo],
+  imports: [LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, LucideInfo, AvatarComponent],
   template: `
     @if (store.pendingToast(); as n) {
       <button
@@ -15,14 +16,25 @@ import { LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, LucideInfo }
         (click)="store.dismissToast()"
         aria-live="polite"
       >
-        <span class="toast-icon" aria-hidden="true">
-          @switch (n.type) {
-            @case ('success') { <svg lucideCheckCircle [size]="16"></svg> }
-            @case ('error') { <svg lucideAlertCircle [size]="16"></svg> }
-            @case ('warning') { <svg lucideAlertTriangle [size]="16"></svg> }
-            @default { <svg lucideInfo [size]="16"></svg> }
-          }
-        </span>
+        @if (n.avatarUrl) {
+          <app-avatar
+            [src]="n.avatarUrl"
+            [alt]="n.nickname ?? 'User'"
+            [initials]="n.nickname ? n.nickname.slice(0, 2) : null"
+            size="sm"
+            shape="circle"
+            class="toast-avatar"
+          />
+        } @else {
+          <span class="toast-icon" aria-hidden="true">
+            @switch (n.type) {
+              @case ('success') { <svg lucideCheckCircle [size]="16"></svg> }
+              @case ('error') { <svg lucideAlertCircle [size]="16"></svg> }
+              @case ('warning') { <svg lucideAlertTriangle [size]="16"></svg> }
+              @default { <svg lucideInfo [size]="16"></svg> }
+            }
+          </span>
+        }
         <span class="toast-text">
           <span class="toast-title">{{ n.title }}</span>
           @if (n.message) {
@@ -55,6 +67,7 @@ import { LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, LucideInfo }
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    .toast-avatar { flex-shrink: 0; align-self: flex-start; }
     .toast-icon { flex-shrink: 0; margin-top: 1px; }
     .toast-info .toast-icon { color: var(--color-primary-500); }
     .toast-success .toast-icon { color: var(--color-accent-500); }

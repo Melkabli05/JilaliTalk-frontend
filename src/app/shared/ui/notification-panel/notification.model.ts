@@ -16,7 +16,13 @@ export interface AppNotification {
   readonly userId?: number;
   readonly avatarUrl?: string | null;
   readonly nickname?: string | null;
+  /** Optional action performed when the notification is clicked. */
+  readonly action?: NotificationAction;
 }
+
+export type NotificationAction =
+  | { readonly type: 'navigate_to_conversation'; readonly userId: number }
+  | { readonly type: 'open_user_profile'; readonly userId: number };
 
 export interface NotificationGroup {
   readonly bucket: DayBucket;

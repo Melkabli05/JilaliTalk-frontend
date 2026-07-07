@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { Dialog } from '@angular/cdk/dialog';
+import { Router } from '@angular/router';
 import { LucideBell, LucideCheck, LucideTrash2 } from '@lucide/angular';
 import { NotificationStore } from '@store/notification.store';
 import { UserInfoService } from '@core/services/user-info.service';
@@ -220,6 +221,7 @@ export class NotificationPanelComponent {
   readonly store = inject(NotificationStore);
   private readonly dialog = inject(Dialog);
   private readonly userInfo = inject(UserInfoService);
+  private readonly router = inject(Router);
 
   readonly isMobile = injectIsMobileViewport(SHEET_BREAKPOINT_QUERY);
 
@@ -270,6 +272,24 @@ export class NotificationPanelComponent {
   }
 
   onItemOpen(notification: AppNotification): void {
+    if (notification.action?.type === 'navigate_to_conversation') {
+      this.router.navigate(['/messages', notification.action.userId]);
+      this.store.close();
+      return;
+    }
+    if (notification.action?.type === 'open_user_profile') {
+      void this.userInfo.fetchUserInfo(notification.action.userId);
+      this.dialog.open<UserInfoModalComponent, UserInfoModalData>(UserInfoModalComponent, {
+        data: {
+          userId: notification.action.userId,
+          nickname: notification.nickname ?? null,
+          headUrl: notification.avatarUrl ?? null,
+        },
+        backdropClass: 'app-modal-backdrop',
+        ariaLabel: notification.nickname ?? 'User',
+      });
+      return;
+    }
     if (!notification.userId) return;
     void this.userInfo.fetchUserInfo(notification.userId);
     this.dialog.open<UserInfoModalComponent, UserInfoModalData>(UserInfoModalComponent, {

@@ -142,10 +142,26 @@ export class ImBootstrapService {
         this.notifications.notify('info', 'Live room shared', `${event.fromNickname} sent you a live room`);
         break;
       case 'text_message':
-        this.notifications.notify('info', 'New message', event.text);
+        this.notifyUserLinked({
+          type: 'info',
+          title: 'New message',
+          message: event.text,
+          uid: event.fromUserId,
+          nickname: event.fromNickname || 'Someone',
+          avatarUrl: event.fromHeadUrl ?? null,
+          action: { type: 'navigate_to_conversation', userId: Number(event.fromUserId) },
+        });
         break;
       case 'image_message':
-        this.notifications.notify('info', 'New message', 'Sent you a photo');
+        this.notifyUserLinked({
+          type: 'info',
+          title: 'New message',
+          message: 'Sent you a photo',
+          uid: event.fromUserId,
+          nickname: event.fromNickname || 'Someone',
+          avatarUrl: event.fromHeadUrl ?? null,
+          action: { type: 'navigate_to_conversation', userId: Number(event.fromUserId) },
+        });
         break;
       case 'gift_message':
         this.notifyUserLinked({
@@ -201,6 +217,7 @@ export class ImBootstrapService {
     uid: string;
     nickname: string | null;
     avatarUrl: string | null;
+    action?: { type: 'navigate_to_conversation'; userId: number } | { type: 'open_user_profile'; userId: number };
   }): void {
     const uid = Number(params.uid);
     if (Number.isFinite(uid) && uid > 0) {
@@ -212,6 +229,7 @@ export class ImBootstrapService {
         userId: uid,
         avatarUrl: params.avatarUrl,
         nickname: params.nickname,
+        action: params.action,
       });
     } else {
       this.notifications.notify(params.type, params.title, params.message);
