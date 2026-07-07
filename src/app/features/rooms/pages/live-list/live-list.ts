@@ -41,7 +41,7 @@ type ViewMode = 'grid' | 'list';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [LiveRoomsStore],
   templateUrl: './live-list.html',
-  styleUrls: ['../voice-list/voice-list.scss'],
+  styleUrls: ['./live-list.scss'],
 })
 export class LiveList {
   private readonly store = inject(LiveRoomsStore);
