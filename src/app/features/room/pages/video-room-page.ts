@@ -18,7 +18,7 @@ import { InRoomRtmStore, IN_ROOM_RTM_READER, IN_ROOM_RTM_WRITER } from '../featu
 import { GoodieStore, GOODIE_READER, GOODIE_WRITER } from '../feature/goodie-bag/goodie-store';
 import { StageUser, AudienceUser, LiveRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../data/room-model';
 import { SendEvent } from '../feature/comments/comment-input';
-import { environment } from '@env/environment';
+import { AGORA_APP_ID_VIDEO } from '@core/tokens/agora-app-id.token';
 import { RoomHeaderComponent } from '../feature/room-header';
 import { VideoStageGridComponent } from '../ui/video-stage-grid';
 import { AudienceListComponent } from '../feature/audience/audience-list';
@@ -252,6 +252,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
   });
 
   readonly roomStore = inject(RoomStore);
+  private readonly agoraAppId = inject(AGORA_APP_ID_VIDEO);
 
   readonly showSettings = signal(false);
 
@@ -314,6 +315,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
     const isRestore = await this.resolveRoomEntry(cname);
     this.audienceStore.setBusiType(busiType);
+    this.stageStore.setRoomContext(cname, busiType);
     try {
       await this.roomStore.enterRoom(cname, busiType, this.visible());
     } catch (err) {
@@ -424,7 +426,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
       try {
         const rtcInfo = this.roomStore.rtcInfo();
         const rtcToken = rtcInfo?.token ?? null;
-        const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : environment.agoraAppIdVideo;
+        const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : this.agoraAppId;
         await this.rcs.connect(actualCname, uid, rtcToken, appId, !isVisible);
       } catch {
         this.toast.error('Failed to connect to audio');

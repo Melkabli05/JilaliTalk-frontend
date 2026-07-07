@@ -17,7 +17,7 @@ import { GoodieStore, GOODIE_READER, GOODIE_WRITER } from '../feature/goodie-bag
 import { StageUser, VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../data/room-model';
 import { UserRole } from '@core/models/user-role';
 import { SendEvent } from '../feature/comments/comment-input';
-import { environment } from '@env/environment';
+import { AGORA_APP_ID_VOICE } from '@core/tokens/agora-app-id.token';
 import { RoomHeaderComponent } from '../feature/room-header';
 import { StageGridComponent } from '../feature/stage/stage-grid';
 import { AudienceListComponent } from '../feature/audience/audience-list';
@@ -236,6 +236,7 @@ export class RoomPageComponent extends RoomPageBase {
   });
 
   readonly roomStore = inject(RoomStore);
+  private readonly agoraAppId = inject(AGORA_APP_ID_VOICE);
 
   protected readonly leaveNavTarget = ['/rooms'];
 
@@ -283,6 +284,7 @@ export class RoomPageComponent extends RoomPageBase {
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
     const isRestore = await this.resolveRoomEntry(cname);
     this.audienceStore.setBusiType(busiType);
+    this.stageStore.setRoomContext(cname, busiType);
     try {
       const visibleOnFreshJoin = isRestore
         ? !this.activeCallStore.isInvisible()
@@ -401,7 +403,7 @@ export class RoomPageComponent extends RoomPageBase {
       try {
         const rtcInfo = this.roomStore.rtcInfo();
         const rtcToken = rtcInfo?.token ?? null;
-        const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : environment.agoraAppIdVoice;
+        const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : this.agoraAppId;
         await this.rcs.connect(cname, uid, rtcToken, appId, !isVisible);
         // Populate the OS-level "Call in progress" tile so iOS shows the
         // room name in Control Center / lock-screen instead of a generic
@@ -545,7 +547,7 @@ export class RoomPageComponent extends RoomPageBase {
     const uid = this.roomStore.userId();
     const rtcInfo = this.roomStore.rtcInfo();
     const token = rtcInfo?.token ?? null;
-    const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : environment.agoraAppIdVoice;
+    const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : this.agoraAppId;
     await this.rcs.agora.disconnect();
     await this.rcs.agora.connect(cname, uid, token, appId, true);
     await this.rcs.setMicEnabled(true);

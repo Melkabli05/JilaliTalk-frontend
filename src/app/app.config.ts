@@ -22,6 +22,7 @@ import { environment } from '@env/environment';
 import { routes } from './app.routes';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
 import { WS_BASE_URL } from '@core/tokens/ws-base-url.token';
+import { AGORA_APP_ID_VOICE, AGORA_APP_ID_VIDEO } from '@core/tokens/agora-app-id.token';
 
 function restoreSession() {
   return () => {
@@ -46,6 +47,8 @@ export const appConfig: ApplicationConfig = {
     { provide: APP_INITIALIZER, useFactory: restoreSession, multi: true },
     { provide: API_BASE_URL, useValue: environment.apiUrl },
     { provide: WS_BASE_URL, useValue: environment.wsUrl },
+    { provide: AGORA_APP_ID_VOICE, useValue: environment.agoraAppIdVoice },
+    { provide: AGORA_APP_ID_VIDEO, useValue: environment.agoraAppIdVideo },
 
     // Service Worker — only registered in production builds (enabled: environment.production).
     // Dev mode skips SW registration so hot-reload is unaffected.

@@ -1,8 +1,10 @@
-import { Injectable, InjectionToken, Signal, computed, effect, inject } from '@angular/core';
+import { Injectable, InjectionToken, Signal, computed, effect, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { StageUser } from '../data/room-model';
 import { CollectionStore, EnrichBatchQueue } from '@shared/utils';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserInfoService } from '@core/services/user-info.service';
+import { RoomApi } from '../data/room-api';
 
 /** No narrower consumer currently injects StageStore than room-page-base.ts (which
  *  needs full read+write access to orchestrate the room), so this split has no
@@ -16,6 +18,7 @@ export interface StageReader {
 }
 
 export interface StageWriter {
+  setRoomContext(cname: string, busiType: number): void;
   updateStageUsers(users: StageUser[]): void;
   updateUserMicStatus(uid: number, isTurnOnMic: boolean): void;
   updateUserCamStatus(uid: number, isTurnOnCam: boolean): void;
@@ -32,9 +35,41 @@ export const STAGE_WRITER = new InjectionToken<StageWriter>('STAGE_WRITER');
 export class StageStore extends CollectionStore<StageUser> {
   private readonly bffWs = inject(BffRoomSocketService);
   private readonly userInfoService = inject(UserInfoService);
+  private readonly api = inject(RoomApi);
 
   readonly stageUsers = this.items;
   readonly stageCount = computed(() => this.items().length);
+
+  private readonly _cname = signal<string | null>(null);
+  private readonly _busiType = signal<number>(2);
+
+  setRoomContext(cname: string, busiType: number): void {
+    this._cname.set(cname);
+    this._busiType.set(busiType);
+  }
+
+  /**
+   * stage_join's WS payload (StageUserEvent) carries only userId/nickname/headUrl —
+   * no role — so addStageUser() below has to insert new joiners with a role:3
+   * placeholder. That's harmless for the optimistic self-join case (the caller's own
+   * addStageUser() call already holds the correct role, and the dedup-by-userId in
+   * addStageUser() means this event's placeholder is silently dropped when it echoes
+   * back). It's not harmless for a stage_join broadcast about a *different* user this
+   * client doesn't otherwise know the role of — e.g. a moderator joining stage from
+   * another device would show as a regular participant until the next manual refresh.
+   * Refetching the authoritative stage list (which does carry real roles) after a
+   * genuinely new joiner corrects that within one round-trip instead of waiting on
+   * the user to notice and hit refresh.
+   */
+  private async reconcileRoster(): Promise<void> {
+    const cname = this._cname();
+    if (!cname) return;
+    try {
+      const result = await firstValueFrom(this.api.fetchStageUsers(cname, this._busiType()));
+      this.updateStageUsers([...(result.list ?? [])]);
+    } catch {
+    }
+  }
 
   private readonly enrichQueue = new EnrichBatchQueue((uids) => this.flushEnrichBatch(uids));
 
@@ -77,6 +112,7 @@ export class StageStore extends CollectionStore<StageUser> {
           break;
         case 'stage_join': {
           const uid = Number(event.stageUser.userId);
+          const isNewJoiner = !this.isOnStage(uid);
           this.addStageUser({
             userId: uid,
             nickname: event.stageUser.nickname ?? 'Anonymous',
@@ -97,6 +133,10 @@ export class StageStore extends CollectionStore<StageUser> {
           if (!event.stageUser.headUrl) {
             this.enrichQueue.queue(uid);
           }
+          // Only for a genuinely new joiner — the optimistic self-join case is already
+          // correct (see reconcileRoster's doc comment) and isOnStage(uid) is already
+          // true by the time that echo arrives, so this doesn't double-fetch for it.
+          if (isNewJoiner) void this.reconcileRoster();
           break;
         }
         case 'stage_quit':
@@ -171,5 +211,10 @@ export class StageStore extends CollectionStore<StageUser> {
 
   getStageUser(uid: number): StageUser | undefined {
     return this.items().find((u) => u.userId === uid);
+  }
+
+  override reset(): void {
+    super.reset();
+    this._cname.set(null);
   }
 }
