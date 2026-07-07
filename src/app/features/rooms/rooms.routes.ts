@@ -18,10 +18,4 @@ export const roomsRoutes: Routes = [
     loadComponent: () =>
       import('./pages/live-list/live-list').then((m) => m.LiveList),
   },
-  {
-    path: 'private',
-    title: 'Private Rooms',
-    loadComponent: () =>
-      import('./pages/private-list/private-list').then((m) => m.PrivateList),
-  },
 ];
