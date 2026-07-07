@@ -290,7 +290,7 @@ export class SidenavComponent {
     },
     {
       items: [
-        { id: 'private' as TabType, iconName: 'lock', label: 'Private Rooms', route: '/rooms/private' },
+        { id: 'private' as TabType, iconName: 'lock', label: 'Private Rooms', route: '/rooms/voice' },
         { id: 'messages' as TabType, iconName: 'message', label: 'Messages', route: '/messages', badge: 5 },
       ],
     },
