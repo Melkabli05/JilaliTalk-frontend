@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject, signal, input, effect, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, input, effect, computed, DestroyRef } from '@angular/core';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RoomStore } from '../store/room-store';
@@ -20,8 +21,12 @@ import { CommentsPanelComponent } from '../comments/comments-panel';
 import { ManagersModalComponent } from '../moderation/managers-modal';
 import { AvSettingsComponent } from '../audio-settings/av-settings';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
+import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { ToastService } from '@core/services/toast.service';
+import { RoomApi } from '../api/room-api';
+import { ActiveCallStore } from '@store/active-call.store';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
-import { RoomPageBase } from './room-page-base';
+import { RoomFacade } from '../facade/room-facade';
 
 @Component({
   selector: 'app-video-room-page',
@@ -54,6 +59,7 @@ import { RoomPageBase } from './room-page-base';
     { provide: MANAGERS_READER, useExisting: ManagersStore },
     { provide: MANAGERS_WRITER, useExisting: ManagersStore },
     RoomConnectionService,
+    RoomFacade,
   ],
   template: `
     <div class="room-layout">
@@ -66,24 +72,24 @@ import { RoomPageBase } from './room-page-base';
               [cname]="roomStore.cname() ?? ''"
               [isMicOn]="false"
               [isCamOn]="roomStore.isCamOn()"
-              [camBusy]="mediaToggleBusy()"
-              [micSpeaking]="selfSpeaking()"
+              [camBusy]="facade.mediaToggleBusy()"
+              [micSpeaking]="facade.selfSpeaking()"
               [isHandRaised]="roomStore.isHandRaised()"
               [isOnStage]="rosterStore.isOnStage(roomStore.userId())"
               [isModerator]="roomStore.isModerator()"
               [invisible]="!roomStore.isVisible()"
-              [refreshing]="refreshingRoom()"
-              [captionEnabled]="captionEnabled()"
+              [refreshing]="facade.refreshingRoom()"
+              [captionEnabled]="facade.captionEnabled()"
               [wsStatus]="bffWs.wsStatus()"
               (toggleCam)="onMediaToggle()"
               (toggleCamOrShare)="onToggleCamOrShare()"
               (toggleHand)="onToggleHand()"
-              (gift)="onGift()"
-              (pitch)="onPitch()"
+              (gift)="facade.onGift()"
+              (pitch)="facade.onPitch()"
               (settings)="showSettings.set(true)"
-              (managers)="onManagers()"
-              (reward)="onReward()"
-              (toggleCaption)="onToggleCaption()"
+              (managers)="facade.onManagers()"
+              (reward)="facade.onReward()"
+              (toggleCaption)="facade.onToggleCaption()"
               (toggleInvisible)="onToggleInvisible()"
               (refresh)="onRefreshRoom()"
               (leave)="onLeave()"
@@ -95,19 +101,19 @@ import { RoomPageBase } from './room-page-base';
               [users]="rosterStore.stageUsers()"
               [videoTracks]="remoteVideoTracks()"
               [speakingUids]="rcs.speakingUids()"
-              (userClick)="onStageUserClick($event)"
+              (userClick)="facade.onStageUserClick($event)"
             />
           </section>
 
           <section class="audience-section">
             <app-audience-list
-              [users]="audienceWithGhosts()"
+              [users]="facade.audienceWithGhosts()"
               [speakingUids]="rcs.speakingUids()"
               [currentUserId]="roomStore.userId()"
               [canInviteToStage]="roomStore.isHost()"
-              [inviteBusy]="inviteBusy()"
-              (userClick)="onAudienceUserClick($event)"
-              (inviteToStage)="onInviteToStage($event)"
+              [inviteBusy]="facade.inviteBusy()"
+              (userClick)="facade.onAudienceUserClick($event)"
+              (inviteToStage)="facade.onInviteToStage($event)"
             />
           </section>
         </div>
@@ -117,13 +123,13 @@ import { RoomPageBase } from './room-page-base';
             [comments]="commentsStore.comments()"
             [captions]="commentsStore.captions()"
             [currentUserId]="roomStore.userId()"
-            [refreshing]="refreshingComments()"
-            [typingNames]="typingNames()"
+            [refreshing]="facade.refreshingComments()"
+            [typingNames]="facade.typingNames()"
             [disabled]="!roomStore.isVisible()"
             (sendComment)="onSendComment($event)"
-            (typing)="onTyping()"
+            (typing)="facade.onTyping()"
             (refresh)="onRefreshComments()"
-            (loadCaptions)="onLoadCaptions()"
+            (loadCaptions)="facade.onLoadCaptions()"
           />
         </aside>
       </div>
@@ -132,13 +138,13 @@ import { RoomPageBase } from './room-page-base';
     @if (showSettings()) {
       <app-av-settings />
     }
-    @if (showSignin()) {
+    @if (facade.showSignin()) {
       <app-signin-panel
         [cname]="roomStore.cname() ?? ''"
         [hostId]="roomStore.userId()"
         [roomLevel]="roomStore.roomLevelInfo()?.level ?? 1"
         [roomLevelIcon]="roomStore.roomLevelInfo()?.levelIconV2 ?? roomStore.roomLevelInfo()?.levelIcon ?? null"
-        (onClose)="showSignin.set(false)"
+        (onClose)="facade.showSignin.set(false)"
       />
     }
   `,
@@ -224,7 +230,7 @@ import { RoomPageBase } from './room-page-base';
     `,
   ],
 })
-export class VideoRoomPageComponent extends RoomPageBase {
+export class VideoRoomPageComponent {
   readonly cname = input('', { transform: (v: string | undefined) => v ?? '' });
   readonly busiType = input(1, { transform: (v: string | number | undefined) => Number(v) || 1 });
   readonly visible = input(true, {
@@ -237,6 +243,19 @@ export class VideoRoomPageComponent extends RoomPageBase {
 
   readonly roomStore = inject(RoomStore);
   private readonly agoraAppId = inject(AGORA_APP_ID_VIDEO);
+
+  protected readonly rosterStore = inject(RoomRosterStore);
+  protected readonly commentsStore = inject(CommentsStore);
+  private readonly rtmStore = inject(InRoomRtmStore);
+  protected readonly router = inject(Router);
+  private readonly activeCallStore = inject(ActiveCallStore);
+  private readonly api = inject(RoomApi);
+  readonly rcs = inject(RoomConnectionService);
+  readonly bffWs = inject(BffRoomSocketService);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly facade = inject(RoomFacade);
 
   readonly showSettings = signal(false);
 
@@ -258,10 +277,10 @@ export class VideoRoomPageComponent extends RoomPageBase {
   });
 
   constructor() {
-    super();
+    this.facade.init(this.busiType);
 
     effect(() => {
-      if (this._destroying()) return;
+      if (this.facade.destroying()) return;
       const status = this.bffWs.wsStatus();
       if (this.hasConnectedOnce && status === 'disconnected') {
         this.toast.error('Connection lost — refresh to rejoin');
@@ -271,19 +290,44 @@ export class VideoRoomPageComponent extends RoomPageBase {
     });
 
     effect(() => {
-      if (this._destroying()) return;
+      if (this.facade.destroying()) return;
       if (!this.rcs.roomClosed) return;
       this.toast.error('Room connection was terminated');
       void this.router.navigate(['/rooms/live']);
     });
 
     effect(() => {
-      if (this._destroying()) return;
+      if (this.facade.destroying()) return;
       const cname = this.cname();
       const busiType = this.busiType();
       if (!cname) return;
       void this.enterRoom(cname, busiType);
     });
+  }
+
+  onRefreshRoom(): Promise<void> {
+    return this.facade.refreshRoom(this.roomStore.cname() ?? '', (c) => this.doRefreshRoomCore(c));
+  }
+
+  onRefreshComments(): Promise<void> {
+    return this.facade.refreshComments(this.commentsRefreshMode());
+  }
+
+  onToggleInvisible(): Promise<void> {
+    return this.facade.toggleInvisible((c, bt) => this.makeVisible(c, bt));
+  }
+
+  async onLeave(): Promise<void> {
+    try {
+      await this.facade.leave();
+    } finally {
+      await this.router.navigate(this.leaveNavTarget);
+    }
+  }
+
+  onMinimize(): void {
+    this.facade.minimize();
+    void this.router.navigate(this.leaveNavTarget);
   }
 
   private async enterRoom(cname: string, busiType: number): Promise<void> {
@@ -297,7 +341,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
   }
 
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
-    const isRestore = await this.resolveRoomEntry(cname);
+    const isRestore = await this.facade.resolveRoomEntry(cname);
     this.rosterStore.setRoomContext(cname, busiType);
     try {
       await this.roomStore.enterRoom(cname, busiType, this.visible());
@@ -314,7 +358,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
     // in flight — the page's destroyRef.onDestroy has already run rcs.leave() by
     // now, so continuing here would open a fresh WS/RTC connection nothing will
     // ever tear down. Bail before any further side effects.
-    if (this._destroying()) return;
+    if (this.facade.destroying()) return;
     // Snapshot served its purpose for restore detection — and now becomes the
     // "I am currently in this room" live state that other consumers (e.g. the
     // UserInfoModal's "you're already in this room" check) can read. We update
@@ -360,13 +404,13 @@ export class VideoRoomPageComponent extends RoomPageBase {
       // Also reached when takeUntilDestroyed cancelled the request above (not just a
       // real fetch failure) — don't force-navigate a user who has already left this
       // page to somewhere else entirely.
-      if (this._destroying()) return;
+      if (this.facade.destroying()) return;
       await this.router.navigate(['/rooms']);
       this.toast.error('Room not found');
       return;
     }
     // Same race as above: bail if the page was destroyed while this fetch was in flight.
-    if (this._destroying()) return;
+    if (this.facade.destroying()) return;
 
     const ch = liveInfo.channelInfo;
     const actualCname = ch?.cname || cname;
@@ -376,7 +420,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
     this.roomStore.setRtcInfo(ch?.rtcInfo ?? null);
     const reqUser = liveInfo.reqUserInfo;
     if (reqUser?.userId) {
-      this.reqUserId.set(reqUser.userId);
+      this.facade.reqUserId.set(reqUser.userId);
       this.roomStore.setUserId(reqUser.userId);
       this.commentsStore.setCurrentUserId(reqUser.userId);
     }
@@ -422,7 +466,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
     }
   }
 
-  protected override async makeVisible(cname: string, busiType: number): Promise<void> {
+  protected async makeVisible(cname: string, busiType: number): Promise<void> {
     // joinRoom is the authoritative call — if it fails the user isn't
     // server-side joined, so we must NOT flip local state to visible
     // (would leave the user in an inconsistent "visible" state with
@@ -438,7 +482,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
     // The user may have left the room (or the page been destroyed) while this
     // request was in flight — don't reconnect WS/reset stores for a page no
     // longer showing.
-    if (this._destroying()) return;
+    if (this.facade.destroying()) return;
 
     let liveInfo: LiveRoomInfo | undefined;
     let stage: StageUsersResponse | undefined;
@@ -451,10 +495,10 @@ export class VideoRoomPageComponent extends RoomPageBase {
     } catch {
       this.toast.error('Failed to rejoin — room info unavailable');
     }
-    if (this._destroying()) return;
+    if (this.facade.destroying()) return;
 
     this.roomStore.setVisibility(true);
-    this.syncVisibilityToUrl(true);
+    this.facade.syncVisibilityToUrl(true);
     this.bffWs.connect(cname, liveInfo?.hostInfo?.userId ?? 0, busiType);
     this.rosterStore.setCname(cname);
     // Clears only the stage list (pre-merge, this was rosterStore.reset() alone) — not
@@ -472,7 +516,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
     const { voiceRoomInfo: liveInfo, stageUsers: stage, audienceUsers: audience } = await firstValueFrom(
       this.api.fetchJoinBundle<LiveRoomInfo>(cname, this.busiType()),
     );
-    if (this._destroying()) return;
+    if (this.facade.destroying()) return;
     const ch = liveInfo.channelInfo;
     this.roomStore.setRoomName(ch?.name?.trim() ?? '');
     this.roomStore.setRoomTopic(ch?.topic ?? '');
@@ -480,14 +524,14 @@ export class VideoRoomPageComponent extends RoomPageBase {
     this.rosterStore.updateAudienceUsers([...(audience?.list ?? [])]);
   }
 
-  override onMediaToggle(): void {
+  onMediaToggle(): void {
     if (!this.roomStore.isVisible()) {
       this.toast.info('You are invisible — rejoin visibly to enable camera');
       return;
     }
-    if (this.mediaToggleBusy()) return;
-    this.mediaToggleBusy.set(true);
-    this.doToggleCam().finally(() => this.mediaToggleBusy.set(false));
+    if (this.facade.mediaToggleBusy()) return;
+    this.facade.mediaToggleBusy.set(true);
+    this.doToggleCam().finally(() => this.facade.mediaToggleBusy.set(false));
   }
 
   private async doToggleCam(): Promise<void> {
@@ -496,7 +540,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
 
     if (isOn) {
       await this.rcs.setCamEnabled(false);
-      if (this._destroying()) return;
+      if (this.facade.destroying()) return;
       this.roomStore.setCamOn(false);
       this.rosterStore.updateUserCamStatus(uid, false);
     } else {
@@ -510,7 +554,7 @@ export class VideoRoomPageComponent extends RoomPageBase {
         } else {
           await this.rcs.setCamEnabled(true);
         }
-        if (this._destroying()) return;
+        if (this.facade.destroying()) return;
         this.roomStore.setCamOn(true);
         this.rosterStore.updateUserCamStatus(uid, true);
       } catch (err) {
@@ -520,24 +564,24 @@ export class VideoRoomPageComponent extends RoomPageBase {
     }
   }
 
-  override onToggleCamOrShare(): void {
+  onToggleCamOrShare(): void {
     this.toast.info('Screen share is not available yet');
   }
 
-  override onToggleHand(): void {
+  onToggleHand(): void {
     const cname = this.roomStore.cname();
     const busiType = this.busiType();
     if (!cname) return;
-    this.raiseOrLowerHand(cname, busiType);
+    this.facade.raiseOrLowerHand(cname, busiType);
   }
 
-  override onSendComment(event: SendEvent): void {
+  onSendComment(event: SendEvent): void {
     const cname = this.roomStore.cname();
     if (!cname) return;
     const nickname = this.roomStore.nickname() || 'Anonymous';
     const headUrl = this.roomStore.headUrl() || null;
 
-    const payload = this.buildCommentPayload(event);
+    const payload = this.facade.buildCommentPayload(event);
 
     this.api.sendComment(payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
