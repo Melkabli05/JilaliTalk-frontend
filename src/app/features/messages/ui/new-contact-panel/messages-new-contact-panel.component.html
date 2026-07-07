@@ -1,0 +1,136 @@
+<div #host class="new-contact-host">
+  <div
+    #panel
+    class="new-contact-panel"
+    role="dialog"
+    aria-modal="true"
+    aria-label="New message"
+    [class.open]="open()"
+    [attr.aria-hidden]="!open()"
+  >
+    <header class="panel-header">
+      <h2 class="panel-title">New message</h2>
+      <button
+        type="button"
+        class="panel-close"
+        (click)="onClose()"
+        aria-label="Close"
+      >
+        <svg aria-hidden="true" lucideClose [size]="16"></svg>
+      </button>
+    </header>
+
+    <div class="tabbar" role="tablist" aria-label="Contact source">
+      @for (t of tabs; track t.id) {
+        <button
+          type="button"
+          role="tab"
+          class="tab"
+          [class.active]="tab() === t.id"
+          [attr.aria-selected]="tab() === t.id"
+          (click)="onTabClick(t.id)"
+        >
+          {{ t.label }}
+        </button>
+      }
+    </div>
+
+    <div class="panel-body">
+      @if (tab() === 'byId') {
+        <div class="by-id">
+          <label class="by-id-label" for="by-id-input">Look up by id</label>
+          <div class="by-id-row">
+            <input
+              id="by-id-input"
+              type="number"
+              inputmode="numeric"
+              enterkeyhint="search"
+              class="by-id-input"
+              placeholder="User id (e.g. 123456)"
+              [value]="idQuery()"
+              (input)="onIdQuery($any($event.target).value)"
+              (keydown.enter)="onLookUpId()"
+              aria-describedby="by-id-msg"
+            />
+            <button
+              type="button"
+              class="by-id-btn"
+              [disabled]="!idQuery().trim() || loading().byId"
+              (click)="onLookUpId()"
+            >
+              Look up
+            </button>
+          </div>
+          <p
+            id="by-id-msg"
+            class="by-id-msg"
+            [class.is-error]="!!idError()"
+          >
+            @if (idError()) { {{ idError() }} }
+            @else if (loading().byId) { Looking up… }
+            @else if (byIdResult(); as u) {
+              <app-user-list-item
+                [userId]="u.userId"
+                [name]="u.nickname ?? 'User'"
+                [headUrl]="u.headUrl"
+                [nationality]="u.nationality"
+                [vipType]="u.vipType"
+                variant="followers"
+                (userClick)="onPick($event)"
+              />
+            } @else {
+              Enter a numeric id and tap Look up.
+            }
+          </p>
+        </div>
+      } @else {
+        <ul class="user-list" role="tabpanel">
+          @for (u of currentList(); track u.userId ?? u.userid) {
+            <li>
+              <app-user-list-item
+                [userId]="(u.userId ?? u.userid) ?? 0"
+                [name]="(u.nickName ?? u.nickname) ?? 'User'"
+                [headUrl]="u.headUrl"
+                [nationality]="u.nationality"
+                [vipType]="u.vipType"
+                [variant]="tab()"
+                [isMutual]="isMutual(u)"
+                (userClick)="onPick($event)"
+              />
+            </li>
+          } @empty {
+            @if (loading()[tab()]) {
+              <li class="empty loading">Loading…</li>
+            } @else if (error()[tab()]) {
+              <li class="empty error">
+                <span>{{ error()[tab()] }}</span>
+                <button type="button" class="retry" (click)="retry(tab())">Retry</button>
+              </li>
+            } @else {
+              <li class="empty">
+                @switch (tab()) {
+                  @case ('following') { No one yet. }
+                  @case ('followers') { No followers yet. }
+                  @case ('visitors')  { No recent visitors. }
+                }
+              </li>
+            }
+          }
+
+          @if (currentMore()) {
+            <li>
+              <button
+                type="button"
+                class="load-more"
+                [disabled]="loading()[tab()]"
+                (click)="loadMore()"
+              >
+                @if (loading()[tab()]) { Loading… } @else { Load more }
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+</div>
