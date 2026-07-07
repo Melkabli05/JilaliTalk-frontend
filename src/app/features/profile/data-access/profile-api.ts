@@ -2,6 +2,7 @@ import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { UserInfo } from '@core/services/user-info.service';
 import {
   ProfileBundleResponse,
   SocialListEnvelope,
@@ -59,5 +60,14 @@ export class ProfileApi {
     return this.http
       .get<BlockListEnvelope>(`${this.baseUrl}/blocklist`)
       .pipe(map((res) => res.data?.blackList ?? []));
+  }
+
+  /**
+   * Single-user profile lookup. Mirrors the BFF's {@code GET /api/users/info?userId=N}.
+   * Used by the messages new-contact panel's "By ID" tab.
+   */
+  userInfo(userId: number): Observable<UserInfo> {
+    const params = new HttpParams().set('userId', userId);
+    return this.http.get<UserInfo>(`${this.baseUrl}/info`, { params });
   }
 }
