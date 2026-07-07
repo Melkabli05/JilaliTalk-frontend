@@ -3,7 +3,7 @@ import { AudienceUserComponent } from '../../ui/audience-user';
 import { AudienceUser } from '../../data/room-model';
 import { UserRole } from '@core/models/user-role';
 import { getLanguageById, getLanguageFlag } from '@shared/data/languages';
-import { createSearchMatcher, injectIsMobileViewport } from '@shared/utils';
+import { createSearchMatcher, injectIsMobileViewport, partitionBy } from '@shared/utils';
 import { LucideSearch, LucideX, LucideLayoutGrid, LucideList, LucideUsers, LucideChevronDown } from '@lucide/angular';
 
 type ViewMode = 'grid' | 'list';
@@ -684,10 +684,11 @@ export class AudienceListComponent {
         .sort((a, b) => a.rank - b.rank)
         .map(({ user }) => user);
     }
-    return [...users.filter((u) => u.isGhost), ...users.filter((u) => !u.isGhost)];
+    const { matching: ghosts, rest } = partitionBy(users, (u) => !!u.isGhost);
+    return [...ghosts, ...rest];
   });
 
-  readonly displayUsers = computed(() => this.filteredUsers());
+  readonly displayUsers = this.filteredUsers;
   readonly filteredCount = computed(() => this.filteredUsers().length);
 
   readonly languageGroups = computed(() => {

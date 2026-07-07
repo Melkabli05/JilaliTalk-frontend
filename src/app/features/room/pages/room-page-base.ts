@@ -127,15 +127,22 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
   });
 
 
-  protected ghostAudienceInputs(): GhostAudienceInputs {
-    return buildGhostAudienceInputs(
+  /**
+   * A computed, not a plain method: ghostFetchEffect and audienceWithGhosts both
+   * read this, and buildGhostAudienceInputs allocates fresh stageUserIds/
+   * audienceUserIds arrays on every call — as a plain method that meant two
+   * independent array allocations per reactive cycle even when nothing the two
+   * consumers care about had changed. computed() makes both read one cached value.
+   */
+  protected readonly ghostAudienceInputs = computed<GhostAudienceInputs>(() =>
+    buildGhostAudienceInputs(
       this.rcs,
       this.reqUserId(),
       this.roomStore,
       this.stageStore,
       this.audienceStore,
-    );
-  }
+    ),
+  );
 
   private readonly ghostFetchEffect = effect(() => {
     if (this._destroying()) return;

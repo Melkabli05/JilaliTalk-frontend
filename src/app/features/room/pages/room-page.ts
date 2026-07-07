@@ -240,9 +240,25 @@ export class RoomPageComponent extends RoomPageBase {
   protected readonly leaveNavTarget = ['/rooms'];
 
   private entering = false;
+  private hasConnectedOnce = false;
 
   constructor() {
     super();
+
+    // Voice-room counterpart of video-room-page.ts's identical effect: without this,
+    // a voice room that gives up reconnecting (5 failed attempts) while the user is
+    // actively in the room — not minimized, so resolveRoomEntry()'s gaveUp() check
+    // never runs — left the user silently stuck with a dead socket and no further
+    // chat/realtime updates, with only the small header status dot as any indication.
+    effect(() => {
+      if (this._destroying()) return;
+      const status = this.bffWs.wsStatus();
+      if (this.hasConnectedOnce && status === 'disconnected') {
+        this.toast.error('Connection lost — refresh to rejoin');
+        void this.router.navigate(['/rooms']);
+      }
+      if (status === 'connected') this.hasConnectedOnce = true;
+    });
 
     effect(() => {
       if (this._destroying()) return;
