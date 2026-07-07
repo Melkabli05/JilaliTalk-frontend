@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy, computed, input, output, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, input, output, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { LucideSend, LucideSmile, LucideX, LucideCornerUpLeft } from '@lucide/angular';
+import { KeyboardInsetService } from '@core/services/keyboard-inset.service';
 
 export interface ReplyTarget {
   readonly msgId: string;
@@ -16,6 +17,10 @@ export interface SendEvent {
 @Component({
   selector: 'app-comment-input',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  host: {
+    '[style.bottom.px]': 'hostBottomPx()',
+    '[style.--kb-inset.px]': 'hostBottomPx()',
+  },
   imports: [LucideSend, LucideSmile, LucideX, LucideCornerUpLeft],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -186,8 +191,8 @@ export interface SendEvent {
       }
 
       .reply-cancel {
-        width: 32px;
-        height: 32px;
+        width: 44px;
+        height: 44px;
       }
 
       /* The emoji-picker-element web component has no viewport awareness of
@@ -202,14 +207,26 @@ export interface SendEvent {
       .emoji-picker-container {
         left: var(--space-2);
         right: var(--space-2);
-        max-height: min(400px, 60vh);
+        /* Cap by whichever is smaller: the library's nominal cap (400px) or the
+           space actually visible above the keyboard (visible viewport minus the
+           pinned input-bar height). Without the visible-viewport cap, a picker
+           400px tall extends above the visible area when the keyboard is open and
+           no overflow handling can save it. */
+        max-height: min(
+          400px,
+          calc(100svh - var(--mobile-input-height) - var(--kb-inset, 0px) - 56px)
+        );
+        overflow-y: auto;
       }
 
       emoji-picker {
         --num-columns: 6;
         width: 100% !important;
         height: 100% !important;
-        max-height: min(400px, 60vh) !important;
+        max-height: min(
+          400px,
+          calc(100svh - var(--mobile-input-height) - var(--kb-inset, 0px) - 56px)
+        ) !important;
       }
 
       /* Pin the input to the bottom of the viewport for the immersive mobile
@@ -232,6 +249,18 @@ export interface SendEvent {
   `],
 })
 export class CommentInputComponent {
+  private readonly keyboardInset = inject(KeyboardInsetService);
+
+  /**
+   * Host-bottom offset that lifts the bar above an open soft keyboard. The bar
+   * is `position: fixed; bottom: 0` inside the mobile media query; setting
+   * `style.bottom.px` to the keyboard inset shifts the bar up so its bottom edge
+   * sits at the top of the keyboard instead of being covered by it. iOS Safari
+   * reports `window.visualViewport.height + offsetTop` shrinking while the
+   * keyboard is open; this binding consumes that signal.
+   */
+  protected readonly hostBottomPx = computed(() => this.keyboardInset.keyboardInsetPx());
+
   readonly replyTo = input<ReplyTarget | null>(null);
   readonly disabled = input(false);
   readonly send = output<SendEvent>();
