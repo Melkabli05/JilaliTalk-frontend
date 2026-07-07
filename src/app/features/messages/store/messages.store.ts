@@ -182,6 +182,14 @@ export class MessagesStore {
       case 'typing_indicator':
         this.setTyping(ev.fromUserId, ev.isTyping);
         break;
+      case 'message_ack':
+        // Upstream confirmed an outbound DM. prefix == 0 is the legacy "empty / failure
+        // ACK" marker (≤16-byte body) — leave the bubble alone. Non-zero prefix is the
+        // normal received-by-upstream state, which is what "delivered" means here.
+        if (ev.prefix !== 0 && ev.msgId) {
+          this.markDelivered(ev.msgId);
+        }
+        break;
     }
   }
 
@@ -224,6 +232,31 @@ export class MessagesStore {
       const c = m.get(userId);
       if (!c) return m;
       return new Map(m).set(userId, { ...c, isTyping });
+    });
+  }
+
+  /** Find any outbound bubble with this msgId across every conversation and flip its
+   *  {@code delivery} flag to {@code 'delivered'}. The msgId is unique per send, so
+   *  there is exactly one bubble to update. Conversations stay untouched when no
+   *  bubble matches — happens when the composer hasn't mirrored the DM yet (server
+   *  MSG-ACK arriving faster than the local echo). */
+  private markDelivered(msgId: string): void {
+    this._convMap.update(m => {
+      let touched = false;
+      const next = new Map<string, DmConversation>();
+      for (const [k, c] of m) {
+        const idx = c.messages.findIndex(x => x.id === msgId);
+        if (idx === -1 || c.messages[idx].delivery === 'delivered') {
+          next.set(k, c);
+          continue;
+        }
+        const updated: DmMessage = { ...c.messages[idx], delivery: 'delivered' };
+        const msgs = [...c.messages];
+        msgs[idx] = updated;
+        next.set(k, { ...c, messages: msgs });
+        touched = true;
+      }
+      return touched ? next : m;
     });
   }
 }

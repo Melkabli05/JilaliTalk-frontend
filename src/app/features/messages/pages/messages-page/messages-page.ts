@@ -196,12 +196,14 @@ export class MessagesPageComponent {
       fromProfileTs: now,
     });
     // Mirror the sent DM into the local cache so the sender sees their bubble immediately,
-    // matching how the inbound path uses push() in MessagesStore.dispatch.
+    // matching how the inbound path uses push() in MessagesStore.dispatch. delivery: 'sent'
+    // kicks the bubble into ✓ state until the upstream MSG-ACK arrives and flips it to 'delivered'.
     this.store.pushPublic(String(peerId), this.ownNickname(), {
       id: msgId,
       type: 'text',
       text,
       ts: now,
+      delivery: 'sent',
     });
 
     this.draft.set('');

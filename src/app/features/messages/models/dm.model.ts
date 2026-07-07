@@ -19,6 +19,13 @@ export interface DmMessage {
   /** For {@code voice_room_shared}: how many listeners the room has right now. */
   readonly voiceCount?: number;
   readonly ts: number;
+  /**
+   * Send-state for DMs the local user composed (mirrors WhatsApp-style ✓ / ✓✓). Defaults
+   * to {@code 'sent'} on outbound; flipped to {@code 'delivered'} when the upstream
+   * MSG-ACK (cmdId 16386) arrives with a non-zero prefix. Inbound DMs always have
+   * {@code undefined} — they were never "sent" by us.
+   */
+  readonly delivery?: 'sent' | 'delivered';
 }
 
 export interface DmConversation {

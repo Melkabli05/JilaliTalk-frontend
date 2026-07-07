@@ -16,5 +16,6 @@ export type ImEvent =
   | { readonly type: 'group_message'; readonly senderId: string; readonly senderName: string; readonly roomName: string; readonly text: string }
   | { readonly type: 'typing_indicator'; readonly fromUserId: string; readonly isTyping: boolean }
   | { readonly type: 'read_receipt'; readonly msgId: string }
+  | { readonly type: 'message_ack'; readonly msgId: string; readonly sequence: number; readonly prefix: number }
   | { readonly type: 'account_status'; readonly status: 'banned' | 'session_mismatch' }
   | { readonly type: 'error'; readonly message: string };
