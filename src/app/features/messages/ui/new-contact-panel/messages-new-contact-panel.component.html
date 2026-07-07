@@ -1,4 +1,4 @@
-<div #host class="new-contact-host">
+<div class="new-contact-host">
   <div
     #panel
     class="new-contact-panel"
@@ -25,6 +25,7 @@
         <button
           type="button"
           role="tab"
+          [attr.id]="'tab-' + t.id"
           class="tab"
           [class.active]="tab() === t.id"
           [attr.aria-selected]="tab() === t.id"
@@ -61,7 +62,7 @@
               Look up
             </button>
           </div>
-          <p
+          <div
             id="by-id-msg"
             class="by-id-msg"
             [class.is-error]="!!idError()"
@@ -81,10 +82,14 @@
             } @else {
               Enter a numeric id and tap Look up.
             }
-          </p>
+          </div>
         </div>
       } @else {
-        <ul class="user-list" role="tabpanel">
+        <ul
+          class="user-list"
+          role="tabpanel"
+          [attr.aria-labelledby]="'tab-' + tab()"
+        >
           @for (u of currentList(); track u.userId ?? u.userid) {
             <li>
               <app-user-list-item
