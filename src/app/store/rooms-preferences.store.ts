@@ -65,4 +65,13 @@ export class RoomsPreferencesStore {
     this._languageId.set(DEFAULTS.languageId);
     this._searchQuery.set(DEFAULTS.searchQuery);
   }
+
+  // Session-level hint signals (not persisted — reset on page reload)
+  readonly seenInvisibleTooltip = signal(false);
+  readonly hasSeenInvisibleBanner = signal(false);
+  readonly hasSeenRaiseHandHint = signal(false);
+
+  markInvisibleTooltipSeen(): void { this.seenInvisibleTooltip.set(true); }
+  markInvisibleBannerSeen(): void { this.hasSeenInvisibleBanner.set(true); }
+  markRaiseHandHintSeen(): void { this.hasSeenRaiseHandHint.set(true); }
 }
