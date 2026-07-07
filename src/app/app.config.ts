@@ -16,7 +16,7 @@ import { NotificationStore } from '@store/notification.store';
 import { ActiveCallStore } from '@store/active-call.store';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
-import { RoomApi } from '@features/room/api/room-api';
+import { RoomApi } from '@features/room';
 
 import { environment } from '@env/environment';
 import { routes } from './app.routes';
