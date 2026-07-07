@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { ToastService } from '@core/services/toast.service';
-import type { RoomApi } from '@features/room/api/room-api';
+import type { RoomApi } from '../api/room-api';
 import { handleRealtimeEvent } from './handle-realtime-event.util';
 
 function fakeApi(): RoomApi {

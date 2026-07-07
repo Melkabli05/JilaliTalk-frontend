@@ -1,7 +1,7 @@
 import type { RemoteUser } from '@core/realtime/agora-rtc.service';
 import type { UserInfoService } from '@core/services/user-info.service';
-import type { AudienceUser } from '@features/room/models/room-model';
-import { createGhostAudienceUser } from '@features/room/models/room-model';
+import type { AudienceUser } from '../models/room-model';
+import { createGhostAudienceUser } from '../models/room-model';
 import type { RoomConnectionService } from '@core/realtime/room-connection.service';
 import type { RoomRosterStore } from '../roster/roster-store';
 

@@ -1,5 +1,5 @@
-import type { SendCommentPayload } from '@features/room/models/room-model';
-import type { SendEvent } from '@features/room/comments/comment-input';
+import type { SendCommentPayload } from '../models/room-model';
+import type { SendEvent } from '../comments/comment-input';
 
 interface CommentAuthorContext {
   readonly cname: string | null;

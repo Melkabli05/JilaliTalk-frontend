@@ -1,6 +1,6 @@
 import { firstValueFrom } from 'rxjs';
 import type { ToastService } from '@core/services/toast.service';
-import type { RoomApi } from '@features/room/api/room-api';
+import type { RoomApi } from '../api/room-api';
 import type { RoomRealtimeEvent } from '@core/realtime/room-realtime-events';
 
 export async function handleRealtimeEvent(
