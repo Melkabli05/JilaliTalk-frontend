@@ -3,13 +3,32 @@
   <aside class="sidebar" [class.hidden]="store.selected()">
     <header class="sidebar-header">
       <h1 class="sidebar-title">Messages</h1>
-      <span
-        class="conn-dot"
-        [class]="imSocket.status()"
-        [title]="imSocket.status()"
-        aria-hidden="true"
-      ></span>
+      <div class="sidebar-header-actions">
+        <span
+          class="conn-dot"
+          [class]="imSocket.status()"
+          [title]="imSocket.status()"
+          aria-hidden="true"
+        ></span>
+        <button
+          type="button"
+          class="sidebar-new-contact"
+          (click)="toggleContactPanel()"
+          [attr.aria-label]="panelOpen() ? 'Close new message panel' : 'New message'"
+          [attr.aria-expanded]="panelOpen()"
+          aria-controls="new-contact-panel"
+        >
+          <svg aria-hidden="true" lucidePlus [size]="16"></svg>
+        </button>
+      </div>
     </header>
+
+    <app-messages-new-contact
+      id="new-contact-panel"
+      [open]="panelOpen()"
+      (closed)="closeContactPanel()"
+      (picked)="onContactPicked($event)"
+    ></app-messages-new-contact>
 
     <div class="search-wrap">
       <app-messages-search [(value)]="searchQuery" />

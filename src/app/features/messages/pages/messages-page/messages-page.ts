@@ -15,11 +15,13 @@ import {
   LucideGift,
   LucideCheck,
   LucideCheckCheck,
+  LucidePlus,
 } from '@lucide/angular';
 import { ImSocketService } from '@core/realtime/im-socket.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { relativeTime as formatRelativeTime } from '@shared/utils';
 import { MessagesSearchComponent } from '../../ui/search/messages-search';
+import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
 import { MessagesStore } from '../../store/messages.store';
 import type { DmConversation, DmMessage } from '../../models/dm.model';
 import { isGroupStart, isGroupEnd, dateLabel, preview, fmtTime } from '../../utils/dm-formatting.util';
@@ -29,6 +31,7 @@ import { isGroupStart, isGroupEnd, dateLabel, preview, fmtTime } from '../../uti
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [MessagesStore],
   imports: [
+    MessageNewContactPanelComponent,
     AvatarComponent,
     MessagesSearchComponent,
     LucideChevronLeft,
@@ -37,6 +40,7 @@ import { isGroupStart, isGroupEnd, dateLabel, preview, fmtTime } from '../../uti
     LucideGift,
     LucideCheck,
     LucideCheckCheck,
+    LucidePlus,
   ],
   templateUrl: './messages-page.html',
   styleUrl: './messages-page.scss',
@@ -97,6 +101,23 @@ export class MessagesPageComponent {
    *  a class member. Aliased on import to avoid shadowing this method. */
   protected formatRelativeTime(ts: number): string {
     return formatRelativeTime(ts);
+  }
+
+  // ── New-contact panel ────────────────────────────────────────────────────
+  // Slides an overlay into the sidebar so the user can pick who to
+  // message. Closes on outside click, Esc, or pick; opens with +
+  // button. The selected userId flows through MessagesStore.select().
+  protected readonly panelOpen = signal(false);
+
+  protected toggleContactPanel(): void {
+    this.panelOpen.update(v => !v);
+  }
+  protected closeContactPanel(): void {
+    this.panelOpen.set(false);
+  }
+  protected onContactPicked(userId: number): void {
+    this.panelOpen.set(false);
+    this.store.select(String(userId));
   }
 
   // ── Composer ───────────────────────────────────────────────────────────
