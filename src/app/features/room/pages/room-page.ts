@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject, input, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input, effect, DestroyRef } from '@angular/core';
+import { Router } from '@angular/router';
 import { EMPTY, firstValueFrom } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -20,7 +21,12 @@ import { StageGridComponent } from '../stage/stage-grid';
 import { AudienceListComponent } from '../audience/audience-list';
 import { CommentsPanelComponent } from '../comments/comments-panel';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
-import { RoomPageBase } from './room-page-base';
+import { RoomApi } from '../api/room-api';
+import { RoomConnectionService } from '@core/realtime/room-connection.service';
+import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { ToastService } from '@core/services/toast.service';
+import { ActiveCallStore } from '@store/active-call.store';
+import { RoomFacade } from '../facade/room-facade';
 
 @Component({
   selector: 'app-room-page',
@@ -50,6 +56,7 @@ import { RoomPageBase } from './room-page-base';
     ManagersStore,
     { provide: MANAGERS_READER, useExisting: ManagersStore },
     { provide: MANAGERS_WRITER, useExisting: ManagersStore },
+    RoomFacade,
   ],
   template: `
 <div class="room-layout">
@@ -59,23 +66,23 @@ import { RoomPageBase } from './room-page-base';
           [topic]="roomStore.topic()"
           [cname]="roomStore.cname() ?? ''"
           [isMicOn]="roomStore.isMicOn()"
-          [micSpeaking]="selfSpeaking()"
-          [micBusy]="mediaToggleBusy()"
+          [micSpeaking]="facade.selfSpeaking()"
+          [micBusy]="facade.mediaToggleBusy()"
           [isHandRaised]="roomStore.isHandRaised()"
           [isOnStage]="rosterStore.isOnStage(roomStore.userId())"
           [isModerator]="roomStore.isModerator()"
           [invisible]="!roomStore.isVisible()"
-          [refreshing]="refreshingRoom()"
-          [captionEnabled]="captionEnabled()"
+          [refreshing]="facade.refreshingRoom()"
+          [captionEnabled]="facade.captionEnabled()"
           [wsStatus]="bffWs.wsStatus()"
           (toggleMic)="onMediaToggle()"
           (toggleCamOrShare)="onToggleCamOrShare()"
           (toggleHand)="onToggleHand()"
-          (gift)="onGift()"
-          (pitch)="onPitch()"
-          (managers)="onManagers()"
-          (reward)="onReward()"
-          (toggleCaption)="onToggleCaption()"
+          (gift)="facade.onGift()"
+          (pitch)="facade.onPitch()"
+          (managers)="facade.onManagers()"
+          (reward)="facade.onReward()"
+          (toggleCaption)="facade.onToggleCaption()"
           (toggleInvisible)="onToggleInvisible()"
           (refresh)="onRefreshRoom()"
           (leave)="onLeave()"
@@ -84,18 +91,18 @@ import { RoomPageBase } from './room-page-base';
       </div>
 
       <section class="stage-section">
-        <app-stage-grid [users]="rosterStore.stageUsers()" [speakingUids]="rcs.speakingUids()" (userClick)="onStageUserClick($event)" />
+        <app-stage-grid [users]="rosterStore.stageUsers()" [speakingUids]="rcs.speakingUids()" (userClick)="facade.onStageUserClick($event)" />
       </section>
 
       <section class="audience-section">
         <app-audience-list
-          [users]="audienceWithGhosts()"
+          [users]="facade.audienceWithGhosts()"
           [speakingUids]="rcs.speakingUids()"
           [currentUserId]="roomStore.userId()"
           [canInviteToStage]="roomStore.isHost()"
-          [inviteBusy]="inviteBusy()"
-          (userClick)="onAudienceUserClick($event)"
-          (inviteToStage)="onInviteToStage($event)"
+          [inviteBusy]="facade.inviteBusy()"
+          (userClick)="facade.onAudienceUserClick($event)"
+          (inviteToStage)="facade.onInviteToStage($event)"
         />
       </section>
 
@@ -104,24 +111,24 @@ import { RoomPageBase } from './room-page-base';
           [comments]="commentsStore.comments()"
           [captions]="commentsStore.captions()"
           [currentUserId]="roomStore.userId()"
-          [refreshing]="refreshingComments()"
-          [typingNames]="typingNames()"
+          [refreshing]="facade.refreshingComments()"
+          [typingNames]="facade.typingNames()"
           [disabled]="!roomStore.isVisible()"
           (sendComment)="onSendComment($event)"
-          (typing)="onTyping()"
+          (typing)="facade.onTyping()"
           (refresh)="onRefreshComments()"
-          (loadCaptions)="onLoadCaptions()"
+          (loadCaptions)="facade.onLoadCaptions()"
         />
       </aside>
     </div>
 
-    @if (showSignin()) {
+    @if (facade.showSignin()) {
       <app-signin-panel
         [cname]="roomStore.cname() ?? ''"
         [hostId]="roomStore.userId()"
         [roomLevel]="roomStore.roomLevelInfo()?.level ?? 1"
         [roomLevelIcon]="roomStore.roomLevelInfo()?.levelIconV2 ?? roomStore.roomLevelInfo()?.levelIcon ?? null"
-        (onClose)="showSignin.set(false)"
+        (onClose)="facade.showSignin.set(false)"
       />
     }
   `,
@@ -207,7 +214,7 @@ import { RoomPageBase } from './room-page-base';
 
   `]
 })
-export class RoomPageComponent extends RoomPageBase {
+export class RoomPageComponent {
   readonly cname = input('', { transform: (v: string | undefined) => v ?? '' });
   readonly busiType = input(2, { transform: (v: string | number | undefined) => Number(v) || 2 });
   readonly visible = input(true, {
@@ -226,13 +233,26 @@ export class RoomPageComponent extends RoomPageBase {
   readonly roomStore = inject(RoomStore);
   private readonly agoraAppId = inject(AGORA_APP_ID_VOICE);
 
+  protected readonly rosterStore = inject(RoomRosterStore);
+  protected readonly commentsStore = inject(CommentsStore);
+  private readonly rtmStore = inject(InRoomRtmStore);
+  protected readonly router = inject(Router);
+  private readonly activeCallStore = inject(ActiveCallStore);
+  private readonly api = inject(RoomApi);
+  readonly rcs = inject(RoomConnectionService);
+  readonly bffWs = inject(BffRoomSocketService);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly facade = inject(RoomFacade);
+
   protected readonly leaveNavTarget = ['/rooms'];
 
   private entering = false;
   private hasConnectedOnce = false;
 
   constructor() {
-    super();
+    this.facade.init(this.busiType);
 
     // Voice-room counterpart of video-room-page.ts's identical effect: without this,
     // a voice room that gives up reconnecting (5 failed attempts) while the user is
@@ -240,7 +260,7 @@ export class RoomPageComponent extends RoomPageBase {
     // never runs — left the user silently stuck with a dead socket and no further
     // chat/realtime updates, with only the small header status dot as any indication.
     effect(() => {
-      if (this._destroying()) return;
+      if (this.facade.destroying()) return;
       const status = this.bffWs.wsStatus();
       if (this.hasConnectedOnce && status === 'disconnected') {
         this.toast.error('Connection lost — refresh to rejoin');
@@ -250,12 +270,37 @@ export class RoomPageComponent extends RoomPageBase {
     });
 
     effect(() => {
-      if (this._destroying()) return;
+      if (this.facade.destroying()) return;
       const cname = this.cname();
       const busiType = this.busiType();
       if (!cname) return;
       void this.enterRoom(cname, busiType);
     });
+  }
+
+  onRefreshRoom(): Promise<void> {
+    return this.facade.refreshRoom(this.roomStore.cname() ?? '', (c) => this.doRefreshRoomCore(c));
+  }
+
+  onRefreshComments(): Promise<void> {
+    return this.facade.refreshComments(this.commentsRefreshMode());
+  }
+
+  onToggleInvisible(): Promise<void> {
+    return this.facade.toggleInvisible((c, bt) => this.makeVisible(c, bt));
+  }
+
+  async onLeave(): Promise<void> {
+    try {
+      await this.facade.leave();
+    } finally {
+      await this.router.navigate(this.leaveNavTarget);
+    }
+  }
+
+  onMinimize(): void {
+    this.facade.minimize();
+    void this.router.navigate(this.leaveNavTarget);
   }
 
 
@@ -270,7 +315,7 @@ export class RoomPageComponent extends RoomPageBase {
   }
 
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
-    const isRestore = await this.resolveRoomEntry(cname);
+    const isRestore = await this.facade.resolveRoomEntry(cname);
     this.rosterStore.setRoomContext(cname, busiType);
     try {
       const visibleOnFreshJoin = isRestore
@@ -290,7 +335,7 @@ export class RoomPageComponent extends RoomPageBase {
     // in flight — the page's destroyRef.onDestroy has already run rcs.leave() by
     // now, so continuing here would open a fresh WS/RTC connection nothing will
     // ever tear down. Bail before any further side effects.
-    if (this._destroying()) return;
+    if (this.facade.destroying()) return;
     this.activeCallStore.syncCurrentRoom(
       cname,
       busiType,
@@ -335,13 +380,13 @@ export class RoomPageComponent extends RoomPageBase {
       // Also reached when takeUntilDestroyed cancelled the request above (not just a
       // real fetch failure) — don't force-navigate a user who has already left this
       // page to somewhere else entirely.
-      if (this._destroying()) return;
+      if (this.facade.destroying()) return;
       await this.router.navigate(['/']);
       this.toast.error('Room not found. Please create a new one.');
       return;
     }
     // Same race as above: bail if the page was destroyed while this fetch was in flight.
-    if (this._destroying()) return;
+    if (this.facade.destroying()) return;
 
     const ch = voiceInfo.channelInfo;
     this.roomStore.setCname(cname);
@@ -351,7 +396,7 @@ export class RoomPageComponent extends RoomPageBase {
     this.roomStore.setRoomLevelInfo(voiceInfo.roomLevelInfo ?? null);
     const reqUser = voiceInfo.reqUserInfo;
     if (reqUser?.userId) {
-      this.reqUserId.set(reqUser.userId);
+      this.facade.reqUserId.set(reqUser.userId);
       this.roomStore.setUserId(reqUser.userId);
       this.commentsStore.setCurrentUserId(reqUser.userId);
     }
@@ -423,7 +468,7 @@ export class RoomPageComponent extends RoomPageBase {
     }
   }
 
-  protected override async makeVisible(cname: string, busiType: number): Promise<void> {
+  protected async makeVisible(cname: string, busiType: number): Promise<void> {
     const [bundleResult, joinResult] = await Promise.allSettled([
       firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType)),
       firstValueFrom(this.api.joinRoom(cname, busiType)),
@@ -436,7 +481,7 @@ export class RoomPageComponent extends RoomPageBase {
     // The user may have left the room (or the page been destroyed) while these
     // requests were in flight — don't reconnect WS/reset stores for a page no
     // longer showing.
-    if (this._destroying()) return;
+    if (this.facade.destroying()) return;
 
     const bundleOk = bundleResult.status === 'fulfilled' ? bundleResult.value : null;
     if (!bundleOk) {
@@ -447,7 +492,7 @@ export class RoomPageComponent extends RoomPageBase {
     const audience = bundleOk?.audienceUsers;
 
     this.roomStore.setVisibility(true);
-    this.syncVisibilityToUrl(true);
+    this.facade.syncVisibilityToUrl(true);
     this.bffWs.connect(
       cname,
       voiceInfo?.hostInfo?.userId ?? 0,
@@ -473,7 +518,7 @@ export class RoomPageComponent extends RoomPageBase {
     const { voiceRoomInfo: voiceInfo, stageUsers: stage, audienceUsers: audience } = await firstValueFrom(
       this.api.fetchJoinBundle<VoiceRoomInfo>(cname, this.busiType()),
     );
-    if (this._destroying()) return;
+    if (this.facade.destroying()) return;
     const ch = voiceInfo.channelInfo;
     this.roomStore.setRoomName(ch?.name?.trim() ?? '');
     this.roomStore.setRoomTopic(ch?.topic ?? '');
@@ -483,14 +528,14 @@ export class RoomPageComponent extends RoomPageBase {
   }
 
 
-  override onMediaToggle(): void {
+  onMediaToggle(): void {
     if (!this.roomStore.isVisible()) {
       this.toast.info('You are invisible — rejoin visibly to speak');
       return;
     }
-    if (this.mediaToggleBusy()) return;
-    this.mediaToggleBusy.set(true);
-    this.doToggleMic().finally(() => this.mediaToggleBusy.set(false));
+    if (this.facade.mediaToggleBusy()) return;
+    this.facade.mediaToggleBusy.set(true);
+    this.doToggleMic().finally(() => this.facade.mediaToggleBusy.set(false));
   }
 
   private async doToggleMic(): Promise<void> {
@@ -499,7 +544,7 @@ export class RoomPageComponent extends RoomPageBase {
 
     if (isOn) {
       await this.rcs.setMicEnabled(false);
-      if (this._destroying()) return;
+      if (this.facade.destroying()) return;
       this.roomStore.setMicOn(false);
       this.rosterStore.updateUserMicStatus(uid, false);
       this.notifyStageMicState(uid, true);
@@ -519,7 +564,7 @@ export class RoomPageComponent extends RoomPageBase {
         } else {
           await this.rcs.setMicEnabled(true);
         }
-        if (this._destroying()) return;
+        if (this.facade.destroying()) return;
         this.roomStore.setMicOn(true);
         this.rosterStore.updateUserMicStatus(uid, true);
         this.notifyStageMicState(uid, false);
@@ -551,12 +596,12 @@ export class RoomPageComponent extends RoomPageBase {
     ).subscribe();
   }
 
-  override onToggleCamOrShare(): void {
+  onToggleCamOrShare(): void {
     this.toast.info('Camera and screen share are not available yet');
   }
 
 
-  override onToggleHand(): void {
+  onToggleHand(): void {
     const cname = this.roomStore.cname();
     const busiType = this.busiType();
     if (!cname) return;
@@ -575,19 +620,19 @@ export class RoomPageComponent extends RoomPageBase {
       void this.rcs.stopAudio().catch(() => {});
       const stagedUser = this.rosterStore.getStageUser(uid);
       this.rosterStore.removeStageUser(uid);
-      this.handToggleBusy.set(true);
+      this.facade.handToggleBusy.set(true);
       this.api.leaveStage(cname, busiType).pipe(
         takeUntilDestroyed(this.destroyRef),
       ).subscribe({
         next: () => {
           this.toast.info('You left the stage');
-          this.handToggleBusy.set(false);
+          this.facade.handToggleBusy.set(false);
         },
         error: (err: unknown) => {
           if (stagedUser) this.rosterStore.revertRemoveStageUser(stagedUser);
           console.error('[room] leaveStage failed', err);
           this.toast.error(httpErrorMessage(err, 'Failed to leave stage'));
-          this.handToggleBusy.set(false);
+          this.facade.handToggleBusy.set(false);
         },
       });
       return;
@@ -610,30 +655,30 @@ export class RoomPageComponent extends RoomPageBase {
         isAiUser: false,
       };
       this.rosterStore.addStageUser(myUser);
-      this.handToggleBusy.set(true);
+      this.facade.handToggleBusy.set(true);
       this.api.joinStage(cname, busiType).pipe(
         takeUntilDestroyed(this.destroyRef),
       ).subscribe({
         next: () => {
           this.toast.info('You joined the stage');
           void this.rcs.startAudio().catch(() => {});
-          this.handToggleBusy.set(false);
+          this.facade.handToggleBusy.set(false);
         },
         error: (err: unknown) => {
           this.rosterStore.removeStageUser(uid);
           console.error('[room] joinStage failed', err);
           this.toast.error(httpErrorMessage(err, 'Failed to join stage'));
-          this.handToggleBusy.set(false);
+          this.facade.handToggleBusy.set(false);
         },
       });
       return;
     }
 
-    this.raiseOrLowerHand(cname, busiType);
+    this.facade.raiseOrLowerHand(cname, busiType);
   }
 
 
-  override onSendComment(event: SendEvent): void {
+  onSendComment(event: SendEvent): void {
     const cname = this.roomStore.cname();
     if (!cname) return;
     const nickname = this.roomStore.nickname() || 'Anonymous';
@@ -645,7 +690,7 @@ export class RoomPageComponent extends RoomPageBase {
       ? crypto.randomUUID()
       : `local-${this.roomStore.userId()}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-    const payload = this.buildCommentPayload(event, clientNonce);
+    const payload = this.facade.buildCommentPayload(event, clientNonce);
 
     this.commentsStore.addComment({
       _id: `local-${this.roomStore.userId()}-${Date.now()}`,
