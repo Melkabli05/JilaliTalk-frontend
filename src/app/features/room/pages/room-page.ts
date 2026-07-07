@@ -27,6 +27,7 @@ import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { ToastService } from '@core/services/toast.service';
 import { ActiveCallStore } from '@store/active-call.store';
 import { RoomFacade } from '../facade/room-facade';
+import { sendVoiceComment } from '../commands/send-comment.command';
 
 @Component({
   selector: 'app-room-page',
@@ -681,49 +682,6 @@ export class RoomPageComponent {
   onSendComment(event: SendEvent): void {
     const cname = this.roomStore.cname();
     if (!cname) return;
-    const nickname = this.roomStore.nickname() || 'Anonymous';
-    const headUrl = this.roomStore.headUrl() || null;
-    const nationality = this.roomStore.nationality() || null;
-    const role = this.roomStore.myRole();
-
-    const clientNonce = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
-      ? crypto.randomUUID()
-      : `local-${this.roomStore.userId()}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-
-    const payload = this.facade.buildCommentPayload(event, clientNonce);
-
-    this.commentsStore.addComment({
-      _id: `local-${this.roomStore.userId()}-${Date.now()}`,
-      clientNonce,
-      createdAtMs: Date.now(),
-      updatedAtMs: Date.now(),
-      userId: this.roomStore.userId(),
-      nickname,
-      headUrl,
-      nationality,
-      role: role as UserRole,
-      vipType: 0,
-      msg: {
-        text: { text: event.text },
-        replyInfo: event.replyInfo
-          ? { msgId: event.replyInfo.msgId, fromId: event.replyInfo.fromId, fromNickname: event.replyInfo.nickname, text: event.replyInfo.text, msgType: 'text' }
-          : null,
-      },
-      dayRankLevel: 0,
-      giftLevel: 0,
-      fgLevel: 0,
-      fgName: '',
-      fgIsActive: false,
-      bubbleId: 0,
-      bubbleUrl: null,
-      bubbleColor: '',
-      hitBad: 0,
-      bubbleAnimalType: 0,
-      bubbleAnimalUrl: null,
-    });
-
-    this.api.sendComment(payload)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ error: (err: unknown) => console.warn('[RoomPage] sendComment failed', err) });
+    sendVoiceComment(event, cname, this.roomStore, this.commentsStore, this.api, this.destroyRef);
   }
 }

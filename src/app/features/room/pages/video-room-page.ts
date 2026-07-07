@@ -25,8 +25,8 @@ import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { ToastService } from '@core/services/toast.service';
 import { RoomApi } from '../api/room-api';
 import { ActiveCallStore } from '@store/active-call.store';
-import { httpErrorMessage } from '@shared/utils/http-error-message.util';
 import { RoomFacade } from '../facade/room-facade';
+import { sendVideoComment } from '../commands/send-comment.command';
 
 @Component({
   selector: 'app-video-room-page',
@@ -578,18 +578,6 @@ export class VideoRoomPageComponent {
   onSendComment(event: SendEvent): void {
     const cname = this.roomStore.cname();
     if (!cname) return;
-    const nickname = this.roomStore.nickname() || 'Anonymous';
-    const headUrl = this.roomStore.headUrl() || null;
-
-    const payload = this.facade.buildCommentPayload(event);
-
-    this.api.sendComment(payload)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        error: (err: unknown) => {
-          console.warn('[video-room] sendComment failed', err);
-          this.toast.error(httpErrorMessage(err, 'Failed to send message'));
-        },
-      });
+    sendVideoComment(event, cname, this.roomStore, this.api, this.toast, this.destroyRef);
   }
 }

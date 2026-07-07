@@ -1,8 +1,6 @@
 import { Service, signal, effect, computed, inject, DestroyRef, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
-import { EMPTY, firstValueFrom } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RoomRosterStore } from '../roster/roster-store';
 import { CommentsStore } from '../comments/comments-store';
@@ -11,8 +9,7 @@ import { InRoomRtmStore } from '../in-room-rtm/in-room-rtm-store';
 import { ManagersStore } from '../moderation/managers-store';
 import { RoomApi } from '../api/room-api';
 import { RoomStore } from '../store/room-store';
-import { AudienceUser, StageUser, SendCommentPayload } from '../models/room-model';
-import { SendEvent } from '../comments/comment-input';
+import { AudienceUser, StageUser } from '../models/room-model';
 import { ToastService } from '@core/services/toast.service';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
@@ -20,13 +17,15 @@ import { UserInfoService } from '@core/services/user-info.service';
 import { handleRealtimeEvent } from '@features/room/utils/handle-realtime-event.util';
 import { GhostAudienceInputs, fetchMissingGhostInfo, buildAudienceWithGhosts, buildGhostAudienceInputs } from '@features/room/utils/ghost-audience.util';
 import { buildModActionDefs } from '@features/room/utils/mod-action-defs';
-import { buildSendCommentPayload } from '@features/room/utils/send-comment-payload.util';
 import { canModerateUser } from '@features/room/rules/permission.rules';
-import { clearMediaSessionMetadata } from '@features/room/utils/media-session.util';
 import { leaveRoom } from '@features/room/commands/leave-room.command';
 import { goInvisibleLocally as goInvisibleLocallyCommand } from '@features/room/commands/go-invisible.command';
 import { handleKickedFromRoom as handleKickedFromRoomCommand } from '@features/room/commands/handle-kicked-from-room.command';
 import { resolveRoomEntry as resolveRoomEntryCommand } from '@features/room/commands/resolve-room-entry.command';
+import { makeInvisible as makeInvisibleCommand } from '@features/room/commands/make-invisible.command';
+import { raiseOrLowerHand as raiseOrLowerHandCommand } from '@features/room/commands/raise-or-lower-hand.command';
+import { inviteToStage as inviteToStageCommand } from '@features/room/commands/invite-to-stage.command';
+import { minimizeRoom } from '@features/room/commands/minimize-room.command';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
 import { UserActionModalData } from '../moderation/user-action-modal';
 import { ManagersModalComponent } from '../moderation/managers-modal';
@@ -327,9 +326,13 @@ export class RoomFacade {
   }
 
   private async makeInvisible(cname: string, busiType: number): Promise<void> {
-    await firstValueFrom(this.api.leaveRoom(cname, busiType));
-    await this.goInvisibleLocally(cname, busiType);
-    this.toast.info('You are now invisible');
+    await makeInvisibleCommand(
+      cname,
+      busiType,
+      this.api,
+      this.toast,
+      (c, bt) => this.goInvisibleLocally(c, bt),
+    );
   }
 
   /**
@@ -347,43 +350,14 @@ export class RoomFacade {
    * cases; video's onToggleHand is just this.
    */
   raiseOrLowerHand(cname: string, busiType: number): void {
-    if (!this.roomStore.isVisible()) {
-      this.toast.info('You are invisible — rejoin visibly to raise your hand');
-      return;
-    }
-    if (this.handToggleBusy()) return;
-
-    const wasRaised = this.roomStore.isHandRaised();
-    const raised = !wasRaised;
-    this.roomStore.setHandRaised(raised);
-    this.handToggleBusy.set(true);
-
-    this.api.raiseHand(cname, busiType, raised ? 1 : 2).pipe(
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe({
-      next: () => this.handToggleBusy.set(false),
-      error: (err: unknown) => {
-        console.error('[room] raiseHand failed', err);
-        this.toast.error(`Failed to update hand: ${err instanceof Error ? err.message : String(err)}`);
-        this.roomStore.setHandRaised(wasRaised);
-        this.handToggleBusy.set(false);
-      },
-    });
-  }
-
-  /** Builds the API payload for sendComment from current room store + event. */
-  buildCommentPayload(event: SendEvent, clientNonce?: string): SendCommentPayload {
-    return buildSendCommentPayload(
-      {
-        cname: this.roomStore.cname(),
-        busiType: this.roomStore.busiType(),
-        nickname: this.roomStore.nickname(),
-        headUrl: this.roomStore.headUrl(),
-        nationality: this.roomStore.nationality(),
-        role: this.roomStore.myRole(),
-      },
-      event,
-      clientNonce,
+    raiseOrLowerHandCommand(
+      cname,
+      busiType,
+      this.roomStore,
+      this.api,
+      this.toast,
+      this.handToggleBusy,
+      this.destroyRef,
     );
   }
 
@@ -460,19 +434,15 @@ export class RoomFacade {
   }
 
   onInviteToStage(user: AudienceUser): void {
-    const cname = this.roomStore.cname();
-    const busiType = this.roomStore.busiType();
-    if (!cname || this.inviteBusy() !== null) return;
-    this.inviteBusy.set(user.userId);
-
-    this.api.inviteToStage(cname, busiType, user.userId).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tap({
-        next: () => this.toast.success(`Invited ${user.base?.nickname ?? 'user'} to stage`),
-        error: () => this.toast.error('Failed to invite to stage'),
-      }),
-      catchError(() => EMPTY),
-    ).subscribe({ complete: () => this.inviteBusy.set(null) });
+    inviteToStageCommand(
+      user,
+      this.roomStore.cname(),
+      this.roomStore.busiType(),
+      this.api,
+      this.toast,
+      this.inviteBusy,
+      this.destroyRef,
+    );
   }
 
   private onUserAction(action: ModAction): void {
@@ -525,18 +495,7 @@ export class RoomFacade {
   }
 
   minimize(): void {
-    const cname = this.roomStore.cname();
-    if (!cname) return;
-    this.activeCallStore.minimize(
-      cname,
-      this.busiType(),
-      this.roomStore.name(),
-      this.roomStore.isMicOn(),
-      !this.roomStore.isVisible(),
-    );
-    // Same mediaSession clear as leave() — without this, the iOS lock-screen
-    // tile lingers after minimize, and the bar UI's "playing" state would never reset.
-    clearMediaSessionMetadata();
+    minimizeRoom(this.roomStore, this.activeCallStore, this.busiType());
   }
 
   private resolveNickname(userId: number): string {
