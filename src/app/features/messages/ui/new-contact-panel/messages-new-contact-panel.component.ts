@@ -37,7 +37,7 @@ type ErrorMap = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideX, LucideUserPlus, UserListItemComponent],
   templateUrl: './messages-new-contact-panel.component.html',
-  styles: [`:host { display: contents; }`],
+  styleUrl: './messages-new-contact-panel.component.scss',
 })
 export class MessageNewContactPanelComponent {
   // ── Inputs/outputs ─────────────────────────────────────────────
