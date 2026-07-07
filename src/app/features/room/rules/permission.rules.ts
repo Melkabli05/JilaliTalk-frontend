@@ -9,7 +9,7 @@
 /**
  * Hosts and moderators get the full moderation modal (mute/kick/ban etc.) for real users; a
  * plain viewer — or anyone clicking a ghost placeholder, which has no confirmed identity to
- * act on — gets the read-only profile card instead. See room-page-base.ts's openUserActions().
+ * act on — gets the read-only profile card instead. See room-facade.ts's openUserActions().
  */
 export function canModerateUser(isHost: boolean, isModerator: boolean, isGhost: boolean): boolean {
   return (isHost || isModerator) && !isGhost;

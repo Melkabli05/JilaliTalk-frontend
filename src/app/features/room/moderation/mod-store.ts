@@ -2,7 +2,7 @@ import { Service, InjectionToken, Signal, signal } from '@angular/core';
 
 export type ModAction = 'mute' | 'ban' | 'kick' | 'raise_hand' | 'remove_manager' | 'approve_raise_hand' | 'reject_raise_hand' | 'add_manager' | 'invite_to_stage';
 
-/** No narrower consumer currently injects ModStore than room-page-base.ts —
+/** No narrower consumer currently injects ModStore than room-facade.ts —
  *  see the note on StageReader/StageWriter above; same rationale applies here. */
 export interface ModReader {
   readonly selectedUserId: Signal<number | null>;

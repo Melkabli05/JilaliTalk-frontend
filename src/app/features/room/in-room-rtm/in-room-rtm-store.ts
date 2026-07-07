@@ -20,7 +20,7 @@ export interface RtmMessage {
   readonly isOwn: boolean;
 }
 
-/** No narrower consumer currently injects InRoomRtmStore than room-page-base.ts —
+/** No narrower consumer currently injects InRoomRtmStore than room-facade.ts —
  *  see the note on StageReader/StageWriter above; same rationale applies here. */
 export interface InRoomRtmReader {
   readonly messages: Signal<readonly RtmMessage[]>;

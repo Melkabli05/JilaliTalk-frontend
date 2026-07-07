@@ -238,7 +238,7 @@ export class EventFeedStore {
     this.bffWs.event$('room_kick').pipe(takeUntilDestroyed()).subscribe((event) => {
       const userId = Number(event.userId);
       this.activeJoinedUserIds.delete(userId);
-      // Only show card for the kicked user — others see the toast + redirect from RoomPageBase
+      // Only show card for the kicked user — others see the toast + redirect from RoomFacade
       if (userId === this._currentUserId) {
         this.pushUserEventCard('room_kick', userId, 'roomkick', {
           nickname: event.nickname,

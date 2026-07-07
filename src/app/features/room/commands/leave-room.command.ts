@@ -7,8 +7,9 @@ import { clearMediaSessionMetadata } from '../utils/media-session.util';
 /**
  * The full "leave the room" side-effect sequence: tear down RTC, tell the backend, close
  * the realtime socket, clear the minimize snapshot, and clear the OS media-session tile.
- * Navigation is the caller's concern, not this command's — RoomPageBase.onLeave navigates
- * only after this resolves (in a `finally`, so it still runs if this throws).
+ * Navigation is the caller's concern, not this command's — the page component's onLeave
+ * navigates only after RoomFacade.leave (which forwards to this) resolves, in a `finally`
+ * so it still runs if this throws.
  */
 export async function leaveRoom(
   rcs: RoomConnectionService,

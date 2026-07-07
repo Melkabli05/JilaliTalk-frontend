@@ -119,7 +119,7 @@ export const appConfig: ApplicationConfig = {
               // showing the room name in Control Center / lock-screen.
               // Set in room-page.ts on successful rcs.connect(); clear
               // here ensures the bar's leave button (which routes through
-              // this leave() rather than room-page-base.ts:onLeave)
+              // this leave() rather than room-facade.ts:leave)
               // doesn't leave a stale lock-screen entry behind.
               if ('mediaSession' in navigator) {
                 try {
