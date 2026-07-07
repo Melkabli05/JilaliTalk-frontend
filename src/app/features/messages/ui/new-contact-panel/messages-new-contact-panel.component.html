@@ -16,7 +16,7 @@
         (click)="onClose()"
         aria-label="Close"
       >
-        <svg aria-hidden="true" lucideClose [size]="16"></svg>
+        <svg aria-hidden="true" lucideX [size]="16"></svg>
       </button>
     </header>
 
@@ -73,9 +73,9 @@
               <app-user-list-item
                 [userId]="u.userId"
                 [name]="u.nickname ?? 'User'"
-                [headUrl]="u.headUrl"
+                [headUrl]="u.details?.base?.headUrl ?? null"
                 [nationality]="u.nationality"
-                [vipType]="u.vipType"
+                [vipType]="u.details?.base?.vipType ?? null"
                 variant="followers"
                 (userClick)="onPick($event)"
               />
@@ -90,15 +90,15 @@
           role="tabpanel"
           [attr.aria-labelledby]="'tab-' + tab()"
         >
-          @for (u of currentList(); track u.userId ?? u.userid) {
+          @for (u of currentList(); track userIdOf(u)) {
             <li>
               <app-user-list-item
-                [userId]="(u.userId ?? u.userid) ?? 0"
-                [name]="(u.nickName ?? u.nickname) ?? 'User'"
+                [userId]="userIdOf(u)"
+                [name]="nameOf(u)"
                 [headUrl]="u.headUrl"
                 [nationality]="u.nationality"
-                [vipType]="u.vipType"
-                [variant]="tab()"
+                [vipType]="vipTypeOf(u)"
+                [variant]="variantFor(tab())"
                 [isMutual]="isMutual(u)"
                 (userClick)="onPick($event)"
               />

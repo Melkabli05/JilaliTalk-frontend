@@ -11,10 +11,11 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { LucideClose, LucideUserPlus } from '@lucide/angular';
+import { LucideX, LucideUserPlus } from '@lucide/angular';
 import { ProfileApi } from '@features/profile/data-access/profile-api';
 import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
-import type { SocialUser, VisitorUser, UserInfo } from '@features/profile/models/profile.model';
+import type { SocialUser, VisitorUser } from '@features/profile/models/profile.model';
+import type { UserInfo } from '@core/services/user-info.service';
 
 export type TabId = 'following' | 'followers' | 'visitors' | 'byId';
 
@@ -34,9 +35,9 @@ type ErrorMap = {
 @Component({
   selector: 'app-messages-new-contact',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideClose, LucideUserPlus, UserListItemComponent],
+  imports: [LucideX, LucideUserPlus, UserListItemComponent],
   templateUrl: './messages-new-contact-panel.component.html',
-  styleUrl: './messages-new-contact-panel.component.scss',
+  styles: [`:host { display: contents; }`],
 })
 export class MessageNewContactPanelComponent {
   // ── Inputs/outputs ─────────────────────────────────────────────
@@ -57,8 +58,13 @@ export class MessageNewContactPanelComponent {
     visitors: false,
     byId: false,
   });
-  protected readonly more = signal({ following: false, followers: false, visitors: false });
-  protected readonly cursor = signal<{ following?: string; visitors?: number }>({});
+  protected readonly more = signal<{ following: boolean; followers: boolean; visitors: boolean; byId: boolean }>({
+    following: false,
+    followers: false,
+    visitors: false,
+    byId: false,
+  });
+  protected readonly cursor = signal<{ following?: string | undefined; visitors?: number | undefined }>({});
 
   protected readonly error = signal<ErrorMap>({
     following: null,
@@ -92,6 +98,22 @@ export class MessageNewContactPanelComponent {
 
   protected isMutual(u: SocialUser | VisitorUser): boolean {
     return (u as SocialUser).isMutual === true;
+  }
+
+  protected userIdOf(u: SocialUser | VisitorUser): number {
+    return (u as SocialUser).userId ?? (u as VisitorUser).userid;
+  }
+
+  protected nameOf(u: SocialUser | VisitorUser): string {
+    return (u as SocialUser).nickName ?? (u as VisitorUser).nickname ?? 'User';
+  }
+
+  protected variantFor(tab: TabId): 'following' | 'followers' | 'visitors' {
+    return tab === 'byId' ? 'followers' : tab;
+  }
+
+  protected vipTypeOf(u: SocialUser | VisitorUser): number | null {
+    return (u as SocialUser).vipType ?? null;
   }
 
   // ── View children ─────────────────────────────────────────────
