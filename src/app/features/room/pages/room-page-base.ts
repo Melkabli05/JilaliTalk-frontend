@@ -159,7 +159,11 @@ export abstract class RoomPageBase {
       // and the room page is being destroyed in response — keep state alive for the restore
       // path. (onLeave clears the snapshot before destroy fires, so a "real" leave doesn't
       // match here and falls through to the full cleanup.)
-      if (this.activeCallStore.cname() === this.roomStore.cname()) {
+      // Compare against the ROUTED cname (this.cname()), not this.roomStore.cname():
+      // roomStore.cname() is null/0 before enterRoom() resolves, so an early destroy
+      // (e.g. fast navigation) would mis-fire the full teardown. The routed input is
+      // always available and matches what the snapshot was captured against.
+      if (this.activeCallStore.cname() === this.cname()) {
         return;
       }
       this.rcs.leave().catch(() => {}).finally(() =>
@@ -535,11 +539,24 @@ export abstract class RoomPageBase {
     if (!cname) return;
     this.activeCallStore.minimize(
       cname,
-      this.roomStore.busiType(),
+      this.busiType(),
       this.roomStore.name(),
       this.roomStore.isMicOn(),
       !this.roomStore.isVisible(),
     );
+    // Clear the OS-level "Call in progress" tile so iOS stops showing the
+    // room name in Control Center / lock-screen while the user is on a
+    // different page. Same mediaSession clear as onLeave() — without this,
+    // the iOS lock-screen tile lingers after minimize, and the bar UI's
+    // "playing" state would never reset.
+    if ('mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.metadata = null;
+        navigator.mediaSession.playbackState = 'none';
+      } catch {
+        // Safari < 14 throws on null assignment — fail silent.
+      }
+    }
     void this.router.navigate(this.leaveNavTarget);
   }
 

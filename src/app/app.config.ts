@@ -111,6 +111,20 @@ export const appConfig: ApplicationConfig = {
               bffWs.disconnect();
             } finally {
               store.clear();
+              // Clear the OS-level "Call in progress" tile so iOS stops
+              // showing the room name in Control Center / lock-screen.
+              // Set in room-page.ts on successful rcs.connect(); clear
+              // here ensures the bar's leave button (which routes through
+              // this leave() rather than room-page-base.ts:onLeave)
+              // doesn't leave a stale lock-screen entry behind.
+              if ('mediaSession' in navigator) {
+                try {
+                  navigator.mediaSession.metadata = null;
+                  navigator.mediaSession.playbackState = 'none';
+                } catch {
+                  // Safari < 14 throws on null assignment — fail silent.
+                }
+              }
               await router.navigate(['/rooms/voice']);
             }
           },
