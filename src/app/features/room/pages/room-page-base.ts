@@ -18,11 +18,15 @@ import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserInfoService } from '@core/services/user-info.service';
 import { handleRealtimeEvent } from '@features/room/utils/handle-realtime-event.util';
-import { buildKickedFromRoomOutcome, resolveManagerIdentity } from '@features/room/utils/kicked-from-room.util';
 import { GhostAudienceInputs, fetchMissingGhostInfo, buildAudienceWithGhosts, buildGhostAudienceInputs } from '@features/room/utils/ghost-audience.util';
 import { buildModActionDefs } from '@features/room/utils/mod-action-defs';
 import { buildSendCommentPayload } from '@features/room/utils/send-comment-payload.util';
 import { canModerateUser } from '@features/room/rules/permission.rules';
+import { clearMediaSessionMetadata } from '@features/room/utils/media-session.util';
+import { leaveRoom } from '@features/room/commands/leave-room.command';
+import { goInvisibleLocally as goInvisibleLocallyCommand } from '@features/room/commands/go-invisible.command';
+import { handleKickedFromRoom as handleKickedFromRoomCommand } from '@features/room/commands/handle-kicked-from-room.command';
+import { resolveRoomEntry as resolveRoomEntryCommand } from '@features/room/commands/resolve-room-entry.command';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
 import { UserActionModalData } from '../moderation/user-action-modal';
 import { ManagersModalComponent } from '../moderation/managers-modal';
@@ -361,22 +365,7 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
    * open and its snapshot is stale, so this tears both down before B's entry proceeds.
    */
   protected async resolveRoomEntry(cname: string): Promise<boolean> {
-    const snapshotMatch = this.activeCallStore.cname() === cname;
-    const isRestore = snapshotMatch && this.activeCallStore.minimized();
-    if (this.activeCallStore.minimized() && !isRestore) {
-      await this.rcs.leave().catch(() => {});
-      this.activeCallStore.clear();
-    }
-    // If the WS gave up while the user was minimized (5 reconnect attempts
-    // failed), the restore path would otherwise skip bffWs.connect() and
-    // leave the user in a "restored" room with a permanently dead socket.
-    // Force a fresh full connect in that case by flipping isRestore=false;
-    // doEnterRoom() then re-enters the WS + RTC + RTM branches.
-    if (isRestore && this.bffWs.gaveUp(cname)) {
-      this.bffWs.disconnect().catch(() => {});
-      return false;
-    }
-    return isRestore;
+    return resolveRoomEntryCommand(cname, this.rcs, this.bffWs, this.activeCallStore);
   }
 
   /**
@@ -534,59 +523,35 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
 
   /** Local-only side effects of becoming invisible — no roster leave/join REST call. */
   protected async goInvisibleLocally(cname: string, busiType: number): Promise<void> {
-    this.roomStore.setVisibility(false);
-    this.syncVisibilityToUrl(false);
-    this.activeCallStore.setInvisible(true);
-    // Clears only the stage list (matching this call site's pre-merge behavior of
-    // resetting just StageStore) — not the full rosterStore.reset(), which would also
-    // wipe the cname the audience-reconcile poll depends on and pause it unnecessarily
-    // while the user is merely invisible, not actually leaving the room.
-    this.rosterStore.updateStageUsers([]);
-    await this.rcs.stopAudio();
-    this.bffWs.connect(cname, 0, busiType, null);
+    await goInvisibleLocallyCommand(
+      cname,
+      busiType,
+      this.roomStore,
+      this.rosterStore,
+      this.rcs,
+      this.bffWs,
+      this.activeCallStore,
+      (isVisible) => this.syncVisibilityToUrl(isVisible),
+    );
   }
 
   private async handleKickedFromRoom(managerName: string): Promise<void> {
-    const outcome = buildKickedFromRoomOutcome(managerName, this.roomStore.name(), this.roomStore.isVisible());
-    const identity = resolveManagerIdentity(managerName, this.rosterStore.stageUsers(), this.rosterStore.audienceUsers());
-    const cname = this.roomStore.cname();
-    if (outcome.shouldGoInvisible && cname) {
-      await this.goInvisibleLocally(cname, this.busiType());
-    }
-    this.toast.warning(outcome.toastMessage);
-    if (identity) {
-      this.notifications.notifyUserEvent({
-        type: 'warning',
-        title: outcome.notificationTitle,
-        message: outcome.notificationMessage,
-        userId: identity.userId,
-        avatarUrl: identity.avatarUrl,
-        nickname: managerName,
-      });
-    } else {
-      this.notifications.notify('warning', outcome.notificationTitle, outcome.notificationMessage);
-    }
+    await handleKickedFromRoomCommand(
+      managerName,
+      this.roomStore.cname(),
+      this.busiType(),
+      this.roomStore,
+      this.rosterStore,
+      this.toast,
+      this.notifications,
+      (cname, busiType) => this.goInvisibleLocally(cname, busiType),
+    );
   }
 
   async onLeave(): Promise<void> {
     this._destroying.set(true);
     try {
-      await this.rcs.leave();
-      await this.roomStore.leaveRoom();
-      this.bffWs.disconnect();
-      this.activeCallStore.clear();
-      // Clear the OS-level "Call in progress" tile so iOS stops showing the
-      // room name in Control Center / lock-screen. Set in room-page.ts on
-      // successful rcs.connect(); clear is best-effort — the metadata will
-      // also clear on page navigation away from the room anyway.
-      if ('mediaSession' in navigator) {
-        try {
-          navigator.mediaSession.metadata = null;
-          navigator.mediaSession.playbackState = 'none';
-        } catch {
-          // Safari < 14 throws on null assignment — fail silent.
-        }
-      }
+      await leaveRoom(this.rcs, this.roomStore, this.bffWs, this.activeCallStore);
     } finally {
       await this.router.navigate(this.leaveNavTarget);
     }
@@ -602,19 +567,9 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
       this.roomStore.isMicOn(),
       !this.roomStore.isVisible(),
     );
-    // Clear the OS-level "Call in progress" tile so iOS stops showing the
-    // room name in Control Center / lock-screen while the user is on a
-    // different page. Same mediaSession clear as onLeave() — without this,
-    // the iOS lock-screen tile lingers after minimize, and the bar UI's
-    // "playing" state would never reset.
-    if ('mediaSession' in navigator) {
-      try {
-        navigator.mediaSession.metadata = null;
-        navigator.mediaSession.playbackState = 'none';
-      } catch {
-        // Safari < 14 throws on null assignment — fail silent.
-      }
-    }
+    // Same mediaSession clear as onLeave() — without this, the iOS lock-screen
+    // tile lingers after minimize, and the bar UI's "playing" state would never reset.
+    clearMediaSessionMetadata();
     void this.router.navigate(this.leaveNavTarget);
   }
 
