@@ -16,7 +16,7 @@ import { Clipboard } from '@angular/cdk/clipboard';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { UserRole } from '@core/models/user-role';
-import { Comment, CommentOrEvent, EventCard } from '../data/room-model';
+import { Comment, CommentOrEvent, EventCard } from '../models/room-model';
 import { EventCardComponent } from '../ui/event-card';
 import { formatClockTime } from '@shared/utils';
 import { COMMENTS_READER, COMMENTS_WRITER } from './comments-store';

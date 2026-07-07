@@ -12,19 +12,19 @@ import { GiftsStore } from '../gifts/gifts-store';
 import { InRoomRtmStore } from '../in-room-rtm/in-room-rtm-store';
 import { GoodieStore } from '../goodie-bag/goodie-store';
 import { ManagersStore } from '../moderation/managers-store';
-import { RoomApi } from '../data/room-api';
+import { RoomApi } from '../api/room-api';
 import { RoomStore } from '../store/room-store';
-import { AudienceUser, StageUser } from '../data/room-model';
+import { AudienceUser, StageUser } from '../models/room-model';
 import { SendEvent } from '../comments/comment-input';
 import { ToastService } from '@core/services/toast.service';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserInfoService } from '@core/services/user-info.service';
-import { handleRealtimeEvent } from '@features/room/data/handle-realtime-event.util';
-import { buildKickedFromRoomOutcome, resolveManagerIdentity } from '@features/room/data/kicked-from-room.util';
-import { GhostAudienceInputs, fetchMissingGhostInfo, buildAudienceWithGhosts, buildGhostAudienceInputs } from '@features/room/data/ghost-audience.util';
-import { buildModActionDefs } from '@features/room/data/mod-action-defs';
-import { buildSendCommentPayload } from '@features/room/data/send-comment-payload.util';
+import { handleRealtimeEvent } from '@features/room/utils/handle-realtime-event.util';
+import { buildKickedFromRoomOutcome, resolveManagerIdentity } from '@features/room/utils/kicked-from-room.util';
+import { GhostAudienceInputs, fetchMissingGhostInfo, buildAudienceWithGhosts, buildGhostAudienceInputs } from '@features/room/utils/ghost-audience.util';
+import { buildModActionDefs } from '@features/room/utils/mod-action-defs';
+import { buildSendCommentPayload } from '@features/room/utils/send-comment-payload.util';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
 import { UserActionModalData } from '../moderation/user-action-modal';
 import { ManagersModalComponent } from '../moderation/managers-modal';
@@ -420,7 +420,7 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
   }
 
   /** Builds the API payload for sendComment from current room store + event. */
-  protected buildCommentPayload(event: SendEvent, clientNonce?: string): import('../data/room-model').SendCommentPayload {
+  protected buildCommentPayload(event: SendEvent, clientNonce?: string): import('../models/room-model').SendCommentPayload {
     return buildSendCommentPayload(
       {
         cname: this.roomStore.cname(),

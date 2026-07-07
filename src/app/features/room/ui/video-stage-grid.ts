@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, input, output, computed, signal, viewChild, ElementRef } from '@angular/core';
-import { StageUser } from '../data/room-model';
+import { StageUser } from '../models/room-model';
 import { sortByStageRole } from './stage-sort.util';
 import { LucideUsers, LucideVideo, LucideMaximize2, LucideMinimize2 } from '@lucide/angular';
 import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user';

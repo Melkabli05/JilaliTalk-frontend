@@ -1,6 +1,6 @@
 import { Service, signal, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EventCard } from '../data/room-model';
+import { EventCard } from '../models/room-model';
 import { EnrichBatchQueue } from '@shared/utils';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserInfoService } from '@core/services/user-info.service';

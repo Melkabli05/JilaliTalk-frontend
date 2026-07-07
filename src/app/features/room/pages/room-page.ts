@@ -14,7 +14,7 @@ import { SigninPanelComponent } from '../signin/signin-panel';
 import { GiftsStore, GIFTS_READER, GIFTS_WRITER } from '../gifts/gifts-store';
 import { InRoomRtmStore, IN_ROOM_RTM_READER, IN_ROOM_RTM_WRITER } from '../in-room-rtm/in-room-rtm-store';
 import { GoodieStore, GOODIE_READER, GOODIE_WRITER } from '../goodie-bag/goodie-store';
-import { StageUser, VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../data/room-model';
+import { StageUser, VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../models/room-model';
 import { UserRole } from '@core/models/user-role';
 import { SendEvent } from '../comments/comment-input';
 import { AGORA_APP_ID_VOICE } from '@core/tokens/agora-app-id.token';

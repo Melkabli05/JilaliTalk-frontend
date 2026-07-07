@@ -1,4 +1,4 @@
-import type { AudienceUser, StageUser } from './room-model';
+import type { AudienceUser, StageUser } from '../models/room-model';
 
 export interface ManagerIdentity {
   readonly userId: number;

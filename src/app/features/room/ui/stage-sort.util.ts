@@ -1,5 +1,5 @@
 import { UserRole } from '@core/models/user-role';
-import { StageUser } from '../data/room-model';
+import { StageUser } from '../models/room-model';
 
 function stageRoleRank(role: UserRole): number {
   switch (role) {

@@ -1,4 +1,4 @@
-import type { SendCommentPayload } from '@features/room/data/room-model';
+import type { SendCommentPayload } from '@features/room/models/room-model';
 import type { SendEvent } from '@features/room/comments/comment-input';
 
 interface CommentAuthorContext {

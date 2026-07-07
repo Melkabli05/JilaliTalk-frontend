@@ -1,11 +1,11 @@
 import { Service, InjectionToken, Signal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-import { StageUser } from '../data/room-model';
+import { StageUser } from '../models/room-model';
 import { CollectionStore, EnrichBatchQueue } from '@shared/utils';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserInfoService } from '@core/services/user-info.service';
-import { RoomApi } from '../data/room-api';
+import { RoomApi } from '../api/room-api';
 
 /** No narrower consumer currently injects StageStore than room-page-base.ts (which
  *  needs full read+write access to orchestrate the room), so this split has no

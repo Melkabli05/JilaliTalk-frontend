@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
-import { EventCard } from '../data/room-model';
+import { EventCard } from '../models/room-model';
 import { initialsFrom, formatClockTime } from '@shared/utils';
 import {
   LucideFlower2, LucideArrowRight, LucideGem, LucideHeart,

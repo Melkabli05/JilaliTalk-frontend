@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs';
 import type { ModAction } from '../moderation/mod-store';
-import type { RoomApi } from './room-api';
+import type { RoomApi } from '../api/room-api';
 
 export function buildModActionDefs(
   api: RoomApi,

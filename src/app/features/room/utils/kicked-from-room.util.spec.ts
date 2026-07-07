@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildKickedFromRoomOutcome, resolveManagerIdentity } from './kicked-from-room.util';
-import type { AudienceUser, StageUser } from './room-model';
+import type { AudienceUser, StageUser } from '../models/room-model';
 
 function stageUser(overrides: Partial<StageUser> & { userId: number; nickname: string }): StageUser {
   return {

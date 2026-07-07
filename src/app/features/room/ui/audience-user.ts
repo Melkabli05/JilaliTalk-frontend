@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
-import { AudienceUser } from '../data/room-model';
+import { AudienceUser } from '../models/room-model';
 import { UserRole } from '@core/models/user-role';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { getLanguageById } from '@shared/data/languages';

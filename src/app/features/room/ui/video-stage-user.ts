@@ -11,7 +11,7 @@ import {
   viewChild,
   ElementRef,
 } from '@angular/core';
-import { StageUser } from '../data/room-model';
+import { StageUser } from '../models/room-model';
 import { UserRole } from '@core/models/user-role';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { LucideMicOff, LucideCrown, LucideMaximize2, LucideMinimize2 } from '@lucide/angular';

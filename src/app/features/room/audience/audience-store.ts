@@ -1,11 +1,11 @@
 import { Service, InjectionToken, Signal, computed, inject, signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-import { AudienceUser } from '../data/room-model';
+import { AudienceUser } from '../models/room-model';
 import { CollectionStore, EnrichBatchQueue } from '@shared/utils';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserInfoService } from '@core/services/user-info.service';
-import { RoomApi } from '../data/room-api';
+import { RoomApi } from '../api/room-api';
 import { StageStore } from '../stage/stage-store';
 
 const AUDIENCE_RECONCILE_MS = 30_000;

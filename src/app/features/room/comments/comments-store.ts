@@ -1,11 +1,11 @@
 import { Service, InjectionToken, Signal, signal, inject, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-import { Comment, CaptionEntry, CommentOrEvent, EventCard } from '../data/room-model';
+import { Comment, CaptionEntry, CommentOrEvent, EventCard } from '../models/room-model';
 import { CollectionStore } from '@shared/utils';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserRole } from '@core/models/user-role';
-import { RoomApi } from '../data/room-api';
+import { RoomApi } from '../api/room-api';
 import { EventFeedStore } from './event-feed-store';
 
 type MergedEntry = { readonly item: CommentOrEvent; readonly ts: number };
