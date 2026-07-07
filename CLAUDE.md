@@ -4,7 +4,7 @@ A complete, self-contained explanation of every convention this codebase follows
 exists, and how to stay inside it. Read this before adding a feature, a service, or a
 component. Examples are drawn from the actual code.
 
-Verified against Angular 21.2 / TypeScript 5.9.3. The CI-enforced conventions run via
+Verified against Angular 22.0 / TypeScript 6.0.3. The CI-enforced conventions run via
 `npm run verify`.
 
 ---
@@ -106,6 +106,7 @@ features/reports/
 ├── data-access/     services + the reactive data sources
 ├── models/          feature-local domain models
 ├── store/           ephemeral, component-provided state
+├── utils/           pure functions — formatting, derivations, no DI, no `this`
 ├── reports.routes.ts
 └── index.ts
 ```
@@ -113,6 +114,22 @@ features/reports/
 Not every feature needs every folder — `dashboard/` has only `pages/` because it has no
 local state or dumb components yet. Add folders when you have something to put in them, not
 preemptively.
+
+**Pure logic belongs in `utils/*.util.ts`, not inline in the component.** If a method has no
+`this` dependency — date/label formatting, grouping, deriving one value from another — it's a
+plain exported function, not a component method that happens not to use `this`. This keeps
+the component thin (orchestration + template glue only) and makes the logic trivially
+unit-testable without a `TestBed`. `features/room/data/*.util.ts` (`ghost-audience.util.ts`,
+`kicked-from-room.util.ts`) and `features/messages/utils/dm-formatting.util.ts` are the
+pattern to follow.
+
+**Genuine business rules — authorization, permission checks, invariants that show up in more
+than one place — get their own file** (e.g. a `rules/` folder with `PermissionRules.canKick()`
+-style pure functions), once a feature actually has enough of them to be worth centralizing.
+Don't create `rules/` preemptively: a feature with one or two inline permission checks doesn't
+need it yet — see `features/room/pages/room-page-base.ts`'s `openUserActions()` for a current
+example of an inline check that would be a first candidate if/when Room's permission logic
+grows past a couple of call sites.
 
 ---
 
@@ -185,6 +202,18 @@ the page is, which is what you want for view-scoped state.
 **Enforced by** a custom ESLint rule scoped to `features/*/store/` that errors on
 `providedIn: 'root'`. The global stores in `store/` and `core/auth/` correctly *are*
 root-provided, because their lifecycle is the whole app.
+
+**`@Service()` vs `@Injectable()`.** Angular 22 introduced `@Service()` as the DI decorator
+going forward — `@Service()` (no args) is root-auto-provided, equivalent to
+`@Injectable({ providedIn: 'root' })`; `@Service({ autoProvided: false })` is equivalent to a
+bare `@Injectable()` with no `providedIn`, for page-scoped stores. The codebase is
+**mid-migration**: some root stores (`theme.service.ts`, `notification.store.ts`,
+`active-call.store.ts`, `rooms-preferences.store.ts`) already use `@Service()`; the
+`features/room` feature (the largest, most recently refactored) still uses `@Injectable()`
+throughout. Both are valid today — don't do a drive-by rename when touching unrelated code —
+but **new** root-scoped services/stores should use `@Service()`, and new page-scoped ones
+should use `@Service({ autoProvided: false })`, matching the rule above exactly (a
+page-scoped store must never resolve at root, whichever decorator spells that).
 
 ---
 

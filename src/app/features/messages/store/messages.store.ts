@@ -8,7 +8,11 @@ const STORAGE_KEY = 'jilali_dm_v1';
 const MAX_MESSAGES = 200;
 const MAX_CONVERSATIONS = 100;
 
-@Service()
+// Page-scoped: only messages-page.ts injects this, via its own `providers: [MessagesStore]`
+// (mirroring how features/room's stores are scoped — see CLAUDE.md §7, "feature stores are
+// NEVER providedIn: 'root'"). autoProvided: false is @Service()'s Angular 22 equivalent of a
+// bare @Injectable() with no providedIn.
+@Service({ autoProvided: false })
 export class MessagesStore {
   private readonly imSocket = inject(ImSocketService);
   private readonly storage = inject(StorageService);
