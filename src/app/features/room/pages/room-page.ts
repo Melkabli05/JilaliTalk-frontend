@@ -1,9 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, input, effect, DestroyRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RoomStore } from '../store/room-store';
-import { JoinCancelledError } from '../store/base-room-store';
 import { RoomRosterStore, ROSTER_READER, ROSTER_WRITER } from '../roster/roster-store';
 import { CommentsStore, COMMENTS_READER, COMMENTS_WRITER } from '../comments/comments-store';
 import { EventFeedStore } from '../comments/event-feed-store';
@@ -11,7 +9,7 @@ import { ModStore, MOD_READER, MOD_WRITER } from '../moderation/mod-store';
 import { ManagersStore, MANAGERS_READER, MANAGERS_WRITER } from '../moderation/managers-store';
 import { SigninPanelComponent } from '../signin/signin-panel';
 import { InRoomRtmStore, IN_ROOM_RTM_READER, IN_ROOM_RTM_WRITER } from '../in-room-rtm/in-room-rtm-store';
-import { VoiceRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../models/room-model';
+import { VoiceRoomInfo } from '../models/room-model';
 import { SendEvent } from '../comments/comment-input';
 import { AGORA_APP_ID_VOICE } from '@core/tokens/agora-app-id.token';
 import { RoomHeaderComponent } from '../room-header';
@@ -27,6 +25,8 @@ import { RoomFacade } from '../facade/room-facade';
 import { sendVoiceComment } from '../commands/send-comment.command';
 import { toggleMic } from '../commands/toggle-mic.command';
 import { leaveStage, joinStageAsModerator } from '../commands/toggle-stage-membership.command';
+import { enterVoiceRoom } from '../commands/enter-room.command';
+import { makeVoiceRoomVisible } from '../commands/make-room-visible.command';
 
 @Component({
   selector: 'app-room-page',
@@ -315,201 +315,37 @@ export class RoomPageComponent {
   }
 
   private async doEnterRoom(cname: string, busiType: number): Promise<void> {
-    const isRestore = await this.facade.resolveRoomEntry(cname);
-    this.rosterStore.setRoomContext(cname, busiType);
-    try {
-      const visibleOnFreshJoin = isRestore
-        ? !this.activeCallStore.isInvisible()
-        : this.visible();
-      await this.roomStore.enterRoom(cname, busiType, visibleOnFreshJoin);
-    } catch (err) {
-      if (err instanceof JoinCancelledError) {
-        await this.router.navigate(this.leaveNavTarget);
-        await this.roomStore.leaveRoom();
-        this.rosterStore.reset();
-        return;
-      }
-      throw err;
-    }
-    // The user may have navigated away while enterRoom's join-roster request was
-    // in flight — the page's destroyRef.onDestroy has already run rcs.leave() by
-    // now, so continuing here would open a fresh WS/RTC connection nothing will
-    // ever tear down. Bail before any further side effects.
-    if (this.facade.destroying()) return;
-    this.activeCallStore.syncCurrentRoom(
-      cname,
-      busiType,
-      this.roomStore.name(),
-      this.roomStore.isMicOn(),
-      !this.roomStore.isVisible(),
-    );
-
-    if (isRestore) {
-      this.activeCallStore.restore();
-    }
-
-    let voiceInfo: VoiceRoomInfo;
-    let stage: StageUsersResponse | undefined;
-    let audience: AudienceUsersResponse | undefined;
-    let comments: CommentsResponse | undefined;
-    try {
-      if (this.fresh()) {
-        // Fresh room (just created via create-room-modal): upstream's stage/list + comment
-        // endpoints reliably 500 on a cname created moments earlier — they require
-        // voice_room_info to have completed for this room/session first. Only fetch
-        // room info; let the realtime push events (user_join/stage_join/comment) populate
-        // the lists once the websocket connects, which they will naturally as the first
-        // audience member (us) and any other joiners/chat arrive. stage/audience/comments
-        // intentionally stay undefined here — code below guards on that.
-        voiceInfo = await firstValueFrom(
-          this.api.fetchVoiceRoomInfo(cname).pipe(takeUntilDestroyed(this.destroyRef)),
-        );
-      } else {
-        // Cancels the actual in-flight HTTP request (not just the continuation guarded
-        // below) if the page is destroyed mid-fetch — the largest payload in the join
-        // flow, so the one most worth not letting complete for nothing on the wire.
-        const bundle = await firstValueFrom(
-          this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType).pipe(takeUntilDestroyed(this.destroyRef)),
-        );
-        voiceInfo = bundle.voiceRoomInfo;
-        stage = bundle.stageUsers;
-        audience = bundle.audienceUsers;
-        comments = bundle.comments;
-      }
-    } catch {
-      // Also reached when takeUntilDestroyed cancelled the request above (not just a
-      // real fetch failure) — don't force-navigate a user who has already left this
-      // page to somewhere else entirely.
-      if (this.facade.destroying()) return;
-      await this.router.navigate(['/']);
-      this.toast.error('Room not found. Please create a new one.');
-      return;
-    }
-    // Same race as above: bail if the page was destroyed while this fetch was in flight.
-    if (this.facade.destroying()) return;
-
-    const ch = voiceInfo.channelInfo;
-    this.roomStore.setCname(cname);
-    this.roomStore.setRoomName(ch?.name?.trim() ?? '');
-    this.roomStore.setRoomTopic(ch?.topic ?? '');
-    this.roomStore.setRtcInfo(ch?.rtcInfo ?? null);
-    this.roomStore.setRoomLevelInfo(voiceInfo.roomLevelInfo ?? null);
-    const reqUser = voiceInfo.reqUserInfo;
-    if (reqUser?.userId) {
-      this.facade.reqUserId.set(reqUser.userId);
-      this.roomStore.setUserId(reqUser.userId);
-      this.commentsStore.setCurrentUserId(reqUser.userId);
-    }
-    if (reqUser?.role) this.roomStore.setRole(reqUser.role);
-    if (reqUser?.base?.nickname) this.roomStore.setNickname(reqUser.base.nickname);
-    if (reqUser?.base?.headUrl) this.roomStore.setHeadUrl(reqUser.base.headUrl);
-    if (reqUser?.base?.nationality) this.roomStore.setNationality(reqUser.base.nationality);
-
-    // Snapshot is read but no longer authoritative for _isVisible — enterRoom already
-    // applied it before we got here. We only need the snapshot here to decide mic state
-    // (mic is captured at minimize time, then re-applied on restore).
-    if (isRestore) {
-      this.roomStore.setMicOn(this.activeCallStore.isMicOn());
-    }
-
-    const isVisible = this.roomStore.isVisible();
-
-    // On a minimize→restore, RTC + WebSocket + RTM stay connected from the min'd state;
-    // opening them again would tear down and re-establish those sockets for nothing.
-    if (!isRestore) {
-      const heartbeatHostId = isVisible ? (voiceInfo.hostInfo?.userId ?? 0) : 0;
-      this.bffWs.connect(cname, heartbeatHostId, busiType, voiceInfo.configInfo?.heartbeatSecond ?? null);
-    }
-
-    const uid = this.roomStore.userId();
-
-    if (isVisible) this.rosterStore.setCname(cname);
-    if (stage?.list) this.rosterStore.updateStageUsers([...stage.list]);
-    if (audience?.list) this.rosterStore.updateAudienceUsers([...audience.list]);
-    if (comments?.items) this.commentsStore.updateComments([...comments.items]);
-
-    this.rtmStore.setCurrentUid(uid);
-
-    if (!isRestore) {
-      try {
-        const rtcInfo = this.roomStore.rtcInfo();
-        const rtcToken = rtcInfo?.token ?? null;
-        const appId = rtcInfo?.appId?.trim() ? rtcInfo.appId : this.agoraAppId;
-        await this.rcs.connect(cname, uid, rtcToken, appId, !isVisible);
-        // Populate the OS-level "Call in progress" tile so iOS shows the
-        // room name in Control Center / lock-screen instead of a generic
-        // "JilaliTalk" line. Cleared in onLeave() (and destroyRef.onDestroy
-        // covers the minimize→destroy path). Guarded by `'mediaSession' in
-        // navigator` because Safari < 14 and some embedded webviews don't
-        // expose it.
-        if ('mediaSession' in navigator) {
-          const hostName = voiceInfo.hostInfo?.base?.nickname?.trim() || 'Voice room';
-          const roomTitle = (voiceInfo.channelInfo?.name?.trim()) || cname;
-          try {
-            navigator.mediaSession.metadata = new MediaMetadata({
-              title: roomTitle,
-              artist: hostName,
-              album: 'JilaliTalk',
-            });
-            navigator.mediaSession.playbackState = 'playing';
-          } catch {
-            // Older Safari throws on MediaMetadata construction — fail silent.
-          }
-        }
-      } catch {
-        this.toast.error('Failed to connect to audio');
-      }
-
-      try {
-        await this.rcs.connectRtm(uid);
-        await this.rcs.subscribeRtmChannel(cname);
-      } catch {
-      }
-    }
+    await enterVoiceRoom(cname, busiType, this.fresh(), this.visible(), {
+      roomStore: this.roomStore,
+      rosterStore: this.rosterStore,
+      commentsStore: this.commentsStore,
+      rtmStore: this.rtmStore,
+      activeCallStore: this.activeCallStore,
+      api: this.api,
+      bffWs: this.bffWs,
+      rcs: this.rcs,
+      router: this.router,
+      toast: this.toast,
+      destroyRef: this.destroyRef,
+      agoraAppId: this.agoraAppId,
+      reqUserId: this.facade.reqUserId,
+      leaveNavTarget: this.leaveNavTarget,
+      resolveRoomEntry: (c) => this.facade.resolveRoomEntry(c),
+      destroying: () => this.facade.destroying(),
+    });
   }
 
   protected async makeVisible(cname: string, busiType: number): Promise<void> {
-    const [bundleResult, joinResult] = await Promise.allSettled([
-      firstValueFrom(this.api.fetchJoinBundle<VoiceRoomInfo>(cname, busiType)),
-      firstValueFrom(this.api.joinRoom(cname, busiType)),
-    ]);
-
-    if (joinResult.status === 'rejected') {
-      this.toast.error('Failed to rejoin visibly');
-      return;
-    }
-    // The user may have left the room (or the page been destroyed) while these
-    // requests were in flight — don't reconnect WS/reset stores for a page no
-    // longer showing.
-    if (this.facade.destroying()) return;
-
-    const bundleOk = bundleResult.status === 'fulfilled' ? bundleResult.value : null;
-    if (!bundleOk) {
-      this.toast.error('Failed to rejoin — room info unavailable');
-    }
-    const voiceInfo = bundleOk?.voiceRoomInfo;
-    const stage = bundleOk?.stageUsers;
-    const audience = bundleOk?.audienceUsers;
-
-    this.roomStore.setVisibility(true);
-    this.facade.syncVisibilityToUrl(true);
-    this.bffWs.connect(
-      cname,
-      voiceInfo?.hostInfo?.userId ?? 0,
-      busiType,
-      voiceInfo?.configInfo?.heartbeatSecond ?? null,
-    );
-    this.rosterStore.setCname(cname);
-    // Clears only the stage list (pre-merge, this was rosterStore.reset() alone) — not
-    // the full rosterStore.reset(), which would also wipe the cname just set above.
-    this.rosterStore.updateStageUsers([]);
-    if (stage?.list) this.rosterStore.updateStageUsers([...stage.list]);
-    if (audience?.list) this.rosterStore.updateAudienceUsers([...audience.list]);
-    // Snapshot is meaningless for a "go visible" toggle (only relevant to a restore).
-    // Update it to match the new visible state so a future minimize→restore cycle
-    // doesn't capture stale invisible=true.
-    this.activeCallStore.setInvisible(false);
-    this.toast.success('You are now visible');
+    await makeVoiceRoomVisible(cname, busiType, {
+      roomStore: this.roomStore,
+      rosterStore: this.rosterStore,
+      api: this.api,
+      bffWs: this.bffWs,
+      toast: this.toast,
+      activeCallStore: this.activeCallStore,
+      syncVisibilityToUrl: (v) => this.facade.syncVisibilityToUrl(v),
+      destroying: () => this.facade.destroying(),
+    });
   }
 
   protected commentsRefreshMode(): 'merge' | 'replace' { return 'merge'; }
