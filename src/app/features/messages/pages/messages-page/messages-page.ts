@@ -10,11 +10,9 @@ import {
 } from '@angular/core';
 import {
   LucideChevronLeft,
-  LucideX,
   LucideInbox,
   LucideMessageCircle,
   LucideGift,
-  LucideLock,
 } from '@lucide/angular';
 import { ImSocketService } from '@core/realtime/im-socket.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
@@ -32,11 +30,9 @@ import { isGroupStart, isGroupEnd, dateLabel, preview, fmtTime } from '../../uti
     AvatarComponent,
     MessagesSearchComponent,
     LucideChevronLeft,
-    LucideX,
     LucideInbox,
     LucideMessageCircle,
     LucideGift,
-    LucideLock,
   ],
   templateUrl: './messages-page.html',
   styleUrl: './messages-page.scss',
@@ -97,5 +93,128 @@ export class MessagesPageComponent {
    *  a class member. Aliased on import to avoid shadowing this method. */
   protected formatRelativeTime(ts: number): string {
     return formatRelativeTime(ts);
+  }
+
+  // ── Composer ───────────────────────────────────────────────────────────
+  // Mirrors the legacy sendTextMessage dispatch: a text field that fires a typing packet
+  // on each keystroke (debounced), accepts Enter to send a `text` DM and Shift+Enter for
+  // newlines. Read-receipt fires automatically when a conversation becomes selected.
+
+  private readonly draft = signal('');
+  private typingTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastTypingFireTs = 0;
+  private typingActive = false;
+
+  /** Composite state: draft non-empty → button enabled. */
+  protected readonly canSend = computed(() => this.draft().trim().length > 0);
+
+  protected composePlaceholder(): string {
+    return 'Message…';
+  }
+
+  /** wire onInput: types, debounce-typing, auto-clear. */
+  protected onInput(value: string): void {
+    this.draft.set(value);
+    this.onTyping(true);
+  }
+
+  /** Throttle typing-fires to ~5 s while-typing cadence (legacy iOS app re-broadcasts is-typing=true
+   *  on a heartbeat) and emits a single is-typing=false on clear/blur/timeout. */
+  protected onTyping(active: boolean): void {
+    if (!active) {
+      if (this.typingTimer !== null) {
+        clearTimeout(this.typingTimer);
+        this.typingTimer = null;
+      }
+      if (this.typingActive) {
+        this.typingActive = false;
+        this.fireTypingForSelection(false);
+      }
+      return;
+    }
+    // Auto-stop the typing indicator after 4 s of no further keystrokes.
+    if (this.typingTimer !== null) clearTimeout(this.typingTimer);
+    this.typingTimer = setTimeout(() => {
+      this.onTyping(false);
+    }, 4000);
+
+    const peerId = this.selectedPeerNumericId();
+    if (peerId == null) return;
+
+    const now = Date.now();
+    if (!this.typingActive) {
+      this.fireTypingForSelection(true);
+      this.typingActive = true;
+      this.lastTypingFireTs = now;
+    } else if (now - this.lastTypingFireTs >= 5000) {
+      // Re-broadcast is-typing=true every 5 s while typing (legacy iOS app's cadence).
+      this.fireTypingForSelection(true);
+      this.lastTypingFireTs = now;
+    }
+  }
+
+  /** Enter sends, Shift+Enter newlines. KeyboardEvent#preventDefault on Enter keeps the
+   *  text in place per the legacy sendTextMessage API contract. */
+  protected onSendKey(event: Event): void {
+    const ke = event as KeyboardEvent;
+    if (ke.shiftKey) return; // newline
+    ke.preventDefault();
+    this.onSend();
+  }
+
+  /** Decode the selected conversation's userId-string into a number for the API call.
+   *  Returns null when the conversation key isn't a clean int (defensive). */
+  private selectedPeerNumericId(): number | null {
+    const id = this.store.selectedId();
+    if (id === null) return null;
+    const n = Number(id);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private fireTypingForSelection(active: boolean): void {
+    const peerId = this.selectedPeerNumericId();
+    if (peerId != null) this.store.sendTyping(peerId, active);
+  }
+
+  /** Send the current draft as a 1:1 text DM. Echoes locally so the sender sees their own
+   *  bubble, then clears the draft. Reads own identity from the auth store (we don't have
+   *  it on this component today — see ownUserId comment). */
+  protected onSend(): void {
+    const text = this.draft().trim();
+    if (!text) return;
+    const peerId = this.selectedPeerNumericId();
+    if (peerId == null) return;
+
+    const msgId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const now = Date.now();
+
+    this.store.sendDm(peerId, 'text', {
+      msgId,
+      text,
+      fromId: this.ownUserId() ?? undefined,
+      fromNickname: this.ownNickname(),
+      fromProfileTs: now,
+    });
+    // Mirror the sent DM into the local cache so the sender sees their bubble immediately,
+    // matching how the inbound path uses push() in MessagesStore.dispatch.
+    this.store.pushPublic(String(peerId), this.ownNickname(), {
+      id: msgId,
+      type: 'text',
+      text,
+      ts: now,
+    });
+
+    this.draft.set('');
+    this.onTyping(false);
+  }
+
+  /** We don't have a canonical self-id on this component today. The BFF falls back to the
+   *  JWT subject when this is null/undefined, which is the desired default. */
+  private ownUserId(): number | null {
+    return null;
+  }
+
+  private ownNickname(): string {
+    return 'You';
   }
 }

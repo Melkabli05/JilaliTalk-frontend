@@ -3,6 +3,7 @@ import { ImSocketService } from '@core/realtime/im-socket.service';
 import { StorageService } from '@core/services/storage.service';
 import type { ImEvent } from '@core/realtime/im-events';
 import type { DmConversation, DmMessage } from '../models/dm.model';
+import { MessagesApi, SendDmBody, DmKind } from '../api/messages-api.service';
 
 const STORAGE_KEY = 'jilali_dm_v1';
 const MAX_MESSAGES = 200;
@@ -16,6 +17,7 @@ const MAX_CONVERSATIONS = 100;
 export class MessagesStore {
   private readonly imSocket = inject(ImSocketService);
   private readonly storage = inject(StorageService);
+  private readonly api = inject(MessagesApi);
 
   private readonly _convMap = signal(
     this.storage.get<[string, DmConversation][]>(STORAGE_KEY)?.reduce(
@@ -64,16 +66,64 @@ export class MessagesStore {
   }
 
   select(userId: string): void {
+    // Marking read at the local-cache level is what the rest of the UI needs to render.
+    // The upstream read-receipt send (so the peer can show ✓ on their side) runs through
+    // MessagesStore.markLastRead — called automatically by select() whenever there is a
+    // most-recent inbound message from the peer.
     this._selectedId.set(userId);
     this._convMap.update(m => {
       const c = m.get(userId);
       if (!c || c.unread === 0) return m;
       return new Map(m).set(userId, { ...c, unread: 0 });
     });
+
+    // Fire the upstream read-receipt only when the conversation actually carries unread
+    // history (otherwise we'd spam the upstream on every navigation, including re-opens).
+    const numeric = Number(userId);
+    if (Number.isFinite(numeric)) {
+      this.markLastRead(numeric);
+    }
   }
 
   back(): void {
     this._selectedId.set(null);
+  }
+
+  /** Convenience: fire-and-forget read-receipt for the most recently received message from
+   *  this peer. No-op when the conversation is empty / never seen. */
+  markLastRead(peerId: number): void {
+    const msgId = this.lastInboundMsgId(peerId);
+    if (msgId == null) return;
+    this.api.postReadReceipt(peerId, msgId).subscribe({ error: () => {});
+  }
+
+  // ── outbound (matches prvgmsgpacket.js's sendReadReceipt / sendTypingIndicator / sendTextMessage) ──
+
+  /** Fire a read-receipt packet for the most recently received message in a conversation.
+   *  Provided as a side-effect-free facade — callers that need a msgId they'd otherwise not
+   *  have access to can chain through {@link lastInboundMsgId}. */
+  markReadForLastInbound(peerId: number, msgId: string): void {
+    this.api.postReadReceipt(peerId, msgId).subscribe({ error: () => {} });
+  }
+
+  /** The msgId of the most recently received DM from this peer (or null when the conversation
+   *  is empty / never seen). Used by the composer/page to feed {@link markReadForLastInbound}. */
+  lastInboundMsgId(peerId: number): string | null {
+    const c = this._convMap().get(String(peerId));
+    if (!c || c.messages.length === 0) return null;
+    const last = c.messages[c.messages.length - 1];
+    return last.id;
+  }
+
+  /** Fire a typing-state packet. Caller is expected to debounce this to ~1Hz while input is
+   *  non-empty and emit a one-shot {@code false} on input clear or blur. */
+  sendTyping(peerId: number, isTyping: boolean): void {
+    this.api.postTyping(peerId, isTyping).subscribe({ error: () => {});
+  }
+
+  /** Fire a 1:1 DM. Used by the composer for any of the six shapes the legacy client emitted. */
+  sendDm(peerId: number, kind: DmKind, fields: Partial<SendDmBody>): void {
+    this.api.postSendMessage(peerId, { kind, ...fields }).subscribe({ error: () => {} });
   }
 
   private dispatch(ev: ImEvent): void {
@@ -112,6 +162,23 @@ export class MessagesStore {
           ts: Date.now(),
         });
         break;
+      case 'voice_room_shared':
+        this.push(ev.fromNickname, ev.fromNickname, {
+          id: uid(),
+          type: 'voice_room_shared',
+          cname: ev.cname,
+          voiceCount: ev.count,
+          ts: Date.now(),
+        });
+        break;
+      case 'live_room_shared':
+        this.push(ev.fromNickname, ev.fromNickname, {
+          id: uid(),
+          type: 'live_room_shared',
+          cname: ev.cname,
+          ts: Date.now(),
+        });
+        break;
       case 'typing_indicator':
         this.setTyping(ev.fromUserId, ev.isTyping);
         break;
@@ -119,6 +186,15 @@ export class MessagesStore {
   }
 
   private push(userId: string, nickname: string, msg: DmMessage): void {
+    this.pushPublic(userId, nickname, msg);
+  }
+
+  /**
+   * Public wrapper around the same {@code push} used by inbound events. Used by the composer
+   * to mirror outbound DMs into the local cache so the sender sees their own bubble appear
+   * immediately without waiting for the upstream echo (which can lag the typing-state light).
+   */
+  pushPublic(userId: string, nickname: string, msg: DmMessage): void {
     const isSelected = this._selectedId() === userId;
     this._convMap.update(m => {
       const existing = m.get(userId);

@@ -151,6 +151,22 @@
                     Introduction
                   </span>
                 }
+                @case ('voice_room_shared') {
+                  <a class="bubble-meta" [href]="'/room/' + msg.cname + '/2'">
+                    <svg aria-hidden="true" lucideMessageCircle [size]="13"></svg>
+                    @if (msg.voiceCount != null) {
+                      Voice room · {{ msg.voiceCount }} listening
+                    } @else {
+                      Voice room shared
+                    }
+                  </a>
+                }
+                @case ('live_room_shared') {
+                  <a class="bubble-meta" [href]="'/room/live/' + msg.cname + '/2'">
+                    <svg aria-hidden="true" lucideMessageCircle [size]="13"></svg>
+                    Live link shared
+                  </a>
+                }
               }
               @if (isGroupEnd(conv.messages, i)) {
                 <time class="bubble-time">{{ fmtTime(msg.ts) }}</time>
@@ -175,21 +191,26 @@
       </div>
 
       <!-- compose -->
-      <div class="compose">
-        <div class="compose-field" role="note" aria-label="Replies not available yet">
-          <svg
-            aria-hidden="true"
-            lucideMessageCircle
-            [size]="15"
-            class="compose-msg-icon"
-          ></svg>
-          <span class="compose-placeholder">Reply…</span>
-          <div class="compose-lock">
-            <svg aria-hidden="true" lucideLock [size]="12"></svg>
-            <span>Soon</span>
-          </div>
-        </div>
-      </div>
+      <form class="compose" (submit)="$event.preventDefault(); onSend()">
+        <textarea
+          class="compose-field"
+          rows="1"
+          [placeholder]="composePlaceholder()"
+          [value]="draft()"
+          (input)="onInput($any($event.target).value)"
+          (keydown.enter)="onSendKey($event)"
+          (blur)="onTyping(false)"
+          aria-label="Message body"
+        ></textarea>
+        <button
+          type="submit"
+          class="compose-send"
+          [disabled]="!canSend()"
+          aria-label="Send"
+        >
+          <svg aria-hidden="true" lucideMessageCircle [size]="15"></svg>
+        </button>
+      </form>
     } @else {
       <!-- no conversation selected -->
       <div class="no-selection">
