@@ -1,5 +1,5 @@
 import {
-  Injectable,
+  Service,
   inject,
   signal,
   computed,
@@ -23,7 +23,8 @@ interface LivePageSource {
   readonly items: readonly ChannelListItem[];
 }
 
-@Injectable()
+// Page-scoped: only live-list.ts injects this, via its own providers: [LiveRoomsStore].
+@Service({ autoProvided: false })
 export class LiveRoomsStore {
   private readonly api = inject(RoomsApi);
   private readonly prefs = inject(RoomsPreferencesStore);

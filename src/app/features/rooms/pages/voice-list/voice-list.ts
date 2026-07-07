@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { RoomsStore } from '../../state/rooms-store';
-import { RoomsApi } from '../../data/rooms-api';
 import { ChannelListItem } from '../../data/rooms-model';
 import { CategoryFilterComponent } from '../../ui/category-filter/category-filter';
 import { LanguageFilterComponent } from '../../ui/language-filter/language-filter';
@@ -61,7 +60,7 @@ type ViewMode = 'grid' | 'list';
     LucideChevronRight,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [RoomsApi, RoomsStore],
+  providers: [RoomsStore],
   templateUrl: './voice-list.html',
   styleUrls: ['./voice-list.scss'],
 })

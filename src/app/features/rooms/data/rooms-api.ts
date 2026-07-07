@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
@@ -10,7 +10,9 @@ import {
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
 import { CategoriesService } from '@shared/data/categories.service';
 
-@Injectable()
+// Stateless HTTP wrapper (no per-page state, unlike RoomsStore/LiveRoomsStore) — root-scoped
+// so voice-list and live-list share one instance, matching features/room's RoomApi convention.
+@Service()
 export class RoomsApi {
   private readonly http = inject(HttpClient);
   private readonly categoriesService = inject(CategoriesService);

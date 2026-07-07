@@ -1,5 +1,5 @@
 import {
-  Injectable,
+  Service,
   inject,
   signal,
   computed,
@@ -23,7 +23,8 @@ interface RoomsPageSource {
   readonly items: readonly ChannelListItem[];
 }
 
-@Injectable()
+// Page-scoped: only voice-list.ts injects this, via its own providers: [RoomsStore].
+@Service({ autoProvided: false })
 export class RoomsStore {
   private readonly api = inject(RoomsApi);
   private readonly prefs = inject(RoomsPreferencesStore);

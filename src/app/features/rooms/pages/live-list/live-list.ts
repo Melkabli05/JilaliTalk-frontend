@@ -7,7 +7,6 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { LiveRoomsStore } from '../../state/live-rooms-store';
-import { RoomsApi } from '../../data/rooms-api';
 import { ChannelListItem } from '../../data/rooms-model';
 import { LanguageFilterComponent } from '../../ui/language-filter/language-filter';
 import { SearchBarComponent } from '../../ui/search-bar/search-bar';
@@ -39,7 +38,7 @@ type ViewMode = 'grid' | 'list';
     LucideSearch,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [RoomsApi, LiveRoomsStore],
+  providers: [LiveRoomsStore],
   templateUrl: './live-list.html',
   styleUrls: ['../voice-list/voice-list.scss'],
 })
