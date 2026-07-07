@@ -81,20 +81,20 @@
     <app-button
       variant="primary"
       size="xs"
+      class="join-visible-btn"
       (click)="handleJoin(true, $event)"
-      [attr.aria-label]="'Join ' + room().channel.name + ' as visible'"
+      [attr.aria-label]="'Join ' + room().channel.name"
     >
       <svg aria-hidden="true" lucideEye [size]="10"></svg>
-      Visible
+      Join
     </app-button>
-    <app-button
-      variant="soft-warm"
-      size="xs"
+    <button
+      type="button"
+      class="invisible-btn"
+      [attr.aria-label]="'Join ' + room().channel.name + ' invisible'"
       (click)="handleJoin(false, $event)"
-      [attr.aria-label]="'Join ' + room().channel.name + ' as invisible'"
     >
-      <svg aria-hidden="true" lucideEyeOff [size]="10"></svg>
-      Invisible
-    </app-button>
+      <svg aria-hidden="true" lucideEyeOff [size]="12"></svg>
+    </button>
   </div>
 </article>
