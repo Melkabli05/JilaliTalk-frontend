@@ -3,8 +3,8 @@ import type { UserInfoService } from '@core/services/user-info.service';
 import type { AudienceUser } from '@features/room/data/room-model';
 import { createGhostAudienceUser } from '@features/room/data/room-model';
 import type { RoomConnectionService } from '@core/realtime/room-connection.service';
-import type { StageStore } from '../state/stage-store';
-import type { AudienceStore } from '../state/audience-store';
+import type { StageStore } from '../stage/stage-store';
+import type { AudienceStore } from '../audience/audience-store';
 
 /** Minimal shape this util needs from the room store — satisfied
  *  structurally by RoomStore, so callers never need to pass more than

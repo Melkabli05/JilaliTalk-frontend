@@ -4,8 +4,8 @@ import { Dialog } from '@angular/cdk/dialog';
 import { EMPTY, firstValueFrom, forkJoin } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { StageStore } from '../state/stage-store';
-import { AudienceStore } from '../state/audience-store';
+import { StageStore } from '../stage/stage-store';
+import { AudienceStore } from '../audience/audience-store';
 import { CommentsStore } from '../comments/comments-store';
 import { ModStore, ModAction } from '../moderation/mod-store';
 import { GiftsStore } from '../gifts/gifts-store';
@@ -13,7 +13,7 @@ import { InRoomRtmStore } from '../in-room-rtm/in-room-rtm-store';
 import { GoodieStore } from '../goodie-bag/goodie-store';
 import { ManagersStore } from '../moderation/managers-store';
 import { RoomApi } from '../data/room-api';
-import { RoomStore } from '../state/room-store';
+import { RoomStore } from '../store/room-store';
 import { AudienceUser, StageUser } from '../data/room-model';
 import { SendEvent } from '../comments/comment-input';
 import { ToastService } from '@core/services/toast.service';
@@ -35,7 +35,7 @@ import { ActiveCallStore } from '@store/active-call.store';
 /**
  * Generic over the concrete room store so voice and video pages both extend
  * this without a separate RoomStoreContract duck-type — both now inject the
- * same unified RoomStore (see state/room-store.ts), so the abstract property
+ * same unified RoomStore (see store/room-store.ts), so the abstract property
  * can be typed directly against it instead of a structural interface.
  */
 export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {

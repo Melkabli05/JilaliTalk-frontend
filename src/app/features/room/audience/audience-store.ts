@@ -6,7 +6,7 @@ import { CollectionStore, EnrichBatchQueue } from '@shared/utils';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
 import { UserInfoService } from '@core/services/user-info.service';
 import { RoomApi } from '../data/room-api';
-import { StageStore } from './stage-store';
+import { StageStore } from '../stage/stage-store';
 
 const AUDIENCE_RECONCILE_MS = 30_000;
 
