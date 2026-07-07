@@ -105,6 +105,7 @@ export const appConfig: ApplicationConfig = {
           ),
           updateMicState: (v: boolean) => store.updateMicState(v),
           setInvisible: (v: boolean) => store.setInvisible(v),
+          restore: () => store.restore(),
           leave: async (): Promise<void> => {
             try {
               await rcs.leave();
