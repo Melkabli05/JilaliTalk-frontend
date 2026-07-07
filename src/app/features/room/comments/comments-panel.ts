@@ -11,7 +11,7 @@ import { Tabs, TabList, Tab, TabPanel, TabContent } from '@angular/aria/tabs';
 import { CommentListComponent } from './comment-list';
 import { CommentInputComponent, ReplyTarget, SendEvent } from './comment-input';
 import { CaptionListComponent } from './caption-list';
-import { Comment } from '../../data/room-model';
+import { Comment } from '../data/room-model';
 import { COMMENTS_READER } from './comments-store';
 import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, LucideRefreshCw } from '@lucide/angular';
 
@@ -337,7 +337,7 @@ export class CommentsPanelComponent {
   readonly commentsStore = inject(COMMENTS_READER);
 
   readonly comments = input<readonly Comment[]>([]);
-  readonly captions = input<readonly import('../../data/room-model').CaptionEntry[]>([]);
+  readonly captions = input<readonly import('../data/room-model').CaptionEntry[]>([]);
   readonly currentUserId = input<number>(0);
   readonly refreshing = input(false);
   readonly typingNames = input<readonly string[]>([]);

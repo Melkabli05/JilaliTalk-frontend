@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, computed, viewChild, ElementRef, effect } from '@angular/core';
-import { AudienceUserComponent } from '../../ui/audience-user';
-import { AudienceUser } from '../../data/room-model';
+import { AudienceUserComponent } from '../ui/audience-user';
+import { AudienceUser } from '../data/room-model';
 import { UserRole } from '@core/models/user-role';
 import { getLanguageById, getLanguageFlag } from '@shared/data/languages';
 import { createSearchMatcher, injectIsMobileViewport, partitionBy } from '@shared/utils';

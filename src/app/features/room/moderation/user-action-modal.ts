@@ -4,7 +4,7 @@ import { ModAction } from './mod-store';
 import { UserRole } from '@core/models/user-role';
 import { UserInfoService } from '@core/services/user-info.service';
 import { PermissionsService } from '@core/services/permissions.service';
-import { BaseRoomStore } from '../../state/base-room-store';
+import { BaseRoomStore } from '../state/base-room-store';
 import { ModalComponent } from '@shared/ui/modal/modal.component';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';

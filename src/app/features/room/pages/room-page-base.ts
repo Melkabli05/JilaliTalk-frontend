@@ -6,16 +6,16 @@ import { catchError, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { StageStore } from '../state/stage-store';
 import { AudienceStore } from '../state/audience-store';
-import { CommentsStore } from '../feature/comments/comments-store';
-import { ModStore, ModAction } from '../feature/moderation/mod-store';
-import { GiftsStore } from '../feature/gifts/gifts-store';
-import { InRoomRtmStore } from '../feature/in-room-rtm/in-room-rtm-store';
-import { GoodieStore } from '../feature/goodie-bag/goodie-store';
-import { ManagersStore } from '../feature/moderation/managers-store';
+import { CommentsStore } from '../comments/comments-store';
+import { ModStore, ModAction } from '../moderation/mod-store';
+import { GiftsStore } from '../gifts/gifts-store';
+import { InRoomRtmStore } from '../in-room-rtm/in-room-rtm-store';
+import { GoodieStore } from '../goodie-bag/goodie-store';
+import { ManagersStore } from '../moderation/managers-store';
 import { RoomApi } from '../data/room-api';
 import { RoomStore } from '../state/room-store';
 import { AudienceUser, StageUser } from '../data/room-model';
-import { SendEvent } from '../feature/comments/comment-input';
+import { SendEvent } from '../comments/comment-input';
 import { ToastService } from '@core/services/toast.service';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
@@ -26,9 +26,9 @@ import { GhostAudienceInputs, fetchMissingGhostInfo, buildAudienceWithGhosts, bu
 import { buildModActionDefs } from '@features/room/data/mod-action-defs';
 import { buildSendCommentPayload } from '@features/room/data/send-comment-payload.util';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
-import { UserActionModalData } from '../feature/moderation/user-action-modal';
-import { ManagersModalComponent } from '../feature/moderation/managers-modal';
-import { UserActionModalComponent } from '../feature/moderation/user-action-modal';
+import { UserActionModalData } from '../moderation/user-action-modal';
+import { ManagersModalComponent } from '../moderation/managers-modal';
+import { UserActionModalComponent } from '../moderation/user-action-modal';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal/user-info-modal.component';
 import { ActiveCallStore } from '@store/active-call.store';
 
@@ -323,7 +323,7 @@ export abstract class RoomPageBase<TStore extends RoomStore = RoomStore> {
         hostId,
         busiType,
         isHost: this.roomStore.isHost(),
-      } as import('../feature/moderation/managers-modal').ManagersModalData,
+      } as import('../moderation/managers-modal').ManagersModalData,
       backdropClass: 'app-modal-backdrop',
       injector: this.injector,
     });

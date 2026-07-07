@@ -2,8 +2,8 @@ import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/cor
 import { Dialog, DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 import { Listbox, Option } from '@angular/aria/listbox';
 import { MANAGERS_READER, MANAGERS_WRITER } from './managers-store';
-import { RoomApi } from '../../data/room-api';
-import { Manager } from '../../data/room-model';
+import { RoomApi } from '../data/room-api';
+import { Manager } from '../data/room-model';
 import { ToastService } from '@core/services/toast.service';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal/user-info-modal.component';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';

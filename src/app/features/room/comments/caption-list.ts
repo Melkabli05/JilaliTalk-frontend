@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
-import { CaptionEntry } from '../../data/room-model';
+import { CaptionEntry } from '../data/room-model';
 import { formatClockTime } from '@shared/utils';
 import { LucideCaptions } from '@lucide/angular';
 

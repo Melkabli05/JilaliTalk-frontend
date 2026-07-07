@@ -1,13 +1,13 @@
 import { Service, inject, signal, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { map, of } from 'rxjs';
-import { RoomApi } from '../../data/room-api';
+import { RoomApi } from '../data/room-api';
 import {
   VoiceSignPanelResponse,
   RoomLevelRewardResponse,
   RoomLevelConfigResponse,
   VoiceTasksResponse,
-} from '../../data/room-model';
+} from '../data/room-model';
 
 const EMPTY_SIGN_PANEL: VoiceSignPanelResponse = { signList: [], toDaySigned: false, consecutiveDays: 0 };
 const EMPTY_REWARDS: RoomLevelRewardResponse = { items: [] };

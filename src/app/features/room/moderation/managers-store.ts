@@ -1,8 +1,8 @@
 import { Service, InjectionToken, Signal, inject, signal, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
-import { RoomApi } from '../../data/room-api';
-import { Manager, ManagerListResponse } from '../../data/room-model';
+import { RoomApi } from '../data/room-api';
+import { Manager, ManagerListResponse } from '../data/room-model';
 import { UserRole } from '@core/models/user-role';
 
 const EMPTY_MANAGER_LIST: ManagerListResponse = { managerList: [] };

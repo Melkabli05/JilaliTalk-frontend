@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
-import { StageUserComponent } from '../../ui/stage-user';
-import { StageUser } from '../../data/room-model';
-import { sortByStageRole } from '../../ui/stage-sort.util';
+import { StageUserComponent } from '../ui/stage-user';
+import { StageUser } from '../data/room-model';
+import { sortByStageRole } from '../ui/stage-sort.util';
 import { LucideUserCircle } from '@lucide/angular';
 
 @Component({

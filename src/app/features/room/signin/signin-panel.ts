@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input, output, inject, signal, effect } from '@angular/core';
 import { SigninStore } from './signin-store';
-import { RoomApi } from '../../data/room-api';
-import { RewardItem, TaskItem } from '../../data/room-model';
+import { RoomApi } from '../data/room-api';
+import { RewardItem, TaskItem } from '../data/room-model';
 import { LucideGift, LucideX, LucideCheck, LucideStar, LucideFlame, LucideLock, LucideList } from '@lucide/angular';
 import { firstValueFrom } from 'rxjs';
 

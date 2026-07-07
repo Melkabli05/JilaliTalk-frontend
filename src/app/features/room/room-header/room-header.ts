@@ -36,7 +36,7 @@ import {
   LucideMinimize2,
 } from '@lucide/angular';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
-import { MicButtonComponent } from '../../ui/mic-button';
+import { MicButtonComponent } from '../ui/mic-button';
 import { AvSettingsComponent } from '../audio-settings/av-settings';
 
 @Component({
