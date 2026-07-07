@@ -9,7 +9,8 @@ import {
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RoomsApi } from '../data/rooms-api';
-import { ChannelListItem, Category, ChannelListResponse, RoomType, filterRooms } from '../data/rooms-model';
+import { ChannelListItem, Category, ChannelListResponse, RoomType } from '../data/rooms-model';
+import { filterRooms } from '../data/room-filter.util';
 import { SearchDebounce, paginateDedup } from '../data/pagination-search.util';
 import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
 
