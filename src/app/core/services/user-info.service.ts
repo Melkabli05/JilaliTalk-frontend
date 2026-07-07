@@ -234,12 +234,15 @@ export interface UserPresence {
   readonly statusType: number;
   readonly cname: string | null;
   readonly roomName: string | null;
+  readonly roomId: string | null;
   readonly hostId: number;
   readonly hostName: string | null;
+  readonly hostNationality: string | null;
   /** Avatar URL — present in every captured response with statusType 1 or 2. Empty/null
    *  when statusType is 0 (offline). Lets the banner show the host's avatar without a
    *  second HTTP round trip. */
   readonly headUrl: string | null;
+  readonly giftLevel: number | null;
   readonly blackened: boolean;
 }
 
@@ -391,7 +394,7 @@ export class UserInfoService {
           userId: number;
           roomId?: string | null;
           roomName?: string | null;
-          hostId: number;
+          hostId?: number | null;
           hostName?: string | null;
           hostNationality?: string | null;
           cname?: string | null;
@@ -405,9 +408,15 @@ export class UserInfoService {
         statusType: raw.userStatusType,
         cname: raw.cname ?? null,
         roomName: raw.roomName ?? null,
-        hostId: raw.hostId,
+        roomId: raw.roomId ?? null,
+        // `hostId` arrives as a number on the wire today, but the BFF DTO now types it
+        // as nullable to absorb any future upstream null. Coalesce missing → 0 here so
+        // the existing `hostId > 0` call sites keep working unchanged.
+        hostId: raw.hostId ?? 0,
         hostName: raw.hostName ?? null,
+        hostNationality: raw.hostNationality ?? null,
         headUrl: raw.headUrl ?? null,
+        giftLevel: raw.giftLevel ?? null,
         blackened: raw.blackened,
       };
       this._presenceCache.update((map) => new Map(map).set(userId, { presence, fetchedAt: Date.now() }));
