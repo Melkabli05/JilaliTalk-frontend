@@ -58,6 +58,9 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
 
             @if (visibleMembers().length > 0) {
         <div class="card-members">
+          @if (isActive()) {
+            <span class="live-dot" aria-label="Live now"></span>
+          }
           <div class="member-avatars">
             @for (user of visibleMembers(); track user.userId; let i = $index) {
               <app-avatar
@@ -221,9 +224,19 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
         .card-members {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: var(--space-3);
+      gap: var(--space-2);
     }
+
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background-color: #22c55e; flex-shrink: 0;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(0.85); }
+    }
+    :host-context(.dark) .live-dot { background-color: #16a34a; }
 
     .member-avatars {
       display: flex;
@@ -315,6 +328,8 @@ export class RoomCardComponent {
   readonly joinRoom = output<{ room: ChannelListItem; visible: boolean }>();
 
   readonly visibleMembers = computed(() => this.room().users?.slice(0, 4) ?? []);
+
+  readonly isActive = computed(() => (this.room().channel.totalUserCount ?? 0) > 5);
 
   handleJoin(): void {
     this.joinRoom.emit({ room: this.room(), visible: true });
