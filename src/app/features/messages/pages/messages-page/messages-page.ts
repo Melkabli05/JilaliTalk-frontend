@@ -16,6 +16,7 @@ import {
   LucideCheck,
   LucideCheckCheck,
   LucidePlus,
+  LucideSend,
 } from '@lucide/angular';
 import { ImSocketService } from '@core/realtime/im-socket.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
@@ -41,6 +42,7 @@ import { isGroupStart, isGroupEnd, dateLabel, preview, fmtTime } from '../../uti
     LucideCheck,
     LucideCheckCheck,
     LucidePlus,
+    LucideSend,
   ],
   templateUrl: './messages-page.html',
   styleUrl: './messages-page.scss',
@@ -133,6 +135,16 @@ export class MessagesPageComponent {
   /** Composite state: draft non-empty → button enabled. */
   protected readonly canSend = computed(() => this.draft().trim().length > 0);
 
+  /** Visible character count — covers grapheme clusters for Latin scripts reasonably; non-ASCII
+   *  emoji-counting would require Intl.Segmenter, deferred. */
+  protected readonly charCount = computed(() => this.draft().length);
+
+  /** Soft cap for the counter — set generously; below this, no warning surfaced. */
+  protected readonly maxChars = 2000;
+
+  /** Whether the input currently has keyboard focus — gates the focus-ring glow. */
+  protected readonly focused = signal(false);
+
   protected composePlaceholder(): string {
     return 'Message…';
   }
@@ -141,6 +153,23 @@ export class MessagesPageComponent {
   protected onInput(value: string): void {
     this.draft.set(value);
     this.onTyping(true);
+  }
+
+  /** Enter sends without Shift, Shift+Enter inserts a newline. Plain Enter on a textarea
+   *  inserts "\n" by default; preventDefault + manual send is the only way to override. */
+  protected onComposerKeydown(event: Event): void {
+    const ke = event as KeyboardEvent;
+    if (ke.key !== 'Enter' || ke.shiftKey) return;
+    ke.preventDefault();
+    this.onSend();
+  }
+
+  /** Tracks focus so the chrome can glow the focus ring; blur unconditionally,
+   *  unfocus is reliable via the text-input handler. */
+  protected onFocus(): void { this.focused.set(true); }
+  protected onBlur(): void {
+    this.focused.set(false);
+    this.onTyping(false);
   }
 
   /** Throttle typing-fires to ~5 s while-typing cadence (legacy iOS app re-broadcasts is-typing=true

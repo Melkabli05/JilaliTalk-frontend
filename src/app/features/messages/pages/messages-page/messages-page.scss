@@ -516,56 +516,163 @@ li.unread .row-ts {
 
 /* ─── Compose ────────────────────────────────────── */
 .compose {
-  padding: var(--space-3) var(--space-4);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "field side"
+    "counter counter";
+  align-items: end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--color-border);
   background: var(--color-card);
   flex-shrink: 0;
 }
 
 .compose-field {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 44px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
+  grid-area: field;
+  width: 100%;
+  min-height: 40px;
+  max-height: 160px;
+  padding: 10px var(--space-3);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-card);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  resize: none;
+  field-sizing: content;
+  min-width: 0;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.compose-field::placeholder {
+  color: var(--color-text-muted);
+}
+.compose-field:hover:not(:disabled):not([aria-disabled="true"]) {
+  border-color: var(--color-neutral-300);
+}
+:host-context(.dark) .compose-field:hover:not(:disabled):not([aria-disabled="true"]) {
+  border-color: var(--color-neutral-500);
+}
+.compose-field:focus,
+.compose:focus-within .compose-field {
+  outline: none;
+  border-color: var(--color-primary-400);
+  background: var(--color-card);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 14%, transparent);
+}
+.compose-field:disabled,
+.compose-field[aria-disabled="true"] {
   background: var(--color-neutral-100);
   cursor: not-allowed;
-  opacity: 0.7;
 }
-:host-context(.dark) .compose-field {
+:host-context(.dark) .compose-field:disabled,
+:host-context(.dark) .compose-field[aria-disabled="true"] {
   background: var(--color-neutral-800);
 }
 
-.compose-msg-icon {
-  color: var(--color-text-muted);
-  flex-shrink: 0;
-}
-
-.compose-placeholder {
-  flex: 1;
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  user-select: none;
-}
-
-.compose-lock {
+.compose-side {
+  grid-area: side;
   display: flex;
+  align-items: flex-end;
+}
+
+.compose-send {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: 3px var(--space-2);
+  justify-content: center;
   border-radius: var(--radius-full);
+  background: var(--color-primary-500);
+  color: var(--color-card);
+  border: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
+}
+.compose-send:hover:not(:disabled) {
+  background: var(--color-primary-600);
+  transform: scale(1.04);
+}
+.compose-send:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.compose-send:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+.compose-send:disabled {
   background: var(--color-neutral-200);
   color: var(--color-text-muted);
-  font-size: var(--text-2xs);
-  font-weight: var(--font-medium);
-  white-space: nowrap;
-  flex-shrink: 0;
+  cursor: not-allowed;
 }
-:host-context(.dark) .compose-lock {
+:host-context(.dark) .compose-send:disabled {
   background: var(--color-neutral-700);
 }
+
+.compose-counter {
+  grid-area: counter;
+  justify-self: end;
+  font-size: var(--text-2xs);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  transition: color 0.2s ease;
+}
+.compose-counter.is-warning {
+  color: var(--color-primary-600);
+}
+.compose-counter.is-over-limit {
+  color: var(--color-danger-500, #dc2626);
+}
+:host-context(.dark) .compose-counter.is-warning {
+  color: var(--color-primary-300);
+}
+
+/* ── Mobile ───────────────────────────────────────── */
+@media (max-width: 640px) {
+  .compose {
+    padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+    gap: var(--space-2);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    box-shadow: 0 -4px 12px hsl(0deg 0% 0% / 6%);
+  }
+  .compose-field {
+    /* On phones we drop the multi-line field's auto-grow for screen real estate and
+       keep a single visual row. The Send button sits right next to the input. */
+    min-height: 44px;
+    max-height: 120px;
+    font-size: var(--text-base);
+  }
+  .compose-send {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ── Reduced motion ───────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .compose-field,
+  .compose-send,
+  .compose-counter {
+    transition: none;
+  }
+  .compose-send:hover:not(:disabled),
+  .compose-send:active:not(:disabled) {
+    transform: none;
+  }
+}
+
 
 /* ─── No-selection ───────────────────────────────── */
 .no-selection {

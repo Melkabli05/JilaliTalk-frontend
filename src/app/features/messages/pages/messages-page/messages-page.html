@@ -231,25 +231,59 @@
       </div>
 
       <!-- compose -->
-      <form class="compose" (submit)="$event.preventDefault(); onSend()">
-        <input
+      <form
+        class="compose"
+        [class.is-focused]="focused()"
+        [class.is-over-limit]="charCount() > maxChars"
+        (submit)="$event.preventDefault(); onSend()"
+      >
+        <textarea
           class="compose-field"
-          type="text"
+          rows="1"
           autocomplete="off"
+          autocapitalize="sentences"
+          autocorrect="off"
+          spellcheck="true"
+          enterkeyhint="send"
           [placeholder]="composePlaceholder()"
           [value]="draft()"
           (input)="onInput($any($event.target).value)"
-          (blur)="onTyping(false)"
-          aria-label="Message body"
-        />
-        <button
-          type="submit"
-          class="compose-send"
-          [disabled]="!canSend()"
-          aria-label="Send"
-        >
-          <svg aria-hidden="true" lucideMessageCircle [size]="15"></svg>
-        </button>
+          (keydown)="onComposerKeydown($event)"
+          (focus)="onFocus()"
+          (blur)="onBlur()"
+          [attr.aria-label]="'Message to ' + (conv.nickname || 'this conversation')"
+          [attr.aria-describedby]="'compose-meta compose-counter'"
+          [attr.aria-invalid]="charCount() > maxChars ? 'true' : null"
+          [attr.aria-disabled]="!store.selected() ? 'true' : null"
+          [disabled]="!store.selected()"
+        ></textarea>
+
+        <div class="compose-side">
+          <button
+            type="submit"
+            class="compose-send"
+            [disabled]="!canSend() || charCount() > maxChars"
+            [attr.aria-label]="canSend()
+              ? 'Send message'
+              : (charCount() > maxChars
+                ? 'Message exceeds the maximum length'
+                : 'Type a message to enable send')"
+            title="Send"
+          >
+            <svg aria-hidden="true" lucideSend [size]="16"></svg>
+          </button>
+        </div>
+
+        <span
+          id="compose-counter"
+          class="compose-counter"
+          [class.is-warning]="charCount() > maxChars * 0.8"
+          [class.is-over-limit]="charCount() > maxChars"
+          aria-live="polite"
+        >{{ charCount() }} / {{ maxChars }}</span>
+        <span id="compose-meta" class="visually-hidden">
+          Press Enter to send, Shift+Enter for a new line.
+        </span>
       </form>
     } @else {
       <!-- no conversation selected -->
