@@ -13,7 +13,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { LucideX, LucideUserPlus } from '@lucide/angular';
+import { LucideX } from '@lucide/angular';
 import { ProfileApi } from '@features/profile/data-access/profile-api';
 import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
 import type { SocialUser, VisitorUser } from '@features/profile/models/profile.model';
@@ -37,7 +37,7 @@ type ErrorMap = {
 @Component({
   selector: 'app-messages-new-contact',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideX, LucideUserPlus, UserListItemComponent],
+  imports: [LucideX, UserListItemComponent],
   templateUrl: './messages-new-contact-panel.component.html',
   styleUrl: './messages-new-contact-panel.component.scss',
 })
@@ -60,11 +60,10 @@ export class MessageNewContactPanelComponent {
     visitors: false,
     byId: false,
   });
-  protected readonly more = signal<{ following: boolean; followers: boolean; visitors: boolean; byId: boolean }>({
+  protected readonly more = signal<{ following: boolean; followers: boolean; visitors: boolean }>({
     following: false,
     followers: false,
     visitors: false,
-    byId: false,
   });
   protected readonly cursor = signal<{ visitors?: number | undefined }>({});
 
@@ -96,7 +95,14 @@ export class MessageNewContactPanelComponent {
     }
   });
 
-  protected readonly currentMore = computed<boolean>(() => this.more()[this.tab()]);
+  protected readonly currentMore = computed<boolean>(() => {
+    // Load-more is only relevant for the list tabs (following / followers / visitors);
+    // the by-id tab has no pagination. Narrowing here keeps `more`'s type accurate
+    // (no phantom byId flag) while letting the computed signal stay typed as boolean.
+    const t = this.tab();
+    if (t === 'byId') return false;
+    return this.more()[t];
+  });
 
   protected isMutual(u: SocialUser | VisitorUser): boolean {
     return (u as SocialUser).isMutual === true;
@@ -126,23 +132,29 @@ export class MessageNewContactPanelComponent {
   private readonly api = inject(ProfileApi);
 
   constructor() {
-    // First fetch when the panel first opens; clear by-id error when it closes.
-    effect(() => {
-      if (this.open()) {
-        this.refetchTab(this.tab());
-      } else {
-        this.idError.set(null);
-      }
-    });
-
-    // Tab-switch refetch. The first effect already re-fetches the *current* tab on
-    // open, so this one only acts when the tab changes to a *different* value — the
-    // `lastTab` guard prevents a double load on the very first open.
+    // Single effect that handles all transitions: panel opening (any first time after
+    // close), panel closing (reset state), and tab switching. Two separate effects here
+    // would double-fire on every first-open (one for `open()`, one for `tab()` starting
+    // from the initial null `lastTab`). The `lastTab`/`lastOpen` guards collapse that
+    // to exactly one refetch per meaningful transition.
     let lastTab: TabId | null = null;
+    let lastOpen = false;
+
     effect(() => {
-      if (!this.open()) { lastTab = null; return; }
+      const isOpen = this.open();
       const t = this.tab();
-      if (t === lastTab) return;
+
+      // Panel closing — reset cursor so reopen re-fetches fresh.
+      if (!isOpen) {
+        lastTab = null;
+        lastOpen = false;
+        this.idError.set(null);
+        return;
+      }
+
+      // First open since last close, OR a tab switch — fetch.
+      if (lastOpen && t === lastTab) return;
+      lastOpen = true;
       lastTab = t;
       this.refetchTab(t);
     });
@@ -216,7 +228,10 @@ export class MessageNewContactPanelComponent {
     this.api.following(50).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (page) => {
         this.following.update(curr => curr.length ? [...curr, ...page.list] : [...page.list]);
-        this.more.update(m => ({ ...m, following: page.more }));
+        // The Following API does not support pagination — always force `more=false` so
+        // the Load-more control doesn't render an extra click that would just refetch
+        // the same first 50 and append them (which silently duplicates the list).
+        this.more.update(m => ({ ...m, following: false }));
         this.loading.update(l => ({ ...l, following: false }));
       },
       error: () => {
@@ -232,7 +247,10 @@ export class MessageNewContactPanelComponent {
     this.api.followers('1', 50).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (page) => {
         this.followers.update(curr => append ? [...curr, ...page.list] : [...page.list]);
-        this.more.update(m => ({ ...m, followers: page.more }));
+        // The Followers API does not support pagination either — same rationale as the
+        // Following branch above. Server-side pagination is the real fix; for now we
+        // simply don't pretend the API has a "next page".
+        this.more.update(m => ({ ...m, followers: false }));
         this.loading.update(l => ({ ...l, followers: false }));
       },
       error: () => {
