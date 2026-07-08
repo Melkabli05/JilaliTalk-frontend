@@ -61,6 +61,7 @@ export class MessagesPageComponent {
   });
 
   private readonly feedEl = viewChild<ElementRef<HTMLElement>>('feed');
+  private readonly composeField = viewChild<ElementRef<HTMLTextAreaElement>>('composeField');
 
   constructor() {
     effect(() => {
@@ -73,6 +74,17 @@ export class MessagesPageComponent {
         Promise.resolve().then(() => {
           el.scrollTop = el.scrollHeight;
         });
+    });
+
+    // Auto-grow composer: when the draft changes, resize the textarea to fit content.
+    // Browsers without `field-sizing: content` support (Firefox, Safari) need this JS
+    // fallback. We reset height to `auto` first so shrinking (content deletion) works.
+    effect(() => {
+      this.draft();
+      const el = this.composeField()?.nativeElement;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
     });
   }
 
@@ -188,8 +200,16 @@ export class MessagesPageComponent {
     }
     // Auto-stop the typing indicator after 4 s of no further keystrokes.
     if (this.typingTimer !== null) clearTimeout(this.typingTimer);
+    const peerIdAtSet = this.selectedPeerNumericId();
+    if (peerIdAtSet == null) return;
     this.typingTimer = setTimeout(() => {
-      this.onTyping(false);
+      this.typingTimer = null;
+      // Only emit the typing-stop to the peer we were typing to, not whatever
+      // conversation the user may have switched to in the meantime.
+      if (this.selectedPeerNumericId() === peerIdAtSet && this.typingActive) {
+        this.fireTypingForSelection(false);
+        this.typingActive = false;
+      }
     }, 4000);
 
     const peerId = this.selectedPeerNumericId();
