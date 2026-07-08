@@ -1,32 +1,29 @@
 import {
-  Component,
   ChangeDetectionStrategy,
-  inject,
-  ElementRef,
-  viewChild,
+  Component,
   effect,
+  inject,
+  input,
   signal,
   computed,
-  input,
+  ElementRef,
+  viewChild,
 } from '@angular/core';
 import {
   LucideChevronLeft,
   LucideInbox,
   LucideMessageCircle,
-  LucideGift,
-  LucideCheck,
-  LucideCheckCheck,
   LucidePlus,
+  LucideSearch,
   LucideSend,
 } from '@lucide/angular';
 import { ImSocketService } from '@core/realtime/im-socket.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
-import { relativeTime as formatRelativeTime } from '@shared/utils';
-import { MessagesSearchComponent } from '../../ui/search/messages-search';
+import { relativeTime } from '@shared/utils';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
 import { MessagesStore } from '../../store/messages.store';
-import type { DmConversation, DmMessage } from '../../models/dm.model';
-import { isGroupStart, isGroupEnd, dateLabel, preview, fmtTime } from '../../utils/dm-formatting.util';
+import { preview } from '../../utils/dm-formatting.util';
+import type { DmMessage } from '../../models/dm.model';
 
 @Component({
   selector: 'app-messages',
@@ -35,14 +32,11 @@ import { isGroupStart, isGroupEnd, dateLabel, preview, fmtTime } from '../../uti
   imports: [
     MessageNewContactPanelComponent,
     AvatarComponent,
-    MessagesSearchComponent,
     LucideChevronLeft,
     LucideInbox,
     LucideMessageCircle,
-    LucideGift,
-    LucideCheck,
-    LucideCheckCheck,
     LucidePlus,
+    LucideSearch,
     LucideSend,
   ],
   templateUrl: './messages-page.html',
@@ -51,39 +45,29 @@ import { isGroupStart, isGroupEnd, dateLabel, preview, fmtTime } from '../../uti
 export class MessagesPageComponent {
   protected readonly store = inject(MessagesStore);
   protected readonly imSocket = inject(ImSocketService);
+  protected readonly relativeTime = relativeTime;
+  protected readonly preview = preview;
 
-  /**
-   * Query-param-driven conversation opener. The user-info modal navigates here with
-   * `?userId=<id>` and the page selects the conversation automatically. Inputs are
-   * populated by `withComponentInputBinding()` in `app.config.ts`, so this works
-   * for both forward navigation and in-app router.navigate(..., { queryParams: }).
-   */
   readonly userId = input<number | null>(null);
 
   protected readonly searchQuery = signal('');
-
   protected readonly filteredConversations = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
     const all = this.store.conversations();
     if (!q) return all;
-    return all.filter((c) => c.nickname.toLowerCase().includes(q) || c.userId.includes(q));
+    return all.filter(c => c.nickname.toLowerCase().includes(q) || c.userId.includes(q));
   });
 
+  protected readonly panelOpen = signal(false);
+  protected readonly draft = signal('');
+  protected readonly canSend = computed(() => this.draft().trim().length > 0);
+
   private readonly feedEl = viewChild<ElementRef<HTMLElement>>('feed');
-  private readonly composeField = viewChild<ElementRef<HTMLTextAreaElement>>('composeField');
 
   constructor() {
-    // Open the conversation requested by the `?userId=<id>` query param when
-    // the messages page is reached via a deep link (e.g. from the user-info
-    // modal's "Send message" button). The effect tracks `userId()` — when the
-    // param is set and the page has a store ready, call `select` to create
-    // (or re-activate) the conversation. Idempotent — repeated navigation
-    // to the same userId just re-selects the existing row.
     effect(() => {
       const id = this.userId();
       if (id == null) return;
-      // The store is page-scoped and created at component construction, so it's
-      // available by the time this effect runs.
       this.store.select(String(id));
     });
 
@@ -91,107 +75,25 @@ export class MessagesPageComponent {
       const conv = this.store.selected();
       if (!conv) return;
       conv.messages.length;
-      conv.isTyping; // also scroll when typing bubble appears
+      conv.isTyping;
       const el = this.feedEl()?.nativeElement;
-      if (el)
-        Promise.resolve().then(() => {
-          el.scrollTop = el.scrollHeight;
-        });
-    });
-
-    // Auto-grow composer: when the draft changes, resize the textarea to fit content.
-    // Browsers without `field-sizing: content` support (Firefox, Safari) need this JS
-    // fallback. We reset height to `auto` first so shrinking (content deletion) works.
-    effect(() => {
-      this.draft();
-      const el = this.composeField()?.nativeElement;
-      if (!el) return;
-      el.style.height = 'auto';
-      el.style.height = `${el.scrollHeight}px`;
+      if (el) Promise.resolve().then(() => { el.scrollTop = el.scrollHeight; });
     });
   }
 
-  /** Delegates to pure helpers in utils/dm-formatting.util.ts so the Angular template
-   *  can call them as class members — the formatting logic itself has no `this`
-   *  dependency and lives outside the component per this feature's DDD-lite pass. */
-  protected isGroupStart(messages: readonly DmMessage[], i: number): boolean {
-    return isGroupStart(messages, i);
-  }
-
-  protected isGroupEnd(messages: readonly DmMessage[], i: number): boolean {
-    return isGroupEnd(messages, i);
-  }
-
-  protected dateLabel(messages: readonly DmMessage[], i: number): string | null {
-    return dateLabel(messages, i);
-  }
-
-  protected preview(conv: DmConversation): string {
-    return preview(conv);
-  }
-
-  protected fmtTime(ts: number): string {
-    return fmtTime(ts);
-  }
-
-  /** Delegates to the imported `formatRelativeTime` so the Angular template can call it as
-   *  a class member. Aliased on import to avoid shadowing this method. */
-  protected formatRelativeTime(ts: number): string {
-    return formatRelativeTime(ts);
-  }
-
-  // ── New-contact panel ────────────────────────────────────────────────────
-  // Slides an overlay into the sidebar so the user can pick who to
-  // message. Closes on outside click, Esc, or pick; opens with +
-  // button. The selected userId flows through MessagesStore.select().
-  protected readonly panelOpen = signal(false);
-
-  protected toggleContactPanel(): void {
-    this.panelOpen.update(v => !v);
-  }
-  protected closeContactPanel(): void {
-    this.panelOpen.set(false);
-  }
+  protected toggleContactPanel(): void { this.panelOpen.update(v => !v); }
+  protected closeContactPanel(): void { this.panelOpen.set(false); }
   protected onContactPicked(userId: number): void {
     this.panelOpen.set(false);
     this.store.select(String(userId));
   }
 
-  // ── Composer ───────────────────────────────────────────────────────────
-  // Mirrors the legacy sendTextMessage dispatch: a text field that fires a typing packet
-  // on each keystroke (debounced), accepts Enter to send a `text` DM and Shift+Enter for
-  // newlines. Read-receipt fires automatically when a conversation becomes selected.
-
-  protected readonly draft = signal('');
-  private typingTimer: ReturnType<typeof setTimeout> | null = null;
-  private lastTypingFireTs = 0;
-  private typingActive = false;
-
-  /** Composite state: draft non-empty → button enabled. */
-  protected readonly canSend = computed(() => this.draft().trim().length > 0);
-
-  /** Visible character count — covers grapheme clusters for Latin scripts reasonably; non-ASCII
-   *  emoji-counting would require Intl.Segmenter, deferred. */
-  protected readonly charCount = computed(() => this.draft().length);
-
-  /** Soft cap for the counter — set generously; below this, no warning surfaced. */
-  protected readonly maxChars = 2000;
-
-  /** Whether the input currently has keyboard focus — gates the focus-ring glow. */
-  protected readonly focused = signal(false);
-
-  protected composePlaceholder(): string {
-    return 'Message…';
-  }
-
-  /** wire onInput: types, debounce-typing, auto-clear. */
   protected onInput(value: string): void {
     this.draft.set(value);
-    this.onTyping(true);
+    const peerId = Number(this.store.selectedId());
+    if (Number.isFinite(peerId)) this.store.sendTyping(peerId, true);
   }
 
-  /** Enter sends without Shift, Shift+Enter inserts a newline. Plain Enter on a textarea
-   *  inserts "\n" by default; preventDefault + manual send is the only way to override. */
   protected onComposerKeydown(event: Event): void {
     const ke = event as KeyboardEvent;
     if (ke.key !== 'Enter' || ke.shiftKey) return;
@@ -199,112 +101,60 @@ export class MessagesPageComponent {
     this.onSend();
   }
 
-  /** Tracks focus so the chrome can glow the focus ring; blur unconditionally,
-   *  unfocus is reliable via the text-input handler. */
-  protected onFocus(): void { this.focused.set(true); }
   protected onBlur(): void {
-    this.focused.set(false);
-    this.onTyping(false);
+    const peerId = Number(this.store.selectedId());
+    if (Number.isFinite(peerId)) this.store.sendTyping(peerId, false);
   }
 
-  /** Throttle typing-fires to ~5 s while-typing cadence (legacy iOS app re-broadcasts is-typing=true
-   *  on a heartbeat) and emits a single is-typing=false on clear/blur/timeout. */
-  protected onTyping(active: boolean): void {
-    if (!active) {
-      if (this.typingTimer !== null) {
-        clearTimeout(this.typingTimer);
-        this.typingTimer = null;
-      }
-      if (this.typingActive) {
-        this.typingActive = false;
-        this.fireTypingForSelection(false);
-      }
-      return;
-    }
-    // Auto-stop the typing indicator after 4 s of no further keystrokes.
-    if (this.typingTimer !== null) clearTimeout(this.typingTimer);
-    const peerIdAtSet = this.selectedPeerNumericId();
-    if (peerIdAtSet == null) return;
-    this.typingTimer = setTimeout(() => {
-      this.typingTimer = null;
-      // Only emit the typing-stop to the peer we were typing to, not whatever
-      // conversation the user may have switched to in the meantime.
-      if (this.selectedPeerNumericId() === peerIdAtSet && this.typingActive) {
-        this.fireTypingForSelection(false);
-        this.typingActive = false;
-      }
-    }, 4000);
-
-    const peerId = this.selectedPeerNumericId();
-    if (peerId == null) return;
-
-    const now = Date.now();
-    if (!this.typingActive) {
-      this.fireTypingForSelection(true);
-      this.typingActive = true;
-      this.lastTypingFireTs = now;
-    } else if (now - this.lastTypingFireTs >= 5000) {
-      // Re-broadcast is-typing=true every 5 s while typing (legacy iOS app's cadence).
-      this.fireTypingForSelection(true);
-      this.lastTypingFireTs = now;
-    }
-  }
-
-  /** Decode the selected conversation's userId-string into a number for the API call.
-   *  Returns null when the conversation key isn't a clean int (defensive). */
-  private selectedPeerNumericId(): number | null {
-    const id = this.store.selectedId();
-    if (id === null) return null;
-    const n = Number(id);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  private fireTypingForSelection(active: boolean): void {
-    const peerId = this.selectedPeerNumericId();
-    if (peerId != null) this.store.sendTyping(peerId, active);
-  }
-
-  /** Send the current draft as a 1:1 text DM. Echoes locally so the sender sees their own
-   *  bubble, then clears the draft. Reads own identity from the auth store (we don't have
-   *  it on this component today — see ownUserId comment). */
   protected onSend(): void {
     const text = this.draft().trim();
     if (!text) return;
-    const peerId = this.selectedPeerNumericId();
-    if (peerId == null) return;
+    const peerId = Number(this.store.selectedId());
+    if (!Number.isFinite(peerId)) return;
 
-    const msgId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const msgId = uid();
     const now = Date.now();
-
     this.store.sendDm(peerId, 'text', {
       msgId,
       text,
-      fromId: this.ownUserId() ?? undefined,
-      fromNickname: this.ownNickname(),
+      fromNickname: 'You',
       fromProfileTs: now,
     });
-    // Mirror the sent DM into the local cache so the sender sees their bubble immediately,
-    // matching how the inbound path uses push() in MessagesStore.dispatch. delivery: 'sent'
-    // kicks the bubble into ✓ state until the upstream MSG-ACK arrives and flips it to 'delivered'.
-    this.store.pushPublic(String(peerId), this.ownNickname(), {
+    this.store.pushPublic(String(peerId), 'You', {
       id: msgId,
       type: 'text',
       text,
       ts: now,
       delivery: 'sent',
     });
-
     this.draft.set('');
-    this.onTyping(false);
+    this.store.sendTyping(peerId, false);
   }
 
-  /** We don't have a canonical self-id on this component today. The BFF falls back to the
-   *  JWT subject when this is null/undefined, which is the desired default. */
-  private ownUserId(): number | null {
-    return null;
+  /** Show "Today" / "Yesterday" / "Jun 12" pill at the first message of each day. */
+  protected dayLabel(messages: readonly DmMessage[], i: number): string | null {
+    const cur = messages[i];
+    if (!cur) return null;
+    if (i > 0) {
+      const prev = messages[i - 1];
+      if (prev && new Date(prev.ts).toDateString() === new Date(cur.ts).toDateString()) {
+        return null;
+      }
+    }
+    return formatDay(cur.ts);
   }
+}
 
-  private ownNickname(): string {
-    return 'You';
-  }
+function uid(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function formatDay(ts: number): string {
+  const d = new Date(ts);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return 'Today';
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 }

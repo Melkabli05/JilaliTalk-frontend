@@ -56,7 +56,7 @@
             <button
               type="button"
               class="by-id-btn"
-              [disabled]="!idQuery().trim() || loading().byId"
+              [disabled]="!idQuery().trim() || loading()"
               (click)="onLookUpId()"
             >
               Look up
@@ -68,7 +68,7 @@
             [class.is-error]="!!idError()"
           >
             @if (idError()) { {{ idError() }} }
-            @else if (loading().byId) { Looking up… }
+            @else if (loading()) { Looking up… }
             @else if (byIdResult(); as u) {
               <app-user-list-item
                 [userId]="u.userId"
@@ -98,18 +98,18 @@
                 [headUrl]="u.headUrl"
                 [nationality]="u.nationality"
                 [vipType]="vipTypeOf(u)"
-                [variant]="variantFor(tab())"
+                [variant]="variantFor()"
                 [isMutual]="isMutual(u)"
                 (userClick)="onPick($event)"
               />
             </li>
           } @empty {
-            @if (loading()[tab()]) {
+            @if (loading()) {
               <li class="empty loading">Loading…</li>
-            } @else if (error()[tab()]) {
+            } @else if (error()) {
               <li class="empty error">
-                <span>{{ error()[tab()] }}</span>
-                <button type="button" class="retry" (click)="retry(tab())">Retry</button>
+                <span>{{ error() }}</span>
+                <button type="button" class="retry" (click)="retry()">Retry</button>
               </li>
             } @else {
               <li class="empty">
@@ -127,10 +127,10 @@
               <button
                 type="button"
                 class="load-more"
-                [disabled]="loading()[tab()]"
+                [disabled]="loading()"
                 (click)="loadMore()"
               >
-                @if (loading()[tab()]) { Loading… } @else { Load more }
+                @if (loading()) { Loading… } @else { Load more }
               </button>
             </li>
           }

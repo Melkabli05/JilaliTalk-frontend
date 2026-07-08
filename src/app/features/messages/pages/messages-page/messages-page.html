@@ -1,5 +1,4 @@
 <div class="shell">
-  <!-- ══════════════ Sidebar ══════════════ -->
   <aside class="sidebar" [class.hidden]="store.selected()">
     <header class="sidebar-header">
       <h1 class="sidebar-title">Messages</h1>
@@ -31,16 +30,15 @@
     ></app-messages-new-contact>
 
     <div class="search-wrap">
-      <app-messages-search [(value)]="searchQuery" />
+      <input
+        type="search"
+        class="search-input"
+        placeholder="Search…"
+        aria-label="Search conversations"
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+      />
     </div>
-
-    <!-- conversation count hint -->
-    @if (store.conversations().length > 0) {
-      <div class="conv-count">
-        {{ store.conversations().length }}
-        {{ store.conversations().length === 1 ? 'conversation' : 'conversations' }}
-      </div>
-    }
 
     @if (filteredConversations().length === 0) {
       <div class="empty">
@@ -48,11 +46,7 @@
           <svg aria-hidden="true" lucideInbox [size]="28"></svg>
         </div>
         <p class="empty-title">
-          @if (searchQuery()) {
-            No results
-          } @else {
-            No messages yet
-          }
+          @if (searchQuery()) { No results } @else { No messages yet }
         </p>
         <p class="empty-body">
           @if (searchQuery()) {
@@ -77,31 +71,22 @@
             <app-avatar
               [alt]="conv.nickname"
               size="md"
-              [ringColor]="
-                store.selectedId() === conv.userId ? 'var(--color-primary-500)' : null
-              "
+              [ringColor]="store.selectedId() === conv.userId ? 'var(--color-primary-500)' : null"
             />
             <div class="row-body">
               <span class="row-name">{{ conv.nickname }}</span>
               <time class="row-ts" [attr.datetime]="conv.lastTs">
-                {{ formatRelativeTime(conv.lastTs) }}
+                {{ relativeTime(conv.lastTs) }}
               </time>
               @if (conv.isTyping) {
-                <span class="row-preview typing-preview" aria-label="typing">
-                  <span class="typing-dots" aria-hidden="true">
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                  </span>
-                  <span class="typing-label">typing…</span>
-                </span>
+                <span class="row-preview typing-preview">typing…</span>
               } @else {
                 <span class="row-preview">{{ preview(conv) }}</span>
               }
               @if (conv.unread > 0) {
-                <span class="unread-badge" [attr.aria-label]="conv.unread + ' unread'">{{
-                  conv.unread > 99 ? '99+' : conv.unread
-                }}</span>
+                <span class="unread-badge" [attr.aria-label]="conv.unread + ' unread'">
+                  {{ conv.unread > 99 ? '99+' : conv.unread }}
+                </span>
               }
             </div>
           </li>
@@ -110,10 +95,8 @@
     }
   </aside>
 
-  <!-- ══════════════ Thread ══════════════ -->
   <main class="thread" [class.open]="store.selected()">
     @if (store.selected(); as conv) {
-      <!-- mobile back bar -->
       <div class="mobile-bar">
         <button class="back-btn" (click)="store.back()" aria-label="Back to conversations">
           <svg aria-hidden="true" lucideChevronLeft [size]="18"></svg>
@@ -123,102 +106,33 @@
           <span class="mobile-bar-name">{{ conv.nickname }}</span>
         </div>
         @if (conv.isTyping) {
-          <span class="typing-dots" aria-label="typing" aria-hidden="true">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-          </span>
+          <span class="typing-label" aria-label="typing">typing…</span>
         }
       </div>
 
-      <!-- messages -->
       <div class="feed" #feed>
         @for (msg of conv.messages; track msg.id; let i = $index) {
-          @if (dateLabel(conv.messages, i); as label) {
+          @let label = dayLabel(conv.messages, i);
+          @if (label) {
             <div class="date-pill" role="separator">{{ label }}</div>
           }
 
-          <div
-            class="msg"
-            [class.tail]="isGroupEnd(conv.messages, i)"
-            [class.first]="isGroupStart(conv.messages, i)"
-            [class.is-outbound]="!!msg.delivery"
-          >
-            <!-- avatar shown only on group start -->
-            @if (isGroupStart(conv.messages, i)) {
-              <app-avatar [alt]="conv.nickname" size="xs" class="msg-avatar" />
+          <div class="msg" [class.is-outbound]="!!msg.delivery">
+            @if (msg.delivery) {
+              <div class="bubble outbound">
+                <p>{{ msg.text }}</p>
+              </div>
             } @else {
-              <span class="msg-avatar-gap"></span>
+              <app-avatar [alt]="conv.nickname" size="xs" class="msg-avatar" />
+              <div class="bubble">
+                <p>{{ msg.text }}</p>
+              </div>
             }
-
-            <div class="bubble">
-              @switch (msg.type) {
-                @case ('text') {
-                  <p>{{ msg.text }}</p>
-                }
-                @case ('image') {
-                  <img [src]="msg.imageUrl" alt="Photo" loading="lazy" />
-                }
-                @case ('gift') {
-                  <span class="bubble-meta">
-                    <svg aria-hidden="true" lucideGift [size]="13"></svg>
-                    Gift &times;{{ msg.count ?? 1 }}
-                  </span>
-                }
-                @case ('introduction') {
-                  <span class="bubble-meta">
-                    <svg aria-hidden="true" lucideMessageCircle [size]="13"></svg>
-                    Introduction
-                  </span>
-                }
-                @case ('voice_room_shared') {
-                  <a class="bubble-meta" [href]="'/room/' + msg.cname + '/2'">
-                    <svg aria-hidden="true" lucideMessageCircle [size]="13"></svg>
-                    @if (msg.voiceCount != null) {
-                      Voice room · {{ msg.voiceCount }} listening
-                    } @else {
-                      Voice room shared
-                    }
-                  </a>
-                }
-                @case ('live_room_shared') {
-                  <a class="bubble-meta" [href]="'/room/live/' + msg.cname + '/2'">
-                    <svg aria-hidden="true" lucideMessageCircle [size]="13"></svg>
-                    Live link shared
-                  </a>
-                }
-              }
-              @if (isGroupEnd(conv.messages, i)) {
-                <time class="bubble-time">{{ fmtTime(msg.ts) }}</time>
-                @if (msg.delivery) {
-                  @if (msg.delivery === 'delivered') {
-                    <svg
-                      aria-hidden="true"
-                      lucideCheckCheck
-                      [size]="12"
-                      class="bubble-delivery"
-                      aria-label="Delivered"
-                      title="Delivered"
-                    ></svg>
-                  } @else {
-                    <svg
-                      aria-hidden="true"
-                      lucideCheck
-                      [size]="12"
-                      class="bubble-delivery"
-                      aria-label="Sent"
-                      title="Sent"
-                    ></svg>
-                  }
-                }
-              }
-            </div>
           </div>
         }
 
-        <!-- live typing bubble -->
         @if (conv.isTyping) {
-          <div class="msg tail first typing-row">
+          <div class="msg typing-row">
             <app-avatar [alt]="conv.nickname" size="xs" class="msg-avatar" />
             <div class="bubble typing-bubble">
               <span class="typing-dots" aria-label="typing">
@@ -231,9 +145,6 @@
         }
       </div>
 
-      <!-- mobile-only FAB: when a thread is open, the sidebar is hidden and the
-           + in its header is unreachable; this FAB remains visible. Hidden on
-           desktop where the sidebar + is already in reach. -->
       <button
         type="button"
         class="new-contact-fab"
@@ -245,15 +156,11 @@
         <svg aria-hidden="true" lucidePlus [size]="22"></svg>
       </button>
 
-      <!-- compose -->
       <form
         class="compose"
-        [class.is-focused]="focused()"
-        [class.is-over-limit]="charCount() > maxChars"
         (submit)="$event.preventDefault(); onSend()"
       >
         <textarea
-          #composeField
           class="compose-field"
           rows="1"
           autocomplete="off"
@@ -261,48 +168,26 @@
           autocorrect="off"
           spellcheck="true"
           enterkeyhint="send"
-          [placeholder]="composePlaceholder()"
+          placeholder="Message…"
           [value]="draft()"
           (input)="onInput($any($event.target).value)"
           (keydown)="onComposerKeydown($event)"
-          (focus)="onFocus()"
           (blur)="onBlur()"
           [attr.aria-label]="'Message to ' + (conv.nickname || 'this conversation')"
-          [attr.aria-describedby]="'compose-meta compose-counter'"
-          [attr.aria-invalid]="charCount() > maxChars ? 'true' : null"
-          [attr.aria-disabled]="!store.selected() ? 'true' : null"
           [disabled]="!store.selected()"
         ></textarea>
 
-        <div class="compose-side">
-          <button
-            type="submit"
-            class="compose-send"
-            [disabled]="!canSend() || charCount() > maxChars"
-            [attr.aria-label]="canSend()
-              ? 'Send message'
-              : (charCount() > maxChars
-                ? 'Message exceeds the maximum length'
-                : 'Type a message to enable send')"
-            title="Send"
-          >
-            <svg aria-hidden="true" lucideSend [size]="16"></svg>
-          </button>
-        </div>
-
-        <span
-          id="compose-counter"
-          class="compose-counter"
-          [class.is-warning]="charCount() > maxChars * 0.8"
-          [class.is-over-limit]="charCount() > maxChars"
-          aria-live="polite"
-        >{{ charCount() }} / {{ maxChars }}</span>
-        <span id="compose-meta" class="visually-hidden">
-          Press Enter to send, Shift+Enter for a new line.
-        </span>
+        <button
+          type="submit"
+          class="compose-send"
+          [disabled]="!canSend()"
+          [attr.aria-label]="canSend() ? 'Send message' : 'Type a message to enable send'"
+          title="Send"
+        >
+          <svg aria-hidden="true" lucideSend [size]="16"></svg>
+        </button>
       </form>
     } @else {
-      <!-- no conversation selected -->
       <div class="no-selection">
         <button
           type="button"
