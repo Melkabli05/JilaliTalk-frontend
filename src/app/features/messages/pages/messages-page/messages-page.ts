@@ -22,7 +22,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { relativeTime } from '@shared/utils';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
 import { MessagesStore } from '../../store/messages.store';
-import { preview } from '../../utils/dm-formatting.util';
+import { preview, uid, formatDay } from '../../utils/dm-formatting.util';
 import type { DmMessage } from '../../models/dm.model';
 
 @Component({
@@ -143,18 +143,4 @@ export class MessagesPageComponent {
     }
     return formatDay(cur.ts);
   }
-}
-
-function uid(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function formatDay(ts: number): string {
-  const d = new Date(ts);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return 'Today';
-  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 }

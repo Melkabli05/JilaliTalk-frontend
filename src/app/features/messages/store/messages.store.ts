@@ -5,6 +5,7 @@ import { StorageService } from '@core/services/storage.service';
 import { UserInfoService } from '@core/services/user-info.service';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
 import type { ImEvent } from '@core/realtime/im-events';
+import { uid } from '../utils/dm-formatting.util';
 import type { DmConversation, DmMessage } from '../models/dm.model';
 
 export type DmKind = 'text' | 'image' | 'voice_room' | 'live_link' | 'introduction' | 'send_gift';
@@ -185,8 +186,4 @@ export class MessagesStore {
         break;
     }
   }
-}
-
-function uid(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
