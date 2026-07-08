@@ -257,15 +257,6 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
                 <svg aria-hidden="true" lucideGift [size]="18"></svg>
               </button>
               <button
-                class="toolbar-btn c-pitch"
-                appTooltip="Voice pitch"
-                tooltipPosition="bottom"
-                (click)="onPitch()"
-                aria-label="Pitch settings"
-              >
-                <svg aria-hidden="true" lucideMusic [size]="18"></svg>
-              </button>
-              <button
                 class="toolbar-btn c-reward"
                 appTooltip="Daily rewards"
                 tooltipPosition="bottom"
@@ -417,10 +408,6 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
                 <span class="row-label">Share screen</span>
               </button>
             }
-            <button class="overflow-row" (click)="onPitch()">
-              <svg aria-hidden="true" lucideMusic [size]="20"></svg>
-              <span class="row-label">Voice pitch</span>
-            </button>
             <button class="overflow-row" (click)="showSettings.set(!showSettings())">
               <svg aria-hidden="true" lucideSettings [size]="20"></svg>
               <span class="row-label">Mic settings</span>

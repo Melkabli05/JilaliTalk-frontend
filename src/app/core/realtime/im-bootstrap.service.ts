@@ -229,7 +229,7 @@ export class ImBootstrapService {
         userId: uid,
         avatarUrl: params.avatarUrl,
         nickname: params.nickname,
-        action: params.action,
+        ...(params.action !== undefined ? { action: params.action } : {}),
       });
     } else {
       this.notifications.notify(params.type, params.title, params.message);

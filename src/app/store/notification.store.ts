@@ -108,9 +108,9 @@ export class NotificationStore {
     userId: number;
     avatarUrl?: string | null;
     nickname?: string | null;
-    action?: AppNotification['action'];
+    action?: AppNotification['action'] | undefined;
   }): void {
-    const full = this.buildNotification(params);
+    const full = this.buildNotification(params as Omit<AppNotification, 'id' | 'timestamp' | 'read'>);
     this._notifications.update(list => this.capNotifications([full, ...list]));
     this.maybeShowToast(full);
   }
@@ -164,7 +164,14 @@ export class NotificationStore {
     params: Omit<AppNotification, 'id' | 'timestamp' | 'read'>,
   ): AppNotification {
     const id = `notif-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    return { ...params, id, timestamp: Date.now(), read: false };
+    const base = { ...(params as Record<string, unknown>), id, timestamp: Date.now(), read: false };
+    // Pull `action` out of the spread record so we don't include it when it's undefined —
+    // exactOptionalPropertyTypes: the AppNotification type has `action: NotificationAction`
+    // as optional (= absent when undefined).
+    if ('action' in params && (params as { action?: unknown }).action !== undefined) {
+      (base as { action?: unknown }).action = (params as { action?: unknown }).action;
+    }
+    return base as AppNotification;
   }
 
   private capNotifications(list: AppNotification[]): AppNotification[] {
