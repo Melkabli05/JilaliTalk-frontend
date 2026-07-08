@@ -7,6 +7,7 @@ import {
   effect,
   signal,
   computed,
+  input,
 } from '@angular/core';
 import {
   LucideChevronLeft,
@@ -51,6 +52,14 @@ export class MessagesPageComponent {
   protected readonly store = inject(MessagesStore);
   protected readonly imSocket = inject(ImSocketService);
 
+  /**
+   * Query-param-driven conversation opener. The user-info modal navigates here with
+   * `?userId=<id>` and the page selects the conversation automatically. Inputs are
+   * populated by `withComponentInputBinding()` in `app.config.ts`, so this works
+   * for both forward navigation and in-app router.navigate(..., { queryParams: }).
+   */
+  readonly userId = input<number | null>(null);
+
   protected readonly searchQuery = signal('');
 
   protected readonly filteredConversations = computed(() => {
@@ -64,6 +73,20 @@ export class MessagesPageComponent {
   private readonly composeField = viewChild<ElementRef<HTMLTextAreaElement>>('composeField');
 
   constructor() {
+    // Open the conversation requested by the `?userId=<id>` query param when
+    // the messages page is reached via a deep link (e.g. from the user-info
+    // modal's "Send message" button). The effect tracks `userId()` — when the
+    // param is set and the page has a store ready, call `select` to create
+    // (or re-activate) the conversation. Idempotent — repeated navigation
+    // to the same userId just re-selects the existing row.
+    effect(() => {
+      const id = this.userId();
+      if (id == null) return;
+      // The store is page-scoped and created at component construction, so it's
+      // available by the time this effect runs.
+      this.store.select(String(id));
+    });
+
     effect(() => {
       const conv = this.store.selected();
       if (!conv) return;

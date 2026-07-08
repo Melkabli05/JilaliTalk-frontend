@@ -14,7 +14,7 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
 import { RoomPresenceBannerComponent } from '@shared/ui/room-presence-banner';
 import { cnameToBusiType } from '@shared/utils';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
-import { LucideX, LucideCrown, LucideUserPlus, LucideUserCheck, LucideLoader } from '@lucide/angular';
+import { LucideX, LucideCrown, LucideUserPlus, LucideUserCheck, LucideLoader, LucideMessageCircle } from '@lucide/angular';
 
 export interface UserInfoModalData {
   readonly userId: number;
@@ -42,6 +42,7 @@ export interface UserInfoModalData {
     LucideUserPlus,
     LucideUserCheck,
     LucideLoader,
+    LucideMessageCircle,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -100,7 +101,16 @@ export interface UserInfoModalData {
         />
 
         @if (canFollow()) {
-          <div class="follow-action-row">
+          <div class="action-row">
+            <button
+              type="button"
+              class="message-btn"
+              (click)="sendMessage()"
+              aria-label="Send message to {{ displayName() }}"
+            >
+              <svg aria-hidden="true" lucideMessageCircle [size]="14"></svg>
+              Message
+            </button>
             <button
               type="button"
               class="follow-btn"
@@ -635,7 +645,7 @@ export interface UserInfoModalData {
         .detail-row, .tags-row, .links-row { animation: none; }
       }
 
-      .follow-action-row {
+      .action-row {
         display: flex;
         align-items: center;
         gap: var(--space-2);
@@ -643,6 +653,7 @@ export interface UserInfoModalData {
         animation: itemIn 0.2s ease-out 0.1s backwards;
       }
 
+      .message-btn,
       .follow-btn {
         display: inline-flex;
         align-items: center;
@@ -656,6 +667,24 @@ export interface UserInfoModalData {
         font-weight: var(--font-semibold);
         cursor: pointer;
         transition: background 0.15s, opacity 0.15s, border-color 0.15s;
+      }
+      /* The Message button is the primary CTA — filled. The Follow button
+         toggles to a transparent "Following" state when active (see
+         .follow-btn--following below), so we deliberately give them a
+         shared base and let .follow-btn--following override the fill. */
+      .message-btn:hover:not(:disabled) {
+        background: var(--color-primary-700, #4338ca);
+        border-color: var(--color-primary-700, #4338ca);
+      }
+      .message-btn:focus-visible,
+      .follow-btn:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: 2px;
+      }
+      .message-btn:disabled,
+      .follow-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
       }
       .follow-btn:hover:not(:disabled) {
         background: var(--color-primary-700, #4338ca);
@@ -906,6 +935,32 @@ export class UserInfoModalComponent {
     } finally {
       this._isTogglingFollow.set(false);
     }
+  }
+
+  /**
+   * Open a 1:1 conversation with the viewed user. Closes the modal first so
+   * the messages page is the only view in focus on arrival, then routes to
+   * `/messages?userId=<id>`. The messages page's `userId` input (bound from
+   * the query param via `withComponentInputBinding()`) drives a `select(userId)`
+   * call, which creates-or-activates the conversation row.
+   *
+   * Self-message guard: the follow button is hidden when viewing your own
+   * profile (see `canFollow()`), but a defensive check is here in case the
+   * Send button is reached via another path. We also bail if the viewer's
+   * session is missing (logged-out case).
+   */
+  sendMessage(): void {
+    const me = this.authStore.user();
+    if (me == null) return;
+    if (me.userId === this.data.userId) {
+      this.toast.info("You can't message yourself.");
+      this.ref.close();
+      return;
+    }
+    this.ref.close();
+    void this.router.navigate(['/messages'], {
+      queryParams: { userId: this.data.userId },
+    });
   }
 
   // Room-presence banner join handlers — see RoomPresenceBannerComponent for the trigger.
