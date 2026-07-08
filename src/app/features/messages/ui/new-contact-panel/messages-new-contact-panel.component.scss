@@ -191,11 +191,14 @@
 
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 600px) {
-  /* Phone: full-screen sheet, slides up from the bottom. */
+  /* Phone: full-screen sheet, slides up from the bottom, anchored below the
+     global app-header so the tabbar and panel-header are never under it. The
+     panel-header's own `padding-top: env(safe-area-inset-top)` handles the iOS
+     notch — this rule only positions the panel relative to the app-header. */
   .new-contact-panel {
-    top: auto;
+    top: var(--app-header-height, 56px);
     bottom: 0;
-    height: 100dvh;          /* dynamic vh — handles iOS URL bar */
+    height: calc(100dvh - var(--app-header-height, 56px));
     transform: translateY(100%);
     border-radius: 14px 14px 0 0;
   }
