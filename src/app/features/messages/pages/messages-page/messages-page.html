@@ -230,6 +230,20 @@
         }
       </div>
 
+      <!-- mobile-only FAB: when a thread is open, the sidebar is hidden and the
+           + in its header is unreachable; this FAB remains visible. Hidden on
+           desktop where the sidebar + is already in reach. -->
+      <button
+        type="button"
+        class="new-contact-fab"
+        [class.is-hidden]="panelOpen()"
+        (click)="toggleContactPanel()"
+        [attr.aria-label]="panelOpen() ? 'Close new message panel' : 'New message'"
+        aria-controls="new-contact-panel"
+      >
+        <svg aria-hidden="true" lucidePlus [size]="22"></svg>
+      </button>
+
       <!-- compose -->
       <form
         class="compose"
@@ -288,6 +302,16 @@
     } @else {
       <!-- no conversation selected -->
       <div class="no-selection">
+        <button
+          type="button"
+          class="new-contact-empty"
+          (click)="toggleContactPanel()"
+          [attr.aria-label]="panelOpen() ? 'Close new message panel' : 'New message'"
+          aria-controls="new-contact-panel"
+        >
+          <svg aria-hidden="true" lucidePlus [size]="18"></svg>
+          <span>New message</span>
+        </button>
         <div class="no-selection-icon">
           <svg aria-hidden="true" lucideMessageCircle [size]="40"></svg>
         </div>
