@@ -41,7 +41,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-5) var(--space-4) var(--space-3);
+  padding: calc(var(--space-5) + env(safe-area-inset-top, 0px)) var(--space-4) var(--space-3);
   flex-shrink: 0;
 }
 
@@ -365,7 +365,7 @@ li.unread .row-ts {
   display: none;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  padding: calc(var(--space-2) + env(safe-area-inset-top, 0px)) var(--space-3) var(--space-2);
   background: var(--color-card);
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
@@ -778,7 +778,7 @@ li.unread .row-ts {
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  padding: var(--space-8);
+  padding: calc(var(--space-8) + env(safe-area-inset-top, 0px)) var(--space-8) var(--space-8);
   text-align: center;
 }
 

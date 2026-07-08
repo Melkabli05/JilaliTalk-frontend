@@ -52,6 +52,8 @@ export function preview(conv: DmConversation): string {
         : 'Voice room shared';
     case 'live_room_shared':
       return 'Live link shared';
+    default:
+      return '';
   }
 }
 

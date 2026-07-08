@@ -47,8 +47,10 @@ export class MessagesStore {
     effect(() => {
       const events = this.imSocket.events();
       if (events.length < this.processedEventCount) {
-        // Log was reset (disconnect/reconnect) — start over from the beginning.
-        this.processedEventCount = 0;
+        // Log was reset (disconnect/reconnect) — events we already processed are gone.
+        // Clamp to the new length; do NOT re-dispatch (re-firing would re-send
+        // read-receipts / typing-stops / MSG-ACKs for messages already handled).
+        this.processedEventCount = events.length;
       }
       for (const ev of events.slice(this.processedEventCount)) {
         this.dispatch(ev);
