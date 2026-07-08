@@ -142,6 +142,7 @@
             class="msg"
             [class.tail]="isGroupEnd(conv.messages, i)"
             [class.first]="isGroupStart(conv.messages, i)"
+            [class.is-outbound]="!!msg.delivery"
           >
             <!-- avatar shown only on group start -->
             @if (isGroupStart(conv.messages, i)) {

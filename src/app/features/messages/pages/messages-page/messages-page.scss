@@ -129,11 +129,17 @@ li::before {
   transition: opacity 0.15s ease;
 }
 
+li {
+  position: relative;
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
 li:hover {
   background: var(--color-neutral-100);
 }
 li.active {
-  background: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
+  background: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
 }
 li.active::before {
   opacity: 1;
@@ -143,7 +149,11 @@ li.active::before {
   background: var(--color-neutral-700);
 }
 :host-context(.dark) li.active {
-  background: color-mix(in srgb, var(--color-primary-500) 14%, transparent);
+  background: color-mix(in srgb, var(--color-primary-500) 16%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  li { transition: none; }
 }
 
 li:focus-visible {
@@ -184,6 +194,11 @@ li.unread .row-ts {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.005em;
+}
+li.unread .row-name {
+  color: var(--color-text);
+  font-weight: var(--font-semibold);
 }
 
 .row-ts {
@@ -192,6 +207,13 @@ li.unread .row-ts {
   font-size: var(--text-2xs);
   color: var(--color-text-muted);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  transition: color 0.2s ease;
+}
+li.unread .row-ts {
+  color: var(--color-accent-600);
+  font-weight: var(--font-medium);
 }
 
 .row-preview {
@@ -209,9 +231,11 @@ li.unread .row-ts {
 
 .typing-preview {
   color: var(--color-primary-500);
+  font-weight: var(--font-medium);
 }
-.typing-label {
+.typing-preview .typing-label {
   font-style: italic;
+  letter-spacing: 0.04em;
 }
 
 .unread-badge {
@@ -229,16 +253,17 @@ li.unread .row-ts {
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: badge-pop 0.2s ease;
+  animation: badge-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 1px 4px hsl(0deg 0% 0% / 12%);
 }
 
 @keyframes badge-pop {
   0% {
-    transform: scale(0.5);
+    transform: scale(0.4);
     opacity: 0;
   }
-  70% {
-    transform: scale(1.15);
+  60% {
+    transform: scale(1.18);
   }
   100% {
     transform: scale(1);
@@ -425,6 +450,12 @@ li.unread .row-ts {
   align-items: flex-end;
   gap: var(--space-2);
 }
+/* Outbound bubbles flush right; reverse the row order so the bubble lands
+   against the right edge and the avatar (gap) sits on the left of it. */
+.msg.is-outbound {
+  justify-content: flex-end;
+  flex-direction: row-reverse;
+}
 .msg.tail {
   margin-bottom: var(--space-1);
 }
@@ -449,10 +480,26 @@ li.unread .row-ts {
   flex-direction: column;
   gap: 3px;
   box-shadow: var(--shadow-xs);
-  transition: box-shadow 0.15s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: bubble-pop 0.22s cubic-bezier(0.34, 1.4, 0.64, 1);
+  transform-origin: bottom left;
 }
 .bubble:hover {
   box-shadow: var(--shadow-sm);
+}
+
+/* Outbound messages are own-sent: small primary-tinted background + sharper shadow. */
+.msg.is-outbound .bubble {
+  background: var(--color-primary-50);
+  border-color: color-mix(in srgb, var(--color-primary-500) 28%, transparent);
+  transform-origin: bottom right;
+}
+:host-context(.dark) .msg.is-outbound .bubble {
+  background: color-mix(in srgb, var(--color-primary-500) 18%, var(--color-neutral-800) 100%);
+  border-color: color-mix(in srgb, var(--color-primary-500) 40%, transparent);
 }
 
 /* First message in a group: connect visually with its avatar */
@@ -460,15 +507,40 @@ li.unread .row-ts {
   border-bottom-left-radius: var(--radius-xl);
   border-top-left-radius: var(--radius-sm);
 }
+.msg.is-outbound.msg.first .bubble {
+  border-bottom-left-radius: var(--radius-xl);
+  border-bottom-right-radius: var(--radius-xl);
+  border-top-left-radius: var(--radius-sm);
+  border-top-right-radius: var(--radius-sm);
+}
 /* Mid-group (not first, not tail) */
 .msg:not(.first):not(.tail) .bubble {
   border-top-left-radius: var(--radius-xs);
   border-bottom-left-radius: var(--radius-xs);
 }
+.msg.is-outbound:not(.first):not(.tail) .bubble {
+  border-top-right-radius: var(--radius-xs);
+  border-bottom-right-radius: var(--radius-xs);
+}
 /* Tail but not first */
 .msg.tail:not(.first) .bubble {
   border-top-left-radius: var(--radius-xs);
   border-bottom-left-radius: var(--radius-xl);
+}
+.msg.is-outbound.tail:not(.first) .bubble {
+  border-top-right-radius: var(--radius-xs);
+  border-bottom-right-radius: var(--radius-xl);
+}
+
+@keyframes bubble-pop {
+  0% {
+    transform: scale(0.92) translateY(4px);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 
 .bubble p {
@@ -509,9 +581,33 @@ li.unread .row-ts {
 .typing-bubble {
   padding: var(--space-2) var(--space-3);
   color: var(--color-primary-400);
+  background: color-mix(in srgb, var(--color-primary-500) 6%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary-500) 24%, transparent);
+  animation: bubble-pop 0.22s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 .typing-row {
   opacity: 1;
+  animation: bubble-pop 0.22s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.typing-bubble .dot {
+  width: 6px;
+  height: 6px;
+  opacity: 0.7;
+}
+.typing-bubble .dot:nth-child(2) { animation-delay: 0.18s; }
+.typing-bubble .dot:nth-child(3) { animation-delay: 0.36s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .msg,
+  .bubble,
+  .typing-bubble,
+  .typing-row,
+  .msg:first-child .bubble,
+  .unread-badge {
+    animation: none;
+    transition: none;
+  }
+  .bubble:hover { box-shadow: var(--shadow-xs); }
 }
 
 /* ─── Compose ────────────────────────────────────── */
@@ -696,6 +792,12 @@ li.unread .row-ts {
   align-items: center;
   justify-content: center;
   box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-primary-500) 5%, transparent);
+  animation: icon-breathe 4s ease-in-out infinite;
+  transition: box-shadow 0.3s ease;
+}
+@keyframes icon-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
 }
 :host-context(.dark) .no-selection-icon {
   background: color-mix(in srgb, var(--color-primary-500) 16%, transparent);
