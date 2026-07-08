@@ -1,6 +1,7 @@
 import { Service, computed, effect, inject, signal } from '@angular/core';
 import { ImSocketService } from '@core/realtime/im-socket.service';
 import { StorageService } from '@core/services/storage.service';
+import { UserInfoService } from '@core/services/user-info.service';
 import type { ImEvent } from '@core/realtime/im-events';
 import type { DmConversation, DmMessage } from '../models/dm.model';
 import { MessagesApi, SendDmBody, DmKind } from '../api/messages-api.service';
@@ -18,6 +19,7 @@ export class MessagesStore {
   private readonly imSocket = inject(ImSocketService);
   private readonly storage = inject(StorageService);
   private readonly api = inject(MessagesApi);
+  private readonly userInfoService = inject(UserInfoService);
 
   private readonly _convMap = signal(
     this.storage.get<[string, DmConversation][]>(STORAGE_KEY)?.reduce(
@@ -74,9 +76,25 @@ export class MessagesStore {
     // most-recent inbound message from the peer.
     this._selectedId.set(userId);
     this._convMap.update(m => {
-      const c = m.get(userId);
-      if (!c || c.unread === 0) return m;
-      return new Map(m).set(userId, { ...c, unread: 0 });
+      const existing = m.get(userId);
+      if (existing) {
+        // Existing conversation: clear the unread badge.
+        if (existing.unread === 0) return m;
+        return new Map(m).set(userId, { ...existing, unread: 0 });
+      }
+      const numeric = Number(userId);
+      const info = Number.isFinite(numeric)
+        ? this.userInfoService.getUserInfo(numeric)
+        : null;
+      const placeholder: DmConversation = {
+        userId,
+        nickname: info?.nickname?.trim() || info?.username?.trim() || userId,
+        messages: [],
+        unread: 0,
+        lastTs: 0,
+        isTyping: false,
+      };
+      return new Map(m).set(userId, placeholder);
     });
 
     // Fire the upstream read-receipt only when the conversation actually carries unread
