@@ -22,8 +22,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { relativeTime } from '@shared/utils';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
 import { MessagesStore } from '../../store/messages.store';
-import { preview, uid, formatDay } from '../../utils/dm-formatting.util';
-import type { DmMessage } from '../../models/dm.model';
+import { preview, uid, dayLabel } from '../../utils/dm-formatting.util';
 
 @Component({
   selector: 'app-messages',
@@ -61,6 +60,12 @@ export class MessagesPageComponent {
   protected readonly panelOpen = signal(false);
   protected readonly draft = signal('');
   protected readonly canSend = computed(() => this.draft().trim().length > 0);
+  protected readonly dayLabel = dayLabel;
+
+  private readonly selectedPeerId = computed(() => {
+    const n = Number(this.store.selectedId());
+    return Number.isFinite(n) ? n : null;
+  });
 
   private readonly feedEl = viewChild<ElementRef<HTMLElement>>('feed');
 
@@ -90,8 +95,8 @@ export class MessagesPageComponent {
 
   protected onInput(value: string): void {
     this.draft.set(value);
-    const peerId = Number(this.store.selectedId());
-    if (Number.isFinite(peerId)) this.store.sendTyping(peerId, true);
+    const peerId = this.selectedPeerId();
+    if (peerId != null) this.store.sendTyping(peerId, true);
   }
 
   protected onComposerKeydown(event: Event): void {
@@ -102,45 +107,20 @@ export class MessagesPageComponent {
   }
 
   protected onBlur(): void {
-    const peerId = Number(this.store.selectedId());
-    if (Number.isFinite(peerId)) this.store.sendTyping(peerId, false);
+    const peerId = this.selectedPeerId();
+    if (peerId != null) this.store.sendTyping(peerId, false);
   }
 
   protected onSend(): void {
     const text = this.draft().trim();
-    if (!text) return;
-    const peerId = Number(this.store.selectedId());
-    if (!Number.isFinite(peerId)) return;
+    const peerId = this.selectedPeerId();
+    if (!text || peerId == null) return;
 
     const msgId = uid();
     const now = Date.now();
-    this.store.sendDm(peerId, 'text', {
-      msgId,
-      text,
-      fromNickname: 'You',
-      fromProfileTs: now,
-    });
-    this.store.pushPublic(String(peerId), 'You', {
-      id: msgId,
-      type: 'text',
-      text,
-      ts: now,
-      delivery: 'sent',
-    });
+    this.store.sendDm(peerId, 'text', { msgId, text, fromNickname: 'You', fromProfileTs: now });
+    this.store.pushPublic(String(peerId), 'You', { id: msgId, type: 'text', text, ts: now, delivery: 'sent' });
     this.draft.set('');
     this.store.sendTyping(peerId, false);
-  }
-
-  /** Show "Today" / "Yesterday" / "Jun 12" pill at the first message of each day. */
-  protected dayLabel(messages: readonly DmMessage[], i: number): string | null {
-    const cur = messages[i];
-    if (!cur) return null;
-    if (i > 0) {
-      const prev = messages[i - 1];
-      if (prev && new Date(prev.ts).toDateString() === new Date(cur.ts).toDateString()) {
-        return null;
-      }
-    }
-    return formatDay(cur.ts);
   }
 }

@@ -1,4 +1,4 @@
-import type { DmConversation } from '../models/dm.model';
+import type { DmConversation, DmMessage } from '../models/dm.model';
 
 export function preview(conv: DmConversation): string {
   const last = conv.messages.at(-1);
@@ -27,4 +27,13 @@ export function formatDay(ts: number): string {
   if (d.toDateString() === today.toDateString()) return 'Today';
   if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
   return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+/** "Today" / "Yesterday" / "Jun 12" pill shown at the first message of each day, or null mid-day. */
+export function dayLabel(messages: readonly DmMessage[], i: number): string | null {
+  const cur = messages[i];
+  if (!cur) return null;
+  const prev = messages[i - 1];
+  if (prev && new Date(prev.ts).toDateString() === new Date(cur.ts).toDateString()) return null;
+  return formatDay(cur.ts);
 }

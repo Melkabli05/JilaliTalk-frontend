@@ -12,16 +12,19 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { of } from 'rxjs';
 import { LucideX } from '@lucide/angular';
 import { ProfileApi } from '@features/profile/data-access/profile-api';
 import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
-import type { SocialUser, VisitorUser } from '@features/profile/models/profile.model';
+import type { SocialListPage, SocialUser, VisitorUser } from '@features/profile/models/profile.model';
 import type { UserInfo } from '@core/services/user-info.service';
 
 export type TabId = 'following' | 'followers' | 'visitors' | 'byId';
 
 type Row = SocialUser | VisitorUser;
+
+const EMPTY_SOCIAL_PAGE: SocialListPage = { pageIndex: null, more: false, count: 0, list: [] };
 
 @Component({
   selector: 'app-messages-new-contact',
@@ -36,18 +39,15 @@ export class MessageNewContactPanelComponent {
   readonly picked = output<number>();
 
   protected readonly tab = signal<TabId>('following');
-  protected readonly following = signal<readonly SocialUser[]>([]);
-  protected readonly followers = signal<readonly SocialUser[]>([]);
   protected readonly visitors = signal<readonly VisitorUser[]>([]);
-  protected readonly byIdResult = signal<UserInfo | null>(null);
-
-  protected readonly loading = signal(false);
-  protected readonly error = signal<string | null>(null);
   protected readonly moreVisitors = signal(false);
+  protected readonly visitorsLoading = signal(false);
+  protected readonly visitorsError = signal<string | null>(null);
   private visitorsCursor = 0;
 
   protected readonly idQuery = signal('');
-  protected readonly idError = signal<string | null>(null);
+  protected readonly idFormatError = signal<string | null>(null);
+  private readonly submittedId = signal<number | null>(null);
 
   protected readonly tabs = [
     { id: 'following' as const, label: 'Following' },
@@ -56,12 +56,57 @@ export class MessageNewContactPanelComponent {
     { id: 'byId'      as const, label: 'By ID'     },
   ];
 
+  private readonly api = inject(ProfileApi);
+  private readonly destroyRef = inject(DestroyRef);
+  protected readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+
+  private readonly followingRes = rxResource<SocialListPage, boolean | undefined>({
+    params: () => (this.open() && this.tab() === 'following' ? true : undefined),
+    stream: ({ params }) => (params === undefined ? of(EMPTY_SOCIAL_PAGE) : this.api.following(50)),
+    defaultValue: EMPTY_SOCIAL_PAGE,
+  });
+
+  private readonly followersRes = rxResource<SocialListPage, boolean | undefined>({
+    params: () => (this.open() && this.tab() === 'followers' ? true : undefined),
+    stream: ({ params }) => (params === undefined ? of(EMPTY_SOCIAL_PAGE) : this.api.followers('1', 50)),
+    defaultValue: EMPTY_SOCIAL_PAGE,
+  });
+
+  private readonly byIdRes = rxResource<UserInfo | null, number | undefined>({
+    params: () => this.submittedId() ?? undefined,
+    stream: ({ params }) => (params === undefined ? of(null) : this.api.userInfo(params)),
+    defaultValue: null,
+  });
+
+  protected readonly byIdResult = this.byIdRes.value;
+  protected readonly idError = computed(
+    () => this.idFormatError() ?? (this.byIdRes.error() ? 'User not found.' : null),
+  );
+
   protected readonly currentList = computed<readonly Row[]>(() => {
     switch (this.tab()) {
-      case 'following': return this.following();
-      case 'followers': return this.followers();
+      case 'following': return this.followingRes.value().list;
+      case 'followers': return this.followersRes.value().list;
       case 'visitors':  return this.visitors();
       case 'byId':      return [];
+    }
+  });
+
+  protected readonly loading = computed(() => {
+    switch (this.tab()) {
+      case 'following': return this.followingRes.isLoading();
+      case 'followers': return this.followersRes.isLoading();
+      case 'visitors':  return this.visitorsLoading();
+      case 'byId':      return this.byIdRes.isLoading();
+    }
+  });
+
+  protected readonly error = computed(() => {
+    switch (this.tab()) {
+      case 'following': return this.followingRes.error() ? 'Could not load following.' : null;
+      case 'followers': return this.followersRes.error() ? 'Could not load followers.' : null;
+      case 'visitors':  return this.visitorsError();
+      case 'byId':      return null;
     }
   });
 
@@ -84,20 +129,9 @@ export class MessageNewContactPanelComponent {
     return (u as SocialUser).isMutual === true;
   }
 
-  protected readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly api = inject(ProfileApi);
-  private lastFired: { open: boolean; tab: TabId } | null = null;
-
   constructor() {
     effect(() => {
-      const isOpen = this.open();
-      const t = this.tab();
-      if (!isOpen) { this.lastFired = null; this.idError.set(null); return; }
-      const key = { open: true, tab: t };
-      if (this.lastFired && this.lastFired.open === key.open && this.lastFired.tab === key.tab) return;
-      this.lastFired = key;
-      this.refetchTab(t, /*append=*/ false);
+      if (this.open() && this.tab() === 'visitors') this.fetchVisitors(false);
     });
   }
 
@@ -107,7 +141,7 @@ export class MessageNewContactPanelComponent {
 
   protected onIdQuery(value: string): void {
     this.idQuery.set(value);
-    if (this.idError()) this.idError.set(null);
+    this.idFormatError.set(null);
   }
 
   protected onLookUpId(): void {
@@ -115,92 +149,43 @@ export class MessageNewContactPanelComponent {
     if (!raw) return;
     const userId = Number(raw);
     if (!Number.isFinite(userId) || userId <= 0) {
-      this.idError.set('Enter a numeric user id.');
+      this.idFormatError.set('Enter a numeric user id.');
       return;
     }
-    this.loading.set(true);
-    this.byIdResult.set(null);
-    this.api.userInfo(userId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (info) => {
-        this.byIdResult.set(info);
-        this.idError.set(null);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.byIdResult.set(null);
-        this.idError.set('User not found.');
-        this.loading.set(false);
-      },
-    });
+    this.idFormatError.set(null);
+    if (this.submittedId() === userId) this.byIdRes.reload();
+    else this.submittedId.set(userId);
   }
 
   protected retry(): void {
-    this.error.set(null);
-    this.refetchTab(this.tab(), false);
+    switch (this.tab()) {
+      case 'following': this.followingRes.reload(); break;
+      case 'followers': this.followersRes.reload(); break;
+      case 'visitors':  this.fetchVisitors(false); break;
+      case 'byId':      break;
+    }
   }
 
   protected loadMore(): void {
-    if (this.tab() === 'visitors') this.refetchTab('visitors', true);
-  }
-
-  private refetchTab(tab: TabId, append: boolean): void {
-    if (!append) {
-      if (tab === 'following') this.following.set([]);
-      if (tab === 'followers') this.followers.set([]);
-      if (tab === 'visitors')  { this.visitors.set([]); this.visitorsCursor = 0; }
-      if (tab === 'byId')      this.byIdResult.set(null);
-      this.moreVisitors.set(false);
-      this.error.set(null);
-    }
-    if (tab === 'following') this.fetchFollowing();
-    if (tab === 'followers') this.fetchFollowers();
-    if (tab === 'visitors')  this.fetchVisitors(append);
-  }
-
-  private fetchFollowing(): void {
-    this.loading.set(true);
-    this.api.following(50).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (page) => {
-        this.following.set(page.list);
-        this.moreVisitors.set(false);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.error.set('Could not load following.');
-      },
-    });
-  }
-
-  private fetchFollowers(): void {
-    this.loading.set(true);
-    this.api.followers('1', 50).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (page) => {
-        this.followers.set(page.list);
-        this.moreVisitors.set(false);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.error.set('Could not load followers.');
-      },
-    });
+    if (this.tab() === 'visitors') this.fetchVisitors(true);
   }
 
   private fetchVisitors(append: boolean): void {
-    this.loading.set(true);
-    this.api.visitors(append ? this.visitorsCursor : 0)
+    this.visitorsLoading.set(true);
+    this.visitorsError.set(null);
+    if (!append) this.visitorsCursor = 0;
+    this.api.visitors(this.visitorsCursor)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (page) => {
           this.visitors.update(curr => append ? [...curr, ...page.list] : [...page.list]);
-          this.visitorsCursor = (append ? this.visitorsCursor : 0) + 1;
+          this.visitorsCursor += 1;
           this.moreVisitors.set(page.more);
-          this.loading.set(false);
+          this.visitorsLoading.set(false);
         },
         error: () => {
-          this.loading.set(false);
-          this.error.set('Could not load visitors.');
+          this.visitorsLoading.set(false);
+          this.visitorsError.set('Could not load visitors.');
         },
       });
   }

@@ -1,4 +1,5 @@
-import { Service, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Service, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
 import { ImSocketService } from '@core/realtime/im-socket.service';
 import { StorageService } from '@core/services/storage.service';
@@ -39,6 +40,7 @@ export class MessagesStore {
 
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${inject(API_BASE_URL)}/im/messages`;
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly _convMap = signal(
     this.storage.get<[string, DmConversation][]>(STORAGE_KEY)?.reduce(
@@ -96,12 +98,8 @@ export class MessagesStore {
     });
 
     const numeric = Number(userId);
-    if (Number.isFinite(numeric)) {
-      const msgId = this.lastInboundMsgId(numeric);
-      if (msgId != null) {
-        this.http.post(`${this.baseUrl}/${numeric}/read`, { msgId }).subscribe({ error: () => {} });
-      }
-    }
+    const msgId = Number.isFinite(numeric) ? this.lastInboundMsgId(numeric) : null;
+    if (msgId != null) this.markReadForLastInbound(numeric, msgId);
   }
 
   back(): void {
@@ -109,7 +107,7 @@ export class MessagesStore {
   }
 
   markReadForLastInbound(peerId: number, msgId: string): void {
-    this.http.post(`${this.baseUrl}/${peerId}/read`, { msgId }).subscribe({ error: () => {} });
+    this.post(`${peerId}/read`, { msgId });
   }
 
   lastInboundMsgId(peerId: number): string | null {
@@ -119,35 +117,37 @@ export class MessagesStore {
   }
 
   sendTyping(peerId: number, isTyping: boolean): void {
-    this.http.post(`${this.baseUrl}/${peerId}/typing`, { typing: isTyping }).subscribe({ error: () => {} });
+    this.post(`${peerId}/typing`, { typing: isTyping });
   }
 
   sendDm(peerId: number, kind: DmKind, fields: Partial<SendDmBody>): void {
-    this.http.post(`${this.baseUrl}/${peerId}/send`, { kind, ...fields }).subscribe({ error: () => {} });
+    this.post(`${peerId}/send`, { kind, ...fields });
+  }
+
+  private post(path: string, body: unknown): void {
+    this.http.post(`${this.baseUrl}/${path}`, body).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ error: () => {} });
   }
 
   pushPublic(userId: string, nickname: string, msg: DmMessage): void {
     if (msg.id) this._msgIndex.set(msg.id, userId);
     const isSelected = this._selectedId() === userId;
     this._convMap.update(m => {
-      const existing = m.get(userId);
-      const next: DmConversation = existing
-        ? {
-            ...existing,
-            nickname: nickname || existing.nickname,
-            messages: [...existing.messages, msg].slice(-MAX_MESSAGES),
-            unread: isSelected ? 0 : existing.unread + 1,
-            lastTs: msg.ts,
-            isTyping: false,
-          }
-        : {
-            userId,
-            nickname: nickname || userId,
-            messages: [msg],
-            unread: isSelected ? 0 : 1,
-            lastTs: msg.ts,
-            isTyping: false,
-          };
+      const existing = m.get(userId) ?? {
+        userId,
+        nickname: userId,
+        messages: [],
+        unread: 0,
+        lastTs: 0,
+        isTyping: false,
+      };
+      const next: DmConversation = {
+        ...existing,
+        nickname: nickname || existing.nickname,
+        messages: [...existing.messages, msg].slice(-MAX_MESSAGES),
+        unread: isSelected ? 0 : existing.unread + 1,
+        lastTs: msg.ts,
+        isTyping: false,
+      };
       return new Map(m).set(userId, next);
     });
   }
