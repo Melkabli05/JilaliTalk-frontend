@@ -6,6 +6,8 @@ import {
   computed,
   viewChild,
   ElementRef,
+  DestroyRef,
+  afterNextRender,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { VoiceRoomsStore } from '../../state/voice-rooms.store';
@@ -57,6 +59,11 @@ export class VoiceListComponent {
   private readonly router = inject(Router);
 
   private readonly carousel = viewChild<ElementRef<HTMLElement>>('carouselScroll');
+
+  constructor() {
+    afterNextRender(() => this.store.restoreScrollPosition());
+    inject(DestroyRef).onDestroy(() => this.store.saveScrollPosition());
+  }
 
   readonly filteredRooms = this.store.filteredRooms;
   readonly recommendedRooms = this.store.recommendedRooms;

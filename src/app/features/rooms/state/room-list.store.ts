@@ -7,6 +7,7 @@ import {
   effect,
   DestroyRef,
 } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import { RoomsApi } from '../data/rooms-api';
@@ -29,6 +30,8 @@ interface RoomsPageSource {
 export abstract class RoomListStore {
   protected readonly api = inject(RoomsApi);
   protected readonly prefs = inject(RoomsPreferencesStore);
+  private readonly document = inject(DOCUMENT);
+  private lastScrollTop = 0;
   /** Page-scoped debounce on top of the persisted prefs query — the prefs
    *  store updates synchronously on every keystroke (for cross-page persistence
    *  and for the `<app-search-bar>` input echo), but the network request only
@@ -148,6 +151,16 @@ export abstract class RoomListStore {
     this._offset.set(0);
     this.roomsPage.reload();
     this.recommendedResource.reload();
+  }
+
+  saveScrollPosition(): void {
+    const el = this.document.getElementById('main-content');
+    if (el) this.lastScrollTop = el.scrollTop;
+  }
+
+  restoreScrollPosition(): void {
+    const el = this.document.getElementById('main-content');
+    if (el) el.scrollTop = this.lastScrollTop;
   }
 
   /** 2 = Voice Rooms, 1 = Live Rooms */

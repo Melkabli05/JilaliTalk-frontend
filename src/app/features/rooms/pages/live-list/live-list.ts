@@ -4,6 +4,8 @@ import {
   inject,
   signal,
   computed,
+  DestroyRef,
+  afterNextRender,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { LiveRoomsStore } from '../../state/live-rooms.store';
@@ -45,6 +47,11 @@ type ViewMode = 'grid' | 'list';
 export class LiveList {
   private readonly store = inject(LiveRoomsStore);
   private readonly router = inject(Router);
+
+  constructor() {
+    afterNextRender(() => this.store.restoreScrollPosition());
+    inject(DestroyRef).onDestroy(() => this.store.saveScrollPosition());
+  }
 
   readonly filteredRooms = this.store.filteredRooms;
   readonly recommendedRooms = this.store.recommendedRooms;
