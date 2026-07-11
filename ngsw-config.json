@@ -32,7 +32,9 @@
     {
       "name": "api-freshness",
       "urls": [
-        "/api/**",
+        "/api/profile/**",
+        "/api/im/**",
+        "/api/users/**",
         "/auth/**",
         "/user/**"
       ],

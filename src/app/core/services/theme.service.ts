@@ -15,7 +15,7 @@ export class ThemeService {
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
       const stored = this.storage.get<string>(THEME_KEY);
-      this._isDark.set(stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches));
+      this._isDark.set(stored === 'dark');
       this.applyTheme();
     }
   }
