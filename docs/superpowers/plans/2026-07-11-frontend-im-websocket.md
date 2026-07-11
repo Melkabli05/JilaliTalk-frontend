@@ -2168,7 +2168,7 @@ Expected: no errors.
 
 - [ ] **Step 5: Run the existing test suite**
 
-Run: `npm test -- --watch=false --browsers=ChromeHeadless`
+Run: `npx ng test --watch=false`
 
 Expected: `im-bootstrap.service.spec.ts` passes (it was already testing `ImBootstrapService`'s event-handling behavior against a mocked socket service — that behavior is unchanged, only the mocked class name changed).
 
