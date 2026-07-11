@@ -1,4 +1,8 @@
 /* NOTE: no height/overflow here — the app shell's .app-main is the scroller. */
+:host {
+  display: block;
+}
+
 .voice-list-page {
   padding: var(--space-5);
 
