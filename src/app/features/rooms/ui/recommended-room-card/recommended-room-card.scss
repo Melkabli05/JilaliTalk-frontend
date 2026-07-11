@@ -33,9 +33,9 @@
   }
 
   @media (width <= 640px) {
-    width: 200px;
-    padding: var(--space-3);
-    gap: var(--space-2);
+    width: 168px;
+    padding: var(--space-2);
+    gap: var(--space-1);
   }
 }
 
@@ -102,8 +102,8 @@
   margin: 0;
   line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 

@@ -5,7 +5,7 @@
   margin-bottom: var(--space-10);
 
   @media (width <= 640px) {
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-4);
   }
 
   @media (width >= 641px) and (width <= 1024px) {
@@ -99,6 +99,10 @@
 
   &::-webkit-scrollbar {
     display: none;
+  }
+
+  @media (width <= 640px) {
+    gap: var(--space-2);
   }
 }
 
