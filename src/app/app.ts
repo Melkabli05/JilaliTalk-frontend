@@ -64,10 +64,6 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
       .app-shell {
         display: grid;
         grid-template-columns: 1fr;
-        /* Small viewport height — the guaranteed-visible area even with the
-           browser's address/tab bars fully expanded. dvh recalculates as
-           those bars animate, which can transiently exceed what's actually
-           visible and make the page scroll; svh never does. */
         height: 100svh;
         overflow: hidden;
       }
