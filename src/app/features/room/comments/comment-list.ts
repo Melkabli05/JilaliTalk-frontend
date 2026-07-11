@@ -84,7 +84,7 @@ const NAME_COLORS_LIGHT = [
        above the iOS home indicator. */
     @container room-page (max-width: 1023.98px) and (min-height: 500px) {
       :host {
-        bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+        bottom: calc(var(--space-3) + var(--shell-inset-bottom));
       }
     }
     .new-messages-pill {
@@ -401,7 +401,7 @@ export class NewMessagesPillComponent {
         padding-bottom: calc(
           var(--mobile-input-height) +
           var(--space-4) +
-          env(safe-area-inset-bottom, 0px)
+          var(--shell-inset-bottom)
         );
         overflow-y: auto;
         /* Stop iOS rubber-band from chaining through to the parent once the

@@ -147,6 +147,37 @@ import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
       outline-offset: var(--focus-ring-offset);
     }
 
+    @media (width <= 640px) {
+      .room-card {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        grid-template-areas:
+          "header header"
+          "host members"
+          "tags tags"
+          "actions actions";
+        padding: var(--space-3);
+        gap: var(--space-2);
+      }
+      .card-header { grid-area: header; }
+      .card-host { grid-area: host; }
+      .card-members { grid-area: members; justify-self: end; }
+      .tags-row { grid-area: tags; }
+      .card-actions { grid-area: actions; margin-top: 0; gap: var(--space-1); }
+      .card-title {
+        -webkit-line-clamp: 1;
+      }
+      .card-topic {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .card-members {
+        gap: var(--space-1);
+      }
+    }
+
         .card-header {
       display: flex;
       flex-direction: column;

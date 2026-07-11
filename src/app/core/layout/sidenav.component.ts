@@ -78,48 +78,19 @@ interface NavGroup {
         </app-button>
       </div>
     </nav>
-
-    <nav class="mobile-nav" aria-label="Main navigation">
-      <div class="mobile-nav-inner">
-        @for (item of mobileNavItems; track item.id) {
-          <a
-            [routerLink]="item.route"
-            routerLinkActive="active"
-            class="mobile-nav-item"
-            [attr.aria-label]="item.label"
-          >
-            @switch (item.iconName) {
-              @case ('globe') { <svg aria-hidden="true" lucideGlobe [size]="22"></svg> }
-              @case ('tv') { <svg aria-hidden="true" lucideTv [size]="22"></svg> }
-              @case ('lock') { <svg aria-hidden="true" lucideLock [size]="22"></svg> }
-              @case ('message') { <svg aria-hidden="true" lucideMessageCircle [size]="22"></svg> }
-              @case ('user') { <svg aria-hidden="true" lucideUser [size]="22"></svg> }
-            }
-            @if (item.badge && item.badge > 0) {
-              <span class="nav-badge mobile-nav-badge" aria-label="{{ item.badge }} notifications">{{ item.badge > 9 ? '9+' : item.badge }}</span>
-            }
-            <span class="mobile-nav-label">{{ mobileLabel(item.label) }}</span>
-          </a>
-        }
-      </div>
-      <div class="safe-area-spacer"></div>
-    </nav>
   `,
   styles: [`
-/* This element has no box of its own: both children below are already independently
-       positioned (.sidebar-desktop is fixed or display:none; .mobile-nav is fixed),
-       so this wrapper must not consume a track in the app-shell grid it sits in —
-       app.ts's .app-shell has no grid-template-rows, so on the mobile single-column
-       layout this element and .main-wrapper would otherwise be auto-placed into two
-       separate implicit rows, with this one claiming visible space despite rendering
-       nothing in normal flow.
-       Plain tag selector, not :host: this component uses ViewEncapsulation.None, so
-       its styles are already unscoped global CSS — :host (like :host-context(), see
-       below) is only rewritten into a working selector under the default Emulated
-       encapsulation, and ships as inert, non-matching syntax under None. A bare
-       ':host {}' here silently never applied, leaving <app-sidenav> as a real block-level
-       grid item with a non-zero auto height (from its own box-model quirks), which pushed
-       every route's content down by ~190px on desktop. */
+/* This element has no box of its own: its only child (.sidebar-desktop) is
+   fixed-position or display:none, so this host must not consume a track in
+   the app-shell grid it sits in as a direct sibling of .main-wrapper —
+   without this, on the mobile single-column layout this element would be
+   auto-placed into its own implicit grid row, claiming visible space
+   despite rendering nothing in normal flow.
+   Plain tag selector, not :host: this component uses ViewEncapsulation.None,
+   so its styles are already unscoped global CSS — :host (like
+   :host-context(), see below) is only rewritten into a working selector
+   under the default Emulated encapsulation, and ships as inert,
+   non-matching syntax under None. */
     app-sidenav {
       display: contents;
     }
@@ -138,8 +109,7 @@ interface NavGroup {
     }
     @media (min-width: 1024px) { .sidebar-desktop { display: flex; } }
     /* Standalone routes (e.g. /messages) keep the mobile bottom nav but drop the
-       desktop sidebar — focused pages where the chrome strip is just noise. The
-       mobile-nav and safe-area-spacer still render via the same component. */
+       desktop sidebar — focused pages where the chrome strip is just noise. */
     @media (min-width: 1024px) {
       .app-shell.standalone .sidebar-desktop { display: none; }
     }
@@ -199,85 +169,20 @@ interface NavGroup {
       margin-top: var(--space-2);
     }
 
-    /* ─── Mobile Bottom Nav ─────────────────────────── */
-    .mobile-nav {
-      display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: var(--z-shell-sidenav);
-    }
-    @media (min-width: 1024px) { .mobile-nav { display: none; } }
-    /* Immersive routes (mobile room pages) hide the bottom nav so the room gets the
-       full viewport height. Desktop sidebar is unaffected.
-       Plain ancestor selector, not :host-context: this component uses
-       ViewEncapsulation.None, so its styles are already unscoped global CSS —
-       :host-context() is only rewritten into a working selector under the default
-       Emulated encapsulation, and ships as inert, non-matching syntax under None. */
-    @media (max-width: 1023.98px) {
-      .app-shell.immersive .mobile-nav {
-        display: none;
-      }
-    }
-
-    .mobile-nav-inner {
-      width: 100%; height: var(--bottom-nav-height);
-      display: flex; align-items: center; justify-content: space-around;
-      padding: 0 var(--space-2);
-      background-color: color-mix(in srgb, var(--color-card) 90%, transparent);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      border-top: 1px solid var(--color-border);
-    }
-
-    .mobile-nav-item {
-      position: relative;
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 2px; padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-xl);
-      color: var(--color-text-muted);
-      text-decoration: none; font-size: var(--text-xs); font-weight: var(--font-medium);
-      transition: background 0.15s ease, color 0.15s ease;
-    }
-    .mobile-nav-item:hover {
-      background-color: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
-      color: var(--color-primary-600);
-    }
-    .mobile-nav-item:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-    .mobile-nav-item.active {
-      color: var(--color-primary-600);
-      font-weight: var(--font-bold);
-    }
-    .mobile-nav-label { margin-top: var(--space-1); }
-    .safe-area-spacer { height: env(safe-area-inset-bottom); background-color: var(--color-card); }
-
     /* ─── Dark mode ───────────────────────────────── */
-    :host-context(.dark) {
-      /* Desktop sidebar */
-      .sidebar-desktop { background-color: var(--color-neutral-900); border-color: var(--color-neutral-700); }
-      .nav-separator { background-color: var(--color-neutral-700); }
-      .nav-item { color: var(--color-neutral-500); }
-      .nav-item:hover {
-        background-color: color-mix(in srgb, var(--color-primary-400) 10%, transparent);
-        color: var(--color-primary-300);
-      }
-      .nav-item.active {
-        background-color: color-mix(in srgb, var(--color-primary-400) 18%, transparent);
-        color: var(--color-primary-300);
-      }
-      .nav-badge { background-color: var(--color-warm-400); }
-      .sidebar-footer { border-color: var(--color-neutral-700); }
-
-      /* Mobile nav */
-      .mobile-nav-inner {
-        background-color: color-mix(in srgb, var(--color-neutral-900) 90%, transparent);
-        border-color: var(--color-neutral-700);
-      }
-      .mobile-nav-item { color: var(--color-neutral-500); }
-      .mobile-nav-item:hover {
-        background-color: color-mix(in srgb, var(--color-primary-400) 10%, transparent);
-        color: var(--color-primary-300);
-      }
-      .mobile-nav-item.active { color: var(--color-primary-300); }
-      .safe-area-spacer { background-color: var(--color-neutral-900); }
+    .dark .sidebar-desktop { background-color: var(--color-neutral-900); border-color: var(--color-neutral-700); }
+    .dark .nav-separator { background-color: var(--color-neutral-700); }
+    .dark .nav-item { color: var(--color-neutral-500); }
+    .dark .nav-item:hover {
+      background-color: color-mix(in srgb, var(--color-primary-400) 10%, transparent);
+      color: var(--color-primary-300);
     }
+    .dark .nav-item.active {
+      background-color: color-mix(in srgb, var(--color-primary-400) 18%, transparent);
+      color: var(--color-primary-300);
+    }
+    .dark .nav-badge { background-color: var(--color-warm-400); }
+    .dark .sidebar-footer { border-color: var(--color-neutral-700); }
   `]
 })
 export class SidenavComponent {
@@ -305,21 +210,4 @@ export class SidenavComponent {
       ],
     },
   ];
-
-  readonly mobileNavItems: NavItem[] = [
-    { id: 'voice', iconName: 'globe', label: 'Voice Rooms', route: '/rooms/voice' },
-    { id: 'live', iconName: 'tv', label: 'Live Streams', route: '/rooms/live' },
-    { id: 'messages', iconName: 'message', label: 'Messages', route: '/messages', badge: 5 },
-    { id: 'profile', iconName: 'user', label: 'Profile', route: '/profile' },
-  ];
-
-  /** Short labels so four items fit at typical mobile widths without crowding. */
-  mobileLabel(full: string): string {
-    switch (full) {
-      case 'Voice Rooms': return 'Voice';
-      case 'Live Streams': return 'Live';
-      case 'Private Rooms': return 'Private';
-      default: return full;
-    }
-  }
 }

@@ -154,6 +154,8 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         position: fixed;
         inset: 0;
         z-index: var(--z-modal);
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
         animation: panel-expand 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
       }
       @keyframes panel-expand {
@@ -276,7 +278,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
            (40px buttons + 8px top padding + 8px bottom padding) plus
            env() for the home indicator on iOS. */
         .comments-scroll {
-          padding-bottom: calc(var(--mobile-input-height) + env(safe-area-inset-bottom, 0px));
+          padding-bottom: calc(var(--mobile-input-height) + var(--shell-inset-bottom));
         }
       }
 

@@ -186,7 +186,7 @@ import { AuthService } from '@core/auth/auth.service';
     @media (min-width: 640px) {
       .status-pill { display: flex; }
     }
-    :host-context(.dark) .status-pill {
+    .dark .status-pill {
       background: var(--color-neutral-800);
       border-color: var(--color-neutral-700);
     }
@@ -201,10 +201,10 @@ import { AuthService } from '@core/auth/auth.service';
       background: var(--color-accent-500);
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-500) 25%, transparent);
     }
-    :host-context(.dark) .status-dot {
+    .dark .status-dot {
       background: var(--color-neutral-600);
     }
-    :host-context(.dark) .status-dot.online {
+    .dark .status-dot.online {
       background: var(--color-accent-400);
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-400) 25%, transparent);
     }
@@ -213,7 +213,7 @@ import { AuthService } from '@core/auth/auth.service';
       font-weight: var(--font-medium);
       color: var(--color-text-muted);
     }
-    :host-context(.dark) .status-text { color: var(--color-neutral-400); }
+    .dark .status-text { color: var(--color-neutral-400); }
     /* Coins Badge */
     .coins-badge {
       display: inline-flex;
@@ -239,12 +239,12 @@ import { AuthService } from '@core/auth/auth.service';
       outline: var(--focus-ring);
       outline-offset: var(--focus-ring-offset);
     }
-    :host-context(.dark) .coins-badge {
+    .dark .coins-badge {
       background: linear-gradient(135deg, var(--color-gold-900), var(--color-gold-800));
       color: var(--color-gold-300);
       border-color: color-mix(in srgb, var(--color-gold-600) 40%, transparent);
     }
-    :host-context(.dark) .coins-badge:hover {
+    .dark .coins-badge:hover {
       background: linear-gradient(135deg, var(--color-gold-800), var(--color-gold-700));
       transform: translateY(-1px);
       box-shadow: 0 2px 8px color-mix(in srgb, var(--color-gold-500) 30%, transparent);
@@ -299,20 +299,20 @@ import { AuthService } from '@core/auth/auth.service';
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
     }
 
-    :host-context(.dark) .notification-btn {
+    .dark .notification-btn {
       color: var(--color-neutral-500);
     }
 
-    :host-context(.dark) .notification-btn:hover {
+    .dark .notification-btn:hover {
       background: color-mix(in srgb, var(--color-primary-400) 10%, transparent);
       color: var(--color-primary-300);
     }
 
-    :host-context(.dark) .notification-btn.has-unread {
+    .dark .notification-btn.has-unread {
       color: var(--color-primary-400);
     }
 
-    :host-context(.dark) .notification-badge {
+    .dark .notification-badge {
       background: var(--color-warm-400);
     }
 

@@ -132,13 +132,7 @@ export interface SendEvent {
       align-items: center;
       gap: var(--space-2);
       padding: var(--space-2) var(--space-3);
-      /* Bottom padding lifts the text input + buttons above the iOS home
-         indicator on devices that report safe-area-inset-bottom > 0
-         (iPhone 14 Pro Max = 34px). The fixed :host itself sits at
-         bottom: 0 (see the mobile media query below) so the bar visually
-         extends to the screen edge — only the inner content gets
-         lifted. */
-      padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(var(--space-2) + var(--shell-inset-bottom));
       border-top: 1px solid var(--ci-border);
       background: var(--ci-bg);
     }

@@ -3,6 +3,7 @@ import { NavigationEnd, Router, RouterOutlet, type ActivatedRouteSnapshot } from
 import { filter, map } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { SidenavComponent } from '@core/layout/sidenav.component';
+import { MobileNavComponent } from '@core/layout/mobile-nav.component';
 import { HeaderComponent } from '@core/layout/header.component';
 import { MinimizedRoomBarComponent } from '@core/layout/minimized-room-bar.component';
 import { ImBootstrapService } from '@core/realtime/im-bootstrap.service';
@@ -13,30 +14,21 @@ import { PwaUpdateService } from '@core/services/pwa-update.service';
 import { ActiveCallStore } from '@store/active-call.store';
 import { injectIsMobileViewport } from '@shared/utils';
 
-/** Walks to the deepest activated route and reports whether it opted into immersive mode. */
-function isImmersiveRoute(root: ActivatedRouteSnapshot): boolean {
+function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standalone'): boolean {
   let node = root;
   while (node.firstChild) node = node.firstChild;
-  return node.data['immersive'] === true;
-}
-
-/** Walks to the deepest activated route and reports whether it wants the desktop sidebar
- *  hidden but the mobile bottom nav kept (a focused page that still needs cross-route nav
- *  on phone but doesn't want a chrome strip on desktop). */
-function isStandaloneRoute(root: ActivatedRouteSnapshot): boolean {
-  let node = root;
-  while (node.firstChild) node = node.firstChild;
-  return node.data['standalone'] === true;
+  return node.data[key] === true;
 }
 
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, SidenavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent, MinimizedRoomBarComponent, NotificationToastComponent],
+  imports: [RouterOutlet, SidenavComponent, MobileNavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent, MinimizedRoomBarComponent, NotificationToastComponent],
   template: `
     <div class="app-shell" [class.immersive]="immersive()" [class.standalone]="standalone()">
       @if (!hideSidenav()) {
         <app-sidenav />
+        <app-mobile-nav />
       }
       <div class="main-wrapper">
         <app-header />
@@ -131,7 +123,6 @@ function isStandaloneRoute(root: ActivatedRouteSnapshot): boolean {
       @media (min-width: 1024px) {
         .app-shell.immersive {
           --shell-inset-top: var(--app-header-height);
-          --shell-inset-bottom: env(safe-area-inset-bottom);
         }
       }
     `,
@@ -143,24 +134,19 @@ export class App {
   readonly pwaUpdate = inject(PwaUpdateService);
   protected readonly activeCallStore = inject(ActiveCallStore);
 
-  readonly immersive = toSignal(
+  private readonly routeFlags = toSignal(
     this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
-      map(() => isImmersiveRoute(this.router.routerState.snapshot.root)),
+      map(() => {
+        const root = this.router.routerState.snapshot.root;
+        return { immersive: isRouteFlagSet(root, 'immersive'), standalone: isRouteFlagSet(root, 'standalone') };
+      }),
     ),
-    { initialValue: false },
+    { initialValue: { immersive: false, standalone: false } },
   );
 
-  /** Routes marked standalone drop the desktop sidebar (the chrome strip is just noise
-   *  on focused pages) but keep the mobile bottom nav so phone users still have cross-route
-   *  navigation. Driven from CSS via the .app-shell.standalone class. */
-  readonly standalone = toSignal(
-    this.router.events.pipe(
-      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
-      map(() => isStandaloneRoute(this.router.routerState.snapshot.root)),
-    ),
-    { initialValue: false },
-  );
+  readonly immersive = computed(() => this.routeFlags().immersive);
+  readonly standalone = computed(() => this.routeFlags().standalone);
 
   /**
    * CSS alone can hide the sidenav's content on mobile, but not remove

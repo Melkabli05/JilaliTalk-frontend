@@ -535,7 +535,7 @@ app-mic-button.tip { display: inline-flex; }
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
-  max-height: min(85dvh, calc(100dvh - var(--app-header-height) - env(safe-area-inset-top, 0px)));
+  max-height: min(85dvh, calc(100dvh - var(--shell-inset-top) - var(--room-header-height)));
   display: flex;
   flex-direction: column;
   overscroll-behavior: contain;

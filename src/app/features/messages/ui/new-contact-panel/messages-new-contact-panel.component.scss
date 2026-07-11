@@ -193,9 +193,9 @@
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 600px) {
   .new-contact-panel {
-    top: var(--app-header-height, 56px);
+    top: var(--shell-inset-top);
     bottom: 0;
-    height: calc(100dvh - var(--app-header-height, 56px));
+    height: calc(100dvh - var(--shell-inset-top));
     transform: translateY(100%);
     border-radius: 14px 14px 0 0;
   }
