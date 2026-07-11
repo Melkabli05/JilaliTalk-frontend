@@ -1,3 +1,8 @@
+:host {
+  display: block;
+  align-self: flex-start;
+}
+
 .rec-card {
   flex-shrink: 0;
   width: 240px;
@@ -201,6 +206,10 @@
   font-size: var(--text-xs);
   color: var(--color-accent-500);
   font-weight: var(--font-medium);
+
+  @media (width <= 640px) {
+    display: none;
+  }
 }
 
 .rec-actions {
