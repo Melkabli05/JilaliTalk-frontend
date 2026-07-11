@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { RoomListStore } from './room-list.store';
 import { ChannelListResponse, RoomType } from '../data/rooms-model';
 
-@Service({ autoProvided: false })
+@Service()
 export class VoiceRoomsStore extends RoomListStore {
   readonly busiType = 2;
 

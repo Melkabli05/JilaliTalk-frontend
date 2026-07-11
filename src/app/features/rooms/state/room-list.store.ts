@@ -25,7 +25,7 @@ interface RoomsPageSource {
   readonly items: readonly ChannelListItem[];
 }
 
-@Service({ autoProvided: false })
+@Service()
 export abstract class RoomListStore {
   protected readonly api = inject(RoomsApi);
   protected readonly prefs = inject(RoomsPreferencesStore);

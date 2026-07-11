@@ -39,7 +39,6 @@ type ViewMode = 'grid' | 'list';
     LucideSearch,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [LiveRoomsStore],
   templateUrl: './live-list.html',
   styleUrls: ['./live-list.scss'],
 })

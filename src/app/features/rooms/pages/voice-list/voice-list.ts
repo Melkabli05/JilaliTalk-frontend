@@ -49,7 +49,6 @@ type ViewMode = 'grid' | 'list';
     LucideChevronRight,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [VoiceRoomsStore],
   templateUrl: './voice-list.html',
   styleUrls: ['./voice-list.scss'],
 })

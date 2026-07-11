@@ -17,7 +17,7 @@ interface LivePageSource {
   readonly items: readonly ChannelListItem[];
 }
 
-@Service({ autoProvided: false })
+@Service()
 export class LiveRoomsStore extends RoomListStore {
   readonly busiType = 1;
 
