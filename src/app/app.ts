@@ -28,7 +28,6 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
     <div class="app-shell" [class.immersive]="immersive()" [class.standalone]="standalone()">
       @if (!hideSidenav()) {
         <app-sidenav />
-        <app-mobile-nav />
       }
       <div class="main-wrapper">
         <app-header />
@@ -36,6 +35,10 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
           <router-outlet />
         </main>
       </div>
+      @if(hideSidenav()) {
+        <app-mobile-nav />
+      }
+      
     </div>
     <app-toast-container />
     <app-notification-toast />
