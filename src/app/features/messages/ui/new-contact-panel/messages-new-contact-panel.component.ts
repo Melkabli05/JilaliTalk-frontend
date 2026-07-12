@@ -34,7 +34,7 @@ const EMPTY_SOCIAL_PAGE: SocialListPage = { pageIndex: null, more: false, count:
   styleUrl: './messages-new-contact-panel.component.scss',
 })
 export class MessageNewContactPanelComponent {
-  readonly open = input.required<boolean>();
+  readonly open = input<boolean>(false);
   readonly closed = output<void>();
   readonly picked = output<number>();
 

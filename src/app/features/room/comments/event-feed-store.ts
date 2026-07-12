@@ -33,6 +33,10 @@ export class EventFeedStore {
 
   private readonly activeJoinedUserIds = new Map<number, number>(); // uid → lastSeen ts
   private readonly pendingQuitTimers = new Map<number, ReturnType<typeof setTimeout>>();
+  private readonly knownIdentities = new Map<
+    number,
+    { nickname: string; headUrl: string | null; nationality: string | null }
+  >();
   private readonly enrichQueue = new EnrichBatchQueue((uids) =>
     this.userInfoService.enrichBatchAndCache(uids).then(() => undefined),
   );
@@ -50,6 +54,7 @@ export class EventFeedStore {
     idPrefix: string,
     extra: Omit<EventCard, 'kind' | 'id' | 'ts' | 'userId' | 'nickname' | 'headUrl' | 'nationality'>,
   ): void {
+    const known = this.knownIdentities.get(userId);
     this._eventCards.update((cards) => [
       ...cards,
       {
@@ -57,9 +62,9 @@ export class EventFeedStore {
         id: `${idPrefix}-${userId}-${Date.now()}`,
         ts: Date.now(),
         userId,
-        nickname: '',
-        headUrl: null,
-        nationality: null,
+        nickname: known?.nickname ?? '',
+        headUrl: known?.headUrl ?? null,
+        nationality: known?.nationality ?? null,
         ...extra,
       } as EventCard,
     ]);
@@ -122,6 +127,8 @@ export class EventFeedStore {
   }
 
   private scheduleQuitCard(userId: number, originalEventUserId: string): void {
+    const known = this.knownIdentities.get(userId);
+    this.knownIdentities.delete(userId);
     const timer = setTimeout(() => {
       this.pendingQuitTimers.delete(userId);
       this._eventCards.update((cards) => [
@@ -131,9 +138,9 @@ export class EventFeedStore {
           id: `quit-${originalEventUserId}-${Date.now()}`,
           ts: Date.now(),
           userId,
-          nickname: '',
-          headUrl: null,
-          nationality: null,
+          nickname: known?.nickname ?? '',
+          headUrl: known?.headUrl ?? null,
+          nationality: known?.nationality ?? null,
         } satisfies EventCard,
       ]);
     }, QUIT_GRACE_MS);
@@ -146,6 +153,21 @@ export class EventFeedStore {
     clearTimeout(timer);
     this.pendingQuitTimers.delete(userId);
     return true;
+  }
+
+  private rememberIdentity(
+    userId: number,
+    nickname: string | null,
+    headUrl: string | null,
+    nationality: string | null,
+  ): void {
+    if (!nickname) return;
+    const existing = this.knownIdentities.get(userId);
+    this.knownIdentities.set(userId, {
+      nickname,
+      headUrl: headUrl ?? existing?.headUrl ?? null,
+      nationality: nationality ?? existing?.nationality ?? null,
+    });
   }
 
   constructor() {
@@ -171,6 +193,7 @@ export class EventFeedStore {
     this.bffWs.event$('user_join').pipe(takeUntilDestroyed()).subscribe((event) => {
       this.pruneActiveUsers();
       const userId = Number(event.userId);
+      this.rememberIdentity(userId, event.nickname, event.headUrl, event.nationality);
       if (this.cancelPendingQuit(userId)) {
         this.activeJoinedUserIds.set(userId, Date.now());
         return;
@@ -190,6 +213,15 @@ export class EventFeedStore {
       this.activeJoinedUserIds.delete(userId);
       this.scheduleQuitCard(userId, event.userId);
       this.enrichQueue.queue(userId);
+    });
+
+    this.bffWs.event$('stage_join').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.rememberIdentity(
+        Number(event.stageUser.userId),
+        event.stageUser.nickname,
+        event.stageUser.headUrl,
+        null,
+      );
     });
 
     this.bffWs.event$('stage_raisehand').pipe(takeUntilDestroyed()).subscribe((event) => {
@@ -241,10 +273,8 @@ export class EventFeedStore {
       this.activeJoinedUserIds.delete(userId);
       // Only show card for the kicked user — others see the toast + redirect from RoomFacade
       if (userId === this._currentUserId) {
-        this.pushUserEventCard('room_kick', userId, 'roomkick', {
-          nickname: event.nickname,
-          managerName: event.managerName,
-        });
+        this.rememberIdentity(userId, event.nickname, null, null);
+        this.pushUserEventCard('room_kick', userId, 'roomkick', { managerName: event.managerName });
       }
     });
   }
@@ -254,6 +284,7 @@ export class EventFeedStore {
     this.activeJoinedUserIds.clear();
     for (const timer of this.pendingQuitTimers.values()) clearTimeout(timer);
     this.pendingQuitTimers.clear();
+    this.knownIdentities.clear();
     this._currentUserId = 0;
     this.enrichQueue.dispose();
   }

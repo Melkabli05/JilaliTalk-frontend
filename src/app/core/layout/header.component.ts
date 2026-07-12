@@ -1,9 +1,9 @@
 import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal, ViewEncapsulation } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { Observable, catchError, filter, finalize, of, switchMap, tap } from 'rxjs';
-import { LucidePlus, LucideLogIn, LucideLogOut, LucideBell } from '@lucide/angular';
+import { LucidePlus, LucideLogIn, LucideLogOut, LucideBell, LucideTerminal } from '@lucide/angular';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { ThemeToggleComponent } from '@shared/ui/theme/theme-toggle.component';
 import { AuthDialogComponent } from '@shared/ui/auth-dialog/auth-dialog.component';
@@ -15,18 +15,21 @@ import { CreateRoomService } from '@core/services/create-room.service';
 import { ToastService } from '@core/services/toast.service';
 import { AuthStore } from '@core/auth/auth.store';
 import { AuthService } from '@core/auth/auth.service';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-header',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    RouterLink,
     ButtonComponent,
     ThemeToggleComponent,
     LucidePlus,
     LucideLogIn,
     LucideLogOut,
     LucideBell,
+    LucideTerminal,
     NotificationPanelComponent,
   ],
   template: `
@@ -52,6 +55,17 @@ import { AuthService } from '@core/auth/auth.service';
           <span class="status-dot" [class.online]="isConnected()"></span>
           <span class="status-text">{{ isConnected() ? 'Online' : 'Offline' }}</span>
         </div>
+
+        @if (isDevMode) {
+          <a
+            routerLink="/dev/packets"
+            class="dev-tools-btn"
+            title="Packet Inspector (dev only)"
+            aria-label="Open packet inspector (development only)"
+          >
+            <svg aria-hidden="true" lucideTerminal [size]="16"></svg>
+          </a>
+        }
 
         <button
           type="button"
@@ -209,6 +223,38 @@ import { AuthService } from '@core/auth/auth.service';
     }
     .dark .status-text { color: var(--color-neutral-400); }
 
+    /* Dev-only packet inspector link */
+    .dev-tools-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-lg);
+      background: transparent;
+      border: 1px dashed var(--color-border);
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .dev-tools-btn:hover {
+      background: color-mix(in srgb, var(--color-warm-500) 10%, transparent);
+      color: var(--color-warm-600);
+      border-color: var(--color-warm-400);
+    }
+    .dev-tools-btn:focus-visible {
+      outline: var(--focus-ring);
+      outline-offset: var(--focus-ring-offset);
+    }
+    .dark .dev-tools-btn {
+      color: var(--color-neutral-500);
+      border-color: var(--color-neutral-700);
+    }
+    .dark .dev-tools-btn:hover {
+      color: var(--color-warm-400);
+      border-color: var(--color-warm-500);
+    }
+
     /* Notification Bell Button */
     .notification-btn {
       position: relative;
@@ -299,6 +345,7 @@ export class HeaderComponent {
   readonly isConnected = signal(typeof navigator !== 'undefined' ? navigator.onLine : true);
   readonly isAuthenticated = this.authStore.isAuthenticated;
   readonly creatingRoom = signal(false);
+  readonly isDevMode = !environment.production;
 
   private readonly categoriesResource = rxResource<Category[], void>({
     stream: () => this.createRoomService.fetchCategories() as Observable<Category[]>,

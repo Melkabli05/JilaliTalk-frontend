@@ -35,6 +35,10 @@ export const routes: Routes = [
     path: 'room',
     loadChildren: () => import('./features/room').then((m) => m.roomRoutes),
   },
+  {
+    path: 'dev/packets',
+    loadChildren: () => import('./features/dev-tools').then((m) => m.devToolsRoutes),
+  },
   { path: 'error/401', title: 'Unauthorized', component: ErrorPageComponent, data: { code: 401 } },
   { path: 'error/403', title: 'Forbidden', component: ErrorPageComponent, data: { code: 403 } },
   { path: 'error/404', title: 'Not Found', component: ErrorPageComponent, data: { code: 404 } },

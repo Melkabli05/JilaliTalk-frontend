@@ -95,6 +95,19 @@ function buildPacket(params: {
   return packet;
 }
 
+export function buildCustomPacket(params: {
+  readonly flag: number;
+  readonly version: number;
+  readonly keyType: number;
+  readonly termType: number;
+  readonly cmdId: number;
+  readonly fromId: number;
+  readonly toId: number;
+  readonly body: Uint8Array;
+}): Uint8Array {
+  return buildPacket(params);
+}
+
 /** Login packet (cmdId 0x1025) — authenticates this connection as the official Android app
  *  using the spoofed APK signature. Field set and order matches the reference client's
  *  `sendRefreshToken` payload exactly. */

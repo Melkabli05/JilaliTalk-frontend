@@ -1,0 +1,161 @@
+<div class="inspector">
+  <header class="inspector-header">
+    <div class="title-block">
+      <svg aria-hidden="true" lucideActivity [size]="20" class="title-icon"></svg>
+      <div>
+        <h1>Packet Inspector</h1>
+        <p class="subtitle">Raw IM socket frames — for diagnosing the offline-sync / notification pipeline</p>
+      </div>
+    </div>
+    <div class="status-row">
+      <span class="status-badge" [attr.data-status]="status()">
+        <span class="status-dot"></span>
+        {{ status() }}
+      </span>
+      <button type="button" class="btn" (click)="connect()">
+        <svg aria-hidden="true" lucidePlug [size]="14"></svg>
+        Connect
+      </button>
+      <button type="button" class="btn" (click)="disconnect()">
+        <svg aria-hidden="true" lucideWifiOff [size]="14"></svg>
+        Disconnect
+      </button>
+    </div>
+  </header>
+
+  <div class="panel-grid">
+    <section class="panel panel-accent-sync">
+      <h2>Retrigger offline sync</h2>
+      <div class="row">
+        <label>
+          last_id
+          <input type="number" [value]="lastIdInput()" (input)="onLastIdInput($event)" />
+        </label>
+        <button type="button" class="btn btn-primary" (click)="retriggerSync()">
+          <svg aria-hidden="true" lucideRefreshCw [size]="14"></svg>
+          Send
+        </button>
+      </div>
+    </section>
+
+    <section class="panel panel-accent-raw">
+      <h2>Send raw packet</h2>
+      <div class="raw-form">
+        <label>
+          flag (hex)
+          <input type="text" [value]="flagInput()" (input)="onFlagInput($event)" />
+        </label>
+        <label>
+          version
+          <input type="number" [value]="versionInput()" (input)="onVersionInput($event)" />
+        </label>
+        <label>
+          keyType
+          <input type="number" [value]="keyTypeInput()" (input)="onKeyTypeInput($event)" />
+        </label>
+        <label>
+          termType
+          <input type="number" [value]="termTypeInput()" (input)="onTermTypeInput($event)" />
+        </label>
+        <label>
+          cmdId
+          <input type="number" [value]="cmdIdInput()" (input)="onCmdIdInput($event)" />
+        </label>
+        <label>
+          toId
+          <input type="number" [value]="toIdInput()" (input)="onToIdInput($event)" />
+        </label>
+        <label class="checkbox">
+          <input class="checkbox-input" type="checkbox" [checked]="compressInput()" (change)="onCompressChange($event)" />
+          zlib compress body
+        </label>
+        <label class="body-json">
+          body (JSON)
+          <textarea rows="3" [value]="bodyJsonInput()" (input)="onBodyJsonInput($event)"></textarea>
+        </label>
+        <button type="button" class="btn btn-primary" (click)="sendRaw()">
+          <svg aria-hidden="true" lucideSend [size]="14"></svg>
+          Send packet
+        </button>
+      </div>
+    </section>
+  </div>
+
+  @if (sendResult()) {
+    <p class="send-result">{{ sendResult() }}</p>
+  }
+
+  <section class="panel frames-panel">
+    <div class="frames-header">
+      <h2>Frames ({{ visibleFrames().length }})</h2>
+      <div class="legend">
+        <span class="legend-dot" data-kind="login" title="login"></span>
+        <span class="legend-dot" data-kind="heartbeat" title="heartbeat"></span>
+        <span class="legend-dot" data-kind="message" title="private message"></span>
+        <span class="legend-dot" data-kind="ack" title="ack"></span>
+        <span class="legend-dot" data-kind="typing" title="typing"></span>
+        <span class="legend-dot" data-kind="sync" title="offline sync"></span>
+        <span class="legend-dot" data-kind="push" title="push"></span>
+        <span class="legend-dot" data-kind="other" title="unrecognized"></span>
+      </div>
+      <select class="direction-select" [value]="direction()" (change)="onDirectionChange($any($event.target).value)">
+        <option value="all">all</option>
+        <option value="in">in</option>
+        <option value="out">out</option>
+      </select>
+      <input
+        class="query-input"
+        type="text"
+        placeholder="filter by cmd/flag"
+        [value]="query()"
+        (input)="onQueryInput($event)"
+      />
+      <button type="button" class="btn" (click)="clearLog()">
+        <svg aria-hidden="true" lucideEraser [size]="14"></svg>
+        Clear log
+      </button>
+    </div>
+
+    <div class="frame-list">
+      @for (f of visibleFrames(); track trackFrame($index, f)) {
+        <div
+          class="frame-row"
+          [attr.data-kind]="frameKind(f)"
+          [class.expanded]="isExpanded(f.id)"
+          (click)="toggleExpand(f.id)"
+        >
+          <div class="frame-summary">
+            <span class="frame-time">{{ formatFrameTime(f.ts) }}</span>
+            <span class="frame-direction" [attr.data-direction]="f.direction">
+              @if (f.direction === 'in') {
+                <svg aria-hidden="true" lucideArrowDownToLine [size]="11"></svg>
+              } @else {
+                <svg aria-hidden="true" lucideArrowUpToLine [size]="11"></svg>
+              }
+              {{ f.direction }}
+            </span>
+            <span class="frame-flag">{{ describeFlag(f.header.flag) }}</span>
+            <span class="frame-cmd">{{ describeCmd(f.header.cmdId) }}</span>
+            <span class="frame-len">{{ f.header.bodyLength }}B</span>
+            <span class="frame-decoded">{{ f.decoded }}</span>
+          </div>
+          @if (isExpanded(f.id)) {
+            <div class="frame-detail">
+              <dl>
+                <dt>seq</dt><dd>{{ f.header.seq }}</dd>
+                <dt>fromId</dt><dd>{{ f.header.fromId }}</dd>
+                <dt>toId</dt><dd>{{ f.header.toId }}</dd>
+                <dt>keyType</dt><dd>{{ f.header.keyType }}</dd>
+                <dt>version</dt><dd>{{ f.header.version }}</dd>
+                <dt>termType</dt><dd>{{ f.header.termType }}</dd>
+              </dl>
+              <pre class="frame-hex">{{ f.payloadHex }}</pre>
+            </div>
+          }
+        </div>
+      } @empty {
+        <p class="empty">No frames yet.</p>
+      }
+    </div>
+  </section>
+</div>

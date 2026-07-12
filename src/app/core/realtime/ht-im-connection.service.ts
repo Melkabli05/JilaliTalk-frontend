@@ -1,6 +1,7 @@
 // src/app/core/realtime/ht-im-connection.service.ts
 import { Injectable, signal, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { deflate } from 'pako';
 import { AuthStore, type ImCredentials } from '@core/auth/auth.store';
 import { AuthService } from '@core/auth/auth.service';
 import { IM_WS_URL } from '@core/tokens/im-ws-url.token';
@@ -11,6 +12,7 @@ import { generateApkSignature } from './ht-protocol/apk-signature.util';
 import { describeCmd, describeFlag, describeImEvent } from './ht-protocol/im-event-description.util';
 import {
   buildAckPacket,
+  buildCustomPacket,
   buildDmMessagePacket,
   buildHeartbeatPacket,
   buildLoginPacket,
@@ -43,6 +45,20 @@ import { mapImJsonToEvent } from './ht-protocol/im-event-mapper.util';
 
 const HEARTBEAT_INTERVAL_MS = 30_000;
 const STABLE_CONNECTION_MS = 5_000;
+const FRAME_LOG_CAP = 300;
+
+export interface FrameLogEntry {
+  readonly id: number;
+  readonly direction: 'in' | 'out';
+  readonly ts: number;
+  readonly header: PacketHeader;
+  readonly payloadHex: string;
+  readonly decoded: string;
+}
+
+function toHex(bytes: Uint8Array): string {
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 function decodeJwtUid(jwt: string): string | null {
   try {
@@ -70,8 +86,10 @@ export class HtImConnectionService {
 
   private readonly _events = signal<readonly ImEvent[]>([]);
   private readonly _status = signal<ConnectionStatus>('disconnected');
+  private readonly _frames = signal<readonly FrameLogEntry[]>([]);
   readonly events = this._events.asReadonly();
   readonly status = this._status.asReadonly();
+  readonly frames = this._frames.asReadonly();
 
   private sock: WebSocket | null = null;
   private wantsConnection = false;
@@ -81,6 +99,7 @@ export class HtImConnectionService {
   private stableConnectionTimer: ReturnType<typeof setTimeout> | null = null;
   private sessionKey: Uint8Array | null = null;
   private userId = '';
+  private frameSeq = 0;
 
   isConnected = (): boolean => this.sock?.readyState === WebSocket.OPEN;
 
@@ -137,20 +156,64 @@ export class HtImConnectionService {
       ...(msgId !== undefined ? { msgId } : {}),
     });
     logRealtime('send dm', { kind: payload.kind, peerId, msgId: sentMsgId });
-    this.sock.send(new Uint8Array(packet));
+    this.sendPacket(packet);
     return sentMsgId;
   }
 
   sendTyping(peerId: number, isTyping: boolean): void {
     if (!this.sock || this.sock.readyState !== WebSocket.OPEN) return;
     logRealtime('send typing', { peerId, isTyping });
-    this.sock.send(new Uint8Array(buildTypingIndicatorPacket(this.userId, String(peerId), isTyping)));
+    this.sendPacket(buildTypingIndicatorPacket(this.userId, String(peerId), isTyping));
   }
 
   sendReadReceipt(peerId: number, msgId: string): void {
     if (!this.sock || this.sock.readyState !== WebSocket.OPEN) return;
     logRealtime('send read receipt', { peerId, msgId });
-    this.sock.send(new Uint8Array(buildReadReceiptPacket(this.userId, String(peerId), msgId)));
+    this.sendPacket(buildReadReceiptPacket(this.userId, String(peerId), msgId));
+  }
+
+  currentUserId(): string {
+    return this.userId;
+  }
+
+  clearFrames(): void {
+    this._frames.set([]);
+  }
+
+  retriggerOfflineSync(lastId: number): boolean {
+    if (!this.sock || this.sock.readyState !== WebSocket.OPEN) return false;
+    this.sendPacket(
+      buildOfflineSyncTriggerPacket({ fromId: this.userId, lastId, cmdId: CMD_OFFLINE_SYNC_TRIGGER_FIRST }),
+    );
+    return true;
+  }
+
+  sendRawPacket(params: {
+    readonly flag: number;
+    readonly version: number;
+    readonly keyType: number;
+    readonly termType: number;
+    readonly cmdId: number;
+    readonly toId: number;
+    readonly bodyJson: string;
+    readonly compress: boolean;
+  }): boolean {
+    if (!this.sock || this.sock.readyState !== WebSocket.OPEN) return false;
+    const bodyBytes = new TextEncoder().encode(params.bodyJson);
+    const body = params.compress ? deflate(bodyBytes) : bodyBytes;
+    this.sendPacket(
+      buildCustomPacket({
+        flag: params.flag,
+        version: params.version,
+        keyType: params.keyType,
+        termType: params.termType,
+        cmdId: params.cmdId,
+        fromId: Number(this.userId),
+        toId: params.toId,
+        body,
+      }),
+    );
+    return true;
   }
 
   private open(): void {
@@ -225,28 +288,25 @@ export class HtImConnectionService {
     if (!sock) return;
     const apkSignature = await generateApkSignature(deviceId);
     if (this.sock !== sock || sock.readyState !== WebSocket.OPEN) return;
-    sock.send(
-      new Uint8Array(
-        buildLoginPacket({
-          userId: this.userId,
-          jwt,
-          deviceId,
-          deviceModel,
-          apkSignature,
-          mobileOperator: 'Orange',
-          operatorCountry: 'ma',
-        }),
-      ),
+    this.sendPacket(
+      buildLoginPacket({
+        userId: this.userId,
+        jwt,
+        deviceId,
+        deviceModel,
+        apkSignature,
+        mobileOperator: 'Orange',
+        operatorCountry: 'ma',
+      }),
     );
     this.heartbeatTimer = setInterval(() => {
-      if (this.sock?.readyState === WebSocket.OPEN) {
-        this.sock.send(new Uint8Array(buildHeartbeatPacket(this.userId)));
-      }
+      this.sendPacket(buildHeartbeatPacket(this.userId));
     }, HEARTBEAT_INTERVAL_MS);
   }
 
   private handleMessage(raw: Uint8Array): void {
     if (raw.byteLength < HEADER_LEN) return;
+    this.logFrame('in', raw);
     const header = parseHeader(raw);
     logRealtime(`recv ${describeFlag(header.flag)} / ${describeCmd(header.cmdId)}, ${header.bodyLength} bytes`);
     const payload = raw.subarray(HEADER_LEN, HEADER_LEN + header.bodyLength);
@@ -280,7 +340,7 @@ export class HtImConnectionService {
   }
 
   private handleMsgAckFrame(raw: Uint8Array, header: PacketHeader, payload: Uint8Array): void {
-    if (header.flag === FLAG_PUSH && this.sock) this.sock.send(new Uint8Array(buildAckPacket(raw)));
+    if (header.flag === FLAG_PUSH) this.sendPacket(buildAckPacket(raw));
     const decoded = decodeMsgAckPayload(payload, header.keyType, this.sessionKey);
     if (!decoded.isFailureAck) {
       this.pushEvent({
@@ -293,7 +353,7 @@ export class HtImConnectionService {
   }
 
   private handlePushFrame(raw: Uint8Array, header: PacketHeader, payload: Uint8Array): void {
-    if (this.sock) this.sock.send(new Uint8Array(buildAckPacket(raw)));
+    this.sendPacket(buildAckPacket(raw));
     const result = decodePushFrame(payload, this.sessionKey);
     if (result.kind === 'json') {
       logRealtime('[deserialize] push frame', result.json);
@@ -305,15 +365,13 @@ export class HtImConnectionService {
       }
     } else if (result.kind === 'read_receipt') {
       this.pushEvent({ type: 'read_receipt', msgId: result.msgId });
-    } else if (result.kind === 'new_message_notify' && result.lastId !== null && this.sock) {
-      this.sock.send(
-        new Uint8Array(
-          buildOfflineSyncTriggerPacket({
-            fromId: this.userId,
-            lastId: result.lastId,
-            cmdId: CMD_OFFLINE_SYNC_TRIGGER_FIRST,
-          }),
-        ),
+    } else if (result.kind === 'new_message_notify' && result.lastId !== null) {
+      this.sendPacket(
+        buildOfflineSyncTriggerPacket({
+          fromId: this.userId,
+          lastId: result.lastId,
+          cmdId: CMD_OFFLINE_SYNC_TRIGGER_FIRST,
+        }),
       );
     }
   }
@@ -344,11 +402,9 @@ export class HtImConnectionService {
 
     const lastId = inner['last_id'];
     const packetList = inner['packet_list'];
-    if (typeof lastId === 'number' && Array.isArray(packetList) && packetList.length > 0 && this.sock) {
-      this.sock.send(
-        new Uint8Array(
-          buildOfflineSyncTriggerPacket({ fromId: this.userId, lastId, cmdId: CMD_OFFLINE_SYNC_TRIGGER_PAGE }),
-        ),
+    if (typeof lastId === 'number' && Array.isArray(packetList) && packetList.length > 0) {
+      this.sendPacket(
+        buildOfflineSyncTriggerPacket({ fromId: this.userId, lastId, cmdId: CMD_OFFLINE_SYNC_TRIGGER_PAGE }),
       );
     }
 
@@ -400,34 +456,28 @@ export class HtImConnectionService {
           this.auth.updateImJwt(newJwt);
         }
 
-        if (this.sock) {
-          this.sock.send(
-            new Uint8Array(
-              buildOfflineSyncTriggerPacket({
-                fromId: this.userId,
-                lastId: 0,
-                cmdId: CMD_OFFLINE_SYNC_TRIGGER_FIRST,
-                flag: 0xf0,
-                version: 4,
-                keyType: 0,
-                termType: 1,
-              }),
-            ),
-          );
-          this.sock.send(
-            new Uint8Array(
-              buildOfflineSyncTriggerPacket({
-                fromId: this.userId,
-                lastId: 0,
-                cmdId: CMD_OFFLINE_SYNC_TRIGGER_PAGE,
-                flag: 0xf2,
-                version: 4,
-                keyType: 0,
-                termType: 1,
-              }),
-            ),
-          );
-        }
+        this.sendPacket(
+          buildOfflineSyncTriggerPacket({
+            fromId: this.userId,
+            lastId: 0,
+            cmdId: CMD_OFFLINE_SYNC_TRIGGER_FIRST,
+            flag: 0xf0,
+            version: 4,
+            keyType: 0,
+            termType: 1,
+          }),
+        );
+        this.sendPacket(
+          buildOfflineSyncTriggerPacket({
+            fromId: this.userId,
+            lastId: 0,
+            cmdId: CMD_OFFLINE_SYNC_TRIGGER_PAGE,
+            flag: 0xf2,
+            version: 4,
+            keyType: 0,
+            termType: 1,
+          }),
+        );
       }
     }
 
@@ -472,5 +522,62 @@ export class HtImConnectionService {
   private pushEvent(event: ImEvent): void {
     logRealtime(describeImEvent(event), event);
     this._events.update((events) => [...events, event]);
+  }
+
+  private sendPacket(packet: Uint8Array): void {
+    if (!this.sock || this.sock.readyState !== WebSocket.OPEN) return;
+    this.sock.send(new Uint8Array(packet));
+    this.logFrame('out', packet);
+  }
+
+  private logFrame(direction: 'in' | 'out', raw: Uint8Array): void {
+    if (raw.byteLength < HEADER_LEN) return;
+    const header = parseHeader(raw);
+    const payload = raw.subarray(HEADER_LEN, HEADER_LEN + header.bodyLength);
+    const entry: FrameLogEntry = {
+      id: ++this.frameSeq,
+      direction,
+      ts: Date.now(),
+      header,
+      payloadHex: toHex(payload),
+      decoded: this.bestEffortDecode(header, payload),
+    };
+    this._frames.update((frames) => {
+      const next = [...frames, entry];
+      return next.length > FRAME_LOG_CAP ? next.slice(-FRAME_LOG_CAP) : next;
+    });
+  }
+
+  private bestEffortDecode(header: PacketHeader, payload: Uint8Array): string {
+    try {
+      if (header.cmdId === CMD_MSG_ACK) {
+        return JSON.stringify(decodeMsgAckPayload(payload, header.keyType, this.sessionKey));
+      }
+      if (header.flag === FLAG_PUSH) {
+        return JSON.stringify(decodePushFrame(payload, this.sessionKey));
+      }
+      if (header.flag === FLAG_TYPING) {
+        return `isTyping=${decodeTypingPayload(payload, header.keyType, this.sessionKey)}`;
+      }
+      if (header.cmdId === CMD_OFFLINE_SYNC_RESPONSE) {
+        return JSON.stringify(this.decodeOfflineSyncEnvelope(payload));
+      }
+      const asJson = decodeLoginFrame(payload);
+      return asJson ? JSON.stringify(asJson) : '(unparsed)';
+    } catch {
+      return '(decode error)';
+    }
+  }
+
+  private decodeOfflineSyncEnvelope(payload: Uint8Array): unknown {
+    const data = decodeLoginFrame(payload);
+    if (!data) return '(unparsed)';
+    const inner = data['data'] as Record<string, unknown> | undefined;
+    const packetList = inner?.['packet_list'];
+    if (!Array.isArray(packetList)) return data;
+    const decodedEntries = packetList
+      .filter((entry): entry is string => typeof entry === 'string')
+      .map((entry) => decodeOfflinePacket(entry, this.sessionKey));
+    return { ...data, data: { ...inner, packet_list: decodedEntries } };
   }
 }
