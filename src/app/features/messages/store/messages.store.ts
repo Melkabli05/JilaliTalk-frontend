@@ -60,12 +60,13 @@ export class MessagesStore {
   private processedEventCount = 0;
 
   readonly conversations = computed(() =>
-    [...this._convMap().values()].sort((a, b) => b.lastTs - a.lastTs),
+    [...this._convMap().values()].map(c => this.resolveDisplayIdentity(c)).sort((a, b) => b.lastTs - a.lastTs),
   );
   readonly selectedId = this._selectedId.asReadonly();
   readonly selected = computed(() => {
     const id = this._selectedId();
-    return id ? (this._convMap().get(id) ?? null) : null;
+    const c = id ? this._convMap().get(id) : null;
+    return c ? this.resolveDisplayIdentity(c) : null;
   });
   readonly totalUnread = computed(() =>
     [...this._convMap().values()].reduce((s, c) => s + c.unread, 0),
@@ -88,7 +89,37 @@ export class MessagesStore {
       this.persistence.schedule(this._convMap());
     });
 
+    // A conversation ends up with its raw userId as the "nickname" (and no avatar) whenever
+    // it's created before a real profile was available — e.g. selecting a peer we've never
+    // seen elsewhere in the app, so UserInfoService's cache is empty for them — and nothing
+    // corrected it afterwards, since select()'s fallback and pushPublic()'s upsert both only
+    // run once per conversation-touching action. This fetches the real profile in the
+    // background for any conversation still missing one; resolveDisplayIdentity() picks it
+    // up reactively once UserInfoService's cache updates, the same "trigger + read via
+    // computed" pattern this service's own doc comment describes as the intended usage.
+    effect(() => {
+      for (const c of this._convMap().values()) {
+        if (c.nickname !== c.userId && c.headUrl) continue;
+        const numeric = Number(c.userId);
+        if (Number.isFinite(numeric)) this.userInfoService.ensureFresh(numeric);
+      }
+    });
+
     this.destroyRef.onDestroy(() => this.persistence.flush());
+  }
+
+  /** Prefers UserInfoService's live cache over the conversation's own stored nickname/avatar
+   *  when those are missing (nickname still the raw userId, or no avatar at all) — see the
+   *  constructor effect that keeps the cache populated for exactly this case. */
+  private resolveDisplayIdentity(conv: DmConversation): DmConversation {
+    if (conv.nickname !== conv.userId && conv.headUrl) return conv;
+    const numeric = Number(conv.userId);
+    const info = Number.isFinite(numeric) ? this.userInfoService.getUserInfo(numeric) : null;
+    if (!info) return conv;
+    const nickname = conv.nickname === conv.userId ? info.nickname?.trim() : null;
+    const headUrl = conv.headUrl ? null : info.details?.base?.headUrl;
+    if (!nickname && !headUrl) return conv;
+    return { ...conv, ...(nickname ? { nickname } : {}), ...(headUrl ? { headUrl } : {}) };
   }
 
   select(userId: string): void {
@@ -96,7 +127,8 @@ export class MessagesStore {
     const numeric = Number(userId);
     const info = Number.isFinite(numeric) ? this.userInfoService.getUserInfo(numeric) : null;
     const fallbackNickname = info?.nickname?.trim() || info?.username?.trim() || userId;
-    this._convMap.update(m => markConversationRead(m, userId, fallbackNickname));
+    const fallbackHeadUrl = info?.details?.base?.headUrl ?? null;
+    this._convMap.update(m => markConversationRead(m, userId, fallbackNickname, fallbackHeadUrl));
 
     const msgId = Number.isFinite(numeric) ? this.lastInboundMsgId(numeric) : null;
     if (msgId != null) this.markReadForLastInbound(numeric, msgId);
@@ -129,9 +161,10 @@ export class MessagesStore {
     return this.htIm.sendDm(peerId, payload, self?.nickname ?? '', 0, fields.msgId);
   }
 
-  pushPublic(userId: string, nickname: string, msg: DmMessage): void {
+  pushPublic(userId: string, nickname: string, headUrl: string | null, msg: DmMessage): void {
     const isSelected = this._selectedId() === userId;
-    const { map, evictedMessageIds } = upsertConversationMessage(this._convMap(), userId, nickname, msg, isSelected);
+    const { map, evictedMessageIds } =
+      upsertConversationMessage(this._convMap(), userId, nickname, headUrl, msg, isSelected);
     for (const evictedId of evictedMessageIds) this._msgIndex.delete(evictedId);
     if (msg.id) this._msgIndex.set(msg.id, userId);
     this._convMap.set(map);
@@ -140,7 +173,7 @@ export class MessagesStore {
   private dispatch(ev: ImEvent): void {
     const mapped = mapImEventToDmMessage(ev);
     if (mapped) {
-      this.pushPublic(mapped.userId, mapped.nickname, mapped.message);
+      this.pushPublic(mapped.userId, mapped.nickname, mapped.headUrl, mapped.message);
       return;
     }
     switch (ev.type) {

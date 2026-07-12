@@ -76,6 +76,8 @@
             (keydown.enter)="store.select(conv.userId)"
           >
             <app-avatar
+              [src]="conv.headUrl ?? ''"
+              [initials]="conv.nickname.slice(0, 2)"
               [alt]="conv.nickname"
               size="md"
               [ringColor]="store.selectedId() === conv.userId ? 'var(--color-primary-500)' : null"
@@ -109,7 +111,7 @@
           <svg aria-hidden="true" lucideChevronLeft [size]="18"></svg>
         </button>
         <div class="mobile-bar-identity">
-          <app-avatar [alt]="conv.nickname" size="xs" />
+          <app-avatar [src]="conv.headUrl ?? ''" [initials]="conv.nickname.slice(0, 2)" [alt]="conv.nickname" size="xs" />
           <span class="mobile-bar-name">{{ conv.nickname }}</span>
         </div>
         @if (conv.isTyping) {
@@ -152,7 +154,7 @@
                   </span>
                 </div>
               } @else {
-                <app-avatar [alt]="conv.nickname" size="xs" class="msg-avatar" />
+                <app-avatar [src]="conv.headUrl ?? ''" [initials]="conv.nickname.slice(0, 2)" [alt]="conv.nickname" size="xs" class="msg-avatar" />
                 <div class="bubble">
                   @switch (msg.type) {
                     @case ('image') { <img [src]="msg.imageUrl" alt="" class="bubble-image" /> }

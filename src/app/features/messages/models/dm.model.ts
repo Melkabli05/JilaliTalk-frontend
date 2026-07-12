@@ -32,6 +32,7 @@ export interface DmMessage {
 export interface DmConversation {
   readonly userId: string;
   readonly nickname: string;
+  readonly headUrl: string | null;
   readonly messages: readonly DmMessage[];
   readonly unread: number;
   readonly lastTs: number;

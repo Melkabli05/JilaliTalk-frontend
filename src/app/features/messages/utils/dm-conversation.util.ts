@@ -13,8 +13,8 @@ const MAX_MESSAGES = 200;
  * correctly skips a redundant update instead of re-rendering for a no-op write.
  */
 
-function createConversationPlaceholder(userId: string, nickname: string): DmConversation {
-  return { userId, nickname, messages: [], unread: 0, lastTs: 0, isTyping: false };
+function createConversationPlaceholder(userId: string, nickname: string, headUrl: string | null): DmConversation {
+  return { userId, nickname, headUrl, messages: [], unread: 0, lastTs: 0, isTyping: false };
 }
 
 /** Case-insensitive match on nickname or raw userId, used by the sidebar search box. Kept as
@@ -33,13 +33,14 @@ export function markConversationRead(
   map: ReadonlyMap<string, DmConversation>,
   userId: string,
   fallbackNickname: string,
+  fallbackHeadUrl: string | null,
 ): ReadonlyMap<string, DmConversation> {
   const existing = map.get(userId);
   if (existing) {
     if (existing.unread === 0 && existing.messages.length > 0) return map;
     return new Map(map).set(userId, { ...existing, unread: 0 });
   }
-  return new Map(map).set(userId, createConversationPlaceholder(userId, fallbackNickname));
+  return new Map(map).set(userId, createConversationPlaceholder(userId, fallbackNickname, fallbackHeadUrl));
 }
 
 export function setConversationTyping(
@@ -64,10 +65,11 @@ export function upsertConversationMessage(
   map: ReadonlyMap<string, DmConversation>,
   userId: string,
   nickname: string,
+  headUrl: string | null,
   msg: DmMessage,
   isSelected: boolean,
 ): ConversationMessageUpsert {
-  const existing = map.get(userId) ?? createConversationPlaceholder(userId, userId);
+  const existing = map.get(userId) ?? createConversationPlaceholder(userId, userId, null);
   const combined = [...existing.messages, msg];
   const evictedCount = Math.max(0, combined.length - MAX_MESSAGES);
   const evictedMessageIds = combined.slice(0, evictedCount).map((m) => m.id);
@@ -75,6 +77,7 @@ export function upsertConversationMessage(
   const next: DmConversation = {
     ...existing,
     nickname: nickname || existing.nickname,
+    headUrl: headUrl ?? existing.headUrl,
     messages: combined.slice(-MAX_MESSAGES),
     unread: isSelected ? 0 : existing.unread + 1,
     lastTs: msg.ts,

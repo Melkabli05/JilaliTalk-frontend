@@ -167,7 +167,8 @@ export class MessagesPageComponent {
       this.toast.error('Message not sent — check your connection');
       return;
     }
-    this.store.pushPublic(String(peerId), 'You', { id: msgId, type: 'text', text, ts: now, delivery: 'sent' });
+    // headUrl is irrelevant for our own messages — outbound bubbles never show an avatar.
+    this.store.pushPublic(String(peerId), 'You', null, { id: msgId, type: 'text', text, ts: now, delivery: 'sent' });
     this.draft.set('');
     this.typingBroadcaster.stop(peerId);
   }

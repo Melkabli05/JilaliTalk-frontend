@@ -5,6 +5,7 @@ import type { DmMessage } from '../models/dm.model';
 export interface MappedDmMessage {
   readonly userId: string;
   readonly nickname: string;
+  readonly headUrl: string | null;
   readonly message: DmMessage;
 }
 
@@ -21,18 +22,21 @@ export function mapImEventToDmMessage(ev: ImEvent): MappedDmMessage | null {
       return {
         userId: ev.fromUserId,
         nickname: ev.fromNickname || ev.fromUserId,
+        headUrl: ev.fromHeadUrl ?? null,
         message: { id: uid(), type: 'text', text: ev.text, fromNickname: ev.fromNickname, ts: ev.ts },
       };
     case 'image_message':
       return {
         userId: ev.fromUserId,
         nickname: ev.fromNickname || ev.fromUserId,
+        headUrl: ev.fromHeadUrl ?? null,
         message: { id: uid(), type: 'image', imageUrl: ev.imageUrl, fromNickname: ev.fromNickname, ts: ev.ts },
       };
     case 'gift_message':
       return {
         userId: ev.fromUserId,
         nickname: ev.fromNickname || ev.fromUserId,
+        headUrl: ev.fromHeadUrl ?? null,
         message: {
           id: uid(),
           type: 'gift',
@@ -46,12 +50,14 @@ export function mapImEventToDmMessage(ev: ImEvent): MappedDmMessage | null {
       return {
         userId: ev.fromUserId,
         nickname: ev.fromNickname || ev.fromUserId,
+        headUrl: ev.fromHeadUrl ?? null,
         message: { id: uid(), type: 'introduction', fromNickname: ev.fromNickname, ts: Date.now() },
       };
     case 'voice_room_shared':
       return {
         userId: ev.fromUserId,
         nickname: ev.fromNickname || ev.fromUserId,
+        headUrl: ev.headUrl,
         message: {
           id: uid(),
           type: 'voice_room_shared',
@@ -65,6 +71,7 @@ export function mapImEventToDmMessage(ev: ImEvent): MappedDmMessage | null {
       return {
         userId: ev.fromUserId,
         nickname: ev.fromNickname || ev.fromUserId,
+        headUrl: ev.headUrl,
         message: { id: uid(), type: 'live_room_shared', cname: ev.cname, fromNickname: ev.fromNickname, ts: Date.now() },
       };
     default:
