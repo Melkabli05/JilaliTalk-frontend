@@ -29,6 +29,7 @@ a {
 html {
   height: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: var(--leading-normal);
@@ -42,6 +43,7 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 a {

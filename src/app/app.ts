@@ -94,6 +94,7 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
         min-height: 0;
         overflow-y: auto;
         overflow-x: hidden;
+        overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: thin;
         scrollbar-gutter: stable;
