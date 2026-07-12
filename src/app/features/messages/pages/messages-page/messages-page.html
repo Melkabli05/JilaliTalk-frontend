@@ -180,17 +180,6 @@
         }
       </div>
 
-      <button
-        type="button"
-        class="new-contact-fab"
-        [class.is-hidden]="panelOpen()"
-        (click)="toggleContactPanel()"
-        [attr.aria-label]="panelOpen() ? 'Close new message panel' : 'New message'"
-        aria-controls="new-contact-panel"
-      >
-        <svg aria-hidden="true" lucidePlus [size]="22"></svg>
-      </button>
-
       <form
         class="compose"
         (submit)="$event.preventDefault(); onSend()"

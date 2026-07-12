@@ -574,33 +574,6 @@ li.unread .row-ts {
     font-size: var(--text-base);
   }
 
-  .new-contact-fab {
-    position: fixed;
-    bottom: calc(var(--shell-inset-bottom) + var(--space-4));
-    right: calc(16px + env(safe-area-inset-right, 0px));
-    width: 56px;
-    height: 56px;
-    border-radius: var(--radius-full);
-    background: var(--color-primary-500);
-    color: var(--color-card);
-    border: 0;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 6px 14px hsl(0deg 0% 0% / 24%);
-    z-index: 20;
-  }
-  .new-contact-fab:hover { background: var(--color-primary-600); }
-  .new-contact-fab:focus-visible {
-    outline: var(--focus-ring);
-    outline-offset: var(--focus-ring-offset);
-  }
-  .new-contact-fab.is-hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-
   .new-contact-empty {
     display: inline-flex;
     align-items: center;
@@ -625,6 +598,5 @@ li.unread .row-ts {
 }
 
 @media (min-width: 641px) {
-  .new-contact-fab,
   .new-contact-empty { display: none; }
 }
