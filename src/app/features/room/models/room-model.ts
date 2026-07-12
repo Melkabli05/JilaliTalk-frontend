@@ -280,6 +280,7 @@ export interface LiveRoomInfo {
   readonly channelInfo: {
     readonly cname: string | null;
     readonly name: string | null;
+    readonly langId: number;
     readonly topic?: string | null;
     readonly rtcInfo: RtcInfo | null;
   } | null;

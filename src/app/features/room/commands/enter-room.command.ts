@@ -136,6 +136,7 @@ export async function enterVoiceRoom(
   roomStore.setCname(cname);
   roomStore.setRoomName(ch?.name?.trim() ?? '');
   roomStore.setRoomTopic(ch?.topic ?? '');
+  roomStore.setRoomLanguage(ch?.langId ?? 1);
   roomStore.setRtcInfo(ch?.rtcInfo ?? null);
   roomStore.setRoomLevelInfo(voiceInfo.roomLevelInfo ?? null);
   const reqUser = voiceInfo.reqUserInfo;
@@ -315,6 +316,7 @@ export async function enterVideoRoom(
   roomStore.setCname(actualCname);
   roomStore.setRoomName(ch?.name?.trim() ?? '');
   roomStore.setRoomTopic(ch?.topic ?? '');
+  roomStore.setRoomLanguage(ch?.langId ?? 1);
   roomStore.setRtcInfo(ch?.rtcInfo ?? null);
   const reqUser = liveInfo.reqUserInfo;
   if (reqUser?.userId) {
