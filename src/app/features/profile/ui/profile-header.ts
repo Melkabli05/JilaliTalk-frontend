@@ -9,24 +9,22 @@ import { LucideCrown } from '@lucide/angular';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AvatarComponent, CountryFlagComponent, LanguageTagComponent, LucideCrown],
   template: `
-    <div class="identity-card" [class.identity-card--vip]="vipType() === 100">
+    <div class="identity-card" [class.identity-card--vip]="isTopVip()">
       <app-avatar
         [src]="avatarUrl()"
         [initials]="initials()"
         size="xl"
         [alt]="displayName()"
-        [ringColor]="vipType() === 100 ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
+        [ringColor]="isTopVip() ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
         [priority]="true"
       />
       <div class="identity-main">
         <div class="name-row">
           <span class="user-name">{{ displayName() }}</span>
-          @if (vipType() === 100) {
+          @if (isTopVip()) {
             <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
-          } @else if (vipType(); as vip) {
-            @if (vip > 0) {
-              <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
-            }
+          } @else if (vipType() > 0) {
+            <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
           }
         </div>
         @if (username()) {
@@ -200,9 +198,18 @@ export class ProfileHeaderComponent {
   readonly nationality = computed(() => this.info()?.nationality ?? null);
   readonly regDays = computed(() => this.info()?.regDays ?? null);
   readonly vipType = computed(() => this.base()?.vipType ?? 0);
+  /** vipType 100 is the top VIP tier — the same magic number this repo checks in several
+   *  other places (room's event-card/comment-list/user-action-modal, shared's
+   *  user-info-modal). Named locally rather than 0/1 > 0 "regular vip", since the meaning
+   *  of the threshold, not just its value, is what a reader needs. */
+  readonly isTopVip = computed(() => this.vipType() === 100);
   readonly nativeLang = computed(() => this.base()?.nativeLang ?? null);
   readonly learnLangs = computed(() => this.base()?.learnLangs ?? []);
   readonly tagChips = computed<readonly string[]>(() => this.info()?.tags ?? []);
+  /** `info().city`/`fullCountry` are the BFF's flattened summary of `details.location`'s
+   *  raw fields (see `UserProfileDetails`'s doc comment) — prefer the summary since it's
+   *  what the BFF considers current, and fall back to the nested value only when the
+   *  summary field is missing. */
   readonly location = computed(() => {
     const loc = this.details()?.location;
     const city = this.info()?.city ?? loc?.city ?? null;

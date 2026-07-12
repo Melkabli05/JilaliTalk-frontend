@@ -40,6 +40,10 @@ export class ProfileApi {
       .pipe(map((res) => res.data ?? EMPTY_SOCIAL_PAGE));
   }
 
+  /** The visitors endpoint's request envelope mirrors the mobile client's own request shape
+   *  (device/client metadata fields the backend expects on this specific endpoint) rather
+   *  than a plain `{ index }` body — `device_type`/`client_ver`/etc. are static placeholders
+   *  identifying this as the web client, not per-request state. */
   visitors(index: number): Observable<VisitorsPage> {
     const body = {
       device_type: 'Web',

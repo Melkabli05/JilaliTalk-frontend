@@ -36,6 +36,9 @@ export class ProfilePageComponent {
   private readonly dialog = inject(Dialog);
   protected readonly activeTab = signal<ProfileTab>('followers');
   constructor() {
+    // `(selectedTabChange)` only fires on user interaction, not for the tab that's already
+    // active on first render — without this, the default "followers" tab would sit empty
+    // until the user clicked away and back.
     this.onTabChange(this.activeTab());
   }
   protected onViewProfile(
