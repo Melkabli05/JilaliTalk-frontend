@@ -215,10 +215,12 @@ export function buildTypingIndicatorPacket(fromId: string, toId: string, isTypin
 /**
  * Requests offline/history messages starting after `lastId`. The reference client calls this
  * with two different header shapes depending on when it fires: right after login it sends an
- * explicit `flag`/`version`/`termType` (see scriptv2.js `onSessionReady`), but when re-triggered
- * reactively (a push notify, or paging through more history) it's called with those omitted,
- * which — because the original JS function signature had no defaults for them — resulted in
- * 0x00 header bytes at runtime. Both call shapes are preserved via the optional params here.
+ * explicit `flag`/`version`/`termType` (see scriptv2.js `onSessionReady`); when re-triggered
+ * reactively (a push notify, or paging through more history) it's called with those omitted —
+ * but the callee (`packetPRIVATEMSG`) destructures its own defaults (`flag = 240, version = 4,
+ * keyType = 0, termType = 1`), and JS applies destructuring defaults to an explicitly-passed
+ * `undefined` the same as an omitted property, so both call shapes actually emit the identical
+ * `0xF0/4/0/1` header on the wire. The defaults below match that.
  */
 export function buildOfflineSyncTriggerPacket(params: {
   readonly fromId: string;
@@ -231,10 +233,10 @@ export function buildOfflineSyncTriggerPacket(params: {
 }): Uint8Array {
   const body = deflate(new TextEncoder().encode(JSON.stringify({ last_id: params.lastId })));
   return buildPacket({
-    flag: params.flag ?? 0,
-    version: params.version ?? 0,
+    flag: params.flag ?? FLAG_CLIENT_REQUEST,
+    version: params.version ?? 4,
     keyType: params.keyType ?? 0,
-    termType: params.termType ?? 0,
+    termType: params.termType ?? 1,
     cmdId: params.cmdId,
     fromId: Number(params.fromId),
     toId: 0,
@@ -287,7 +289,6 @@ function buildDmMessageBody(params: {
     pay_chat_cost_virtual_val: 0,
     pay_chat_switch: 0,
     recv_diamonds: 0,
-    source: 'Chat List',
     to_payer: false,
     valid_time: 0,
     from_nickname: fromNickname,
@@ -297,7 +298,12 @@ function buildDmMessageBody(params: {
   switch (payload.kind) {
     case 'text':
       return {
-        msg: { ...common, msg_type: 'text', text: { reportIndex: 0, reportText: '', text: payload.text } },
+        msg: {
+          ...common,
+          msg_type: 'text',
+          text: { reportIndex: 0, reportText: '', text: payload.text },
+          source: 'Chat List',
+        },
         version: CURRENT_VERSION,
         client_lang: 'English',
       };
@@ -315,6 +321,7 @@ function buildDmMessageBody(params: {
             url: payload.url,
             width: payload.width ?? 0,
           },
+          source: 'Chat List',
         },
         version: CURRENT_VERSION,
         client_lang: 'English',
