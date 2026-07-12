@@ -147,9 +147,18 @@ export class HtRoomConnectionService {
     }
   }
 
+  /** The room protocol has no login handshake/response the way the IM protocol does — this
+   *  first server-initiated push is the earliest point we know the server is actually
+   *  talking back to us (`sock.onopen` only confirms the TCP/WS handshake, not that the
+   *  server accepted the connection), so it's the equivalent "really connected" signal.
+   *  Resetting `reconnectAttempt` here too mirrors HtImConnectionService.handleLoginResponse
+   *  — otherwise a successful reconnect after N failed attempts would leave the backoff
+   *  counter still at N for the *next* drop instead of starting a fresh sequence. */
   private handleHeartbeatIntervalFrame(heartbeatSec: number, userId: number, cname: string): void {
     this.heartbeatIntervalSec = heartbeatSec;
-    logRealtime('heartbeat interval', heartbeatSec, 's');
+    this.reconnectAttempt = 0;
+    this._wsStatus.set('connected');
+    logRealtime('status -> connected, heartbeat interval', heartbeatSec, 's');
     this.sendHeartbeat(userId, cname);
     this.scheduleHeartbeat(userId, cname);
   }
@@ -229,7 +238,6 @@ export class HtRoomConnectionService {
 
   private pushEvent(event: RoomRealtimeEvent): void {
     logRealtime(describeRoomEvent(event), event);
-    if (event.type === 'connection-state') this._wsStatus.set(event.state);
     this._lastEvent.set(event);
     if (this._gaveUpCnames().has(this.cname)) {
       const next = new Set(this._gaveUpCnames());

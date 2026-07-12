@@ -58,7 +58,6 @@ export interface GiftEvent {
 }
 
 export type RoomRealtimeEvent =
-  | { readonly type: 'connection-state'; readonly state: 'connecting' | 'connected' | 'reconnecting' | 'disconnected' }
   | { readonly type: 'user_join'; readonly userId: string; readonly nickname: string; readonly headUrl: string | null; readonly nationality: string | null; readonly isBannedComment: boolean }
   | { readonly type: 'user_quit'; readonly userId: string }
   | { readonly type: 'stage_join'; readonly stageUser: StageUserEvent }

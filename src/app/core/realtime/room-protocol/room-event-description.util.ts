@@ -7,8 +7,6 @@ import type { RoomRealtimeEvent } from '../room-realtime-events';
  */
 export function describeRoomEvent(event: RoomRealtimeEvent): string {
   switch (event.type) {
-    case 'connection-state':
-      return `connection state: ${event.state}`;
     case 'user_join':
       return `${event.nickname} joined`;
     case 'user_quit':
