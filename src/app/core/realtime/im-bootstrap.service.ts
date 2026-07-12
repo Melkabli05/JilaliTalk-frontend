@@ -17,9 +17,11 @@ export class ImBootstrapService {
   private readonly toast = inject(ToastService);
   private readonly notifications = inject(NOTIFICATION_REPORTER);
   private readonly userInfo = inject(UserInfoService);
-  /** Prefetches profiles for notification events (profile_visit/follow/gift/introduction) so
-   *  UserInfoModal is warm by the time the user clicks — batched instead of one call per event,
-   *  since a burst of queued notifications can flush at once (e.g. app foregrounded). */
+  /** Prefetches profiles for every user-linked notification (profile_visit/follow/
+   *  text_message/image_message/gift_message/introduction_message/voice_room_shared/
+   *  live_room_shared) so UserInfoModal is warm by the time the user clicks — batched
+   *  instead of one call per event, since a burst of queued notifications can flush at
+   *  once (e.g. app foregrounded). */
   private readonly enrichQueue = new EnrichBatchQueue((uids) =>
     this.userInfo.enrichBatchAndCache(uids).then(() => undefined),
   );
@@ -122,24 +124,39 @@ export class ImBootstrapService {
         this.toast.success('You can speak now');
         break;
       case 'follow': {
+        const nickname = event.nickname || 'Someone';
         const message = event.status === 2
-          ? `${event.nickname} followed you back`
-          : `${event.nickname} followed you`;
+          ? `${nickname} followed you back`
+          : `${nickname} followed you`;
         this.notifyUserLinked({
           type: 'info',
           title: 'New follower',
           message,
           uid: event.userId,
-          nickname: event.nickname,
+          nickname,
           avatarUrl: event.headUrl ?? null,
         });
         break;
       }
       case 'voice_room_shared':
-        this.notifications.notify('info', 'Voice room shared', `${event.fromNickname} sent you a voice room`);
+        this.notifyUserLinked({
+          type: 'info',
+          title: 'Voice room shared',
+          message: `${event.fromNickname} sent you a voice room`,
+          uid: event.fromUserId,
+          nickname: event.fromNickname || 'Someone',
+          avatarUrl: event.headUrl,
+        });
         break;
       case 'live_room_shared':
-        this.notifications.notify('info', 'Live room shared', `${event.fromNickname} sent you a live room`);
+        this.notifyUserLinked({
+          type: 'info',
+          title: 'Live room shared',
+          message: `${event.fromNickname} sent you a live room`,
+          uid: event.fromUserId,
+          nickname: event.fromNickname || 'Someone',
+          avatarUrl: event.headUrl,
+        });
         break;
       case 'text_message':
         this.notifyUserLinked({
@@ -163,26 +180,30 @@ export class ImBootstrapService {
           action: { type: 'navigate_to_conversation', userId: Number(event.fromUserId) },
         });
         break;
-      case 'gift_message':
+      case 'gift_message': {
+        const nickname = event.fromNickname || 'Someone';
         this.notifyUserLinked({
           type: 'info',
           title: 'Gift received',
-          message: `${event.fromNickname} sent you a gift`,
+          message: `${nickname} sent you a gift`,
           uid: event.fromUserId,
-          nickname: event.fromNickname,
+          nickname,
           avatarUrl: event.fromHeadUrl ?? null,
         });
         break;
-      case 'introduction_message':
+      }
+      case 'introduction_message': {
+        const nickname = event.fromNickname || 'Someone';
         this.notifyUserLinked({
           type: 'info',
           title: 'Introduction',
-          message: `${event.fromNickname} sent you an introduction`,
+          message: `${nickname} sent you an introduction`,
           uid: event.fromUserId,
-          nickname: event.fromNickname,
+          nickname,
           avatarUrl: event.fromHeadUrl ?? null,
         });
         break;
+      }
       case 'group_message':
         this.notifications.notify('info', `${event.roomName}`, `${event.senderName}: ${event.text}`);
         break;
@@ -205,11 +226,13 @@ export class ImBootstrapService {
 
   /** Emits a user-linked notification when `uid` parses as a positive integer, otherwise falls
    *  back to a plain notification (so the user still sees the event happened even without a
-   *  resolvable identity). Shared by profile_visit, follow, gift_message, and introduction_message
-   *  to deduplicate the parse/queue/fallback dance that was duplicated in each switch case.
-   *  Pre-warms the UserInfoService cache via the batched enrich queue so the click-through
-   *  UserInfoModal is populated by the time the user opens the notification — the queue already
-   *  coalesces a burst of realtime events into one /users/enrich-batch POST. */
+   *  resolvable identity). Shared by every event that names a specific user — profile_visit,
+   *  follow, text_message, image_message, gift_message, introduction_message,
+   *  voice_room_shared, live_room_shared — to deduplicate the parse/queue/fallback dance that
+   *  would otherwise be duplicated in each switch case. Pre-warms the UserInfoService cache via
+   *  the batched enrich queue so the click-through UserInfoModal is populated by the time the
+   *  user opens the notification — the queue already coalesces a burst of realtime events into
+   *  one /users/enrich-batch POST. */
   private notifyUserLinked(params: {
     type: 'info' | 'success' | 'warning' | 'error';
     title: string;
