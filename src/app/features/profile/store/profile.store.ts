@@ -1,14 +1,13 @@
 import { Service, inject, signal, computed, DestroyRef } from '@angular/core';
-import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { of } from 'rxjs';
+import { map, of } from 'rxjs';
 import { ProfileApi } from '../data-access/profile-api';
+import { PaginatedList } from '../data-access/paginated-list';
 import { AuthStore } from '@core/auth/auth.store';
 import {
   ProfileBundleResponse,
   SocialListPage,
-  SocialUser,
-  VisitorUser,
   BlockedUser,
 } from '../models/profile.model';
 const EMPTY_SOCIAL_PAGE: SocialListPage = { pageIndex: null, more: false, count: 0, list: [] };
@@ -44,54 +43,28 @@ export class ProfileStore {
     this.bundleRef.reload();
   }
 
-  /**
-   * Followers and visitors are cursor-paginated lists with a "Load more" button, not a
-   * single page — `rxResource` (used everywhere else in this store) replaces its `value()`
-   * on every params change, which is right for "refetch the same thing" but wrong for
-   * "append the next page": swapping the cursor would have silently replaced the visible
-   * list with just the next page instead of growing it. These two lists accumulate pages
-   * into their own signal instead, following the same manual-fetch pattern already used for
-   * `messages`'s new-contact-panel visitors tab, which has the identical accumulation need.
-   */
-  private readonly _followers = signal<readonly SocialUser[]>([]);
-  private readonly _followersCursor = signal('');
-  private readonly _followersMore = signal(false);
-  private readonly _followersLoading = signal(false);
-  private readonly _followersError = signal<string | null>(null);
-  private followersActivated = false;
-
-  readonly followers = this._followers.asReadonly();
-  readonly followersMore = this._followersMore.asReadonly();
-  readonly followersLoading = this._followersLoading.asReadonly();
-  readonly followersError = this._followersError.asReadonly();
-
+  /** Cursor-paginated with a "Load more" button — see `PaginatedList`'s doc for why that
+   *  needs its own accumulator instead of the `rxResource` used for every single-page list
+   *  in this store. The `map` adapts each API's own page shape (`pageIndex`/`index` field
+   *  names differ) to `PaginatedList`'s generic `{ list, nextCursor, more }` contract. */
+  private readonly followersList = new PaginatedList(
+    '',
+    (cursor: string) =>
+      this.api.followers(cursor, FOLLOWERS_PAGE_SIZE).pipe(
+        map((page) => ({ list: page.list, nextCursor: page.pageIndex ?? '', more: page.more })),
+      ),
+    'Failed to load followers',
+    this.destroyRef,
+  );
+  readonly followers = this.followersList.items;
+  readonly followersMore = this.followersList.more;
+  readonly followersLoading = this.followersList.loading;
+  readonly followersError = this.followersList.error;
   activateFollowersTab(): void {
-    if (this.followersActivated) return;
-    this.followersActivated = true;
-    this.fetchFollowers(true);
+    this.followersList.activate();
   }
   loadMoreFollowers(): void {
-    if (this._followersLoading()) return;
-    this.fetchFollowers(false);
-  }
-  private fetchFollowers(reset: boolean): void {
-    this._followersLoading.set(true);
-    this._followersError.set(null);
-    const cursor = reset ? '' : this._followersCursor();
-    this.api.followers(cursor, FOLLOWERS_PAGE_SIZE)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (page) => {
-          this._followers.update((acc) => (reset ? page.list : [...acc, ...page.list]));
-          this._followersCursor.set(page.pageIndex ?? '');
-          this._followersMore.set(page.more);
-          this._followersLoading.set(false);
-        },
-        error: () => {
-          this._followersLoading.set(false);
-          this._followersError.set('Failed to load followers');
-        },
-      });
+    this.followersList.loadMore();
   }
 
   private readonly _followingTabActive = signal(false);
@@ -102,9 +75,7 @@ export class ProfileStore {
     defaultValue: EMPTY_SOCIAL_PAGE,
   });
   /** No "load more" for following — `ProfileApi.following` doesn't accept a cursor, so this
-   *  tab only ever shows the first page (matches what the API actually supports; the old
-   *  `followingMore` signal implied pagination that didn't exist and was never read by the
-   *  template). */
+   *  tab only ever shows the first page (matches what the API actually supports). */
   readonly following = computed(() => this.followingRef.value().list);
   readonly followingLoading = this.followingRef.isLoading;
   readonly followingError = computed(() => (this.followingRef.error() ? 'Failed to load following' : null));
@@ -112,45 +83,24 @@ export class ProfileStore {
     this._followingTabActive.set(true);
   }
 
-  private readonly _visitors = signal<readonly VisitorUser[]>([]);
-  private readonly _visitorsCursor = signal(0);
-  private readonly _visitorsMore = signal(false);
-  private readonly _visitorsLoading = signal(false);
-  private readonly _visitorsError = signal<string | null>(null);
-  private visitorsActivated = false;
-
-  readonly visitors = this._visitors.asReadonly();
-  readonly visitorsMore = this._visitorsMore.asReadonly();
-  readonly visitorsLoading = this._visitorsLoading.asReadonly();
-  readonly visitorsError = this._visitorsError.asReadonly();
-
+  private readonly visitorsList = new PaginatedList(
+    0,
+    (cursor: number) =>
+      this.api.visitors(cursor).pipe(
+        map((page) => ({ list: page.list, nextCursor: page.index ?? 0, more: page.more })),
+      ),
+    'Failed to load visitors',
+    this.destroyRef,
+  );
+  readonly visitors = this.visitorsList.items;
+  readonly visitorsMore = this.visitorsList.more;
+  readonly visitorsLoading = this.visitorsList.loading;
+  readonly visitorsError = this.visitorsList.error;
   activateVisitorsTab(): void {
-    if (this.visitorsActivated) return;
-    this.visitorsActivated = true;
-    this.fetchVisitors(true);
+    this.visitorsList.activate();
   }
   loadMoreVisitors(): void {
-    if (this._visitorsLoading()) return;
-    this.fetchVisitors(false);
-  }
-  private fetchVisitors(reset: boolean): void {
-    this._visitorsLoading.set(true);
-    this._visitorsError.set(null);
-    const index = reset ? 0 : this._visitorsCursor();
-    this.api.visitors(index)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (page) => {
-          this._visitors.update((acc) => (reset ? page.list : [...acc, ...page.list]));
-          this._visitorsCursor.set(page.index ?? 0);
-          this._visitorsMore.set(page.more);
-          this._visitorsLoading.set(false);
-        },
-        error: () => {
-          this._visitorsLoading.set(false);
-          this._visitorsError.set('Failed to load visitors');
-        },
-      });
+    this.visitorsList.loadMore();
   }
 
   private readonly _blockedTabActive = signal(false);
