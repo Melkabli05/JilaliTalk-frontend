@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   effect,
   inject,
   input,
@@ -23,6 +24,11 @@ import { relativeTime } from '@shared/utils';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
 import { MessagesStore } from '../../store/messages.store';
 import { preview, dayLabel } from '../../utils/dm-formatting.util';
+
+/** How long to wait after the last keystroke before telling the peer typing stopped —
+ *  also the minimum gap between repeated "started typing" sends while the user keeps
+ *  typing continuously, so a WS packet doesn't go out on every single keystroke. */
+const TYPING_STOP_DELAY_MS = 3_000;
 
 @Component({
   selector: 'app-messages',
@@ -69,6 +75,9 @@ export class MessagesPageComponent {
 
   private readonly feedEl = viewChild<ElementRef<HTMLElement>>('feed');
 
+  private typingActive = false;
+  private typingStopTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor() {
     effect(() => {
       const id = this.userId();
@@ -84,6 +93,11 @@ export class MessagesPageComponent {
       const el = this.feedEl()?.nativeElement;
       if (el) Promise.resolve().then(() => { el.scrollTop = el.scrollHeight; });
     });
+
+    inject(DestroyRef).onDestroy(() => {
+      const peerId = this.selectedPeerId();
+      if (peerId != null) this.stopTyping(peerId);
+    });
   }
 
   protected toggleContactPanel(): void { this.panelOpen.update(v => !v); }
@@ -96,7 +110,14 @@ export class MessagesPageComponent {
   protected onInput(value: string): void {
     this.draft.set(value);
     const peerId = this.selectedPeerId();
-    if (peerId != null) this.store.sendTyping(peerId, true);
+    if (peerId == null) return;
+
+    if (!this.typingActive) {
+      this.typingActive = true;
+      this.store.sendTyping(peerId, true);
+    }
+    if (this.typingStopTimer) clearTimeout(this.typingStopTimer);
+    this.typingStopTimer = setTimeout(() => this.stopTyping(peerId), TYPING_STOP_DELAY_MS);
   }
 
   protected onComposerKeydown(event: Event): void {
@@ -108,7 +129,20 @@ export class MessagesPageComponent {
 
   protected onBlur(): void {
     const peerId = this.selectedPeerId();
-    if (peerId != null) this.store.sendTyping(peerId, false);
+    if (peerId != null) this.stopTyping(peerId);
+  }
+
+  /** Sends "stopped typing" (only if we'd actually told the peer we started) and clears the
+   *  pending stop-timer — the single exit point for onBlur, onSend, the inactivity timeout,
+   *  and component destroy, so the peer's indicator can never get stuck showing "typing…". */
+  private stopTyping(peerId: number): void {
+    if (this.typingStopTimer) {
+      clearTimeout(this.typingStopTimer);
+      this.typingStopTimer = null;
+    }
+    if (!this.typingActive) return;
+    this.typingActive = false;
+    this.store.sendTyping(peerId, false);
   }
 
   protected onSend(): void {
@@ -121,6 +155,6 @@ export class MessagesPageComponent {
     this.store.sendDm(peerId, 'text', { msgId, text, fromNickname: 'You', fromProfileTs: now });
     this.store.pushPublic(String(peerId), 'You', { id: msgId, type: 'text', text, ts: now, delivery: 'sent' });
     this.draft.set('');
-    this.store.sendTyping(peerId, false);
+    this.stopTyping(peerId);
   }
 }

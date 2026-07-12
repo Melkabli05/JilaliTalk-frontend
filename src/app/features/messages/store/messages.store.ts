@@ -1,4 +1,4 @@
-import { Service, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Service, computed, effect, inject, signal } from '@angular/core';
 import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
 import type { ImEventSource, ImMessageSender } from '@core/realtime/im-connection-roles';
 import { StorageService } from '@core/services/storage.service';
@@ -31,6 +31,10 @@ export interface SendDmBody {
 const STORAGE_KEY = 'jilali_dm_v1';
 const MAX_MESSAGES = 200;
 const MAX_CONVERSATIONS = 100;
+/** Coalesces bursts of rapid store mutations (a peer's per-keystroke typing indicator, a
+ *  fast run of incoming messages) into one write instead of re-serializing the whole
+ *  conversation table synchronously on every single signal change. */
+const PERSIST_DEBOUNCE_MS = 500;
 
 @Service({ autoProvided: false })
 export class MessagesStore {
@@ -38,6 +42,10 @@ export class MessagesStore {
   private readonly storage = inject(StorageService);
   private readonly userInfoService = inject(UserInfoService);
   private readonly authStore = inject(AuthStore);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private persistTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingPersist: ReadonlyMap<string, DmConversation> | null = null;
 
   private readonly _convMap = signal(
     this.storage.get<[string, DmConversation][]>(STORAGE_KEY)?.reduce(
@@ -75,11 +83,34 @@ export class MessagesStore {
     });
 
     effect(() => {
-      const entries = [...this._convMap().entries()]
-        .sort(([, a], [, b]) => b.lastTs - a.lastTs)
-        .slice(0, MAX_CONVERSATIONS);
-      this.storage.set(STORAGE_KEY, entries);
+      this.schedulePersist(this._convMap());
     });
+
+    this.destroyRef.onDestroy(() => {
+      if (!this.persistTimer) return;
+      clearTimeout(this.persistTimer);
+      this.persistTimer = null;
+      this.persistNow();
+    });
+  }
+
+  private schedulePersist(map: ReadonlyMap<string, DmConversation>): void {
+    this.pendingPersist = map;
+    if (this.persistTimer) clearTimeout(this.persistTimer);
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
+      this.persistNow();
+    }, PERSIST_DEBOUNCE_MS);
+  }
+
+  private persistNow(): void {
+    const map = this.pendingPersist;
+    this.pendingPersist = null;
+    if (!map) return;
+    const entries = [...map.entries()]
+      .sort(([, a], [, b]) => b.lastTs - a.lastTs)
+      .slice(0, MAX_CONVERSATIONS);
+    this.storage.set(STORAGE_KEY, entries);
   }
 
   select(userId: string): void {
