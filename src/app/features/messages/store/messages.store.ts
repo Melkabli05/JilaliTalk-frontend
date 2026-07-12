@@ -1,10 +1,9 @@
-import { DestroyRef, Service, computed, effect, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { HttpClient } from '@angular/common/http';
-import { ImSocketService } from '@core/realtime/im-socket.service';
+import { Service, computed, effect, inject, signal } from '@angular/core';
+import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
 import { StorageService } from '@core/services/storage.service';
 import { UserInfoService } from '@core/services/user-info.service';
-import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { AuthStore } from '@core/auth/auth.store';
+import type { DmSendGift, DmSendPayload } from '@core/realtime/ht-protocol/packet-framer.util';
 import type { ImEvent } from '@core/realtime/im-events';
 import { uid } from '../utils/dm-formatting.util';
 import type { DmConversation, DmMessage } from '../models/dm.model';
@@ -34,13 +33,10 @@ const MAX_CONVERSATIONS = 100;
 
 @Service({ autoProvided: false })
 export class MessagesStore {
-  private readonly imSocket = inject(ImSocketService);
+  private readonly htIm = inject(HtImConnectionService);
   private readonly storage = inject(StorageService);
   private readonly userInfoService = inject(UserInfoService);
-
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${inject(API_BASE_URL)}/im/messages`;
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly authStore = inject(AuthStore);
 
   private readonly _convMap = signal(
     this.storage.get<[string, DmConversation][]>(STORAGE_KEY)?.reduce(
@@ -65,7 +61,7 @@ export class MessagesStore {
 
   constructor() {
     effect(() => {
-      for (const ev of this.imSocket.events()) this.dispatch(ev);
+      for (const ev of this.htIm.events()) this.dispatch(ev);
     });
 
     effect(() => {
@@ -107,7 +103,7 @@ export class MessagesStore {
   }
 
   markReadForLastInbound(peerId: number, msgId: string): void {
-    this.post(`${peerId}/read`, { msgId });
+    this.htIm.sendReadReceipt(peerId, msgId);
   }
 
   lastInboundMsgId(peerId: number): string | null {
@@ -117,15 +113,41 @@ export class MessagesStore {
   }
 
   sendTyping(peerId: number, isTyping: boolean): void {
-    this.post(`${peerId}/typing`, { typing: isTyping });
+    this.htIm.sendTyping(peerId, isTyping);
   }
 
   sendDm(peerId: number, kind: DmKind, fields: Partial<SendDmBody>): void {
-    this.post(`${peerId}/send`, { kind, ...fields });
+    const payload = this.toSendPayload(kind, fields);
+    if (!payload) return;
+    const self = this.authStore.user();
+    this.htIm.sendDm(peerId, payload, self?.nickname ?? '', 0, fields.msgId);
   }
 
-  private post(path: string, body: unknown): void {
-    this.http.post(`${this.baseUrl}/${path}`, body).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ error: () => {} });
+  private toSendPayload(kind: DmKind, fields: Partial<SendDmBody>): DmSendPayload | null {
+    switch (kind) {
+      case 'text':
+        return { kind: 'text', text: fields.text ?? '' };
+      case 'image':
+        return {
+          kind: 'image',
+          url: fields.url ?? '',
+          ...(fields.localPath !== undefined ? { localPath: fields.localPath } : {}),
+          ...(fields.size !== undefined ? { size: fields.size } : {}),
+          ...(fields.width !== undefined ? { width: fields.width } : {}),
+          ...(fields.height !== undefined ? { height: fields.height } : {}),
+          ...(fields.mimeType !== undefined ? { mimeType: fields.mimeType } : {}),
+        };
+      case 'introduction':
+        return { kind: 'introduction', roomData: fields.roomData };
+      case 'voice_room':
+        return { kind: 'voice_room', roomData: fields.roomData };
+      case 'live_link':
+        return { kind: 'live_link', roomData: fields.roomData };
+      case 'send_gift':
+        return fields.gift ? { kind: 'send_gift', gift: fields.gift as DmSendGift } : null;
+      default:
+        return null;
+    }
   }
 
   pushPublic(userId: string, nickname: string, msg: DmMessage): void {

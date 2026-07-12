@@ -17,7 +17,7 @@ import {
   LucideSearch,
   LucideSend,
 } from '@lucide/angular';
-import { ImSocketService } from '@core/realtime/im-socket.service';
+import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { relativeTime } from '@shared/utils';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
@@ -43,7 +43,7 @@ import { preview, uid, dayLabel } from '../../utils/dm-formatting.util';
 })
 export class MessagesPageComponent {
   protected readonly store = inject(MessagesStore);
-  protected readonly imSocket = inject(ImSocketService);
+  protected readonly imSocket = inject(HtImConnectionService);
   protected readonly relativeTime = relativeTime;
   protected readonly preview = preview;
 
