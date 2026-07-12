@@ -1,13 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import AgoraRTM, { type RTMClient, type RTMEvents } from 'agora-rtm-sdk';
 import type { RealtimeLifecycle, RtmInboundMessage, RtmOutboundMessage } from './realtime-events';
-
-interface RtmTypingSignal {
-  channel: string;
-  fromUid: string;
-  sender: string;
-  ts: number;
-}
+import { parseRtmMessageEvent, type RtmTypingSignal } from './rtm-message-parser.util';
 
 @Injectable({ providedIn: 'root' })
 export class AgoraRtmService implements RealtimeLifecycle {
@@ -30,29 +24,12 @@ export class AgoraRtmService implements RealtimeLifecycle {
     this.client = client;
 
     client.addEventListener('message', (e: RTMEvents.MessageEvent) => {
-      const raw =
-        typeof e.message === 'string'
-          ? e.message
-          : e.message instanceof ArrayBuffer
-            ? new TextDecoder().decode(e.message)
-            : String(e.message);
-
-      let parsed: RtmOutboundMessage | null = null;
-      try { parsed = JSON.parse(raw) as RtmOutboundMessage; } catch { /* not JSON */ }
-
-      const fromUid = String(e.publisher);
-      if (parsed?.kind === 'typing') {
-        this._lastTyping.set({ channel: e.channelName, fromUid, sender: parsed.sender, ts: Date.now() });
-        return;
+      const result = parseRtmMessageEvent(e);
+      if (result.kind === 'typing') {
+        this._lastTyping.set(result.signal);
+      } else {
+        this._lastMessage.set(result.message);
       }
-
-      this._lastMessage.set({
-        channel: e.channelName,
-        fromUid,
-        text: parsed?.kind === 'chat' ? parsed.text : raw,
-        ts: Date.now(),
-        payload: parsed,
-      });
     });
 
     await client.login(token ? { token } : undefined);

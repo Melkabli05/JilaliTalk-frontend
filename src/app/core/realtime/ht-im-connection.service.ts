@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthStore, type ImCredentials } from '@core/auth/auth.store';
 import { AuthService } from '@core/auth/auth.service';
 import { IM_WS_URL } from '@core/tokens/im-ws-url.token';
-import { backoffDelay, MAX_RECONNECT_ATTEMPTS } from './reconnecting-socket-base';
+import { backoffDelay, MAX_RECONNECT_ATTEMPTS, type ConnectionStatus } from './reconnect-backoff.util';
 import { logRealtime } from './dev-log.util';
 import type { ImEvent } from './im-events';
 import { generateApkSignature } from './ht-protocol/apk-signature.util';
@@ -40,8 +40,6 @@ import {
 } from './ht-protocol/frame-decoder.util';
 import { mapImJsonToEvent } from './ht-protocol/im-event-mapper.util';
 
-export type ImConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
-
 const HEARTBEAT_INTERVAL_MS = 30_000;
 
 function decodeJwtUid(jwt: string): string | null {
@@ -69,7 +67,7 @@ export class HtImConnectionService {
   private readonly wsUrl = inject(IM_WS_URL);
 
   private readonly _events = signal<readonly ImEvent[]>([]);
-  private readonly _status = signal<ImConnectionStatus>('disconnected');
+  private readonly _status = signal<ConnectionStatus>('disconnected');
   readonly events = this._events.asReadonly();
   readonly status = this._status.asReadonly();
 

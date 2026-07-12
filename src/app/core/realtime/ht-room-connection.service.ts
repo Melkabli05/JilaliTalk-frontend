@@ -6,7 +6,7 @@ import { filter } from 'rxjs/operators';
 import { AuthStore } from '@core/auth/auth.store';
 import { ROOM_WS_URL } from '@core/tokens/room-ws-url.token';
 import { logRealtime } from './dev-log.util';
-import { backoffDelay, MAX_RECONNECT_ATTEMPTS } from './reconnecting-socket-base';
+import { backoffDelay, MAX_RECONNECT_ATTEMPTS, type ConnectionStatus } from './reconnect-backoff.util';
 import type { RoomRealtimeEvent } from './room-realtime-events';
 import {
   buildAckFrame,
@@ -19,8 +19,6 @@ import { describeRoomEvent } from './room-protocol/room-event-description.util';
 import { mapRoomNotifyToEvent } from './room-protocol/room-event-mapper.util';
 
 type EventOfType<T extends RoomRealtimeEvent['type']> = Extract<RoomRealtimeEvent, { type: T }>;
-
-export type WsConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
 
 /**
  * Direct connection to the LiveHub room WebSocket (replaces `BffRoomSocketService`, which
@@ -36,7 +34,7 @@ export class HtRoomConnectionService {
   private readonly wsUrl = inject(ROOM_WS_URL);
 
   private readonly _lastEvent = signal<RoomRealtimeEvent | null>(null);
-  private readonly _wsStatus = signal<WsConnectionStatus>('disconnected');
+  private readonly _wsStatus = signal<ConnectionStatus>('disconnected');
   readonly lastEvent = this._lastEvent.asReadonly();
   readonly wsStatus = this._wsStatus.asReadonly();
 

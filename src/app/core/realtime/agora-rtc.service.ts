@@ -5,20 +5,18 @@ import AgoraRTC, {
   type ILocalVideoTrack,
   type ConnectionState,
 } from 'agora-rtc-sdk-ng';
-import { AIDenoiserExtension, type IAIDenoiserProcessor } from 'agora-extension-ai-denoiser';
 import type { RtcConnectionState, RealtimeLifecycle } from './realtime-events';
+import { AgoraDenoiserController } from './agora-denoiser-controller';
+import { AutoplayAudioRecovery } from './autoplay-audio-recovery';
+import {
+  clearRemoteUserMedia,
+  removeRemoteUser,
+  upsertRemoteUser,
+  type RemoteUser,
+} from './remote-user-roster.util';
 
+export type { RemoteUser } from './remote-user-roster.util';
 export type AudioNoiseSuppressionLevel = 0 | 1 | 2 | 3;
-
-export interface RemoteUser {
-  readonly uid: number;
-  readonly hasAudio: boolean;
-  readonly hasVideo: boolean;
-  readonly audioTrack: any | null;
-  readonly videoTrack: any | null;
-  readonly nickname: string;
-  readonly isScreenShare: boolean;
-}
 
 @Injectable({ providedIn: 'root' })
 export class AgoraRtcService implements RealtimeLifecycle {
@@ -26,8 +24,8 @@ export class AgoraRtcService implements RealtimeLifecycle {
   private micTrack: ILocalAudioTrack | null = null;
   private videoTrack: ILocalVideoTrack | null = null;
   private isGhostMode = false;
-  private denoiserExtension: AIDenoiserExtension | null = null;
-  private denoiserProcessor: IAIDenoiserProcessor | null = null;
+  private readonly denoiser = new AgoraDenoiserController();
+  private readonly autoplayRecovery = new AutoplayAudioRecovery(() => this.remoteAudioTracks.values());
 
   private readonly _state = signal<RtcConnectionState>('disconnected');
   private readonly _remoteUsers = signal<readonly RemoteUser[]>([]);
@@ -39,8 +37,6 @@ export class AgoraRtcService implements RealtimeLifecycle {
   private readonly _roomClosed = signal<{ reason: string } | null>(null);
   private readonly _noiseSuppressionLevel = signal<AudioNoiseSuppressionLevel>(2);
   private readonly remoteAudioTracks = new Map<number, any>();
-  private autoplayArmed = false;
-  private autoplayHandler: (() => void) | null = null;
 
   readonly state = this._state.asReadonly();
   readonly remoteUsers = this._remoteUsers.asReadonly();
@@ -81,23 +77,6 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this._state.set('connected');
   }
 
-  private async startGhostTrack(): Promise<void> {
-    const client = this.client;
-    if (!client) return;
-    try {
-      const track = await AgoraRTC.createMicrophoneAudioTrack(this.getAudioTrackOptions());
-      track.setVolume(100);
-      await client.publish(track);
-      await track.setEnabled(false);
-      this.micTrack = track;
-      this._localAudioTrack.set(track);
-      this._isPublishing.set(true);
-      this._isMuted.set(true);
-    } catch (err) {
-      console.warn('[AgoraRtc] ghost track failed:', err);
-    }
-  }
-
   async startAudio(publisherToken?: string | null): Promise<void> {
     const client = this.client;
     if (!client) throw new Error('Not connected');
@@ -106,54 +85,12 @@ export class AgoraRtcService implements RealtimeLifecycle {
     if (publisherToken) await client.renewToken(publisherToken);
     const track = await AgoraRTC.createMicrophoneAudioTrack(this.getAudioTrackOptions());
     track.setVolume(100);
-    await this.attachDenoiser(track);
+    await this.denoiser.attach(track);
     await client.publish(track);
     this.micTrack = track;
     this._localAudioTrack.set(track);
     this._isPublishing.set(true);
     this._isMuted.set(false);
-  }
-
-  /**
-   * Agora's AI Noise Suppression — a deep-learning denoiser, well beyond the basic ANS flag's
-   * simple DSP filtering. Best-effort: unsupported browsers or a failed WASM load just mean the
-   * track publishes without it (still using the AEC/AGC/ANS/speech_standard config already set),
-   * not a broken mic.
-   */
-  private async attachDenoiser(track: ILocalAudioTrack): Promise<void> {
-    try {
-      if (!this.denoiserExtension) {
-        const extension = new AIDenoiserExtension({ assetsPath: '/external' });
-        AgoraRTC.registerExtensions([extension]);
-        this.denoiserExtension = extension;
-      }
-      if (!this.denoiserExtension.checkCompatibility()) return;
-
-      const processor = this.denoiserExtension.createProcessor();
-      processor.on('pipeerror', (err: Error) => {
-        console.warn('[AgoraRtc] denoiser pipe error, falling back to unprocessed audio:', err);
-        processor.unpipe();
-        track.unpipe();
-        track.pipe(track.processorDestination);
-      });
-      track.pipe(processor).pipe(track.processorDestination);
-      await processor.enable();
-      this.denoiserProcessor = processor;
-    } catch (err) {
-      console.warn('[AgoraRtc] AI denoiser unavailable, publishing without it:', err);
-    }
-  }
-
-  private async detachDenoiser(): Promise<void> {
-    if (!this.denoiserProcessor) return;
-    const processor = this.denoiserProcessor;
-    this.denoiserProcessor = null;
-    try {
-      processor.unpipe();
-      await processor.destroy();
-    } catch {
-      // best-effort cleanup — the track itself is being torn down regardless
-    }
   }
 
   async startVideo(publisherToken?: string | null): Promise<void> {
@@ -169,7 +106,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
 
   async stopAudio(): Promise<void> {
     if (!this.micTrack) return;
-    await this.detachDenoiser();
+    await this.denoiser.detach();
     await this.client?.unpublish(this.micTrack).catch(() => {});
     this.micTrack.stop();
     this.micTrack.close();
@@ -245,7 +182,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
   async disconnect(): Promise<void> {
     try {
       if (this.micTrack) {
-        await this.detachDenoiser();
+        await this.denoiser.detach();
         await this.client?.unpublish(this.micTrack).catch(() => {});
         this.micTrack.stop();
         this.micTrack.close();
@@ -268,37 +205,8 @@ export class AgoraRtcService implements RealtimeLifecycle {
       this._state.set('disconnected');
       this._roomClosed.set(null);
       this.remoteAudioTracks.clear();
-      if (this.autoplayHandler) {
-        document.removeEventListener('click', this.autoplayHandler);
-        document.removeEventListener('touchstart', this.autoplayHandler);
-        document.removeEventListener('keydown', this.autoplayHandler);
-        this.autoplayHandler = null;
-        this.autoplayArmed = false;
-      }
+      this.autoplayRecovery.disarm();
     }
-  }
-
-  private armAutoplayRecovery(): void {
-    if (this.autoplayArmed) return;
-    this.autoplayArmed = true;
-    const resume = (): void => {
-      for (const track of this.remoteAudioTracks.values()) {
-        try {
-          track.play();
-        } catch {
-          return;
-        }
-      }
-      this.autoplayArmed = false;
-      this.autoplayHandler = null;
-      document.removeEventListener('click', resume);
-      document.removeEventListener('touchstart', resume);
-      document.removeEventListener('keydown', resume);
-    };
-    this.autoplayHandler = resume;
-    document.addEventListener('click', resume);
-    document.addEventListener('touchstart', resume);
-    document.addEventListener('keydown', resume);
   }
 
   private wireCallbacks(client: IAgoraRTCClient): void {
@@ -321,74 +229,28 @@ export class AgoraRtcService implements RealtimeLifecycle {
         try {
           user.audioTrack.play();
         } catch {
-          this.armAutoplayRecovery();
+          this.autoplayRecovery.arm();
         }
       }
-      this.addRemoteUser(user, mediaType);
+      this._remoteUsers.update((list) => upsertRemoteUser(list, user, mediaType));
     });
 
     client.on('user-unpublished', (user: any, mediaType: 'audio' | 'video') => {
-      this._remoteUsers.update((list) =>
-        list.map((u) =>
-          u.uid === user.uid
-            ? {
-                ...u,
-                hasAudio: mediaType === 'audio' ? false : u.hasAudio,
-                hasVideo: mediaType === 'video' ? false : u.hasVideo,
-                audioTrack: mediaType === 'audio' ? null : u.audioTrack,
-                videoTrack: mediaType === 'video' ? null : u.videoTrack,
-              }
-            : u,
-        ),
-      );
+      this._remoteUsers.update((list) => clearRemoteUserMedia(list, user.uid, mediaType));
     });
 
     client.on('user-joined', (user: any) => {
-      this.addRemoteUser(user, 'none');
+      this._remoteUsers.update((list) => upsertRemoteUser(list, user, 'none'));
     });
 
     client.on('user-left', (user: any) => {
       this.remoteAudioTracks.delete(user.uid);
-      this._remoteUsers.update((list) => list.filter((u) => u.uid !== user.uid));
+      this._remoteUsers.update((list) => removeRemoteUser(list, user.uid));
     });
 
     client.on('volume-indicator', (volumes: readonly { uid: number; level: number }[]) => {
       const speaking = volumes.filter((v) => v.level > 60).map((v) => v.uid);
       this._speakingUids.set(speaking);
-    });
-  }
-
-  private addRemoteUser(user: any, mediaType: 'audio' | 'video' | 'none'): void {
-    const uid = user.uid;
-    const isScreenShare = String(uid).startsWith('2000');
-    this._remoteUsers.update((list) => {
-      const existing = list.find((u) => u.uid === uid);
-      if (existing) {
-        return list.map((u) =>
-          u.uid === uid
-            ? {
-                ...u,
-                hasAudio: mediaType === 'audio' ? true : u.hasAudio,
-                hasVideo: mediaType === 'video' ? true : u.hasVideo,
-                audioTrack: mediaType === 'audio' ? user.audioTrack : u.audioTrack,
-                videoTrack: mediaType === 'video' ? user.videoTrack : u.videoTrack,
-                isScreenShare: isScreenShare ? true : u.isScreenShare,
-              }
-            : u,
-        );
-      }
-      return [
-        ...list,
-        {
-          uid,
-          hasAudio: mediaType === 'audio',
-          hasVideo: mediaType === 'video',
-          audioTrack: mediaType === 'audio' ? user.audioTrack : null,
-          videoTrack: mediaType === 'video' ? user.videoTrack : null,
-          nickname: user.nickname ?? String(uid),
-          isScreenShare,
-        },
-      ];
     });
   }
 }
