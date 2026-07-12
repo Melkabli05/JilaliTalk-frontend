@@ -32,8 +32,6 @@ export class AgoraRtcService implements RealtimeLifecycle {
   private readonly _speakingUids = signal<readonly number[]>([]);
   private readonly _localAudioTrack = signal<any | null>(null);
   private readonly _localVideoTrack = signal<any | null>(null);
-  private readonly _isPublishing = signal(false);
-  private readonly _isMuted = signal(false);
   private readonly _roomClosed = signal<{ reason: string } | null>(null);
   private readonly _noiseSuppressionLevel = signal<AudioNoiseSuppressionLevel>(2);
   private readonly remoteAudioTracks = new Map<number, any>();
@@ -43,8 +41,6 @@ export class AgoraRtcService implements RealtimeLifecycle {
   readonly speakingUids = this._speakingUids.asReadonly();
   readonly localAudioTrack = this._localAudioTrack.asReadonly();
   readonly localVideoTrack = this._localVideoTrack.asReadonly();
-  readonly isPublishing = this._isPublishing.asReadonly();
-  readonly isMuted = this._isMuted.asReadonly();
   readonly isConnected = computed(() => this._state() === 'connected');
   readonly roomClosed = this._roomClosed.asReadonly();
   readonly noiseSuppressionLevel = this._noiseSuppressionLevel.asReadonly();
@@ -89,8 +85,6 @@ export class AgoraRtcService implements RealtimeLifecycle {
     await client.publish(track);
     this.micTrack = track;
     this._localAudioTrack.set(track);
-    this._isPublishing.set(true);
-    this._isMuted.set(false);
   }
 
   async startVideo(publisherToken?: string | null): Promise<void> {
@@ -112,8 +106,6 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this.micTrack.close();
     this.micTrack = null;
     this._localAudioTrack.set(null);
-    this._isPublishing.set(false);
-    this._isMuted.set(false);
     if (!this.isGhostMode) await this.client?.setClientRole('audience').catch(() => {});
   }
 
@@ -128,32 +120,11 @@ export class AgoraRtcService implements RealtimeLifecycle {
 
   async setMicEnabled(enabled: boolean): Promise<void> {
     await this.micTrack?.setEnabled(enabled);
-    this._isMuted.set(!enabled);
   }
 
   async setCamEnabled(enabled: boolean): Promise<void> {
     await this.videoTrack?.setEnabled(enabled);
   }
-
-  async switchAudioInput(deviceId: string): Promise<void> {
-    if (!this.micTrack) return;
-    try {
-      await (this.micTrack as any).setDevice(deviceId);
-    } catch (err) {
-      console.warn('[AgoraRtc] switchAudioInput failed:', err);
-    }
-  }
-
-  async switchVideoInput(deviceId: string): Promise<void> {
-    if (!this.videoTrack) return;
-    try {
-      await (this.videoTrack as any).setDevice(deviceId);
-    } catch (err) {
-      console.warn('[AgoraRtc] switchVideoInput failed:', err);
-    }
-  }
-
-  async setSpeakerDevice(_deviceId: string): Promise<void> {}
 
   setNoiseSuppressionLevel(level: AudioNoiseSuppressionLevel): void {
     this._noiseSuppressionLevel.set(level);
@@ -200,8 +171,6 @@ export class AgoraRtcService implements RealtimeLifecycle {
       this._remoteUsers.set([]);
       this._localAudioTrack.set(null);
       this._localVideoTrack.set(null);
-      this._isPublishing.set(false);
-      this._isMuted.set(false);
       this._state.set('disconnected');
       this._roomClosed.set(null);
       this.remoteAudioTracks.clear();

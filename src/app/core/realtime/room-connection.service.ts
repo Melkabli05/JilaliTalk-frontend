@@ -3,16 +3,16 @@ import { environment } from '@env/environment';
 import { AgoraRtcService } from './agora-rtc.service';
 import { AgoraRtmService } from './agora-rtm.service';
 
-export type RoomPhase = 'idle' | 'joining' | 'joined' | 'leaving';
+type RoomPhase = 'idle' | 'joining' | 'joined' | 'leaving';
 
 @Injectable({ providedIn: 'root' })
 export class RoomConnectionService {
   private readonly rtc = inject(AgoraRtcService);
   private readonly rtm = inject(AgoraRtmService);
 
+  /** Only used internally as an idle-guard in leave() — nothing outside this service reads
+   *  connection phase, so it's not exposed as a public signal. */
   private readonly _phase = signal<RoomPhase>('idle');
-  readonly phase = this._phase.asReadonly();
-  readonly isJoined = computed(() => this._phase() === 'joined');
 
   async connect(channel: string, uid: number, token: string | null, appId: string, isGhostMode = false): Promise<void> {
     this._phase.set('joining');
@@ -34,7 +34,6 @@ export class RoomConnectionService {
   sendRtmTyping(uid: number, ch: string, nick = 'Anonymous'): void {
     this.rtm.publishTyping(ch, String(uid), nick);
   }
-  async disconnectRtm(): Promise<void> { await this.rtm.disconnect(); }
 
   readonly agora = this.rtc;
   get roomClosed() { return this.rtc.roomClosed(); }
@@ -42,8 +41,6 @@ export class RoomConnectionService {
   readonly localAudioTrack = this.rtc.localAudioTrack;
   readonly localVideoTrack = this.rtc.localVideoTrack;
   get isConnected() { return this.rtc.isConnected(); }
-  get isPublishing() { return this.rtc.isPublishing(); }
-  get isMuted() { return this.rtc.isMuted(); }
   readonly speakingUids = computed(() => this.rtc.speakingUids());
   readonly rtmMessage = this.rtm.lastMessage;
   readonly rtmTyping = this.rtm.lastTyping;
