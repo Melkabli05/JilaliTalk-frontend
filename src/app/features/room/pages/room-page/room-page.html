@@ -56,6 +56,7 @@
       [comments]="commentsStore.comments()"
       [captions]="commentsStore.captions()"
       [currentUserId]="roomStore.userId()"
+      [langId]="roomStore.langId()"
       [refreshing]="facade.refreshingComments()"
       [typingNames]="facade.typingNames()"
       [disabled]="!roomStore.isVisible()"

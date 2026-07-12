@@ -12,6 +12,7 @@ import { Tabs, TabList, Tab, TabPanel, TabContent } from '@angular/aria/tabs';
 import { CommentListComponent } from './comment-list';
 import { CommentInputComponent, ReplyTarget, SendEvent } from './comment-input';
 import { CaptionListComponent } from './caption-list';
+import { StarterCommentsComponent } from './starter-comments';
 import { Comment } from '../models/room-model';
 import { COMMENTS_READER } from './comments-store';
 import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, LucideRefreshCw } from '@lucide/angular';
@@ -27,6 +28,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
     CommentListComponent,
     CommentInputComponent,
     CaptionListComponent,
+    StarterCommentsComponent,
     LucideMessageCircle,
     LucideCaptions,
     LucideMaximize2,
@@ -103,6 +105,13 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
             }
           </div>
 
+          @if (showStarterComments()) {
+            <app-starter-comments
+              [langId]="langId()"
+              [disabled]="disabled()"
+              (pick)="onSendComment({ text: $event })"
+            />
+          }
           <app-comment-input
             [replyTo]="replyTo()"
             [disabled]="disabled()"
@@ -312,7 +321,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         min-height: 0;
         overflow: hidden;
       }
-      app-comment-input { flex-shrink: 0; }
+      app-comment-input, app-starter-comments { flex-shrink: 0; }
 
       .typing-indicator {
         display: flex;
@@ -364,6 +373,7 @@ export class CommentsPanelComponent {
   readonly comments = input<readonly Comment[]>([]);
   readonly captions = input<readonly import('../models/room-model').CaptionEntry[]>([]);
   readonly currentUserId = input<number>(0);
+  readonly langId = input<number>(1);
   readonly refreshing = input(false);
   readonly typingNames = input<readonly string[]>([]);
   /** When true, the comment input is disabled and inline reply buttons are hidden. */
@@ -376,6 +386,10 @@ export class CommentsPanelComponent {
   readonly activeTab = signal<string | undefined>('comments');
   readonly replyTarget = signal<Comment | null>(null);
   readonly expanded = signal(false);
+
+  readonly showStarterComments = computed(() =>
+    !this.commentsStore.comments().some((c) => c.userId === this.currentUserId()),
+  );
 
   readonly replyTo = computed<ReplyTarget | null>(() => {
     const comment = this.replyTarget();
