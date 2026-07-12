@@ -46,6 +46,7 @@ export class MessagesStore {
   );
   private readonly _msgIndex = new Map<string, string>(); // msgId -> userId
   private readonly _selectedId = signal<string | null>(null);
+  private processedEventCount = 0;
 
   readonly conversations = computed(() =>
     [...this._convMap().values()].sort((a, b) => b.lastTs - a.lastTs),
@@ -61,7 +62,15 @@ export class MessagesStore {
 
   constructor() {
     effect(() => {
-      for (const ev of this.htIm.events()) this.dispatch(ev);
+      const events = this.htIm.events();
+      if (events.length < this.processedEventCount) {
+        // Log was reset (disconnect/reconnect) — start over from the beginning.
+        this.processedEventCount = 0;
+      }
+      for (const event of events.slice(this.processedEventCount)) {
+        this.dispatch(event);
+      }
+      this.processedEventCount = events.length;
     });
 
     effect(() => {

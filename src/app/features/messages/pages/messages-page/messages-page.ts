@@ -22,7 +22,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { relativeTime } from '@shared/utils';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
 import { MessagesStore } from '../../store/messages.store';
-import { preview, uid, dayLabel } from '../../utils/dm-formatting.util';
+import { preview, dayLabel } from '../../utils/dm-formatting.util';
 
 @Component({
   selector: 'app-messages',
@@ -116,7 +116,7 @@ export class MessagesPageComponent {
     const peerId = this.selectedPeerId();
     if (!text || peerId == null) return;
 
-    const msgId = uid();
+    const msgId = crypto.randomUUID();
     const now = Date.now();
     this.store.sendDm(peerId, 'text', { msgId, text, fromNickname: 'You', fromProfileTs: now });
     this.store.pushPublic(String(peerId), 'You', { id: msgId, type: 'text', text, ts: now, delivery: 'sent' });
