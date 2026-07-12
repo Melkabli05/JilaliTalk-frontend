@@ -51,7 +51,7 @@ export interface Cmd16386Result {
  *  omit the length prefix), and finally treats an unparseable buffer as an empty
  *  delivery-failure ack — all three branches ported from the reference client's
  *  `decodeCmd16386`. */
-export function decodeCmd16386(payload: Uint8Array): Cmd16386Result {
+function decodeCmd16386(payload: Uint8Array): Cmd16386Result {
   if (payload.byteLength >= 2) {
     const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
     const lenBE = view.getUint16(0, false);

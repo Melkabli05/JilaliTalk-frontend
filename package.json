@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint:styles": "stylelint \"src/**/*.scss\" --allow-empty-input"
+    "lint:styles": "stylelint \"src/**/*.scss\" --allow-empty-input",
+    "knip": "knip"
   },
   "private": true,
   "packageManager": "npm@11.6.2",
@@ -26,6 +27,7 @@
     "agora-rtc-sdk-ng": "^4.24.4",
     "agora-rtm-sdk": "^2.2.4",
     "emoji-picker-element": "^1.29.1",
+    "knip": "^6.26.0",
     "pako": "^3.0.1",
     "postcss": "^8.5.15",
     "rxjs": "~7.8.0",

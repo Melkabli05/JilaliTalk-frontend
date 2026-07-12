@@ -65,7 +65,7 @@ export function parseHeader(raw: Uint8Array): PacketHeader {
   };
 }
 
-export function buildPacket(params: {
+function buildPacket(params: {
   readonly flag: number;
   readonly version: number;
   readonly keyType: number;

@@ -16,7 +16,7 @@ export function buildAckFrame(userId: number, cname: string, isVisitor: boolean,
   return JSON.stringify({ msg_id: msgId, action: 3, user_id: userId, cname, is_visitor: isVisitor });
 }
 
-export interface RoomNotifyEnvelope {
+interface RoomNotifyEnvelope {
   readonly notifyType: string;
   readonly info: Record<string, unknown>;
   readonly root: Record<string, unknown>;
