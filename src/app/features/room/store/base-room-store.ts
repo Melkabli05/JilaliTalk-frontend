@@ -51,6 +51,7 @@ export abstract class BaseRoomStore {
   private readonly _presence = signal<RoomPresence>({ status: 'disconnected', visible: true });
   private readonly _name = signal<string>('');
   private readonly _topic = signal<string>('');
+  private readonly _langId = signal<number>(1);
 
   private readonly _userId = signal<number>(0);
   private readonly _nickname = signal<string>('');
@@ -68,6 +69,7 @@ export abstract class BaseRoomStore {
   readonly isVisible = computed(() => this._presence().visible);
   readonly name = this._name.asReadonly();
   readonly topic = this._topic.asReadonly();
+  readonly langId = this._langId.asReadonly();
   readonly userId = this._userId.asReadonly();
   readonly nickname = this._nickname.asReadonly();
   readonly headUrl = this._headUrl.asReadonly();
@@ -211,6 +213,7 @@ export abstract class BaseRoomStore {
     this._presence.set({ status: 'disconnected', visible: wasVisible });
     this._name.set('');
     this._topic.set('');
+    this._langId.set(1);
     this._userId.set(0);
     this._nickname.set('');
     this._headUrl.set('');
@@ -230,4 +233,5 @@ export abstract class BaseRoomStore {
   setRole(role: UserRole): void { this._myRole.set(role); }
   setRoomName(name: string): void { this._name.set(name); }
   setRoomTopic(topic: string): void { this._topic.set(topic); }
+  setRoomLanguage(langId: number): void { this._langId.set(langId); }
 }
