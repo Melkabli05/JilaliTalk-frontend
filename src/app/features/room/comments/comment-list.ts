@@ -778,6 +778,11 @@ export class CommentListComponent {
    *  mounts, so we can't rely on ngAfterViewInit alone). */
   private hasAutoScrolledToBottom = false;
 
+  /** Count of plain comments (excluding event cards) as of the last effect
+   *  run — lets the auto-scroll effect detect a genuinely new arrival vs. a
+   *  re-render, without a second reactive signal. */
+  private lastCommentCount = 0;
+
   /** Guards `registerScrollListener()` from being called twice — the
    *  scrollContainer() signal can change reference identity in dev/HMR even
    *  though the underlying element is stable, and we want exactly one listener. */
@@ -831,19 +836,26 @@ export class CommentListComponent {
     // First non-empty `items()` → scroll to bottom once, instantly (no
     // animated scroll-through of the whole history on room entry). Fires
     // when the history fetch lands, not just at mount — history may
-    // complete async.
+    // complete async. After that: while at the bottom, new comments
+    // auto-scroll into view silently — no pill flash, no user action
+    // needed. A comment the current user just sent always scrolls into
+    // view, even if they'd scrolled up to read history — matching every
+    // chat app's convention that your own sent message always shows.
     effect(() => {
-      if (this.hasAutoScrolledToBottom) return;
-      if (this.items().length === 0) return;
-      this.hasAutoScrolledToBottom = true;
-      this.scrollToBottom('auto');
-    });
+      const comments = this.plainComments();
+      const isFirstLoad = !this.hasAutoScrolledToBottom && comments.length > 0;
+      const grewByOne = comments.length > this.lastCommentCount;
+      const newest = comments[comments.length - 1];
+      const isOwnArrival = !isFirstLoad && grewByOne && newest?.userId === this.currentUserId();
+      this.lastCommentCount = comments.length;
 
-    // While at the bottom, new comments auto-scroll into view silently —
-    // no pill flash, no user action needed. Only when the user has scrolled
-    // up does the pill count accumulate.
-    effect(() => {
-      if (this.unreadCount() > 0 && this.isAtBottom()) {
+      if (isFirstLoad) {
+        this.hasAutoScrolledToBottom = true;
+        this.scrollToBottom('auto');
+        return;
+      }
+
+      if (isOwnArrival || (this.unreadCount() > 0 && this.isAtBottom())) {
         this.scrollToBottom();
         this.commentsWriter.resetUnread();
       }
