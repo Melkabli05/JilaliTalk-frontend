@@ -17,6 +17,7 @@ import {
   buildOfflineSyncTriggerPacket,
   buildReadReceiptPacket,
   buildTypingIndicatorPacket,
+  CMD_GROUP_MSG_SYNC,
   CMD_HEARTBEAT_ACK,
   CMD_MSG_ACK,
   CMD_OFFLINE_SYNC_RESPONSE,
@@ -312,6 +313,7 @@ export class HtImConnectionService {
 
   private handleServerResponseFrame(header: PacketHeader, payload: Uint8Array): void {
     if (header.cmdId === CMD_HEARTBEAT_ACK) return;
+    if (header.cmdId === CMD_GROUP_MSG_SYNC) return;
 
     const data = decodeLoginFrame(payload);
     if (!data) return;

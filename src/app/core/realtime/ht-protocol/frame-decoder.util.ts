@@ -184,9 +184,6 @@ export function decodePushFrame(encPayload: Uint8Array, sessionKey: Uint8Array |
   }
 }
 
-/** Typing-indicator payload (packetType 0xF5, cmdId 16407): UID (4 bytes) + status (u16)
- *  after optional decrypt/decompress. Falls back to "any byte equals 1 means typing" for the
- *  odd short-length variants the reference client observed in the wild. */
 export function decodeTypingPayload(payload: Uint8Array, keyType: number, sessionKey: Uint8Array | null): boolean {
   const decrypted = tryDecrypt(payload, keyType, sessionKey);
   const body = tryInflateIfZlib(decrypted);
@@ -194,9 +191,6 @@ export function decodeTypingPayload(payload: Uint8Array, keyType: number, sessio
   if (body.byteLength >= 6) {
     const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
     return view.getUint16(4, true) === 1;
-  }
-  if (body.byteLength > 0) {
-    return Array.from(body).some((b) => b === 1);
   }
   return true;
 }

@@ -22,6 +22,7 @@ export const CMD_TYPING_INDICATOR = 16407;
 export const CMD_OFFLINE_SYNC_TRIGGER_FIRST = 29967;
 export const CMD_OFFLINE_SYNC_TRIGGER_PAGE = 16453;
 export const CMD_OFFLINE_SYNC_RESPONSE = 16454;
+export const CMD_GROUP_MSG_SYNC = 29968;
 
 export const FLAG_CLIENT_REQUEST = 0xf0;
 export const FLAG_PUSH = 0xf2;
