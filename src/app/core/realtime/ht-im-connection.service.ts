@@ -42,6 +42,7 @@ import {
 import { mapImJsonToEvent } from './ht-protocol/im-event-mapper.util';
 
 const HEARTBEAT_INTERVAL_MS = 30_000;
+const STABLE_CONNECTION_MS = 5_000;
 
 function decodeJwtUid(jwt: string): string | null {
   try {
@@ -77,6 +78,7 @@ export class HtImConnectionService {
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private stableConnectionTimer: ReturnType<typeof setTimeout> | null = null;
   private sessionKey: Uint8Array | null = null;
   private userId = '';
 
@@ -94,6 +96,7 @@ export class HtImConnectionService {
     logRealtime('disconnect() requested');
     this.wantsConnection = false;
     this.clearHeartbeat();
+    this.clearStableConnectionTimer();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
@@ -202,10 +205,11 @@ export class HtImConnectionService {
       if (this.sock !== sock) return;
       this.handleMessage(new Uint8Array(event.data as ArrayBuffer));
     };
-    sock.onclose = () => {
+    sock.onclose = (event: CloseEvent) => {
       if (this.sock !== sock) return;
-      logRealtime('socket closed');
+      logRealtime('socket closed', 'code:', event.code, 'reason:', event.reason || '(none)', 'wasClean:', event.wasClean);
       this.clearHeartbeat();
+      this.clearStableConnectionTimer();
       this.sessionKey = null;
       this.sock = null;
       this.scheduleReconnect();
@@ -264,7 +268,15 @@ export class HtImConnectionService {
 
     if (header.flag === FLAG_SERVER_RESPONSE && raw.byteLength > HEADER_LEN) {
       this.handleServerResponseFrame(header, payload);
+      return;
     }
+
+    logRealtime(
+      '[unhandled frame]',
+      'flag:', `0x${header.flag.toString(16)}`,
+      'cmdId:', header.cmdId,
+      'payload hex:', Array.from(payload).map((b) => b.toString(16).padStart(2, '0')).join(''),
+    );
   }
 
   private handleMsgAckFrame(raw: Uint8Array, header: PacketHeader, payload: Uint8Array): void {
@@ -374,9 +386,14 @@ export class HtImConnectionService {
       const sessionKeyStr = inner['session_key'];
       if (typeof sessionKeyStr === 'string') {
         this.sessionKey = new TextEncoder().encode(sessionKeyStr);
-        this.reconnectAttempt = 0;
         this._status.set('connected');
         logRealtime('status -> connected, session key captured');
+
+        this.clearStableConnectionTimer();
+        this.stableConnectionTimer = setTimeout(() => {
+          this.stableConnectionTimer = null;
+          this.reconnectAttempt = 0;
+        }, STABLE_CONNECTION_MS);
 
         const newJwt = inner['jwt'];
         if (typeof newJwt === 'string' && newJwt.length > 0) {
@@ -442,6 +459,13 @@ export class HtImConnectionService {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
+    }
+  }
+
+  private clearStableConnectionTimer(): void {
+    if (this.stableConnectionTimer) {
+      clearTimeout(this.stableConnectionTimer);
+      this.stableConnectionTimer = null;
     }
   }
 
