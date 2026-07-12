@@ -4,7 +4,7 @@
  * The Angular DmMessageList group also displays the room-share shapes as a single
  * "DM-meta" card rather than a bubble so they don't look like chat text.
  */
-export type DmMessageType = 'text' | 'image' | 'gift' | 'introduction' | 'voice_room_shared' | 'live_room_shared';
+type DmMessageType = 'text' | 'image' | 'gift' | 'introduction' | 'voice_room_shared' | 'live_room_shared';
 
 export interface DmMessage {
   readonly id: string;

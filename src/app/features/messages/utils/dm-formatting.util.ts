@@ -19,7 +19,7 @@ export function uid(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function formatDay(ts: number): string {
+function formatDay(ts: number): string {
   const d = new Date(ts);
   const today = new Date();
   const yesterday = new Date(today);
