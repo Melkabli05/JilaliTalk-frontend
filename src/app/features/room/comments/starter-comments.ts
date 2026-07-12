@@ -17,6 +17,10 @@ import { getStarterComments } from './starter-comments.util';
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+      flex-shrink: 0;
+    }
     .starter-comments {
       display: flex;
       gap: var(--space-2);
