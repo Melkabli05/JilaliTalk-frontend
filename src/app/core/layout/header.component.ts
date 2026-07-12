@@ -3,7 +3,7 @@ import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { Observable, catchError, filter, finalize, of, switchMap, tap } from 'rxjs';
-import { LucidePlus, LucideCoins, LucideLogIn, LucideLogOut, LucideBell } from '@lucide/angular';
+import { LucidePlus, LucideLogIn, LucideLogOut, LucideBell } from '@lucide/angular';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { ThemeToggleComponent } from '@shared/ui/theme/theme-toggle.component';
 import { AuthDialogComponent } from '@shared/ui/auth-dialog/auth-dialog.component';
@@ -24,7 +24,6 @@ import { AuthService } from '@core/auth/auth.service';
     ButtonComponent,
     ThemeToggleComponent,
     LucidePlus,
-    LucideCoins,
     LucideLogIn,
     LucideLogOut,
     LucideBell,
@@ -66,11 +65,6 @@ import { AuthService } from '@core/auth/auth.service';
             <span class="notification-badge">{{ notificationStore.unreadCount() > 9 ? '9+' : notificationStore.unreadCount() }}</span>
           }
         </button>
-
-        <div class="coins-badge" [attr.aria-label]="userCoins() + ' coins available'" tabindex="0" (click)="showCoinDetails()">
-          <svg aria-hidden="true" lucideCoins [size]="14"></svg>
-          <span>{{ userCoins() }}</span>
-        </div>
 
         @if (isAuthenticated()) {
           <app-button 
@@ -214,41 +208,6 @@ import { AuthService } from '@core/auth/auth.service';
       color: var(--color-text-muted);
     }
     .dark .status-text { color: var(--color-neutral-400); }
-    /* Coins Badge */
-    .coins-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      height: 30px;
-      padding: 0 10px;
-      border-radius: var(--radius-full);
-      background: linear-gradient(135deg, var(--color-gold-100), var(--color-gold-50));
-      color: var(--color-gold-700);
-      font-size: var(--text-xs);
-      font-weight: var(--font-bold);
-      border: 1px solid color-mix(in srgb, var(--color-gold-300) 40%, transparent);
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .coins-badge:hover {
-      background: linear-gradient(135deg, var(--color-gold-200), var(--color-gold-100));
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px color-mix(in srgb, var(--color-gold-400) 25%, transparent);
-    }
-    .coins-badge:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: var(--focus-ring-offset);
-    }
-    .dark .coins-badge {
-      background: linear-gradient(135deg, var(--color-gold-900), var(--color-gold-800));
-      color: var(--color-gold-300);
-      border-color: color-mix(in srgb, var(--color-gold-600) 40%, transparent);
-    }
-    .dark .coins-badge:hover {
-      background: linear-gradient(135deg, var(--color-gold-800), var(--color-gold-700));
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px color-mix(in srgb, var(--color-gold-500) 30%, transparent);
-    }
 
     /* Notification Bell Button */
     .notification-btn {
@@ -340,7 +299,6 @@ export class HeaderComponent {
   readonly isConnected = signal(typeof navigator !== 'undefined' ? navigator.onLine : true);
   readonly isAuthenticated = this.authStore.isAuthenticated;
   readonly creatingRoom = signal(false);
-  readonly userCoins = signal(120);
 
   private readonly categoriesResource = rxResource<Category[], void>({
     stream: () => this.createRoomService.fetchCategories() as Observable<Category[]>,
@@ -391,10 +349,6 @@ export class HeaderComponent {
     this.authStore.logout();
     this.toast.success('Logged out.');
     this.authService.logout().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ error: () => {} });
-  }
-
-  showCoinDetails(): void {
-    this.toast.info(`You currently have ${this.userCoins()} coins.`);
   }
 
   private doOpenModal(): void {
