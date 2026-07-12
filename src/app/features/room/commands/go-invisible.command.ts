@@ -1,5 +1,5 @@
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { ActiveCallStore } from '@store/active-call.store';
 import { RoomStore } from '../store/room-store';
 import { RoomRosterStore } from '../roster/roster-store';
@@ -16,7 +16,7 @@ export async function goInvisibleLocally(
   roomStore: RoomStore,
   rosterStore: RoomRosterStore,
   rcs: RoomConnectionService,
-  bffWs: BffRoomSocketService,
+  bffWs: HtRoomConnectionService,
   activeCallStore: ActiveCallStore,
   syncVisibilityToUrl: (isVisible: boolean) => void,
 ): Promise<void> {

@@ -10,7 +10,7 @@ import { CommentsStore } from '../comments/comments-store';
 import { InRoomRtmStore } from '../in-room-rtm/in-room-rtm-store';
 import { VoiceRoomInfo, LiveRoomInfo, StageUsersResponse, AudienceUsersResponse, CommentsResponse } from '../models/room-model';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { ToastService } from '@core/services/toast.service';
 import { ActiveCallStore } from '@store/active-call.store';
 
@@ -38,7 +38,7 @@ export interface EnterVoiceRoomDeps {
   rtmStore: InRoomRtmStore;
   activeCallStore: ActiveCallStore;
   api: RoomApi;
-  bffWs: BffRoomSocketService;
+  bffWs: HtRoomConnectionService;
   rcs: RoomConnectionService;
   router: Router;
   toast: ToastService;
@@ -220,7 +220,7 @@ export interface EnterVideoRoomDeps {
   rtmStore: InRoomRtmStore;
   activeCallStore: ActiveCallStore;
   api: RoomApi;
-  bffWs: BffRoomSocketService;
+  bffWs: HtRoomConnectionService;
   rcs: RoomConnectionService;
   router: Router;
   toast: ToastService;

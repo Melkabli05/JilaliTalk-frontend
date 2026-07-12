@@ -1,0 +1,279 @@
+import { Injectable, signal, inject } from '@angular/core';
+import type { WritableSignal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { environment } from '@env/environment';
+import { AuthStore } from '@core/auth/auth.store';
+import { ROOM_WS_URL } from '@core/tokens/room-ws-url.token';
+import { backoffDelay, MAX_RECONNECT_ATTEMPTS } from './reconnecting-socket-base';
+import type { RoomRealtimeEvent } from './room-realtime-events';
+import { buildAckFrame, buildHeartbeatFrame, buildInitFrame, parseRoomFrame } from './room-protocol/room-frame.util';
+import { mapRoomNotifyToEvent } from './room-protocol/room-event-mapper.util';
+
+type EventOfType<T extends RoomRealtimeEvent['type']> = Extract<RoomRealtimeEvent, { type: T }>;
+
+export type WsConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+
+function describeRoomEvent(event: RoomRealtimeEvent): string {
+  switch (event.type) {
+    case 'connection-state':
+      return `connection state: ${event.state}`;
+    case 'user_join':
+      return `${event.nickname} joined`;
+    case 'user_quit':
+      return `user ${event.userId} quit`;
+    case 'stage_join':
+      return `${event.stageUser.nickname ?? event.stageUser.userId} joined stage`;
+    case 'stage_quit':
+      return `user ${event.userId} left stage`;
+    case 'stage_raisehand':
+      return `user ${event.userId} ${event.raisehandType === 1 ? 'raised hand' : 'lowered hand'}`;
+    case 'stage_invite':
+      return `stage invite for user ${event.userId}`;
+    case 'comment':
+      return `comment from ${event.comment.nickname}: "${event.comment.text}"`;
+    case 'gift':
+      return `gift batch, ${event.gifts.length} gift(s)`;
+    case 'stage_device_control':
+      return `device control for user ${event.userId} (device ${event.deviceType}, switch ${event.switchType})`;
+    case 'mod_invite':
+      return `mod invite for user ${event.userId}`;
+    case 'whiteboard_activated':
+      return `whiteboard activated in ${event.cname}`;
+    case 'whiteboard_deactivated':
+      return `whiteboard deactivated in ${event.cname}`;
+    case 'mic_opened':
+      return `user ${event.userId} opened mic`;
+    case 'mic_closed':
+      return `user ${event.userId} closed mic`;
+    case 'mod_unmuted':
+      return `user ${event.userId} unmuted`;
+    case 'room_kick':
+      return `${event.nickname} kicked from room by ${event.managerName}`;
+    case 'stage_kick':
+      return `user ${event.userId} kicked from stage by ${event.managerName}`;
+    case 'mod_accepted':
+      return `user ${event.userId} accepted mod`;
+    case 'mod_removed':
+      return `user ${event.userId} removed as mod`;
+    case 'follow':
+      return `${event.nickname} followed (status ${event.status})`;
+    case 'lucky_bag':
+      return `lucky bag ${event.luckyBagId} in ${event.cname}`;
+    case 'raw':
+      return `unrecognized notify_type ${event.originalType}`;
+    case 'error':
+      return `error: ${event.message}`;
+  }
+}
+
+/**
+ * Direct connection to the LiveHub room WebSocket (replaces `BffRoomSocketService`, which
+ * relayed a JSON event stream from jilalibff's own WebSocket). Ported from the reference
+ * client's `fireRoomWebSocket()` in scriptv2.js: plain JSON frames, connect via
+ * `user_id`/`cname`/`is_visitor` query params (no login handshake), a server-driven
+ * request→ack→reschedule heartbeat loop, and per-message ACKs. Keeps the same public shape
+ * `BffRoomSocketService` had so none of its consumers need to change.
+ */
+@Injectable({ providedIn: 'root' })
+export class HtRoomConnectionService {
+  private readonly auth = inject(AuthStore);
+  private readonly wsUrl = inject(ROOM_WS_URL);
+
+  private readonly _lastEvent = signal<RoomRealtimeEvent | null>(null);
+  private readonly _wsStatus = signal<WsConnectionStatus>('disconnected');
+  readonly lastEvent = this._lastEvent.asReadonly();
+  readonly wsStatus = this._wsStatus.asReadonly();
+
+  private readonly lastEvent$ = toObservable(this._lastEvent);
+
+  event$<T extends RoomRealtimeEvent['type']>(type: T): Observable<EventOfType<T>> {
+    return this.lastEvent$.pipe(
+      filter((e): e is EventOfType<T> => e?.type === type),
+    );
+  }
+
+  private readonly _gaveUpCnames = signal<ReadonlySet<string>>(new Set());
+  readonly gaveUpCnames: WritableSignal<ReadonlySet<string>> = this._gaveUpCnames;
+  gaveUp(cname: string): boolean { return this._gaveUpCnames().has(cname); }
+
+  isConnected = (): boolean => this.sock?.readyState === WebSocket.OPEN;
+
+  private sock: WebSocket | null = null;
+  private cname = '';
+  private reconnectAttempt = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private heartbeatTimer: ReturnType<typeof setTimeout> | null = null;
+  private heartbeatIntervalSec = 60;
+
+  /** `hostId`/`busiType`/`heartbeatSeconds` are accepted for API compatibility with existing
+   *  callers but unused internally — the real LiveHub upstream connection takes only
+   *  `user_id`/`cname`/`is_visitor` (confirmed against both the reference client and
+   *  jilalibff's own upstream connector signature) and always announces its own heartbeat
+   *  interval via the first server push, so none of the other three ever reach the wire. */
+  connect(cname: string, _hostId = 0, _busiType = 2, _heartbeatSeconds: number | null = null): void {
+    if (this.cname === cname && this.sock) return;
+    this.teardownSocket();
+    this.cname = cname;
+    this.reconnectAttempt = 0;
+    this.log('connect() requested', cname);
+    this.open();
+  }
+
+  async disconnect(): Promise<void> {
+    this.log('disconnect() requested');
+    this.cname = '';
+    this.reconnectAttempt = 0;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this._wsStatus.set('disconnected');
+    this._gaveUpCnames.set(new Set());
+    this.teardownSocket();
+    this._lastEvent.set(null);
+  }
+
+  private open(): void {
+    const status = this.reconnectAttempt > 0 ? 'reconnecting' : 'connecting';
+    this._wsStatus.set(status);
+    this.log('status ->', status, this.cname);
+
+    const userId = this.auth.user()?.userId;
+    const cname = this.cname;
+    if (userId == null || !cname) {
+      this.log('no authenticated user or cname, aborting connect');
+      this._wsStatus.set('disconnected');
+      this.cname = '';
+      return;
+    }
+
+    const url = `${this.wsUrl}?user_id=${userId}&cname=${encodeURIComponent(cname)}&is_visitor=true`;
+    this.log('opening socket', url);
+    const sock = new WebSocket(url);
+    this.sock = sock;
+
+    sock.onopen = () => {
+      if (this.sock !== sock) return;
+      this.log('socket open, sending init frame');
+      sock.send(buildInitFrame(userId, cname));
+    };
+    sock.onmessage = (event: MessageEvent) => {
+      if (this.sock !== sock) return;
+      this.handleMessage(event.data as string, userId, cname);
+    };
+    sock.onclose = () => {
+      if (this.sock !== sock) return;
+      this.log('socket closed');
+      this.clearHeartbeat();
+      this.sock = null;
+      this.scheduleReconnect();
+    };
+    sock.onerror = () => {
+      this.log('socket error');
+      this.pushEvent({ type: 'error', message: 'WebSocket error' });
+    };
+  }
+
+  private handleMessage(text: string, userId: number, cname: string): void {
+    const frame = parseRoomFrame(text);
+    if (!frame) return;
+
+    if (frame.kind === 'heartbeat_interval') {
+      this.heartbeatIntervalSec = frame.heartbeatSec;
+      this.log('heartbeat interval', frame.heartbeatSec, 's');
+      this.sendHeartbeat(userId, cname);
+      this.scheduleHeartbeat(userId, cname);
+      return;
+    }
+    if (frame.kind === 'heartbeat_ack') {
+      this.log('heartbeat ack');
+      this.scheduleHeartbeat(userId, cname);
+      return;
+    }
+    if (frame.kind === 'notify') {
+      if (frame.msgId && this.sock) {
+        this.sock.send(buildAckFrame(userId, cname, true, frame.msgId));
+      }
+      if (frame.envelope.notifyType) {
+        const event = mapRoomNotifyToEvent(frame.envelope.notifyType, frame.envelope.info, frame.envelope.root);
+        if (event) this.pushEvent(event);
+      }
+    }
+  }
+
+  private sendHeartbeat(userId: number, cname: string): void {
+    if (!this.sock) return;
+    this.log('send heartbeat');
+    this.sock.send(buildHeartbeatFrame(userId, cname, true));
+  }
+
+  /** Reschedules the NEXT heartbeat 5s before the server-announced interval elapses, and only
+   *  in response to a heartbeat frame (the initial `heartbeat_sec` push, or the server's
+   *  `heartbeat_time` ack of our last one) — a request→ack→reschedule loop, not a
+   *  self-perpetuating interval blind to acks, matching the reference client's
+   *  `scheduleHeartbeat()`/`sendHeartbeat()` pair exactly. */
+  private scheduleHeartbeat(userId: number, cname: string): void {
+    this.clearHeartbeat();
+    const delayMs = Math.max(0, this.heartbeatIntervalSec * 1000 - 5000);
+    this.heartbeatTimer = setTimeout(() => this.sendHeartbeat(userId, cname), delayMs);
+  }
+
+  private clearHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      clearTimeout(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  }
+
+  private scheduleReconnect(): void {
+    if (!this.cname || this.reconnectAttempt >= MAX_RECONNECT_ATTEMPTS) {
+      this.log('giving up reconnecting', this.cname);
+      this._lastEvent.set(null);
+      const cname = this.cname;
+      this.cname = '';
+      this._wsStatus.set('disconnected');
+      if (cname) this._gaveUpCnames.set(new Set(this._gaveUpCnames()).add(cname));
+      return;
+    }
+    this._wsStatus.set('reconnecting');
+    const delay = backoffDelay(this.reconnectAttempt);
+    this.log('scheduling reconnect attempt', this.reconnectAttempt + 1, 'in', delay, 'ms');
+    this.reconnectAttempt++;
+    this.reconnectTimer = setTimeout(() => this.open(), delay);
+  }
+
+  private teardownSocket(): void {
+    this.clearHeartbeat();
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.sock) {
+      const sock = this.sock;
+      this.sock = null;
+      sock.onopen = null;
+      sock.onmessage = null;
+      sock.onclose = null;
+      sock.onerror = null;
+      sock.close();
+    }
+  }
+
+  private pushEvent(event: RoomRealtimeEvent): void {
+    this.log(describeRoomEvent(event), event);
+    if (event.type === 'connection-state') this._wsStatus.set(event.state);
+    this._lastEvent.set(event);
+    if (this._gaveUpCnames().has(this.cname)) {
+      const next = new Set(this._gaveUpCnames());
+      next.delete(this.cname);
+      this._gaveUpCnames.set(next);
+    }
+  }
+
+  private log(...args: unknown[]): void {
+    if (environment.production) return;
+    console.log('[websocket]', ...args);
+  }
+}

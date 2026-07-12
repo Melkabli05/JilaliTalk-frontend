@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { RoomConnectionService } from '@core/realtime/room-connection.service';
-import type { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import type { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import type { ActiveCallStore } from '@store/active-call.store';
 import { resolveRoomEntry } from './resolve-room-entry.command';
 
@@ -8,11 +8,11 @@ function fakeRcs(): RoomConnectionService {
   return { leave: vi.fn(() => Promise.resolve()) } as unknown as RoomConnectionService;
 }
 
-function fakeBffWs(gaveUp = false): BffRoomSocketService {
+function fakeBffWs(gaveUp = false): HtRoomConnectionService {
   return {
     gaveUp: vi.fn(() => gaveUp),
     disconnect: vi.fn(() => Promise.resolve()),
-  } as unknown as BffRoomSocketService;
+  } as unknown as HtRoomConnectionService;
 }
 
 function fakeActiveCallStore(overrides: { cname?: string | null; minimized?: boolean } = {}): ActiveCallStore {

@@ -12,7 +12,7 @@ import { RoomStore } from '../store/room-store';
 import { AudienceUser, StageUser } from '../models/room-model';
 import { ToastService } from '@core/services/toast.service';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { UserInfoService } from '@core/services/user-info.service';
 import { handleRealtimeEvent } from '../utils/handle-realtime-event.util';
 import { GhostAudienceInputs, fetchMissingGhostInfo, buildAudienceWithGhosts, buildGhostAudienceInputs } from '../utils/ghost-audience.util';
@@ -54,7 +54,7 @@ export class RoomFacade {
   private readonly activeCallStore = inject(ActiveCallStore);
   private readonly api = inject(RoomApi);
   private readonly rcs = inject(RoomConnectionService);
-  private readonly bffWs = inject(BffRoomSocketService);
+  private readonly bffWs = inject(HtRoomConnectionService);
   private readonly userInfoService = inject(UserInfoService);
   private readonly toast = inject(ToastService);
   private readonly notifications = inject(NOTIFICATION_REPORTER);

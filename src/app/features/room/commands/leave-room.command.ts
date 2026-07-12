@@ -1,5 +1,5 @@
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { ActiveCallStore } from '@store/active-call.store';
 import { RoomStore } from '../store/room-store';
 import { clearMediaSessionMetadata } from '../utils/media-session.util';
@@ -14,7 +14,7 @@ import { clearMediaSessionMetadata } from '../utils/media-session.util';
 export async function leaveRoom(
   rcs: RoomConnectionService,
   roomStore: RoomStore,
-  bffWs: BffRoomSocketService,
+  bffWs: HtRoomConnectionService,
   activeCallStore: ActiveCallStore,
 ): Promise<void> {
   await rcs.leave();

@@ -1,5 +1,5 @@
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { ActiveCallStore } from '@store/active-call.store';
 
 /**
@@ -16,7 +16,7 @@ import { ActiveCallStore } from '@store/active-call.store';
 export async function resolveRoomEntry(
   cname: string,
   rcs: RoomConnectionService,
-  bffWs: BffRoomSocketService,
+  bffWs: HtRoomConnectionService,
   activeCallStore: ActiveCallStore,
 ): Promise<boolean> {
   const snapshotMatch = activeCallStore.cname() === cname;

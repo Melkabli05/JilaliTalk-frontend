@@ -3,7 +3,7 @@ import { RoomApi } from '../api/room-api';
 import { RoomStore } from '../store/room-store';
 import { RoomRosterStore } from '../roster/roster-store';
 import { VoiceRoomInfo, LiveRoomInfo, StageUsersResponse, AudienceUsersResponse } from '../models/room-model';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { ToastService } from '@core/services/toast.service';
 import { ActiveCallStore } from '@store/active-call.store';
 
@@ -11,7 +11,7 @@ export interface MakeRoomVisibleDeps {
   roomStore: RoomStore;
   rosterStore: RoomRosterStore;
   api: RoomApi;
-  bffWs: BffRoomSocketService;
+  bffWs: HtRoomConnectionService;
   toast: ToastService;
   activeCallStore: ActiveCallStore;
   syncVisibilityToUrl: (isVisible: boolean) => void;

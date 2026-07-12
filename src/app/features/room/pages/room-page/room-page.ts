@@ -19,7 +19,7 @@ import { AudienceListComponent } from '../../audience/audience-list';
 import { CommentsPanelComponent } from '../../comments/comments-panel';
 import { RoomApi } from '../../api/room-api';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { ToastService } from '@core/services/toast.service';
 import { ActiveCallStore } from '@store/active-call.store';
 import { RoomFacade } from '../../facade/room-facade';
@@ -91,7 +91,7 @@ export class RoomPageComponent {
   private readonly activeCallStore = inject(ActiveCallStore);
   private readonly api = inject(RoomApi);
   readonly rcs = inject(RoomConnectionService);
-  readonly bffWs = inject(BffRoomSocketService);
+  readonly bffWs = inject(HtRoomConnectionService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 

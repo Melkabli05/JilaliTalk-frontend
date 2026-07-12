@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { StageUser, AudienceUser } from '../models/room-model';
 import { EnrichBatchQueue } from '@shared/utils';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { UserInfoService } from '@core/services/user-info.service';
 import { RoomApi } from '../api/room-api';
 
@@ -54,7 +54,7 @@ export const ROSTER_WRITER = new InjectionToken<RosterWriter>('ROSTER_WRITER');
 
 @Service({ autoProvided: false })
 export class RoomRosterStore {
-  private readonly bffWs = inject(BffRoomSocketService);
+  private readonly bffWs = inject(HtRoomConnectionService);
   private readonly userInfoService = inject(UserInfoService);
   private readonly api = inject(RoomApi);
   private readonly destroyRef = inject(DestroyRef);

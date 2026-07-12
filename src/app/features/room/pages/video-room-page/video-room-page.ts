@@ -19,7 +19,7 @@ import { CommentsPanelComponent } from '../../comments/comments-panel';
 import { ManagersModalComponent } from '../../moderation/managers-modal';
 import { AvSettingsComponent } from '../../audio-settings/av-settings';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { ToastService } from '@core/services/toast.service';
 import { RoomApi } from '../../api/room-api';
 import { ActiveCallStore } from '@store/active-call.store';
@@ -86,7 +86,7 @@ export class VideoRoomPageComponent {
   private readonly activeCallStore = inject(ActiveCallStore);
   private readonly api = inject(RoomApi);
   readonly rcs = inject(RoomConnectionService);
-  readonly bffWs = inject(BffRoomSocketService);
+  readonly bffWs = inject(HtRoomConnectionService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 

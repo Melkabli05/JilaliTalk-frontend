@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { Comment, CaptionEntry, CommentOrEvent, EventCard } from '../models/room-model';
 import { CollectionStore } from '@shared/utils';
-import { BffRoomSocketService } from '@core/realtime/bff-room-socket.service';
+import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { UserRole } from '@core/models/user-role';
 import { RoomApi } from '../api/room-api';
 import { EventFeedStore } from './event-feed-store';
@@ -33,7 +33,7 @@ export const COMMENTS_WRITER = new InjectionToken<CommentsWriter>('COMMENTS_WRIT
 
 @Service({ autoProvided: false })
 export class CommentsStore extends CollectionStore<Comment> {
-  private readonly bffWs = inject(BffRoomSocketService);
+  private readonly bffWs = inject(HtRoomConnectionService);
   private readonly api = inject(RoomApi);
   private readonly eventFeed = inject(EventFeedStore);
 
