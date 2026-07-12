@@ -6,9 +6,16 @@
         <span
           class="conn-dot"
           [class]="imSocket.status()"
-          [title]="imSocket.status()"
-          aria-hidden="true"
+          [class.conn-tappable]="imSocket.status() === 'disconnected'"
+          [title]="imStatusLabel()"
+          [attr.role]="imSocket.status() === 'disconnected' ? 'button' : null"
+          [attr.tabindex]="imSocket.status() === 'disconnected' ? 0 : null"
+          [attr.aria-label]="imStatusLabel()"
+          (click)="onConnStatusClick()"
+          (keydown.enter)="onConnStatusClick()"
+          (keydown.space)="$event.preventDefault(); onConnStatusClick()"
         ></span>
+        <span class="visually-hidden" aria-live="polite">{{ imStatusLabel() }}</span>
         <button
           type="button"
           class="sidebar-new-contact"

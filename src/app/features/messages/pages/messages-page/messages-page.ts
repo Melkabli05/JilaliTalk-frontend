@@ -19,6 +19,7 @@ import {
   LucideSend,
 } from '@lucide/angular';
 import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
+import { ToastService } from '@core/services/toast.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { relativeTime } from '@shared/utils';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
@@ -52,8 +53,25 @@ const TYPING_STOP_DELAY_MS = 3_000;
 export class MessagesPageComponent {
   protected readonly store = inject(MessagesStore);
   protected readonly imSocket = inject(HtImConnectionService);
+  private readonly toast = inject(ToastService);
   protected readonly relativeTime = relativeTime;
   protected readonly preview = preview;
+
+  /** Humanized label for the connection dot's tooltip and screen-reader text — mirrors
+   *  room-header.ts's wsTooltip, which the messages page's status dot never had an
+   *  equivalent of (it showed the raw 'connecting'/'reconnecting' enum value instead). */
+  protected readonly imStatusLabel = computed<string>(() => {
+    switch (this.imSocket.status()) {
+      case 'connected':
+        return 'Live — messages connected';
+      case 'reconnecting':
+        return 'Reconnecting…';
+      case 'connecting':
+        return 'Connecting…';
+      case 'disconnected':
+        return 'Disconnected — tap to retry';
+    }
+  });
 
   readonly userId = input<number | null>(null);
 
@@ -101,6 +119,13 @@ export class MessagesPageComponent {
     });
   }
 
+  /** The IM socket gives up reconnecting after 5 failed attempts and nothing ever retries it
+   *  automatically after that (the bootstrap connect effect only re-fires on auth-state
+   *  changes) — without this, a dead connection stayed dead until a full page reload. */
+  protected onConnStatusClick(): void {
+    if (this.imSocket.status() === 'disconnected') this.imSocket.connect();
+  }
+
   protected toggleContactPanel(): void { this.panelOpen.update(v => !v); }
   protected closeContactPanel(): void { this.panelOpen.set(false); }
   protected onContactPicked(userId: number): void {
@@ -133,7 +158,15 @@ export class MessagesPageComponent {
 
     const msgId = crypto.randomUUID();
     const now = Date.now();
-    this.store.sendDm(peerId, 'text', { msgId, text, fromNickname: 'You', fromProfileTs: now });
+    // Only show the message (with its optimistic "sent" checkmark) if it actually reached
+    // the socket — sendDm() returns null when the connection is down, and previously that
+    // return value was ignored, so a message could show as sent while never having been
+    // transmitted at all. Text stays in the composer on failure so nothing typed is lost.
+    const sent = this.store.sendDm(peerId, 'text', { msgId, text, fromNickname: 'You', fromProfileTs: now });
+    if (sent == null) {
+      this.toast.error('Message not sent — check your connection');
+      return;
+    }
     this.store.pushPublic(String(peerId), 'You', { id: msgId, type: 'text', text, ts: now, delivery: 'sent' });
     this.draft.set('');
     this.typingBroadcaster.stop(peerId);

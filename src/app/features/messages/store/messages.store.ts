@@ -119,11 +119,14 @@ export class MessagesStore {
     this.htIm.sendTyping(peerId, isTyping);
   }
 
-  sendDm(peerId: number, kind: DmKind, fields: Partial<SendDmBody>): void {
+  /** Returns the sent msgId, or `null` if the send never reached the wire (no payload could
+   *  be built, or the socket isn't open) — callers must check this instead of assuming the
+   *  send succeeded, since nothing else here surfaces the failure. */
+  sendDm(peerId: number, kind: DmKind, fields: Partial<SendDmBody>): string | null {
     const payload = buildDmSendPayload(kind, fields);
-    if (!payload) return;
+    if (!payload) return null;
     const self = this.authStore.user();
-    this.htIm.sendDm(peerId, payload, self?.nickname ?? '', 0, fields.msgId);
+    return this.htIm.sendDm(peerId, payload, self?.nickname ?? '', 0, fields.msgId);
   }
 
   pushPublic(userId: string, nickname: string, msg: DmMessage): void {

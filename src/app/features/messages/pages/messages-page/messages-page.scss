@@ -55,8 +55,14 @@
   flex-shrink: 0;
 }
 .conn-dot.connected { background: var(--color-accent-500); }
-.conn-dot.connecting { background: var(--color-gold-400); }
+.conn-dot.connecting,
+.conn-dot.reconnecting { background: var(--color-gold-400); }
 .conn-dot.disconnected { background: var(--color-neutral-400); }
+.conn-dot.conn-tappable { cursor: pointer; }
+.conn-dot.conn-tappable:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
 
 .sidebar-new-contact {
   width: 28px;
