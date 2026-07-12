@@ -269,7 +269,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
       /* Container query: comments-panel sits in a column that may be the
          mobile bottom slot or the desktop sidebar; expand affordance only
          makes sense when the panel is in the mobile slot. */
-      @container room-page (max-width: 1023.98px) and (min-height: 500px) {
+      @container room-page (max-width: 1023.98px) {
         .expand-btn { display: flex; }
         /* Account for the position:fixed comment-input bar so the last
            messages are not hidden behind it. The padding shrinks the

@@ -13,7 +13,7 @@
 
 /* ── Mobile-first: flex column ──────────────────────────────────────────
    The header lives in normal document flow — no position:fixed hack.
-   Stage caps at 45dvh with internal scroll for full 8-seat rooms.
+   Stage caps at 45svh with internal scroll for full 8-seat rooms.
    Audience auto-sizes (the component starts collapsed on mobile).
    Comments absorbs all remaining space via flex:1. */
 .room-layout {
@@ -31,7 +31,7 @@
 
 .stage-section {
   flex-shrink: 0;
-  max-height: 45dvh;
+  max-height: 45svh;
   display: flex;
   flex-direction: column;
   min-height: 0;

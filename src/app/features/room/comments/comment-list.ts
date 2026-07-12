@@ -82,7 +82,7 @@ const NAME_COLORS_LIGHT = [
     /* Mobile: lift the pill a touch so it clears the last comment row on
        cramped voice-room list heights (22cqh) and adds safe-area padding
        above the iOS home indicator. */
-    @container room-page (max-width: 1023.98px) and (min-height: 500px) {
+    @container room-page (max-width: 1023.98px) {
       :host {
         bottom: calc(var(--space-3) + var(--shell-inset-bottom));
       }
