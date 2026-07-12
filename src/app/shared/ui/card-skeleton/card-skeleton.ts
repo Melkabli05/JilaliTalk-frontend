@@ -56,6 +56,26 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
       box-sizing: border-box;
     }
 
+    @media (width <= 640px) {
+      .skeleton-card {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        grid-template-areas:
+          "header header"
+          "host members"
+          "tags tags"
+          "actions actions";
+        padding: var(--space-3);
+        gap: var(--space-2);
+      }
+      .skeleton-section { grid-area: header; }
+      .skeleton-host { grid-area: host; }
+      .skeleton-members { grid-area: members; justify-self: end; }
+      .skeleton-tag { grid-area: tags; }
+      .skeleton-actions { grid-area: actions; margin-top: 0; }
+    }
+
         .skeleton-section {
       display: flex;
       flex-direction: column;

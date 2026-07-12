@@ -209,9 +209,6 @@ import { AvSettingsComponent } from '../audio-settings/av-settings';
                   <svg aria-hidden="true" lucideHand [size]="18"></svg>
                 }
               }
-              @if (showHandLabel()) {
-                <span>Raise Hand</span>
-              }
             </button>
           </div>
         }
@@ -511,8 +508,6 @@ export class RoomHeaderComponent {
   });
 
   readonly visibilityTooltip = computed(() => (this.invisible() ? 'Go visible' : 'Go invisible'));
-
-  readonly showHandLabel = computed(() => !this.roomsPrefs.hasSeenRaiseHandHint());
 
   copyCname(): void {
     const c = this.cname();

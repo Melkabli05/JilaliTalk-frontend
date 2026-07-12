@@ -344,8 +344,13 @@ export class HtImConnectionService {
       if (this.sock) this.sock.send(new Uint8Array(buildAckPacket(raw)));
       const result = decodePushFrame(payload, this.sessionKey);
       if (result.kind === 'json') {
+        this.log('[deserialize] push frame', result.json);
         const event = mapImJsonToEvent(result.json, header.fromId, Number(this.userId));
-        if (event) this.pushEvent(event);
+        if (event) {
+          this.pushEvent(event);
+        } else {
+          this.log('[deserialize] push frame did not map to an ImEvent', result.json);
+        }
       } else if (result.kind === 'read_receipt') {
         this.pushEvent({ type: 'read_receipt', msgId: result.msgId });
       } else if (result.kind === 'new_message_notify' && result.lastId !== null && this.sock) {
@@ -402,9 +407,14 @@ export class HtImConnectionService {
       if (typeof entry !== 'string') continue;
       const decoded = decodeOfflinePacket(entry, this.sessionKey);
       if (decoded.kind === 'json') {
+        this.log('[deserialize] offline-sync entry', decoded.json);
         const fromId = decoded.json['_fromId'];
         const event = mapImJsonToEvent(decoded.json, typeof fromId === 'number' ? fromId : 0, Number(this.userId));
-        if (event) this.pushEvent(event);
+        if (event) {
+          this.pushEvent(event);
+        } else {
+          this.log('[deserialize] offline-sync entry did not map to an ImEvent', decoded.json);
+        }
       } else if (decoded.kind === 'read_receipt') {
         this.pushEvent({ type: 'read_receipt', msgId: decoded.msgId });
       } else if (decoded.kind === 'typing_indicator') {
