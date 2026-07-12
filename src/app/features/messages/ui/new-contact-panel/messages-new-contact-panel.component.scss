@@ -25,6 +25,11 @@
   opacity: 1;
   pointer-events: auto;
 }
+/* Focused programmatically on open so keyboard focus starts inside the dialog — not a
+   click target itself, so no visible ring on the container. */
+.new-contact-panel:focus {
+  outline: none;
+}
 
 .panel-header {
   display: flex;

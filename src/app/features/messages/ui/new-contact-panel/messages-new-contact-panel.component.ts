@@ -129,9 +129,27 @@ export class MessageNewContactPanelComponent {
     return (u as SocialUser).isMutual === true;
   }
 
+  /** Whatever had focus right before the panel opened (always one of the three buttons
+   *  that can trigger it — sidebar header, mobile FAB, or the empty-state button — restored
+   *  when it closes, so keyboard/screen-reader users land back where they started instead
+   *  of at the top of the document. */
+  private previouslyFocused: HTMLElement | null = null;
+
   constructor() {
     effect(() => {
       if (this.open() && this.tab() === 'visitors') this.fetchVisitors(false);
+    });
+
+    // role="dialog" without moving focus into it isn't actually a dialog for keyboard/
+    // screen-reader users — nothing here previously did that at all.
+    effect(() => {
+      if (this.open()) {
+        this.previouslyFocused = document.activeElement as HTMLElement | null;
+        queueMicrotask(() => this.panel()?.nativeElement.focus());
+      } else if (this.previouslyFocused) {
+        this.previouslyFocused.focus();
+        this.previouslyFocused = null;
+      }
     });
   }
 
