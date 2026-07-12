@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, computed, inject, input, output, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { LucideSend, LucideSmile, LucideX, LucideCornerUpLeft } from '@lucide/angular';
 import { KeyboardInsetService } from '@core/services/keyboard-inset.service';
+import { StarterCommentsComponent } from './starter-comments';
 
 export interface ReplyTarget {
   readonly msgId: string;
@@ -21,9 +22,17 @@ export interface SendEvent {
     '[style.bottom.px]': 'hostBottomPx()',
     '[style.--kb-inset.px]': 'hostBottomPx()',
   },
-  imports: [LucideSend, LucideSmile, LucideX, LucideCornerUpLeft],
+  imports: [LucideSend, LucideSmile, LucideX, LucideCornerUpLeft, StarterCommentsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    @if (showStarterComments()) {
+      <app-starter-comments
+        [langId]="langId()"
+        [disabled]="disabled()"
+        (pick)="onStarterPick($event)"
+      />
+    }
+
     @if (replyTo(); as target) {
       <div class="reply-preview">
         <svg aria-hidden="true" lucideCornerUpLeft [size]="12" class="reply-icon" />
@@ -257,6 +266,8 @@ export class CommentInputComponent {
 
   readonly replyTo = input<ReplyTarget | null>(null);
   readonly disabled = input(false);
+  readonly langId = input<number>(1);
+  readonly showStarterComments = input(false);
   readonly send = output<SendEvent>();
   readonly cancelReply = output<void>();
   readonly typing = output<void>();
@@ -314,6 +325,11 @@ export class CommentInputComponent {
     if (this.disabled()) return;
     this.inputRef = input;
     this.submit(input);
+  }
+
+  onStarterPick(phrase: string): void {
+    if (this.disabled()) return;
+    this.send.emit({ text: phrase, replyInfo: null });
   }
 
   private submit(input: HTMLInputElement): void {

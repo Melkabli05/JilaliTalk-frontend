@@ -12,7 +12,6 @@ import { Tabs, TabList, Tab, TabPanel, TabContent } from '@angular/aria/tabs';
 import { CommentListComponent } from './comment-list';
 import { CommentInputComponent, ReplyTarget, SendEvent } from './comment-input';
 import { CaptionListComponent } from './caption-list';
-import { StarterCommentsComponent } from './starter-comments';
 import { Comment } from '../models/room-model';
 import { COMMENTS_READER } from './comments-store';
 import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, LucideRefreshCw } from '@lucide/angular';
@@ -28,7 +27,6 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
     CommentListComponent,
     CommentInputComponent,
     CaptionListComponent,
-    StarterCommentsComponent,
     LucideMessageCircle,
     LucideCaptions,
     LucideMaximize2,
@@ -105,16 +103,11 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
             }
           </div>
 
-          @if (showStarterComments()) {
-            <app-starter-comments
-              [langId]="langId()"
-              [disabled]="disabled()"
-              (pick)="onSendComment({ text: $event })"
-            />
-          }
           <app-comment-input
             [replyTo]="replyTo()"
             [disabled]="disabled()"
+            [langId]="langId()"
+            [showStarterComments]="showStarterComments()"
             (send)="onSendComment($event)"
             (typing)="typing.emit()"
             (cancelReply)="replyTarget.set(null)"
@@ -321,7 +314,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         min-height: 0;
         overflow: hidden;
       }
-      app-comment-input, app-starter-comments { flex-shrink: 0; }
+      app-comment-input { flex-shrink: 0; }
 
       .typing-indicator {
         display: flex;
