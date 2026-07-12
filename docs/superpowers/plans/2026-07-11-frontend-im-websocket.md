@@ -2185,11 +2185,26 @@ git commit -m "refactor(realtime): wire ImBootstrapService to HtImConnectionServ
 
 **Files:**
 - Modify: `src/app/features/messages/store/messages.store.ts`
+- Modify: `src/app/features/messages/pages/messages-page/messages-page.ts`
 
 **Interfaces:**
 - Consumes: `HtImConnectionService.sendDm/sendTyping/sendReadReceipt` (Task 10); `DmSendPayload`, `DmSendGift` from `@core/realtime/ht-protocol/packet-framer.util` (Task 4); `AuthStore` (Task 8)
 
-- [ ] **Step 1: Replace the HTTP-POST send path with direct calls**
+- [ ] **Step 1: Replace the HTTP-POST send path with direct calls, and consolidate the existing `ImSocketService` injection**
+
+`messages.store.ts` already injects `ImSocketService` today — separately from the send path — for its incoming-events effect (`private readonly imSocket = inject(ImSocketService)`, used at `this.imSocket.events()` in the constructor). Since `HtImConnectionService` is a drop-in replacement exposing the identical `events`/`status` signal shape, that existing field must be renamed to `htIm`/`HtImConnectionService` too — not left behind as a second, broken injection. Do not end up with two separate fields (one for events, one for sending); there is exactly one `htIm` field used for both.
+
+Change the import:
+
+```typescript
+import { ImSocketService } from '@core/realtime/im-socket.service';
+```
+
+to:
+
+```typescript
+import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
+```
 
 Remove these imports:
 
@@ -2204,13 +2219,13 @@ Add:
 
 ```typescript
 import { AuthStore } from '@core/auth/auth.store';
-import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
 import type { DmSendGift, DmSendPayload } from '@core/realtime/ht-protocol/packet-framer.util';
 ```
 
-Replace the field declarations:
+Replace the field declarations — this removes `http`/`baseUrl`/`destroyRef` AND renames the existing `imSocket` field to `htIm` in the same edit:
 
 ```typescript
+  private readonly imSocket = inject(ImSocketService);
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${inject(API_BASE_URL)}/im/messages`;
   private readonly destroyRef = inject(DestroyRef);
@@ -2221,6 +2236,22 @@ with:
 ```typescript
   private readonly htIm = inject(HtImConnectionService);
   private readonly authStore = inject(AuthStore);
+```
+
+Update the constructor's events effect from:
+
+```typescript
+    effect(() => {
+      for (const ev of this.imSocket.events()) this.dispatch(ev);
+    });
+```
+
+to:
+
+```typescript
+    effect(() => {
+      for (const ev of this.htIm.events()) this.dispatch(ev);
+    });
 ```
 
 (`DestroyRef` import at the top of the file becomes unused too — remove it from the `@angular/core` import list, keeping `computed, effect, inject, signal, Service`.)
@@ -2274,16 +2305,46 @@ Replace `sendTyping`, `sendDm`, `markReadForLastInbound`, and `private post(...)
   }
 ```
 
-- [ ] **Step 2: Typecheck**
+- [ ] **Step 2: Update `messages-page.ts`'s separate `ImSocketService` injection**
+
+`messages-page.ts` independently injects `ImSocketService` (not through `MessagesStore`) purely to read `.status()` for a connection-indicator class/title binding in its template. This is a third, previously-unlisted call site — fix it the same way.
+
+Change the import:
+
+```typescript
+import { ImSocketService } from '@core/realtime/im-socket.service';
+```
+
+to:
+
+```typescript
+import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
+```
+
+Change the field:
+
+```typescript
+  protected readonly imSocket = inject(ImSocketService);
+```
+
+to:
+
+```typescript
+  protected readonly imSocket = inject(HtImConnectionService);
+```
+
+(Field name `imSocket` is kept as-is here — only its injected type changes — since the component's template (`[class]="imSocket.status()"`, `[title]="imSocket.status()"`) references the field by that name and doesn't need to change.)
+
+- [ ] **Step 3: Typecheck**
 
 Run: `npx tsc -p tsconfig.app.json --noEmit`
 
-Expected: no errors in `messages.store.ts`.
+Expected: no errors in `messages.store.ts` or `messages-page.ts`.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add src/app/features/messages/store/messages.store.ts
+git add src/app/features/messages/store/messages.store.ts src/app/features/messages/pages/messages-page/messages-page.ts
 git commit -m "refactor(messages): send DMs/typing/read-receipts directly via HtImConnectionService"
 ```
 
