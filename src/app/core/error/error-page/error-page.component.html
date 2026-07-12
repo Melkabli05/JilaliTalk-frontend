@@ -3,7 +3,11 @@
   <h2 class="error-title">{{ config.title }}</h2>
   <p class="error-message">{{ config.message }}</p>
   <div class="error-actions">
-    <a routerLink="/" class="btn btn-primary">Go home</a>
+    @if (showReload) {
+      <button class="btn btn-primary" (click)="reload()">Reload</button>
+    } @else {
+      <a routerLink="/" class="btn btn-primary">Go home</a>
+    }
     <button class="btn btn-ghost" (click)="goBack()">Go back</button>
   </div>
 </div>
