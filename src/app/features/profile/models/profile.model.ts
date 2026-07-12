@@ -1,13 +1,13 @@
 
 import { UserInfo } from '@core/services/user-info.service';
-export interface ProfileStats {
+interface ProfileStats {
   readonly totalMntCount: number | null;
   readonly totalLikeCount: number | null;
   readonly lastMntLikeCount: number | null;
   readonly lastMntPostTs: number | null;
   readonly registeredTs: number | null;
 }
-export interface ProfileTagLimit {
+interface ProfileTagLimit {
   readonly hobbyLmit: number | null;
   readonly travellingLmit: number | null;
   readonly hometownLmit: number | null;
@@ -17,11 +17,11 @@ export interface ProfileTagLimit {
   readonly zodiacSignLimit: number | null;
   readonly bloodTypeLimit: number | null;
 }
-export interface ProfileLangLimit {
+interface ProfileLangLimit {
   readonly limitDays: number | null;
   readonly nextModifyTs: number | null;
 }
-export interface ProfileLimitations {
+interface ProfileLimitations {
   readonly tagLimit: ProfileTagLimit | null;
   readonly langLimit: ProfileLangLimit | null;
   readonly modifyNationality: boolean;

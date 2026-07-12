@@ -55,8 +55,13 @@
             />
           }
           @if (store.followersMore()) {
-            <app-button variant="soft-neutral" size="sm" (click)="store.loadMoreFollowers()">
-              Load more
+            <app-button
+              variant="soft-neutral"
+              size="sm"
+              [disabled]="store.followersLoading()"
+              (click)="store.loadMoreFollowers()"
+            >
+              {{ store.followersLoading() ? 'Loading…' : 'Load more' }}
             </app-button>
           }
         }
@@ -116,8 +121,13 @@
             />
           }
           @if (store.visitorsMore()) {
-            <app-button variant="soft-neutral" size="sm" (click)="store.loadMoreVisitors()">
-              Load more
+            <app-button
+              variant="soft-neutral"
+              size="sm"
+              [disabled]="store.visitorsLoading()"
+              (click)="store.loadMoreVisitors()"
+            >
+              {{ store.visitorsLoading() ? 'Loading…' : 'Load more' }}
             </app-button>
           }
         }
