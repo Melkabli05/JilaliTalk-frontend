@@ -186,11 +186,58 @@ export class MessagesStore {
   private dispatch(ev: ImEvent): void {
     switch (ev.type) {
       case 'text_message':
-        this.pushPublic(ev.fromUserId, ev.fromUserId, {
+        this.pushPublic(ev.fromUserId, ev.fromNickname || ev.fromUserId, {
           id: uid(),
           type: 'text',
           text: ev.text,
+          fromNickname: ev.fromNickname,
           ts: ev.ts,
+        });
+        break;
+      case 'image_message':
+        this.pushPublic(ev.fromUserId, ev.fromNickname || ev.fromUserId, {
+          id: uid(),
+          type: 'image',
+          imageUrl: ev.imageUrl,
+          fromNickname: ev.fromNickname,
+          ts: ev.ts,
+        });
+        break;
+      case 'gift_message':
+        this.pushPublic(ev.fromUserId, ev.fromNickname || ev.fromUserId, {
+          id: uid(),
+          type: 'gift',
+          giftId: ev.giftId,
+          count: ev.count,
+          fromNickname: ev.fromNickname,
+          ts: Date.now(),
+        });
+        break;
+      case 'introduction_message':
+        this.pushPublic(ev.fromUserId, ev.fromNickname || ev.fromUserId, {
+          id: uid(),
+          type: 'introduction',
+          fromNickname: ev.fromNickname,
+          ts: Date.now(),
+        });
+        break;
+      case 'voice_room_shared':
+        this.pushPublic(ev.fromUserId, ev.fromNickname || ev.fromUserId, {
+          id: uid(),
+          type: 'voice_room_shared',
+          cname: ev.cname,
+          voiceCount: ev.count,
+          fromNickname: ev.fromNickname,
+          ts: Date.now(),
+        });
+        break;
+      case 'live_room_shared':
+        this.pushPublic(ev.fromUserId, ev.fromNickname || ev.fromUserId, {
+          id: uid(),
+          type: 'live_room_shared',
+          cname: ev.cname,
+          fromNickname: ev.fromNickname,
+          ts: Date.now(),
         });
         break;
       case 'typing_indicator':
@@ -201,20 +248,35 @@ export class MessagesStore {
         });
         break;
       case 'message_ack':
-        if (ev.prefix !== 0 && ev.msgId) {
-          const userId = this._msgIndex.get(ev.msgId);
-          if (userId == null) break;
-          this._convMap.update(m => {
-            const c = m.get(userId);
-            if (!c) return m;
-            const idx = c.messages.findIndex((x: DmMessage) => x.id === ev.msgId);
-            if (idx === -1 || c.messages[idx].delivery === 'delivered') return m;
-            const msgs = [...c.messages];
-            msgs[idx] = { ...msgs[idx], delivery: 'delivered' };
-            return new Map(m).set(userId, { ...c, messages: msgs });
-          });
-        }
+        this.updateDeliveryForMsgId(ev.msgId, ev.prefix !== 0 ? 'delivered' : null, 'sent');
+        break;
+      case 'read_receipt':
+        this.updateDeliveryForMsgId(ev.msgId, 'read', 'sent', 'delivered');
         break;
     }
+  }
+
+  /** Advances a locally-sent message's delivery state, keyed by msgId via `_msgIndex`.
+   *  `from` restricts which current states are eligible to advance (so a stray/duplicate
+   *  event can't move a message backwards or re-trigger an already-applied transition). */
+  private updateDeliveryForMsgId(
+    msgId: string,
+    to: DmMessage['delivery'] | null,
+    ...from: readonly NonNullable<DmMessage['delivery']>[]
+  ): void {
+    if (!to || !msgId) return;
+    const userId = this._msgIndex.get(msgId);
+    if (userId == null) return;
+    this._convMap.update(m => {
+      const c = m.get(userId);
+      if (!c) return m;
+      const idx = c.messages.findIndex((x: DmMessage) => x.id === msgId);
+      if (idx === -1) return m;
+      const current = c.messages[idx].delivery;
+      if (current === to || !from.includes(current ?? 'sent')) return m;
+      const msgs = [...c.messages];
+      msgs[idx] = { ...msgs[idx], delivery: to };
+      return new Map(m).set(userId, { ...c, messages: msgs });
+    });
   }
 }

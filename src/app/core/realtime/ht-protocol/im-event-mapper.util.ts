@@ -54,7 +54,7 @@ export function mapImJsonToEvent(
         return null;
     }
   }
-  if (json['notify_type'] !== undefined) return mapNotify(json, selfUserId);
+  if (json['notify_type'] !== undefined) return mapNotify(json, headerFromId, selfUserId);
   return null;
 }
 
@@ -126,16 +126,17 @@ function mapIntroduction(json: Record<string, unknown>, headerFromId: number): I
   };
 }
 
-function mapNotify(json: Record<string, unknown>, selfUserId: number): ImEvent | null {
+function mapNotify(json: Record<string, unknown>, headerFromId: number, selfUserId: number): ImEvent | null {
   if (typeof json['cname'] === 'string') {
     const cname = json['cname'];
+    const fromUserId = textOr(json, 'from_id', String(headerFromId));
     const fromNickname = textOr(json, 'from_nickname', textOr(json, 'nickname', ''));
     const headUrl = textOrNull(json, 'head_url');
     if ('count' in json || 'voice_count' in json) {
       const count = 'count' in json ? numOr(json, 'count', 0) : numOr(json, 'voice_count', 0);
-      return { type: 'voice_room_shared', fromNickname, cname, headUrl, count };
+      return { type: 'voice_room_shared', fromUserId, fromNickname, cname, headUrl, count };
     }
-    return { type: 'live_room_shared', fromNickname, cname, headUrl };
+    return { type: 'live_room_shared', fromUserId, fromNickname, cname, headUrl };
   }
 
   const info = (json['notify_info'] as Record<string, unknown> | undefined) ?? {};

@@ -117,18 +117,46 @@
             <div class="date-pill" role="separator">{{ label }}</div>
           }
 
-          <div class="msg" [class.is-outbound]="!!msg.delivery">
-            @if (msg.delivery) {
-              <div class="bubble outbound">
-                <p>{{ msg.text }}</p>
-              </div>
-            } @else {
-              <app-avatar [alt]="conv.nickname" size="xs" class="msg-avatar" />
-              <div class="bubble">
-                <p>{{ msg.text }}</p>
-              </div>
-            }
-          </div>
+          @if (msg.type === 'voice_room_shared' || msg.type === 'live_room_shared') {
+            <div class="meta-card" role="note">
+              <span class="meta-card-label">
+                {{ (msg.fromNickname || conv.nickname) + ' shared a ' + (msg.type === 'voice_room_shared' ? 'voice' : 'live') + ' room' }}
+              </span>
+              <span class="meta-card-detail">
+                @if (msg.type === 'voice_room_shared' && msg.voiceCount != null) {
+                  {{ msg.voiceCount }} listening
+                } @else {
+                  {{ msg.cname }}
+                }
+              </span>
+            </div>
+          } @else {
+            <div class="msg" [class.is-outbound]="!!msg.delivery">
+              @if (msg.delivery) {
+                <div class="bubble outbound">
+                  @switch (msg.type) {
+                    @case ('image') { <img [src]="msg.imageUrl" alt="" class="bubble-image" /> }
+                    @case ('gift') { <p class="bubble-meta">Gift ×{{ msg.count ?? 1 }}</p> }
+                    @case ('introduction') { <p class="bubble-meta">Introduction</p> }
+                    @default { <p>{{ msg.text }}</p> }
+                  }
+                  <span class="delivery-mark" [class.read]="msg.delivery === 'read'">
+                    {{ msg.delivery === 'sent' ? '✓' : '✓✓' }}
+                  </span>
+                </div>
+              } @else {
+                <app-avatar [alt]="conv.nickname" size="xs" class="msg-avatar" />
+                <div class="bubble">
+                  @switch (msg.type) {
+                    @case ('image') { <img [src]="msg.imageUrl" alt="" class="bubble-image" /> }
+                    @case ('gift') { <p class="bubble-meta">Gift ×{{ msg.count ?? 1 }}</p> }
+                    @case ('introduction') { <p class="bubble-meta">Introduction</p> }
+                    @default { <p>{{ msg.text }}</p> }
+                  }
+                </div>
+              }
+            </div>
+          }
         }
 
         @if (conv.isTyping) {

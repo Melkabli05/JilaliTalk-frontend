@@ -20,12 +20,13 @@ export interface DmMessage {
   readonly voiceCount?: number | undefined;
   readonly ts: number;
   /**
-   * Send-state for DMs the local user composed (mirrors WhatsApp-style ✓ / ✓✓). Defaults
-   * to {@code 'sent'} on outbound; flipped to {@code 'delivered'} when the upstream
-   * MSG-ACK (cmdId 16386) arrives with a non-zero prefix. Inbound DMs always have
+   * Send-state for DMs the local user composed (mirrors WhatsApp-style ✓ / ✓✓ / ✓✓ blue).
+   * Defaults to {@code 'sent'} on outbound; flipped to {@code 'delivered'} when the upstream
+   * MSG-ACK (cmdId 16386) arrives with a non-zero prefix, then to {@code 'read'} when a
+   * read-receipt frame (0x25) arrives for the same msgId. Inbound DMs always have
    * {@code undefined} — they were never "sent" by us.
    */
-  readonly delivery?: 'sent' | 'delivered';
+  readonly delivery?: 'sent' | 'delivered' | 'read';
 }
 
 export interface DmConversation {
