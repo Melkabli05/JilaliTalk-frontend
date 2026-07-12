@@ -225,6 +225,7 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         gap: var(--space-1);
       }
       .icon-btn {
+        position: relative;
         width: var(--icon-btn-size);
         height: var(--icon-btn-size);
         border-radius: var(--radius-sm);
@@ -242,16 +243,17 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
         outline-offset: var(--focus-ring-offset);
       }
       /* Apple HIG 44pt minimum touch target — 28px (--icon-btn-size) is fine
-         for desktop but fails HIG on mobile. The button stays visually 28px
-         (no padding change), but its hit area is 44px via padding + a
-         negative margin so the layout doesn't shift. */
+         for desktop but fails HIG on mobile. .panel-header has no fixed
+         height, so growing the box itself (min-width/min-height) would make
+         the header taller and steal vertical space from the message list.
+         An absolutely-positioned pseudo-element expands the tappable area
+         outward instead, leaving the button's visual size and the header's
+         height untouched. */
       @media (max-width: 1023.98px) {
-        .icon-btn {
-          min-width: var(--touch-target-min);
-          min-height: var(--touch-target-min);
-          /* The button is centered inside its hit box via flex (display:flex
-             above). Width/height stay at --icon-btn-size; the min-* pair
-             grows the hit box outward in both axes. */
+        .icon-btn::before {
+          content: '';
+          position: absolute;
+          inset: calc((var(--icon-btn-size) - var(--touch-target-min)) / 2);
         }
         .icon-btn:active:not(:disabled) {
           background: var(--color-neutral-100);
@@ -271,14 +273,18 @@ import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, 
          makes sense when the panel is in the mobile slot. */
       @container room-page (max-width: 1023.98px) {
         .expand-btn { display: flex; }
-        /* Account for the position:fixed comment-input bar so the last
-           messages are not hidden behind it. The padding shrinks the
-           flex:1 app-comment-list by this amount, keeping content above
-           the pinned input. Matches the input bar's approximate height
-           (40px buttons + 8px top padding + 8px bottom padding) plus
-           env() for the home indicator on iOS. */
+        /* Shrink the box given to app-comment-list so it never physically
+           extends behind the position:fixed comment-input bar — padding on
+           the scrollable content itself only helps once scrolled exactly to
+           the bottom; this keeps the list's own viewport clear of the bar
+           at any scroll position. --space-4 covers the .reply-preview row
+           that grows the bar by ~28px when a reply is active. */
         .comments-scroll {
-          padding-bottom: calc(var(--mobile-input-height) + var(--shell-inset-bottom));
+          padding-bottom: calc(
+            var(--mobile-input-height) +
+            var(--space-4) +
+            var(--shell-inset-bottom)
+          );
         }
       }
 

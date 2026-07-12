@@ -113,6 +113,28 @@ export class CommentsStore extends CollectionStore<Comment> {
         }
       }
       if (comment._id && list.some((c) => c._id === comment._id)) return list;
+
+      // Fallback reconciliation for when the BFF doesn't echo clientNonce
+      // back on the realtime event (see CommentEvent.clientNonce): the
+      // optimistic local insert (id "local-...") would otherwise never be
+      // matched against the real server comment and both would render,
+      // duplicating the sender's own message. Match by same user + exact
+      // text + sent within the last 15s instead.
+      if (!comment._id.startsWith('local-')) {
+        const idx = list.findIndex(
+          (c) =>
+            c._id.startsWith('local-') &&
+            c.userId === comment.userId &&
+            c.msg.text.text === comment.msg.text.text &&
+            Math.abs(c.createdAtMs - comment.createdAtMs) < 15_000,
+        );
+        if (idx >= 0) {
+          const next = list.slice();
+          next[idx] = comment;
+          return next;
+        }
+      }
+
       return [...list, comment];
     });
     if (comment.createdAtMs > this._lastReadTs()) {

@@ -394,15 +394,6 @@ export class NewMessagesPillComponent {
         flex-direction: column;
         gap: var(--space-3);
         padding: var(--space-3) var(--space-2);
-        /* Reserve space for the pinned comment-input bar. The bar's minimum
-           height is --mobile-input-height; when a .reply-preview is mounted
-           (inside comment-input.ts), the bar grows by ~28px -- var(--space-4)
-           is ~24px which covers it. Safe-area inset is the iOS home-indicator. */
-        padding-bottom: calc(
-          var(--mobile-input-height) +
-          var(--space-4) +
-          var(--shell-inset-bottom)
-        );
         overflow-y: auto;
         /* Stop iOS rubber-band from chaining through to the parent once the
            list itself is scrolled to either end. Without this, scrolling
@@ -641,6 +632,7 @@ export class NewMessagesPillComponent {
       }
 
       .action-btn {
+        position: relative;
         width: 22px;
         height: 22px;
         border-radius: var(--radius-sm);
@@ -662,12 +654,17 @@ export class NewMessagesPillComponent {
       .action-btn.is-hidden { display: none; }
 
       @container room-page (max-width: 1023.98px) and (min-height: 500px) {
-        /* WCAG 2.5.5 AAA — primary interactive controls must hit 44×44. The
-           visual size stays compact so the layout doesn't reflow; the hit area
-           grows outward without changing the rendered icon. */
-        .action-btn {
-          min-width: 44px;
-          min-height: 44px;
+        /* WCAG 2.5.5 AAA — primary interactive controls must hit 44×44.
+           min-width/min-height would work for a toolbar button, but these
+           sit inline inside the running text of .bubble — growing the box
+           itself would inflate every message bubble's height around a
+           44×44 square. An absolutely-positioned pseudo-element expands the
+           tappable area outward instead, leaving the visible 22×22 icon and
+           the bubble's line-height untouched. */
+        .action-btn::before {
+          content: '';
+          position: absolute;
+          inset: -11px;
         }
 
         /* The "X new messages ↓" pill is the user's only backlog signal while
@@ -793,19 +790,19 @@ export class CommentListComponent {
    *  `scroll` event for programmatic scrollTo, so without this the
    *  at-bottom effect can't detect that we're now at the bottom and would
    *  keep the pill visible on every new comment. */
-  private scrollToBottom(): void {
+  private scrollToBottom(behavior: ScrollBehavior = 'smooth'): void {
     const container = this.scrollContainer()?.nativeElement;
     if (!container) return;
     requestAnimationFrame(() => {
       const el = this.scrollContainer()?.nativeElement;
       if (!el) return;
-      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      el.scrollTo({ top: el.scrollHeight, behavior });
       this.isAtBottom.set(true);
     });
   }
 
-  /** Throttled scroll listener — recomputes `isAtBottom` on every scroll event
-   *  using a 4px tolerance to absorb subpixel rounding and animation in flight. */
+  /** Scroll listener — recomputes `isAtBottom` on every scroll event using a
+   *  4px tolerance to absorb subpixel rounding and animation in flight. */
   private registerScrollListener(): void {
     if (this.scrollListenerRegistered) return;
     const container = this.scrollContainer();
@@ -831,13 +828,15 @@ export class CommentListComponent {
       if (this.highlightTimer) clearTimeout(this.highlightTimer);
     });
 
-    // First non-empty `items()` → scroll to bottom once. Fires when the
-    // history fetch lands, not just at mount — history may complete async.
+    // First non-empty `items()` → scroll to bottom once, instantly (no
+    // animated scroll-through of the whole history on room entry). Fires
+    // when the history fetch lands, not just at mount — history may
+    // complete async.
     effect(() => {
       if (this.hasAutoScrolledToBottom) return;
       if (this.items().length === 0) return;
       this.hasAutoScrolledToBottom = true;
-      this.scrollToBottom();
+      this.scrollToBottom('auto');
     });
 
     // While at the bottom, new comments auto-scroll into view silently —
