@@ -172,10 +172,15 @@ export class EventFeedStore {
 
   constructor() {
     this.bffWs.event$('gift').pipe(takeUntilDestroyed()).subscribe((event) => {
-      for (const g of event.gifts) this.addOrComboGift(g);
+      for (const g of event.gifts) {
+        this.rememberIdentity(Number(g.sendUid), g.sendNickname, g.sendHeadUrl, g.sendNation);
+        this.rememberIdentity(Number(g.receiverUid), g.receiverNickname, g.receiverHeadUrl, g.receiverNation);
+        this.addOrComboGift(g);
+      }
     });
 
     this.bffWs.event$('follow').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.rememberIdentity(Number(event.userId), event.nickname, event.headUrl, null);
       this._eventCards.update((cards) => [
         ...cards,
         {
@@ -188,6 +193,15 @@ export class EventFeedStore {
           isFollowBack: event.status === 2,
         } satisfies EventCard,
       ]);
+    });
+
+    this.bffWs.event$('comment').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this.rememberIdentity(
+        Number(event.comment.userId),
+        event.comment.nickname,
+        event.comment.headUrl,
+        event.comment.nationality,
+      );
     });
 
     this.bffWs.event$('user_join').pipe(takeUntilDestroyed()).subscribe((event) => {

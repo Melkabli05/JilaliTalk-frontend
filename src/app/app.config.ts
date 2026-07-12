@@ -70,6 +70,8 @@ export const appConfig: ApplicationConfig = {
             store.add(message === undefined ? { type, title } : { type, title, message }),
           notifyUserEvent: (params: Parameters<NotificationReporter['notifyUserEvent']>[0]) =>
             store.addUserEvent(params),
+          updateUserEvent: (id: string, patch: Parameters<NotificationReporter['updateUserEvent']>[1]) =>
+            store.updateNotification(id, patch),
         };
       },
     },

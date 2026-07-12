@@ -109,10 +109,19 @@ export class NotificationStore {
     avatarUrl?: string | null;
     nickname?: string | null;
     action?: AppNotification['action'] | undefined;
-  }): void {
+  }): string {
     const full = this.buildNotification(params as Omit<AppNotification, 'id' | 'timestamp' | 'read'>);
     this._notifications.update(list => this.capNotifications([full, ...list]));
     this.maybeShowToast(full);
+    return full.id;
+  }
+
+  /** Patches a previously-added notification in place — used to backfill nickname/avatar/
+   *  message once a deferred user-info lookup resolves after the notification was already
+   *  shown with incomplete data (see ImBootstrapService.notifyUserLinked). No-ops if the
+   *  notification was since removed. */
+  updateNotification(id: string, patch: Partial<Pick<AppNotification, 'nickname' | 'avatarUrl' | 'message'>>): void {
+    this._notifications.update(list => list.map(n => (n.id === id ? { ...n, ...patch } : n)));
   }
 
   markAllRead(): void {
