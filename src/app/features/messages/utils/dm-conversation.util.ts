@@ -70,6 +70,9 @@ export function upsertConversationMessage(
   isSelected: boolean,
 ): ConversationMessageUpsert {
   const existing = map.get(userId) ?? createConversationPlaceholder(userId, userId, null);
+  if (msg.id && existing.messages.some((m) => m.id === msg.id)) {
+    return { map, evictedMessageIds: [] };
+  }
   const combined = [...existing.messages, msg];
   const evictedCount = Math.max(0, combined.length - MAX_MESSAGES);
   const evictedMessageIds = combined.slice(0, evictedCount).map((m) => m.id);
