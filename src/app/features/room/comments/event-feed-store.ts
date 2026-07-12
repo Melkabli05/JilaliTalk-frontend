@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EventCard } from '../models/room-model';
 import { EnrichBatchQueue } from '@shared/utils';
 import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
+import type { RoomEventSource } from '@core/realtime/room-connection-roles';
 import { UserInfoService } from '@core/services/user-info.service';
 import type { GiftEvent } from '@core/realtime/room-realtime-events';
 
@@ -21,7 +22,7 @@ const QUIT_GRACE_MS = 4_000;
  */
 @Service({ autoProvided: false })
 export class EventFeedStore {
-  private readonly bffWs = inject(HtRoomConnectionService);
+  private readonly bffWs: RoomEventSource = inject(HtRoomConnectionService);
   private readonly userInfoService = inject(UserInfoService);
 
   private _currentUserId = 0;

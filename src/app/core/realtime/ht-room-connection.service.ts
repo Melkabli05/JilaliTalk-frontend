@@ -3,70 +3,24 @@ import type { WritableSignal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
-import { environment } from '@env/environment';
 import { AuthStore } from '@core/auth/auth.store';
 import { ROOM_WS_URL } from '@core/tokens/room-ws-url.token';
+import { logRealtime } from './dev-log.util';
 import { backoffDelay, MAX_RECONNECT_ATTEMPTS } from './reconnecting-socket-base';
 import type { RoomRealtimeEvent } from './room-realtime-events';
-import { buildAckFrame, buildHeartbeatFrame, buildInitFrame, parseRoomFrame } from './room-protocol/room-frame.util';
+import {
+  buildAckFrame,
+  buildHeartbeatFrame,
+  buildInitFrame,
+  parseRoomFrame,
+  type RoomFrame,
+} from './room-protocol/room-frame.util';
+import { describeRoomEvent } from './room-protocol/room-event-description.util';
 import { mapRoomNotifyToEvent } from './room-protocol/room-event-mapper.util';
 
 type EventOfType<T extends RoomRealtimeEvent['type']> = Extract<RoomRealtimeEvent, { type: T }>;
 
 export type WsConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
-
-function describeRoomEvent(event: RoomRealtimeEvent): string {
-  switch (event.type) {
-    case 'connection-state':
-      return `connection state: ${event.state}`;
-    case 'user_join':
-      return `${event.nickname} joined`;
-    case 'user_quit':
-      return `user ${event.userId} quit`;
-    case 'stage_join':
-      return `${event.stageUser.nickname ?? event.stageUser.userId} joined stage`;
-    case 'stage_quit':
-      return `user ${event.userId} left stage`;
-    case 'stage_raisehand':
-      return `user ${event.userId} ${event.raisehandType === 1 ? 'raised hand' : 'lowered hand'}`;
-    case 'stage_invite':
-      return `stage invite for user ${event.userId}`;
-    case 'comment':
-      return `comment from ${event.comment.nickname}: "${event.comment.text}"`;
-    case 'gift':
-      return `gift batch, ${event.gifts.length} gift(s)`;
-    case 'stage_device_control':
-      return `device control for user ${event.userId} (device ${event.deviceType}, switch ${event.switchType})`;
-    case 'mod_invite':
-      return `mod invite for user ${event.userId}`;
-    case 'whiteboard_activated':
-      return `whiteboard activated in ${event.cname}`;
-    case 'whiteboard_deactivated':
-      return `whiteboard deactivated in ${event.cname}`;
-    case 'mic_opened':
-      return `user ${event.userId} opened mic`;
-    case 'mic_closed':
-      return `user ${event.userId} closed mic`;
-    case 'mod_unmuted':
-      return `user ${event.userId} unmuted`;
-    case 'room_kick':
-      return `${event.nickname} kicked from room by ${event.managerName}`;
-    case 'stage_kick':
-      return `user ${event.userId} kicked from stage by ${event.managerName}`;
-    case 'mod_accepted':
-      return `user ${event.userId} accepted mod`;
-    case 'mod_removed':
-      return `user ${event.userId} removed as mod`;
-    case 'follow':
-      return `${event.nickname} followed (status ${event.status})`;
-    case 'lucky_bag':
-      return `lucky bag ${event.luckyBagId} in ${event.cname}`;
-    case 'raw':
-      return `unrecognized notify_type ${event.originalType}`;
-    case 'error':
-      return `error: ${event.message}`;
-  }
-}
 
 /**
  * Direct connection to the LiveHub room WebSocket (replaces `BffRoomSocketService`, which
@@ -117,12 +71,12 @@ export class HtRoomConnectionService {
     this.teardownSocket();
     this.cname = cname;
     this.reconnectAttempt = 0;
-    this.log('connect() requested', cname);
+    logRealtime('connect() requested', cname);
     this.open();
   }
 
   async disconnect(): Promise<void> {
-    this.log('disconnect() requested');
+    logRealtime('disconnect() requested');
     this.cname = '';
     this.reconnectAttempt = 0;
     if (this.reconnectTimer) {
@@ -138,25 +92,25 @@ export class HtRoomConnectionService {
   private open(): void {
     const status = this.reconnectAttempt > 0 ? 'reconnecting' : 'connecting';
     this._wsStatus.set(status);
-    this.log('status ->', status, this.cname);
+    logRealtime('status ->', status, this.cname);
 
     const userId = this.auth.user()?.userId;
     const cname = this.cname;
     if (userId == null || !cname) {
-      this.log('no authenticated user or cname, aborting connect');
+      logRealtime('no authenticated user or cname, aborting connect');
       this._wsStatus.set('disconnected');
       this.cname = '';
       return;
     }
 
     const url = `${this.wsUrl}?user_id=${userId}&cname=${encodeURIComponent(cname)}&is_visitor=true`;
-    this.log('opening socket', url);
+    logRealtime('opening socket', url);
     const sock = new WebSocket(url);
     this.sock = sock;
 
     sock.onopen = () => {
       if (this.sock !== sock) return;
-      this.log('socket open, sending init frame');
+      logRealtime('socket open, sending init frame');
       sock.send(buildInitFrame(userId, cname));
     };
     sock.onmessage = (event: MessageEvent) => {
@@ -165,13 +119,13 @@ export class HtRoomConnectionService {
     };
     sock.onclose = () => {
       if (this.sock !== sock) return;
-      this.log('socket closed');
+      logRealtime('socket closed');
       this.clearHeartbeat();
       this.sock = null;
       this.scheduleReconnect();
     };
     sock.onerror = () => {
-      this.log('socket error');
+      logRealtime('socket error');
       this.pushEvent({ type: 'error', message: 'WebSocket error' });
     };
   }
@@ -180,32 +134,46 @@ export class HtRoomConnectionService {
     const frame = parseRoomFrame(text);
     if (!frame) return;
 
-    if (frame.kind === 'heartbeat_interval') {
-      this.heartbeatIntervalSec = frame.heartbeatSec;
-      this.log('heartbeat interval', frame.heartbeatSec, 's');
-      this.sendHeartbeat(userId, cname);
-      this.scheduleHeartbeat(userId, cname);
-      return;
+    switch (frame.kind) {
+      case 'heartbeat_interval':
+        this.handleHeartbeatIntervalFrame(frame.heartbeatSec, userId, cname);
+        return;
+      case 'heartbeat_ack':
+        this.handleHeartbeatAckFrame(userId, cname);
+        return;
+      case 'notify':
+        this.handleNotifyFrame(frame, userId, cname);
+        return;
+      case 'unrecognized':
+        return;
     }
-    if (frame.kind === 'heartbeat_ack') {
-      this.log('heartbeat ack');
-      this.scheduleHeartbeat(userId, cname);
-      return;
+  }
+
+  private handleHeartbeatIntervalFrame(heartbeatSec: number, userId: number, cname: string): void {
+    this.heartbeatIntervalSec = heartbeatSec;
+    logRealtime('heartbeat interval', heartbeatSec, 's');
+    this.sendHeartbeat(userId, cname);
+    this.scheduleHeartbeat(userId, cname);
+  }
+
+  private handleHeartbeatAckFrame(userId: number, cname: string): void {
+    logRealtime('heartbeat ack');
+    this.scheduleHeartbeat(userId, cname);
+  }
+
+  private handleNotifyFrame(frame: Extract<RoomFrame, { kind: 'notify' }>, userId: number, cname: string): void {
+    if (frame.msgId && this.sock) {
+      this.sock.send(buildAckFrame(userId, cname, true, frame.msgId));
     }
-    if (frame.kind === 'notify') {
-      if (frame.msgId && this.sock) {
-        this.sock.send(buildAckFrame(userId, cname, true, frame.msgId));
-      }
-      if (frame.envelope.notifyType) {
-        const event = mapRoomNotifyToEvent(frame.envelope.notifyType, frame.envelope.info, frame.envelope.root);
-        if (event) this.pushEvent(event);
-      }
+    if (frame.envelope.notifyType) {
+      const event = mapRoomNotifyToEvent(frame.envelope.notifyType, frame.envelope.info, frame.envelope.root);
+      if (event) this.pushEvent(event);
     }
   }
 
   private sendHeartbeat(userId: number, cname: string): void {
     if (!this.sock) return;
-    this.log('send heartbeat');
+    logRealtime('send heartbeat');
     this.sock.send(buildHeartbeatFrame(userId, cname, true));
   }
 
@@ -229,7 +197,7 @@ export class HtRoomConnectionService {
 
   private scheduleReconnect(): void {
     if (!this.cname || this.reconnectAttempt >= MAX_RECONNECT_ATTEMPTS) {
-      this.log('giving up reconnecting', this.cname);
+      logRealtime('giving up reconnecting', this.cname);
       this._lastEvent.set(null);
       const cname = this.cname;
       this.cname = '';
@@ -239,7 +207,7 @@ export class HtRoomConnectionService {
     }
     this._wsStatus.set('reconnecting');
     const delay = backoffDelay(this.reconnectAttempt);
-    this.log('scheduling reconnect attempt', this.reconnectAttempt + 1, 'in', delay, 'ms');
+    logRealtime('scheduling reconnect attempt', this.reconnectAttempt + 1, 'in', delay, 'ms');
     this.reconnectAttempt++;
     this.reconnectTimer = setTimeout(() => this.open(), delay);
   }
@@ -262,7 +230,7 @@ export class HtRoomConnectionService {
   }
 
   private pushEvent(event: RoomRealtimeEvent): void {
-    this.log(describeRoomEvent(event), event);
+    logRealtime(describeRoomEvent(event), event);
     if (event.type === 'connection-state') this._wsStatus.set(event.state);
     this._lastEvent.set(event);
     if (this._gaveUpCnames().has(this.cname)) {
@@ -270,10 +238,5 @@ export class HtRoomConnectionService {
       next.delete(this.cname);
       this._gaveUpCnames.set(next);
     }
-  }
-
-  private log(...args: unknown[]): void {
-    if (environment.production) return;
-    console.log('[websocket]', ...args);
   }
 }

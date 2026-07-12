@@ -1,5 +1,6 @@
 import { Service, computed, effect, inject, signal } from '@angular/core';
 import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
+import type { ImEventSource, ImMessageSender } from '@core/realtime/im-connection-roles';
 import { StorageService } from '@core/services/storage.service';
 import { UserInfoService } from '@core/services/user-info.service';
 import { AuthStore } from '@core/auth/auth.store';
@@ -33,7 +34,7 @@ const MAX_CONVERSATIONS = 100;
 
 @Service({ autoProvided: false })
 export class MessagesStore {
-  private readonly htIm = inject(HtImConnectionService);
+  private readonly htIm: ImEventSource & ImMessageSender = inject(HtImConnectionService);
   private readonly storage = inject(StorageService);
   private readonly userInfoService = inject(UserInfoService);
   private readonly authStore = inject(AuthStore);

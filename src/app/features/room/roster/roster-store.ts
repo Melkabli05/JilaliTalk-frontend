@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { StageUser, AudienceUser } from '../models/room-model';
 import { EnrichBatchQueue } from '@shared/utils';
 import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
+import type { RoomEventSource } from '@core/realtime/room-connection-roles';
 import { UserInfoService } from '@core/services/user-info.service';
 import { RoomApi } from '../api/room-api';
 
@@ -54,7 +55,7 @@ export const ROSTER_WRITER = new InjectionToken<RosterWriter>('ROSTER_WRITER');
 
 @Service({ autoProvided: false })
 export class RoomRosterStore {
-  private readonly bffWs = inject(HtRoomConnectionService);
+  private readonly bffWs: RoomEventSource = inject(HtRoomConnectionService);
   private readonly userInfoService = inject(UserInfoService);
   private readonly api = inject(RoomApi);
   private readonly destroyRef = inject(DestroyRef);
