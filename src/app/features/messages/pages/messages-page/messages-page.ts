@@ -10,6 +10,7 @@ import {
   ElementRef,
   viewChild,
 } from '@angular/core';
+import { Dialog } from '@angular/cdk/dialog';
 import {
   LucideChevronLeft,
   LucideInbox,
@@ -21,6 +22,7 @@ import {
 import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
 import { ToastService } from '@core/services/toast.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
+import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal/user-info-modal.component';
 import { relativeTime } from '@shared/utils';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
 import { MessagesStore } from '../../store/messages.store';
@@ -54,6 +56,7 @@ export class MessagesPageComponent {
   protected readonly store = inject(MessagesStore);
   protected readonly imSocket = inject(HtImConnectionService);
   private readonly toast = inject(ToastService);
+  private readonly dialog = inject(Dialog);
   protected readonly relativeTime = relativeTime;
   protected readonly preview = preview;
 
@@ -124,6 +127,15 @@ export class MessagesPageComponent {
    *  changes) — without this, a dead connection stayed dead until a full page reload. */
   protected onConnStatusClick(): void {
     if (this.imSocket.status() === 'disconnected') this.imSocket.connect();
+  }
+
+  protected onViewProfile(userId: string, nickname: string, headUrl: string | null): void {
+    const numeric = Number(userId);
+    if (!Number.isFinite(numeric)) return;
+    this.dialog.open(UserInfoModalComponent, {
+      data: { userId: numeric, nickname, headUrl } satisfies UserInfoModalData,
+      backdropClass: 'app-modal-backdrop',
+    });
   }
 
   protected toggleContactPanel(): void { this.panelOpen.update(v => !v); }

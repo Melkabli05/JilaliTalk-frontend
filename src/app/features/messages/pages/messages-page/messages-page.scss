@@ -291,6 +291,16 @@ li.unread .row-ts {
   gap: var(--space-2);
   flex: 1;
   min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mobile-bar-identity:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
 }
 .mobile-bar-name {
   font-size: var(--text-sm);
