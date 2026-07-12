@@ -4,7 +4,7 @@ export { JungleReverbProcessor, type JungleAudioProcessor } from './audio-pipeli
 export { RoomConnectionService, type RoomPhase } from './room-connection.service';
 export { BffRoomSocketService } from './bff-room-socket.service';
 export { ImBootstrapService } from './im-bootstrap.service';
-export { ImSocketService } from './im-socket.service';
+export { HtImConnectionService } from './ht-im-connection.service';
 
 export type {
   RtcConnectionState,

@@ -6,13 +6,13 @@ import { UserInfoService } from '@core/services/user-info.service';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
 import { ROOM_INVITE_GATEWAY } from '@core/tokens/room-invite-gateway.token';
 import { EnrichBatchQueue } from '@shared/utils';
-import { ImSocketService } from './im-socket.service';
+import { HtImConnectionService } from './ht-im-connection.service';
 import type { ImEvent } from './im-events';
 
 @Injectable({ providedIn: 'root' })
 export class ImBootstrapService {
   private readonly auth = inject(AuthStore);
-  private readonly imSocket = inject(ImSocketService);
+  private readonly imSocket = inject(HtImConnectionService);
   private readonly gateway = inject(ROOM_INVITE_GATEWAY);
   private readonly toast = inject(ToastService);
   private readonly notifications = inject(NOTIFICATION_REPORTER);

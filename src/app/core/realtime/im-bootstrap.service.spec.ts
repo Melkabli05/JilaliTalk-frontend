@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { AuthStore } from '@core/auth/auth.store';
@@ -6,29 +7,27 @@ import { ToastService } from '@core/services/toast.service';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
 import { ROOM_INVITE_GATEWAY, RoomInviteGateway } from '@core/tokens/room-invite-gateway.token';
 import { ImBootstrapService } from './im-bootstrap.service';
-import { ImSocketService } from './im-socket.service';
+import { HtImConnectionService } from './ht-im-connection.service';
 import type { ImEvent } from './im-events';
 
-class FakeWebSocket {
-  static instances: FakeWebSocket[] = [];
-  readonly url: string;
-  readyState = 0;
-  onmessage: ((event: { data: string }) => void) | null = null;
-  onclose: (() => void) | null = null;
-  onerror: (() => void) | null = null;
-
-  constructor(url: string) {
-    this.url = url;
-    FakeWebSocket.instances.push(this);
+class FakeHtImConnectionService {
+  private readonly _events = signal<readonly ImEvent[]>([]);
+  private readonly _status = signal<'connecting' | 'connected' | 'reconnecting' | 'disconnected'>('disconnected');
+  readonly events = this._events.asReadonly();
+  readonly status = this._status.asReadonly();
+  connect(): void {
+    this._status.set('connected');
   }
-
-  close(): void {
-    this.readyState = 3;
+  disconnect(): void {
+    this._status.set('disconnected');
+    this._events.set([]);
+  }
+  push(event: ImEvent): void {
+    this._events.update((events) => [...events, event]);
   }
 }
 
 describe('ImBootstrapService', () => {
-  let imSocket: ImSocketService;
   let toast: ToastService;
   let notify: ReturnType<typeof vi.fn>;
   let notifyUserEvent: ReturnType<typeof vi.fn>;
@@ -36,16 +35,15 @@ describe('ImBootstrapService', () => {
     approveStageInvite: Mock<RoomInviteGateway['approveStageInvite']>;
     approveModInvite: Mock<RoomInviteGateway['approveModInvite']>;
   };
-  let imSock: FakeWebSocket;
+  let fakeImSocket: FakeHtImConnectionService;
 
   function push(event: ImEvent): void {
-    imSock.onmessage?.({ data: JSON.stringify(event) });
+    fakeImSocket.push(event);
     TestBed.flushEffects();
   }
 
   beforeEach(() => {
-    FakeWebSocket.instances = [];
-    vi.stubGlobal('WebSocket', Object.assign(FakeWebSocket, { OPEN: 1, CLOSED: 3 }));
+    fakeImSocket = new FakeHtImConnectionService();
     notify = vi.fn();
     notifyUserEvent = vi.fn();
     gateway = {
@@ -58,15 +56,14 @@ describe('ImBootstrapService', () => {
         { provide: AuthStore, useValue: { isAuthenticated: () => true, user: () => ({ userId: 42 }) } },
         { provide: NOTIFICATION_REPORTER, useValue: { notify, notifyUserEvent } },
         { provide: ROOM_INVITE_GATEWAY, useValue: gateway satisfies RoomInviteGateway },
+        { provide: HtImConnectionService, useValue: fakeImSocket },
       ],
     });
 
     TestBed.inject(ImBootstrapService);
     TestBed.flushEffects(); // auth effect runs once: isAuthenticated() true -> imSocket.connect()
 
-    imSocket = TestBed.inject(ImSocketService);
     toast = TestBed.inject(ToastService);
-    imSock = FakeWebSocket.instances[0]!;
   });
 
   it('shows an actionable toast for stage_invite, unconditionally', () => {
