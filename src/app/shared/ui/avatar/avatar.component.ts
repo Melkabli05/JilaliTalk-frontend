@@ -339,8 +339,8 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
         to { opacity: 1; }
       }
       .avatar-preview-img {
-        max-width: min(90vw, 480px);
-        max-height: 80vh;
+        max-width: min(94vw, 720px);
+        max-height: 90vh;
         width: auto;
         height: auto;
         border-radius: var(--radius-lg);
