@@ -51,7 +51,7 @@
               [headUrl]="user.headUrl"
               [nationality]="user.nationality"
               [vipType]="user.vipType"
-              (userClick)="onViewProfile(user.userId, user.nickName, user.headUrl, user.nationality)"
+              (userClick)="onViewProfile(user.userId, user.nickName, user.headUrl, user.nationality, user.isMutual)"
             />
           }
           @if (store.followersMore()) {
@@ -89,7 +89,7 @@
               [nationality]="user.nationality"
               [vipType]="user.vipType"
               [isMutual]="user.isMutual"
-              (userClick)="onViewProfile(user.userId, user.nickName, user.headUrl, user.nationality)"
+              (userClick)="onViewProfile(user.userId, user.nickName, user.headUrl, user.nationality, true)"
             />
           }
         }

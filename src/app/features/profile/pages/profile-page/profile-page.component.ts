@@ -46,9 +46,10 @@ export class ProfilePageComponent {
     nickname: string | null,
     headUrl: string | null,
     nationality: string | null,
+    isFollowing: boolean | null = null,
   ): void {
     this.dialog.open(UserInfoModalComponent, {
-      data: { userId, nickname, headUrl, nationality } satisfies UserInfoModalData,
+      data: { userId, nickname, headUrl, nationality, isFollowing } satisfies UserInfoModalData,
       backdropClass: 'app-modal-backdrop',
     });
   }

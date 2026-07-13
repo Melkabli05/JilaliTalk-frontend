@@ -21,6 +21,11 @@ export interface UserInfoModalData {
   readonly nickname?: string | null;
   readonly headUrl?: string | null;
   readonly nationality?: string | null;
+  /** Seeds the follow button's initial state when the caller already knows it
+   *  (e.g. the profile page's Followers/Following tabs, which fetch `is_mutual`
+   *  per row). Omit when unknown — the modal falls back to `null` (unknown)
+   *  and the button reads "Follow" until the user actually toggles it. */
+  readonly isFollowing?: boolean | null;
 }
 
 /**
@@ -886,14 +891,15 @@ export class UserInfoModalComponent {
   // The upstream profile-enrichment endpoint (`/profile/v2/userinfo`, which backs
   // UserInfoService) has no follow/mutual field in its `relation` payload — verified
   // against jilalibff's UserInfoResponse.RelationInfo, which only carries counts
-  // (followers, following, likes, ...). There's also no per-arbitrary-user
-  // "am I following them" lookup anywhere in the captured HelloTalk traffic; that
-  // signal only shows up contextually, on room-list and end-page-audience payloads.
-  // So the initial state here is genuinely unknown — `null` — and the only truth we
-  // ever get is the toggle response's `data.status` (1 = now following, 0 = not),
-  // which becomes the definitive state for the rest of this modal's lifetime.
+  // (followers, following, likes, ...). So this modal can't determine the state
+  // itself. Callers that already know it (the profile page's Followers/Following
+  // tabs, which fetch `is_mutual` per row from `/relation/followers` and
+  // `/relation/followings`) pass it in via `data.isFollowing`; anywhere else it's
+  // genuinely unknown and starts `null`. Either way, the toggle response's
+  // `data.status` (1 = now following, 0 = not) becomes the definitive state for
+  // the rest of this modal's lifetime once the user actually taps the button.
 
-  private readonly _isFollowing = signal<boolean | null>(null);
+  private readonly _isFollowing = signal<boolean | null>(this.data.isFollowing ?? null);
   private readonly _isTogglingFollow = signal(false);
 
   readonly isFollowing = this._isFollowing.asReadonly();
