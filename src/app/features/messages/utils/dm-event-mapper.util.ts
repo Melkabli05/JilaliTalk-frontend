@@ -51,7 +51,19 @@ export function mapImEventToDmMessage(ev: ImEvent): MappedDmMessage | null {
         userId: ev.fromUserId,
         nickname: ev.fromNickname || ev.fromUserId,
         headUrl: ev.fromHeadUrl ?? null,
-        message: { id: uid(), type: 'introduction', fromNickname: ev.fromNickname, ts: Date.now() },
+        message: {
+          id: uid(),
+          type: 'introduction',
+          fromNickname: ev.fromNickname,
+          targetUserId: ev.targetUserId,
+          targetNickname: ev.targetNickname,
+          targetHeadUrl: ev.targetHeadUrl ?? null,
+          targetSex: ev.targetSex ?? null,
+          targetAge: ev.targetAge ?? null,
+          targetNationality: ev.targetNationality ?? null,
+          targetBio: ev.targetBio ?? null,
+          ts: Date.now(),
+        },
       };
     case 'voice_room_shared':
       return {

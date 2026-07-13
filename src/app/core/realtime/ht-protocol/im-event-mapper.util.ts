@@ -32,6 +32,21 @@ function numOr(obj: Record<string, unknown>, field: string, fallback: number): n
   return typeof v === 'number' ? v : fallback;
 }
 
+function objOrNull(obj: Record<string, unknown>, field: string): Record<string, unknown> | null {
+  const v = obj[field];
+  return typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+}
+
+function nullableText(obj: Record<string, unknown>, field: string): string | null {
+  const v = obj[field];
+  return typeof v === 'string' ? v : null;
+}
+
+function nullableNum(obj: Record<string, unknown>, field: string): number | null {
+  const v = obj[field];
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
 export function mapImJsonToEvent(
   json: Record<string, unknown>,
   headerFromId: number,
@@ -114,15 +129,34 @@ function mapGift(json: Record<string, unknown>, headerFromId: number): ImEvent {
   };
 }
 
-function mapIntroduction(json: Record<string, unknown>, headerFromId: number): ImEvent {
+function mapIntroduction(json: Record<string, unknown>, headerFromId: number): ImEvent | null {
   const fromUserId = textOr(json, 'from_id', String(headerFromId));
   const fromNickname = textOr(json, 'from_nickname', textOr(json, 'nickname', ''));
   const fromHeadUrl = textOrNull(json, 'from_head_url') ?? textOrNull(json, 'head_url');
+
+  const intro = objOrNull(json, 'introduction');
+  if (!intro) return null;
+  const targetUserId = textOr(intro, 'user_id', '');
+  if (!targetUserId) return null;
+  const targetNickname = textOr(intro, 'nickname', '');
+  const targetHeadUrl = nullableText(intro, 'head_url');
+  const targetSex = nullableText(intro, 'sex');
+  const targetAge = nullableNum(intro, 'age');
+  const targetNationality = nullableText(intro, 'nationality');
+  const targetBio = nullableText(intro, 'bio');
+
   return {
     type: 'introduction_message',
     fromUserId,
     fromNickname,
     ...(fromHeadUrl !== null ? { fromHeadUrl } : {}),
+    targetUserId,
+    targetNickname,
+    targetHeadUrl,
+    targetSex,
+    targetAge,
+    targetNationality,
+    targetBio,
   };
 }
 

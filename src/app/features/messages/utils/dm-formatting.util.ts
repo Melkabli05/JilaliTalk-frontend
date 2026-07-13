@@ -7,7 +7,8 @@ export function preview(conv: DmConversation): string {
     case 'text':          return last.text ?? '';
     case 'image':         return 'Photo';
     case 'gift':          return `Gift ×${last.count ?? 1}`;
-    case 'introduction':  return 'Introduction';
+    case 'introduction':
+      return last.targetNickname ? `Shared: ${last.targetNickname}` : 'Introduction';
     case 'voice_room_shared':
       return last.voiceCount != null ? `Voice room · ${last.voiceCount} listening` : 'Voice room shared';
     case 'live_room_shared': return 'Live link shared';

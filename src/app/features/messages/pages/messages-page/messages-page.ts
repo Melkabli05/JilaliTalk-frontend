@@ -18,6 +18,8 @@ import {
   LucidePlus,
   LucideSearch,
   LucideSend,
+  LucideUserPlus,
+  LucideX,
 } from '@lucide/angular';
 import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
 import { ToastService } from '@core/services/toast.service';
@@ -25,10 +27,12 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal/user-info-modal.component';
 import { relativeTime } from '@shared/utils';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
+import { ShareIntroductionPickerComponent } from '../../ui/share-introduction-picker/share-introduction-picker.component';
 import { MessagesStore } from '../../store/messages.store';
 import { preview, dayLabel } from '../../utils/dm-formatting.util';
 import { filterConversationsByQuery } from '../../utils/dm-conversation.util';
 import { DmTypingBroadcaster } from '../../utils/dm-typing-broadcaster';
+import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
 
 /** How long to wait after the last keystroke before telling the peer typing stopped —
  *  also the minimum gap between repeated "started typing" sends while the user keeps
@@ -41,6 +45,7 @@ const TYPING_STOP_DELAY_MS = 3_000;
   providers: [MessagesStore],
   imports: [
     MessageNewContactPanelComponent,
+    ShareIntroductionPickerComponent,
     AvatarComponent,
     LucideChevronLeft,
     LucideInbox,
@@ -48,6 +53,8 @@ const TYPING_STOP_DELAY_MS = 3_000;
     LucidePlus,
     LucideSearch,
     LucideSend,
+    LucideUserPlus,
+    LucideX,
   ],
   templateUrl: './messages-page.html',
   styleUrl: './messages-page.scss',
@@ -84,8 +91,10 @@ export class MessagesPageComponent {
   );
 
   protected readonly panelOpen = signal(false);
+  protected readonly introPickerOpen = signal(false);
+  protected readonly stagedIntroduction = signal<IntroductionPayload | null>(null);
   protected readonly draft = signal('');
-  protected readonly canSend = computed(() => this.draft().trim().length > 0);
+  protected readonly canSend = computed(() => this.draft().trim().length > 0 || this.stagedIntroduction() !== null);
   protected readonly dayLabel = dayLabel;
 
   private readonly selectedPeerId = computed(() => {
@@ -105,6 +114,11 @@ export class MessagesPageComponent {
       const id = this.userId();
       if (id == null) return;
       this.store.select(String(id));
+    });
+
+    effect(() => {
+      this.store.selectedId();
+      this.stagedIntroduction.set(null);
     });
 
     effect(() => {
@@ -145,6 +159,16 @@ export class MessagesPageComponent {
     this.store.select(String(userId));
   }
 
+  protected toggleIntroPicker(): void { this.introPickerOpen.update(v => !v); }
+  protected closeIntroPicker(): void { this.introPickerOpen.set(false); }
+
+  protected onIntroductionPicked(payload: IntroductionPayload): void {
+    this.stagedIntroduction.set(payload);
+    this.introPickerOpen.set(false);
+  }
+
+  protected onStagedIntroRemove(): void { this.stagedIntroduction.set(null); }
+
   protected onInput(value: string): void {
     this.draft.set(value);
     const peerId = this.selectedPeerId();
@@ -164,9 +188,15 @@ export class MessagesPageComponent {
   }
 
   protected onSend(): void {
-    const text = this.draft().trim();
     const peerId = this.selectedPeerId();
-    if (!text || peerId == null) return;
+    if (peerId == null) return;
+    const intro = this.stagedIntroduction();
+    if (intro) {
+      this.sendIntroduction(peerId, intro);
+      return;
+    }
+    const text = this.draft().trim();
+    if (!text) return;
 
     const msgId = crypto.randomUUID();
     const now = Date.now();
@@ -182,6 +212,36 @@ export class MessagesPageComponent {
     // headUrl is irrelevant for our own messages — outbound bubbles never show an avatar.
     this.store.pushPublic(String(peerId), 'You', null, { id: msgId, type: 'text', text, ts: now, delivery: 'sent' });
     this.draft.set('');
+    this.typingBroadcaster.stop(peerId);
+  }
+
+  private sendIntroduction(peerId: number, intro: IntroductionPayload): void {
+    const msgId = crypto.randomUUID();
+    const now = Date.now();
+    const sent = this.store.sendDm(peerId, 'introduction', {
+      msgId,
+      fromNickname: 'You',
+      fromProfileTs: now,
+      introduction: intro,
+    });
+    if (sent == null) {
+      this.toast.error('Message not sent — check your connection');
+      return;
+    }
+    this.store.pushPublic(String(peerId), 'You', null, {
+      id: msgId,
+      type: 'introduction',
+      targetUserId: String(intro.userId),
+      targetNickname: intro.nickname,
+      targetHeadUrl: intro.headUrl ?? null,
+      targetSex: intro.sex ?? null,
+      targetAge: intro.age ?? null,
+      targetNationality: intro.nationality ?? null,
+      targetBio: intro.bio ?? null,
+      ts: now,
+      delivery: 'sent',
+    });
+    this.stagedIntroduction.set(null);
     this.typingBroadcaster.stop(peerId);
   }
 }

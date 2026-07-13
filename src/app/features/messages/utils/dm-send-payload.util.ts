@@ -1,4 +1,8 @@
-import type { DmSendGift, DmSendPayload } from '@core/realtime/ht-protocol/packet-framer.util';
+import type {
+  DmSendGift,
+  DmSendPayload,
+  IntroductionPayload,
+} from '@core/realtime/ht-protocol/packet-framer.util';
 
 export type DmKind = 'text' | 'image' | 'voice_room' | 'live_link' | 'introduction' | 'send_gift';
 
@@ -16,15 +20,10 @@ export interface SendDmBody {
   readonly height?: number | undefined;
   readonly mimeType?: string | undefined;
   readonly roomData?: unknown;
+  readonly introduction?: IntroductionPayload | undefined;
   readonly gift?: unknown;
 }
 
-/**
- * Builds the wire-format `DmSendPayload` for one of the six outbound DM kinds. Pure
- * translation from the store-facing `SendDmBody` DTO to the protocol layer's shape — kept
- * out of `MessagesStore` so the store's job stays "own conversation state," not also "know
- * the exact field layout each DM kind sends over the wire."
- */
 export function buildDmSendPayload(kind: DmKind, fields: Partial<SendDmBody>): DmSendPayload | null {
   switch (kind) {
     case 'text':
@@ -40,7 +39,9 @@ export function buildDmSendPayload(kind: DmKind, fields: Partial<SendDmBody>): D
         ...(fields.mimeType !== undefined ? { mimeType: fields.mimeType } : {}),
       };
     case 'introduction':
-      return { kind: 'introduction', roomData: fields.roomData };
+      return fields.introduction
+        ? { kind: 'introduction', introduction: fields.introduction }
+        : null;
     case 'voice_room':
       return { kind: 'voice_room', roomData: fields.roomData };
     case 'live_link':

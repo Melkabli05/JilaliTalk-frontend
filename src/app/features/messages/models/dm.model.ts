@@ -14,6 +14,13 @@ export interface DmMessage {
   readonly giftId?: number;
   readonly count?: number;
   readonly fromNickname?: string;
+  readonly targetUserId?: string;
+  readonly targetNickname?: string;
+  readonly targetHeadUrl?: string | null;
+  readonly targetSex?: string | null;
+  readonly targetAge?: number | null;
+  readonly targetNationality?: string | null;
+  readonly targetBio?: string | null;
   /** For room_share messages: the {@code cname} identifying the room. */
   readonly cname?: string;
   /** For {@code voice_room_shared}: how many listeners the room has right now. */

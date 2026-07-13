@@ -144,6 +144,64 @@
                 }
               </span>
             </div>
+          } @else if (msg.type === 'introduction') {
+            <div class="msg" [class.is-outbound]="!!msg.delivery">
+              @if (msg.delivery) {
+                <div class="bubble outbound intro-bubble">
+                  <span class="intro-context">You shared a profile</span>
+                  <button
+                    type="button"
+                    class="intro-card"
+                    [attr.aria-label]="'View ' + (msg.targetNickname || 'shared profile') + '’s profile'"
+                    (click)="onViewProfile(msg.targetUserId ?? '', msg.targetNickname ?? 'User', msg.targetHeadUrl ?? null)"
+                  >
+                    <app-avatar
+                      [src]="msg.targetHeadUrl ?? ''"
+                      [initials]="(msg.targetNickname ?? '?').slice(0, 2)"
+                      [alt]="msg.targetNickname ?? 'Shared profile'"
+                      size="md"
+                      class="intro-avatar"
+                    />
+                    <span class="intro-body">
+                      <span class="intro-name">{{ msg.targetNickname || 'Profile' }}</span>
+                      @if (msg.targetBio) {
+                        <span class="intro-bio">{{ msg.targetBio }}</span>
+                      }
+                      <span class="intro-cta">View profile →</span>
+                    </span>
+                  </button>
+                  <span class="delivery-mark" [class.read]="msg.delivery === 'read'">
+                    {{ msg.delivery === 'sent' ? '✓' : '✓✓' }}
+                  </span>
+                </div>
+              } @else {
+                <app-avatar [src]="conv.headUrl ?? ''" [initials]="conv.nickname.slice(0, 2)" [alt]="conv.nickname" size="xs" class="msg-avatar" />
+                <div class="bubble intro-bubble">
+                  <span class="intro-context">{{ (msg.fromNickname || conv.nickname) + ' shared a profile' }}</span>
+                  <button
+                    type="button"
+                    class="intro-card"
+                    [attr.aria-label]="'View ' + (msg.targetNickname || 'shared profile') + '’s profile'"
+                    (click)="onViewProfile(msg.targetUserId ?? '', msg.targetNickname ?? 'User', msg.targetHeadUrl ?? null)"
+                  >
+                    <app-avatar
+                      [src]="msg.targetHeadUrl ?? ''"
+                      [initials]="(msg.targetNickname ?? '?').slice(0, 2)"
+                      [alt]="msg.targetNickname ?? 'Shared profile'"
+                      size="md"
+                      class="intro-avatar"
+                    />
+                    <span class="intro-body">
+                      <span class="intro-name">{{ msg.targetNickname || 'Profile' }}</span>
+                      @if (msg.targetBio) {
+                        <span class="intro-bio">{{ msg.targetBio }}</span>
+                      }
+                      <span class="intro-cta">View profile →</span>
+                    </span>
+                  </button>
+                </div>
+              }
+            </div>
           } @else {
             <div class="msg" [class.is-outbound]="!!msg.delivery">
               @if (msg.delivery) {
@@ -151,7 +209,6 @@
                   @switch (msg.type) {
                     @case ('image') { <img [src]="msg.imageUrl" alt="" class="bubble-image" /> }
                     @case ('gift') { <p class="bubble-meta">Gift ×{{ msg.count ?? 1 }}</p> }
-                    @case ('introduction') { <p class="bubble-meta">Introduction</p> }
                     @default { <p>{{ msg.text }}</p> }
                   }
                   <span class="delivery-mark" [class.read]="msg.delivery === 'read'">
@@ -164,7 +221,6 @@
                   @switch (msg.type) {
                     @case ('image') { <img [src]="msg.imageUrl" alt="" class="bubble-image" /> }
                     @case ('gift') { <p class="bubble-meta">Gift ×{{ msg.count ?? 1 }}</p> }
-                    @case ('introduction') { <p class="bubble-meta">Introduction</p> }
                     @default { <p>{{ msg.text }}</p> }
                   }
                 </div>
@@ -187,10 +243,46 @@
         }
       </div>
 
+      @if (stagedIntroduction(); as intro) {
+        <div class="compose-staged" role="status">
+          <app-avatar
+            [src]="intro.headUrl ?? ''"
+            [initials]="intro.nickname.slice(0, 2)"
+            [alt]="intro.nickname"
+            size="xs"
+            class="compose-staged-avatar"
+          />
+          <span class="compose-staged-meta">
+            <span class="compose-staged-label">Sharing</span>
+            <span class="compose-staged-name">{{ intro.nickname }}</span>
+          </span>
+          <button
+            type="button"
+            class="compose-staged-remove"
+            aria-label="Remove shared profile"
+            (click)="onStagedIntroRemove()"
+          >
+            <svg aria-hidden="true" lucideX [size]="14"></svg>
+          </button>
+        </div>
+      }
+
       <form
         class="compose"
         (submit)="$event.preventDefault(); onSend()"
       >
+        <button
+          type="button"
+          class="compose-attach"
+          [class.compose-attach--active]="introPickerOpen()"
+          (click)="toggleIntroPicker()"
+          [attr.aria-label]="introPickerOpen() ? 'Close share profile' : 'Share a profile'"
+          [attr.aria-expanded]="introPickerOpen()"
+          title="Share a profile"
+        >
+          <svg aria-hidden="true" lucideUserPlus [size]="16"></svg>
+        </button>
+
         <textarea
           class="compose-field"
           rows="1"
@@ -199,7 +291,7 @@
           autocorrect="off"
           spellcheck="true"
           enterkeyhint="send"
-          placeholder="Message…"
+          [placeholder]="stagedIntroduction() ? 'Add a note (optional)…' : 'Message…'"
           [value]="draft()"
           (input)="onInput($any($event.target).value)"
           (keydown)="onComposerKeydown($event)"
@@ -212,12 +304,19 @@
           type="submit"
           class="compose-send"
           [disabled]="!canSend()"
-          [attr.aria-label]="canSend() ? 'Send message' : 'Type a message to enable send'"
-          title="Send"
+          [attr.aria-label]="canSend() ? (stagedIntroduction() ? 'Send introduction' : 'Send message') : 'Type a message or attach a profile to send'"
+          [title]="stagedIntroduction() ? 'Send introduction' : 'Send'"
         >
           <svg aria-hidden="true" lucideSend [size]="16"></svg>
         </button>
       </form>
+
+      @if (introPickerOpen()) {
+        <app-share-introduction-picker
+          (picked)="onIntroductionPicked($event)"
+          (closed)="closeIntroPicker()"
+        />
+      }
     } @else {
       <div class="no-selection">
         <button

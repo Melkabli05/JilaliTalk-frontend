@@ -269,6 +269,16 @@ export interface DmSendGift {
   readonly giftType: number;
 }
 
+export interface IntroductionPayload {
+  readonly userId: number;
+  readonly nickname: string;
+  readonly headUrl?: string | null;
+  readonly sex?: string | null;
+  readonly age?: number | null;
+  readonly nationality?: string | null;
+  readonly bio?: string | null;
+}
+
 export type DmSendPayload =
   | { readonly kind: 'text'; readonly text: string }
   | {
@@ -282,7 +292,7 @@ export type DmSendPayload =
     }
   | { readonly kind: 'live_link'; readonly roomData: unknown }
   | { readonly kind: 'voice_room'; readonly roomData: unknown }
-  | { readonly kind: 'introduction'; readonly roomData: unknown }
+  | { readonly kind: 'introduction'; readonly introduction: IntroductionPayload }
   | { readonly kind: 'send_gift'; readonly gift: DmSendGift };
 
 function buildDmMessageBody(params: {
@@ -354,7 +364,20 @@ function buildDmMessageBody(params: {
       };
     case 'introduction':
       return {
-        msg: { ...common, msg_type: 'introduction', introduction: payload.roomData, bubble: { id: 0 } },
+        msg: {
+          ...common,
+          msg_type: 'introduction',
+          introduction: {
+            user_id: payload.introduction.userId,
+            nickname: payload.introduction.nickname,
+            head_url: payload.introduction.headUrl ?? '',
+            sex: payload.introduction.sex ?? '',
+            age: payload.introduction.age ?? 0,
+            nationality: payload.introduction.nationality ?? '',
+            bio: payload.introduction.bio ?? '',
+          },
+          bubble: { id: 0 },
+        },
         version: CURRENT_VERSION,
         client_lang: 'English',
       };
