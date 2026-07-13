@@ -7,7 +7,9 @@
 }
 
 /* Mobile-first: flex column, same shape as the voice room (room-page.scss).
-   Stage caps at 45svh, audience auto-sizes, comments absorb the rest. */
+   Comments get a fixed 30% of the room's height; everything else
+   (header, stage, audience) shares the remaining 70%, with the stage
+   grid doing the growing since header/audience are naturally small. */
 .room-layout {
   display: flex;
   flex-direction: column;
@@ -26,7 +28,8 @@
 .left-column {
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -37,8 +40,8 @@
 }
 
 .stage-section {
-  flex-shrink: 0;
-  max-height: 45svh;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
   border-radius: var(--radius-xl);
 }
@@ -53,7 +56,7 @@
 }
 
 .comments-section {
-  flex: 1 1 auto;
+  flex: 0 0 30%;
   min-height: 0;
   overflow: hidden;
 }
