@@ -23,6 +23,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
         [alt]="displayName()"
         [ringColor]="ringColor()"
         [crownType]="crownType()"
+        [clickable]="true"
       />
       <div class="identity-main">
         <div class="name-row">
