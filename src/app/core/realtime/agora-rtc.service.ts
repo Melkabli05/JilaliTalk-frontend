@@ -81,7 +81,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
     if (publisherToken) await client.renewToken(publisherToken);
     const track = await AgoraRTC.createMicrophoneAudioTrack(this.getAudioTrackOptions());
     track.setVolume(100);
-    await this.denoiser.attach(track);
+    await this.denoiser.attach(track, this._noiseSuppressionLevel());
     await client.publish(track);
     this.micTrack = track;
     this._localAudioTrack.set(track);
@@ -128,6 +128,10 @@ export class AgoraRtcService implements RealtimeLifecycle {
 
   setNoiseSuppressionLevel(level: AudioNoiseSuppressionLevel): void {
     this._noiseSuppressionLevel.set(level);
+    // Live-apply if a track is already publishing — matches the AI denoiser being the one
+    // actually doing noise suppression today (see getAudioTrackOptions); native ANS can't be
+    // changed on an existing track anyway, so there'd be nothing to do for that case here.
+    void this.denoiser.applyLevel(level);
   }
 
   private getAudioTrackOptions(): {
@@ -136,11 +140,16 @@ export class AgoraRtcService implements RealtimeLifecycle {
     ANS: boolean;
     encoderConfig: 'speech_standard';
   } {
-    const level = this._noiseSuppressionLevel();
+    // The AI denoiser (attached right after this track is created — see startAudio) and
+    // native ANS both suppress noise on the same signal; running both in series was producing
+    // audible artifacts for listeners, not cleaner audio. Native ANS now only covers browsers
+    // the AI denoiser can't run in at all — isSupported() is checked here, before track
+    // creation, specifically so that fallback decision is made up front rather than only
+    // discovered after attach() runs on an already-created track.
     return {
       AEC: true,
       AGC: true,
-      ANS: level !== 0,
+      ANS: !this.denoiser.isSupported(),
       // speech_standard (32kHz mono, 24Kbps) is Agora's recommended profile for
       // voice-chat call quality/smooth transmission under real network conditions —
       // music_standard (48kHz, 32Kbps, tuned for high-fidelity/no-quality-change-on-
