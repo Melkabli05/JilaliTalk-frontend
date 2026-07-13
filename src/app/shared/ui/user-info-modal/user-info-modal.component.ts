@@ -26,6 +26,12 @@ export interface UserInfoModalData {
    *  per row). Omit when unknown — the modal falls back to `null` (unknown)
    *  and the button reads "Follow" until the user actually toggles it. */
   readonly isFollowing?: boolean | null;
+  /** Room context (cname + busiType) for the target user, when the caller has one and
+   *  `isFollowing` wasn't already known. Lets the modal fetch the room-scoped follow status
+   *  itself via `UserInfoService.fetchRoomFollowStatus` (the one upstream call that exposes
+   *  the viewer's follow relation to an arbitrary user) instead of starting unknown. Ignored
+   *  when `isFollowing` is already set. */
+  readonly roomContext?: { readonly cname: string; readonly busiType: number } | null;
 }
 
 /**
@@ -751,6 +757,15 @@ export class UserInfoModalComponent {
     // and not available from the modal).
     const me = this.viewerId();
     if (me) void this.userInfoService.fetchUserPresence(me);
+
+    const room = this.data.roomContext;
+    if (this.data.isFollowing == null && room) {
+      void this.userInfoService
+        .fetchRoomFollowStatus(this.data.userId, room.cname, room.busiType)
+        .then((isFollowing) => {
+          if (isFollowing != null) this._isFollowing.set(isFollowing);
+        });
+    }
   }
 
   /** The viewer's own current room cname (or null if they're not in any room).
@@ -889,15 +904,19 @@ export class UserInfoModalComponent {
   // ── Follow state ─────────────────────────────────────────────────────────────
   //
   // The upstream profile-enrichment endpoint (`/profile/v2/userinfo`, which backs
-  // UserInfoService) has no follow/mutual field in its `relation` payload — verified
-  // against jilalibff's UserInfoResponse.RelationInfo, which only carries counts
-  // (followers, following, likes, ...). So this modal can't determine the state
-  // itself. Callers that already know it (the profile page's Followers/Following
-  // tabs, which fetch `is_mutual` per row from `/relation/followers` and
-  // `/relation/followings`) pass it in via `data.isFollowing`; anywhere else it's
-  // genuinely unknown and starts `null`. Either way, the toggle response's
-  // `data.status` (1 = now following, 0 = not) becomes the definitive state for
-  // the rest of this modal's lifetime once the user actually taps the button.
+  // UserInfoService's main fetch) has no follow/mutual field in its `relation`
+  // payload — verified against jilalibff's UserInfoResponse.RelationInfo, which
+  // only carries counts (followers, following, likes, ...). Two ways this modal
+  // still learns the real initial state: callers that already know it (the profile
+  // page's Followers/Following tabs, which fetch `is_mutual` per row) pass it in via
+  // `data.isFollowing`; callers with a room context but no pre-known value (room
+  // roster, managers modal) let the constructor fetch it via
+  // `UserInfoService.fetchRoomFollowStatus` (`GET /api/users/{id}/profile`, decoded
+  // from bin/cc2018 server-side — the one upstream call that does expose this per
+  // arbitrary user). Anywhere else it's genuinely unknown and starts `null`. Either
+  // way, the toggle response's `data.status` (1 = now following, 0 = not) becomes
+  // the definitive state for the rest of this modal's lifetime once the user
+  // actually taps the button.
 
   private readonly _isFollowing = signal<boolean | null>(this.data.isFollowing ?? null);
   private readonly _isTogglingFollow = signal(false);

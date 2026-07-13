@@ -409,11 +409,13 @@ export class RoomFacade {
   private openUserActions(user: UserActionModalData): void {
     const canModerate = canModerateUser(this.roomStore.isHost(), this.roomStore.isModerator(), !!user.isGhost);
     if (!canModerate) {
+      const cname = this.roomStore.cname();
       this.dialog.open(UserInfoModalComponent, {
         data: {
           userId: user.userId ?? 0,
           nickname: user.nickname ?? user.base?.nickname ?? null,
           headUrl: user.headUrl ?? user.base?.headUrl ?? null,
+          ...(cname && { roomContext: { cname, busiType: this.busiType() } }),
         } satisfies UserInfoModalData,
         backdropClass: 'app-modal-backdrop',
         injector: this.injector,

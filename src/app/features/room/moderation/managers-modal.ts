@@ -370,6 +370,7 @@ export class ManagersModalComponent {
         nickname: manager.nickname,
         headUrl: manager.headUrl,
         nationality: manager.nationality,
+        roomContext: { cname: this.data.cname, busiType: this.data.busiType },
       } satisfies UserInfoModalData,
       backdropClass: 'app-modal-backdrop',
     });

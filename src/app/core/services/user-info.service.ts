@@ -298,6 +298,30 @@ export class UserInfoService {
     return !entry || Date.now() - entry.fetchedAt > PRESENCE_STALE_AFTER_MS;
   }
 
+  /**
+   * Room-scoped follow lookup — `GET /api/users/{userId}/profile?cname=...&busiType=...`,
+   * the one upstream call that exposes the viewer's follow relation to an arbitrary user
+   * (`/api/users/info` above never does — see UserInfoModalComponent's follow-state comment).
+   * Only usable when the target user is known to be in a specific room (`cname`), since that's
+   * what the upstream endpoint is scoped to. Returns `null` on any failure, matching the
+   * modal's existing "unknown" fallback rather than surfacing a toast for a non-critical hint.
+   */
+  async fetchRoomFollowStatus(userId: number, cname: string, busiType: number): Promise<boolean | null> {
+    if (!(userId > 0) || !cname) return null;
+    try {
+      const res = await firstValueFrom(
+        this.http.get<{ data: { followStat: { status: number } | null } | null }>(
+          `${this.baseUrl}/${userId}/profile`,
+          { params: { cname, busiType } },
+        ),
+      );
+      const status = res.data?.followStat?.status;
+      return status == null ? null : status !== 0;
+    } catch {
+      return null;
+    }
+  }
+
   async fetchUserPresence(userId: number): Promise<UserPresence | null> {
     if (!(userId > 0) || !Number.isFinite(userId)) return null;
     // Deduplicate: if a presence fetch for this uid is already in flight, await it.
