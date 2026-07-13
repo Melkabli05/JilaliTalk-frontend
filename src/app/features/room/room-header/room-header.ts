@@ -38,6 +38,7 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
 import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
 import { MicButtonComponent } from '../ui/mic-button';
 import { AvSettingsComponent } from '../audio-settings/av-settings';
+import { handIcon as resolveHandIcon, handTooltip as resolveHandTooltip, wsStatusTooltip } from './room-header.util';
 
 @Component({
   selector: 'app-room-header',
@@ -480,32 +481,15 @@ export class RoomHeaderComponent {
     });
   }
 
-  readonly wsTooltip = computed<string>(() => {
-    switch (this.wsStatus()) {
-      case 'connected':
-        return 'Live — realtime connected';
-      case 'reconnecting':
-        return 'Reconnecting…';
-      case 'connecting':
-        return 'Connecting…';
-      case 'disconnected':
-        return 'Disconnected — tap to refresh';
-    }
-  });
+  readonly wsTooltip = computed<string>(() => wsStatusTooltip(this.wsStatus()));
 
-  readonly handTooltip = computed<string>(() => {
-    if (this.isOnStage()) return 'Leave stage';
-    if (this.isHandRaised()) return 'Lower hand';
-    if (this.isModerator()) return 'Join stage';
-    return 'Raise hand';
-  });
+  readonly handTooltip = computed<string>(() =>
+    resolveHandTooltip(this.isOnStage(), this.isHandRaised(), this.isModerator()),
+  );
 
-  readonly handIcon = computed<'leave-stage' | 'lower-hand' | 'join-stage' | 'raise'>(() => {
-    if (this.isOnStage()) return 'leave-stage';
-    if (this.isHandRaised()) return 'lower-hand';
-    if (this.isModerator()) return 'join-stage';
-    return 'raise';
-  });
+  readonly handIcon = computed(() =>
+    resolveHandIcon(this.isOnStage(), this.isHandRaised(), this.isModerator()),
+  );
 
   readonly visibilityTooltip = computed(() => (this.invisible() ? 'Go visible' : 'Go invisible'));
 

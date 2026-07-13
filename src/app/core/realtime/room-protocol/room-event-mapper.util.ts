@@ -169,7 +169,13 @@ function mapComment(info: Record<string, unknown>): CommentEvent {
       ? textNode
       : '';
 
-  const id = textOr(info, '_id', textOr(msg, 'msg_id', ''));
+  // The live WS comment push has been observed with neither `_id` nor `msg.msg_id` present
+  // at all (only the REST GET /comments history carries a real `_id`) — falling back to ''
+  // would give every WS-pushed comment the same empty id, colliding in comment-list.util.ts's
+  // @for track keys and in findReplyTarget's "match by ri.msgId" lookup. A random id is unique
+  // per push and safe: nothing here needs it to be stable across redelivery (comments aren't
+  // replayed via offline-sync the way IM messages are).
+  const id = textOr(info, '_id', textOr(msg, 'msg_id', '')) || crypto.randomUUID();
   const createdAt = info['created_at'];
   const ts = typeof createdAt === 'number' ? createdAt * 1000 : Date.now();
 

@@ -2,7 +2,7 @@ import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { StageUsersResponse, AudienceUsersResponse, AudienceUser, CommentsResponse, SendCommentPayload, VoiceSignPanelResponse, RoomLevelRewardResponse, RoomLevelConfigResponse, VoiceRoomInfo, LiveRoomInfo, ManagerListResponse, CaptionHistoryResponse, VoiceTasksResponse } from '../models/room-model';
+import { StageUsersResponse, AudienceUsersResponse, AudienceUser, CommentsResponse, SendCommentPayload, SendCommentResponse, VoiceSignPanelResponse, RoomLevelRewardResponse, RoomLevelConfigResponse, VoiceRoomInfo, LiveRoomInfo, ManagerListResponse, CaptionHistoryResponse, VoiceTasksResponse } from '../models/room-model';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
 
 @Service()
@@ -62,8 +62,8 @@ export class RoomApi {
     return this.http.get<CommentsResponse>(`${this.baseUrl}/comments`, { params });
   }
 
-  sendComment(payload: SendCommentPayload): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/comments`, payload);
+  sendComment(payload: SendCommentPayload): Observable<SendCommentResponse> {
+    return this.http.post<SendCommentResponse>(`${this.baseUrl}/comments`, payload);
   }
 
   joinRoom(cname: string, busiType: number): Observable<void> {
@@ -179,6 +179,13 @@ export class RoomApi {
       );
   }
 
+  /** jilalibff's CaptionEntry.java declares @JsonProperty snake_case overrides for several
+   *  fields (user_id, nick_name, create_at) that the currently-running BFF does not honor —
+   *  confirmed by curling GET /captions/history directly, which returns the raw Java field
+   *  names (userId, nickName, createAt) instead. CaptionEntry (room-model.ts) is typed against
+   *  that live response, not the DTO's annotations — if the backend gets a clean rebuild and
+   *  those overrides start taking effect, this type (and CaptionListComponent's template) will
+   *  need to flip to match. */
   fetchCaptionHistory(cname: string, busiType: number, pageSize = 20): Observable<CaptionHistoryResponse> {
     const params = new HttpParams().set('cname', cname).set('busiType', busiType).set('pageSize', pageSize);
     return this.http.get<CaptionHistoryResponse>(`${this.baseUrl}/captions/history`, { params });

@@ -5,6 +5,12 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { getLanguageById } from '@shared/data/languages';
 import { initialsFrom } from '@shared/utils';
 import { LucideArrowUpToLine, LucideGhost, LucideRefreshCw } from '@lucide/angular';
+import {
+  audienceAriaLabel,
+  audienceLanguageRingColor,
+  audienceModeBadgeClass,
+  audienceModeLabel,
+} from './audience-user.util';
 
 export type AudienceUserDisplay = 'grid' | 'list';
 
@@ -317,33 +323,15 @@ export class AudienceUserComponent {
     return langId ? getLanguageById(langId) : null;
   });
 
-  readonly ringColor = computed(() => {
-    const lang = this.hostLang()?.name ?? '';
-    if (lang.includes('English')) return 'var(--color-neutral-300)';
-    if (lang.includes('Japanese')) return 'var(--color-warm-300)';
-    if (lang.includes('Korean')) return 'var(--color-primary-300)';
-    if (lang.includes('Chinese')) return 'var(--color-warm-400)';
-    if (lang.includes('Spanish')) return 'var(--color-warm-400)';
-    return 'var(--color-border)';
-  });
+  readonly ringColor = computed(() => audienceLanguageRingColor(this.hostLang()?.name));
 
-  readonly modeLabel = computed(() => {
-    if (this.isGhost()) return '';
-    return this.user().role === UserRole.Moderator ? 'MOD' : '';
-  });
+  readonly modeLabel = computed(() => audienceModeLabel(this.user().role, this.isGhost()));
 
-  readonly modeBadgeClass = computed(() => {
-    if (this.isGhost()) return 'ghost';
-    return this.user().role === UserRole.Moderator ? 'moderator' : 'normal';
-  });
+  readonly modeBadgeClass = computed(() => audienceModeBadgeClass(this.user().role, this.isGhost()));
 
-  readonly ariaLabel = computed(() => {
-    const u = this.user();
-    const parts = [this.displayName(), this.modeLabel()];
-    if (this.isGhost()) parts.push('connecting');
-    if (u.isRaiseHand) parts.push('hand raised');
-    return parts.filter(Boolean).join(', ');
-  });
+  readonly ariaLabel = computed(() =>
+    audienceAriaLabel(this.user(), this.displayName(), this.modeLabel(), this.isGhost()),
+  );
 
   emitInvite(event: Event): void {
     event.stopPropagation();

@@ -15,6 +15,7 @@ import { CaptionListComponent } from './caption-list';
 import { Comment } from '../models/room-model';
 import { COMMENTS_READER } from './comments-store';
 import { LucideMessageCircle, LucideCaptions, LucideMaximize2, LucideMinimize2, LucideRefreshCw } from '@lucide/angular';
+import { formatTypingText, resolveReplyTo } from './comments-panel.util';
 
 @Component({
   selector: 'app-comments-panel',
@@ -384,25 +385,9 @@ export class CommentsPanelComponent {
     !this.commentsStore.comments().some((c) => c.userId === this.currentUserId()),
   );
 
-  readonly replyTo = computed<ReplyTarget | null>(() => {
-    const comment = this.replyTarget();
-    return comment
-      ? {
-          msgId: comment._id,
-          fromId: comment.userId,
-          nickname: comment.nickname,
-          text: comment.msg.text.text,
-        }
-      : null;
-  });
+  readonly replyTo = computed<ReplyTarget | null>(() => resolveReplyTo(this.replyTarget()));
 
-  readonly typingText = computed<string | null>(() => {
-    const names = this.typingNames();
-    if (names.length === 0) return null;
-    if (names.length === 1) return `${names[0]} is writing...`;
-    if (names.length === 2) return `${names[0]} & ${names[1]} are writing...`;
-    return 'Several people are writing...';
-  });
+  readonly typingText = computed<string | null>(() => formatTypingText(this.typingNames()));
 
   /**
    * SR-only announcement for unread-count transitions. Reads the store's

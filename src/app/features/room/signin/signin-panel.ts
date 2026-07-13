@@ -4,6 +4,7 @@ import { RoomApi } from '../api/room-api';
 import { RewardItem, TaskItem } from '../models/room-model';
 import { LucideGift, LucideX, LucideCheck, LucideStar, LucideFlame, LucideLock, LucideList } from '@lucide/angular';
 import { firstValueFrom } from 'rxjs';
+import { giftEmojiFor } from './signin-panel.util';
 
 @Component({
   selector: 'app-signin-panel',
@@ -882,13 +883,5 @@ export class SigninPanelComponent {
       .finally(() => this.claimingTask.set(false));
   }
 
-  getGiftEmoji(giftId: number): string {
-    const emojiMap: Record<number, string> = {
-      53: '🎤',
-      175: '🎧',
-      14: '🐰',
-      31: '💝',
-    };
-    return emojiMap[giftId] ?? '🎁';
-  }
+  getGiftEmoji = giftEmojiFor;
 }

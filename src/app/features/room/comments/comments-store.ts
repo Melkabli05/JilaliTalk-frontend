@@ -115,18 +115,24 @@ export class CommentsStore extends CollectionStore<Comment> {
       }
       if (comment._id && list.some((c) => c._id === comment._id)) return list;
 
-      // Fallback reconciliation for when the BFF doesn't echo clientNonce
-      // back on the realtime event (see CommentEvent.clientNonce): the
-      // optimistic local insert (id "local-...") would otherwise never be
-      // matched against the real server comment and both would render,
-      // duplicating the sender's own message. Match by same user + exact
-      // text + sent within the last 15s instead.
+      // Fallback reconciliation for when the BFF doesn't echo clientNonce back on the
+      // realtime event (see CommentEvent.clientNonce) — this is not a rare edge case,
+      // it's the *only* path that ever runs: BffSendCommentRequest.java (the POST
+      // /comments body) has no clientNonce field at all, so the backend can never echo
+      // one back. The optimistic local insert (id "local-...") is matched against the
+      // real server comment by same user + sent within the last 15s — deliberately NOT
+      // exact text equality too: the live WS comment push has been observed carrying no
+      // msg id, and requiring the text to match byte-for-byte as well made this match
+      // fail (and silently leave both rows in the list, duplicated) on any server-side
+      // text normalization. A user's own comments arrive back in the order sent, so
+      // matching the oldest still-pending local placeholder for that user is enough on
+      // its own, and list.findIndex()'s natural array order already gives FIFO pairing
+      // for the rare case of two rapid sends.
       if (!comment._id.startsWith('local-')) {
         const idx = list.findIndex(
           (c) =>
             c._id.startsWith('local-') &&
             c.userId === comment.userId &&
-            c.msg.text.text === comment.msg.text.text &&
             Math.abs(c.createdAtMs - comment.createdAtMs) < 15_000,
         );
         if (idx >= 0) {
@@ -145,6 +151,18 @@ export class CommentsStore extends CollectionStore<Comment> {
 
   removeComment(id: string): void {
     this.collection.update((list) => list.filter((c) => c._id !== id));
+  }
+
+  /** Called once POST /comments confirms a send — patches the optimistic local placeholder's
+   *  timestamp to the BFF's own exact send instant, replacing the frontend's Date.now() guess.
+   *  Deliberately does NOT touch `_id` (stays "local-..."): the WS echo that eventually arrives
+   *  for this comment still needs addComment's fallback match (same user + time window) to find
+   *  and replace this row, since the echo carries no id of its own — this just makes that match
+   *  precise instead of racing the round-trip latency between send and echo. */
+  confirmCommentSent(localId: string, createdAtMs: number): void {
+    this.collection.update((list) =>
+      list.map((c) => (c._id === localId ? { ...c, createdAtMs, updatedAtMs: createdAtMs } : c)),
+    );
   }
 
   updateComments(comments: Comment[]): void {

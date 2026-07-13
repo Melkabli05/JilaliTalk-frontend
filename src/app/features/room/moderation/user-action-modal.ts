@@ -16,6 +16,22 @@ import {
   LucideX,
 } from '@lucide/angular';
 import { initialsFrom } from '@shared/utils';
+import {
+  collectTagChips,
+  formatLocation,
+  formatPointsSummary,
+  formatRoleChipClass,
+  formatRoleLabel,
+  onlineStatusChipClass,
+  resolveAvatarUrl,
+  resolveDisplayName,
+  resolveIsTargetSelf,
+  resolveLiveStatus,
+  resolveOnlineStatus,
+  resolveRelationStats,
+  roleCrownType,
+  roleRingColor,
+} from './user-action-modal.util';
 
 export interface UserActionModalData {
   readonly userId?: number;
@@ -746,12 +762,8 @@ export class UserActionModalComponent {
   private readonly details = computed(() => this.info()?.details ?? null);
   private readonly profileBase = computed(() => this.details()?.base ?? null);
 
-  readonly displayName = computed(
-    () => this.info()?.nickname ?? this.data.nickname ?? this.data.base?.nickname ?? 'User',
-  );
-  readonly avatarUrl = computed(
-    () => this.profileBase()?.headUrl || this.data.headUrl || this.data.base?.headUrl || '',
-  );
+  readonly displayName = computed(() => resolveDisplayName(this.info(), this.data));
+  readonly avatarUrl = computed(() => resolveAvatarUrl(this.profileBase(), this.data));
   readonly initials = computed(() => initialsFrom(this.displayName()));
 
   readonly username = computed(() => this.info()?.username ?? null);
@@ -763,113 +775,32 @@ export class UserActionModalComponent {
   readonly learnLangs = computed(() => this.profileBase()?.learnLangs ?? []);
   readonly vipType = computed(() => this.profileBase()?.vipType ?? 0);
 
-  readonly location = computed(() => {
-    const loc = this.details()?.location;
-    const parts = [loc?.city, loc?.fullCountry].filter((p): p is string => !!p);
-    return parts.length ? parts.join(', ') : null;
-  });
+  readonly location = computed(() => formatLocation(this.details()));
 
   readonly hasLocationMeta = computed(
     () => !!(this.nationality() || this.location() || this.age() || this.regDays() != null),
   );
 
-  readonly onlineStatus = computed(() => {
-    const s = this.details()?.onlineState?.onlineState;
-    if (s == null) return null;
-    return s === 1 ? 'Online' : 'Offline';
-  });
-  readonly onlineChipClass = computed(() =>
-    this.onlineStatus() === 'Online' ? 'chip-online' : 'chip-offline',
-  );
+  readonly onlineStatus = computed(() => resolveOnlineStatus(this.details()));
+  readonly onlineChipClass = computed(() => onlineStatusChipClass(this.onlineStatus()));
 
-  readonly liveStatus = computed(() => {
-    const s = this.details()?.liveState?.statusType;
-    return s != null && s > 0;
-  });
+  readonly liveStatus = computed(() => resolveLiveStatus(this.details()));
 
-  readonly relationStats = computed(() => {
-    const relation = this.details()?.relation;
-    if (!relation) return null;
-    return {
-      followers: relation.followers ?? 0,
-      following: relation.following ?? 0,
-      moments: relation.moments ?? 0,
-    };
-  });
+  readonly relationStats = computed(() => resolveRelationStats(this.details()));
 
-  readonly tagChips = computed<readonly string[]>(() => {
-    const tags = this.details()?.tags;
-    if (!tags) return [];
-    return [
-      ...(tags.hobby ?? []),
-      ...(tags.mbti ?? []),
-      ...(tags.zodiacSign ?? []),
-      ...(tags.bloodType ?? []),
-    ]
-      .map((t) => t.tag ?? '')
-      .filter((tag) => tag.length > 0);
-  });
+  readonly tagChips = computed<readonly string[]>(() => collectTagChips(this.details()));
 
   readonly giftLevel = computed(() => this.details()?.giftLevel ?? null);
 
-  readonly pointsSummary = computed(() => {
-    const p = this.details()?.points;
-    if (!p) return null;
-    const total =
-      (p.correct ?? 0) +
-      (p.translate ?? 0) +
-      (p.word ?? 0) +
-      (p.speechToText ?? 0) +
-      (p.textTranslate ?? 0) +
-      (p.transliterate ?? 0);
-    return total > 0 ? total.toLocaleString() : null;
-  });
+  readonly pointsSummary = computed(() => formatPointsSummary(this.details()));
 
   readonly remarkName = computed(() => this.details()?.remark?.remarkName ?? null);
   readonly profileUrl = computed(() => this.details()?.default?.profileShareUrl ?? null);
 
-  readonly roleLabel = computed(() => {
-    if (this.data.isGhost) return 'Ghost (Invisible)';
-    switch (this.data.role) {
-      case UserRole.Host:
-        return 'Host';
-      case UserRole.Moderator:
-        return 'Moderator';
-      default:
-        return 'Listener';
-    }
-  });
-  readonly roleChipClass = computed(() => {
-    if (this.data.isGhost) return 'chip-ghost';
-    switch (this.data.role) {
-      case UserRole.Host:
-        return 'chip-host';
-      case UserRole.Moderator:
-        return 'chip-mod';
-      default:
-        return 'chip-neutral';
-    }
-  });
-  readonly crownType = computed(() => {
-    switch (this.data.role) {
-      case UserRole.Host:
-        return 1;
-      case UserRole.Moderator:
-        return 2;
-      default:
-        return null;
-    }
-  });
-  readonly ringColor = computed(() => {
-    switch (this.data.role) {
-      case UserRole.Host:
-        return 'var(--color-gold-400)';
-      case UserRole.Moderator:
-        return 'var(--color-primary-300)';
-      default:
-        return 'var(--color-border)';
-    }
-  });
+  readonly roleLabel = computed(() => formatRoleLabel(this.data.role, this.data.isGhost));
+  readonly roleChipClass = computed(() => formatRoleChipClass(this.data.role, this.data.isGhost));
+  readonly crownType = computed(() => roleCrownType(this.data.role));
+  readonly ringColor = computed(() => roleRingColor(this.data.role));
 
   readonly targetRole = computed(
     () => (this.data.role as UserRole) ?? UserRole.Normal,
@@ -881,10 +812,8 @@ export class UserActionModalComponent {
     () => this.roomStore?.myRole() ?? this.data.myRole ?? UserRole.Normal,
   );
 
-  readonly isTargetSelf = computed(
-    () =>
-      this.data.userId != null &&
-      this.data.userId === (this.roomStore?.userId() ?? this.data.myUserId),
+  readonly isTargetSelf = computed(() =>
+    resolveIsTargetSelf(this.data.userId, this.roomStore?.userId() ?? this.data.myUserId),
   );
 
   private readonly permissions = computed(() =>

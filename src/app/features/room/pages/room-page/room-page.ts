@@ -275,6 +275,6 @@ export class RoomPageComponent {
   onSendComment(event: SendEvent): void {
     const cname = this.roomStore.cname();
     if (!cname) return;
-    sendVoiceComment(event, cname, this.roomStore, this.commentsStore, this.api, this.destroyRef);
+    sendVoiceComment(event, cname, this.roomStore, this.commentsStore, this.api, this.toast, this.destroyRef);
   }
 }

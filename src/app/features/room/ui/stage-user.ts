@@ -3,6 +3,7 @@ import { StageUser } from '../models/room-model';
 import { UserRole } from '@core/models/user-role';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { LucideMicOff, LucideMic } from '@lucide/angular';
+import { stageAriaLabel, stageRingColor, stageRoleLabel } from './stage-role.util';
 
 @Component({
   selector: 'app-stage-user',
@@ -160,31 +161,19 @@ export class StageUserComponent {
     return 'online' as const;
   });
 
-  readonly ringColor = computed(() => {
-    switch (this.user().role) {
-      case UserRole.Host: return 'var(--color-gold-400)';
-      case UserRole.Moderator: return 'var(--color-primary-300)';
-      default: return 'var(--color-neutral-200)';
-    }
-  });
+  readonly ringColor = computed(() => stageRingColor(this.user().role));
 
-  readonly roleLabel = computed(() => {
-    switch (this.user().role) {
-      case UserRole.Host: return 'HOST';
-      case UserRole.Moderator: return 'MOD';
-      default: return '';
-    }
-  });
+  readonly roleLabel = computed(() => stageRoleLabel(this.user().role));
 
   readonly roleBadgeClass = computed(() => this.roleLabel().toLowerCase() || 'no-role');
 
-  ariaLabel(): string {
-    const u = this.user();
-    const parts = [u.nickname ?? 'User'];
-    if (u.isAway) parts.push('away');
-    else if (this.roleLabel()) parts.push(this.roleLabel());
-    if (!u.isTurnOnMic) parts.push('muted');
-    if (this.isSpeaking()) parts.push('speaking');
-    return parts.join(', ');
-  }
+  readonly ariaLabel = computed(() =>
+    stageAriaLabel(
+      this.user().nickname,
+      this.roleLabel(),
+      this.user().isAway,
+      this.user().isTurnOnMic,
+      this.isSpeaking(),
+    ),
+  );
 }

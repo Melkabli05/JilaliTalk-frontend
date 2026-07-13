@@ -21,6 +21,12 @@ function makeClientNonce(userId: number): string {
  * video rooms don't (see sendVideoComment). This is a real, intentional difference between
  * the two room types, not an oversight — kept as two functions rather than one merged
  * "SendCommentCommand" so neither behavior silently changes.
+ *
+ * POST /comments can genuinely fail (upstream has been observed rejecting a send with
+ * `code: 100002` from a non-stage account), so a failure here rolls the optimistic insert
+ * back out and surfaces a toast — matching the pattern already used by every other
+ * optimistic room command (raiseOrLowerHand, leaveStage) rather than leaving a message
+ * sitting in the sender's own list that nobody else ever received.
  */
 export function sendVoiceComment(
   event: SendEvent,
@@ -28,6 +34,7 @@ export function sendVoiceComment(
   roomStore: RoomStore,
   commentsStore: CommentsStore,
   api: RoomApi,
+  toast: ToastService,
   destroyRef: DestroyRef,
 ): void {
   const nickname = roomStore.nickname() || 'Anonymous';
@@ -36,6 +43,7 @@ export function sendVoiceComment(
   const role = roomStore.myRole();
 
   const clientNonce = makeClientNonce(roomStore.userId());
+  const localId = `local-${roomStore.userId()}-${Date.now()}`;
 
   const payload = buildSendCommentPayload(
     {
@@ -51,7 +59,7 @@ export function sendVoiceComment(
   );
 
   commentsStore.addComment({
-    _id: `local-${roomStore.userId()}-${Date.now()}`,
+    _id: localId,
     clientNonce,
     createdAtMs: Date.now(),
     updatedAtMs: Date.now(),
@@ -82,7 +90,14 @@ export function sendVoiceComment(
 
   api.sendComment(payload)
     .pipe(takeUntilDestroyed(destroyRef))
-    .subscribe({ error: (err: unknown) => console.warn('[RoomPage] sendComment failed', err) });
+    .subscribe({
+      next: (res) => commentsStore.confirmCommentSent(localId, res.createdAtMs),
+      error: (err: unknown) => {
+        console.warn('[RoomPage] sendComment failed', err);
+        commentsStore.removeComment(localId);
+        toast.error(httpErrorMessage(err, 'Failed to send message'));
+      },
+    });
 }
 
 export function sendVideoComment(

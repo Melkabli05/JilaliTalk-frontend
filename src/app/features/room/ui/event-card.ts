@@ -2,7 +2,17 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { EventCard } from '../models/room-model';
-import { initialsFrom, formatClockTime } from '@shared/utils';
+import { formatClockTime } from '@shared/utils';
+import {
+  eventCardAvatarUrl,
+  eventCardGiftIconUrl,
+  eventCardGiftLabel,
+  eventCardGiftReceiverInitials,
+  eventCardInitials,
+  eventCardName,
+  eventCardNationality,
+  eventCardTag,
+} from './event-card.util';
 import {
   LucideFlower2, LucideArrowRight, LucideGem, LucideHeart,
   LucideLogIn, LucideLogOut, LucideHand, LucidePresentation, LucideShieldCheck, LucideShieldOff, LucideUserX,
@@ -466,51 +476,13 @@ import {
 export class EventCardComponent {
   readonly card = input.required<EventCard>();
 
-  avatarUrl(card: EventCard): string {
-    return 'headUrl' in card ? (card.headUrl ?? '') : '';
-  }
-
-  nationality(card: EventCard): string | null {
-    return 'nationality' in card ? card.nationality : null;
-  }
-
-  giftIconUrl(card: EventCard): string {
-    return card.kind === 'gift' ? (card.giftIconUrl ?? '') : '';
-  }
-
-  initials(card: EventCard): string {
-    const n = this.name(card);
-    return n === 'Someone' ? '??' : initialsFrom(n);
-  }
-
-  giftReceiverInitials(card: EventCard): string {
-    if (card.kind !== 'gift' || !card.receiverNickname) return '??';
-    return initialsFrom(card.receiverNickname);
-  }
-
-  name(card: EventCard): string {
-    return 'nickname' in card && card.nickname ? card.nickname : 'Someone';
-  }
-
-  giftLabel(card: EventCard): string {
-    return card.kind === 'gift' ? (card.giftName || 'gift') : '';
-  }
-
-  tag(card: EventCard): string {
-    switch (card.kind) {
-      case 'follow': return card.isFollowBack ? 'followed back' : 'followed you';
-      case 'user_join': return 'joined';
-      case 'user_quit': return 'left';
-      case 'stage_raisehand': return card.isRaised ? 'raised hand' : 'lowered hand';
-      case 'whiteboard_activated': return 'whiteboard on';
-      case 'whiteboard_deactivated': return 'whiteboard off';
-      case 'mod_accepted': return 'now moderating';
-      case 'mod_removed': return 'mod removed';
-      case 'stage_kick': return 'stage kick';
-      case 'room_kick': return 'room kick';
-      default: return '';
-    }
-  }
-
+  avatarUrl = eventCardAvatarUrl;
+  nationality = eventCardNationality;
+  giftIconUrl = eventCardGiftIconUrl;
+  initials = eventCardInitials;
+  giftReceiverInitials = eventCardGiftReceiverInitials;
+  name = eventCardName;
+  giftLabel = eventCardGiftLabel;
+  tag = eventCardTag;
   formatTime = formatClockTime;
 }

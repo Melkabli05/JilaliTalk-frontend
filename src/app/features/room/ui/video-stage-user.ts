@@ -15,9 +15,10 @@ import { StageUser } from '../models/room-model';
 import { UserRole } from '@core/models/user-role';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { LucideMicOff, LucideCrown, LucideMaximize2, LucideMinimize2 } from '@lucide/angular';
+import { stageRoleLabel, videoStageAriaLabel } from './stage-role.util';
 
 export interface PlayableVideoTrack {
-  play(container: HTMLElement): void;
+  play(container: HTMLElement, config?: { readonly fit?: 'cover' | 'contain' | 'fill' }): void;
   stop(): void;
 }
 
@@ -292,11 +293,7 @@ export class VideoStageUserComponent {
 
   protected readonly isHost = computed(() => this.user().role === UserRole.Host);
   protected readonly isModerator = computed(() => this.user().role === UserRole.Moderator);
-  protected readonly roleLabel = computed(() => {
-    if (this.isHost()) return 'HOST';
-    if (this.isModerator()) return 'MOD';
-    return '';
-  });
+  protected readonly roleLabel = computed(() => stageRoleLabel(this.user().role));
   protected readonly roleBadgeClass = computed(() => this.roleLabel().toLowerCase());
 
   constructor() {
@@ -311,20 +308,21 @@ export class VideoStageUserComponent {
       }
 
       if (track && container) {
-        (track as any).play(container.nativeElement, { fit: 'cover' });
+        track.play(container.nativeElement, { fit: 'cover' });
       }
     });
     this.destroyRef.onDestroy(() => attached?.stop());
   }
 
-  protected readonly ariaLabel = computed(() => {
-    const u = this.user();
-    const parts = [u.nickname];
-    if (this.roleLabel()) parts.push(this.roleLabel());
-    parts.push(!u.isTurnOnMic ? 'muted' : this.isActiveSpeaker() ? 'speaking' : 'mic on');
-    parts.push(this.hasVideoTrack() ? 'camera on' : 'camera off');
-    return parts.join(', ');
-  });
+  protected readonly ariaLabel = computed(() =>
+    videoStageAriaLabel(
+      this.user().nickname,
+      this.roleLabel(),
+      this.user().isTurnOnMic,
+      this.isActiveSpeaker(),
+      this.hasVideoTrack(),
+    ),
+  );
 
   onExpandClick(event: Event): void {
     event.stopPropagation();

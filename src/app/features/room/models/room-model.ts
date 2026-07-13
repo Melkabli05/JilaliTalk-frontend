@@ -250,9 +250,10 @@ export interface SendCommentPayload {
   readonly nationality: string | null;
   readonly role: number;
   readonly text: string;
-  /** Client-generated UUID; echoed back on the WS comment event so the
-   *  sender can replace the optimistic row with the server-authoritative
-   *  one (dedup-by-clientNonce). */
+  /** Client-generated UUID, sent for forward-compatibility if the BFF ever adds support for
+   *  echoing it back — it doesn't yet (BffSendCommentRequest.java has no clientNonce field),
+   *  so CommentsStore.addComment's same-user/time-window fallback match is the one path that
+   *  actually reconciles the optimistic insert today, not this. */
   readonly clientNonce?: string;
   readonly replyInfo?: {
     readonly msgId: string;
@@ -261,6 +262,16 @@ export interface SendCommentPayload {
     readonly text: string;
     readonly msgType: string;
   } | null;
+}
+
+/** POST /comments' response body (CommentController.sendComment → SendCommentResponse.java).
+ *  createdAtMs is the BFF's own send instant — always present, and exact (not the frontend's
+ *  own Date.now() estimate) — used to tighten CommentsStore.addComment's WS-echo reconciliation
+ *  window. id is best-effort only: populated when upstream's response happens to include one,
+ *  never guaranteed. */
+export interface SendCommentResponse {
+  readonly createdAtMs: number;
+  readonly id: string | null;
 }
 export interface RtcInfo {
   readonly appId: string | null;
@@ -535,18 +546,17 @@ export interface ManagerListResponse {
   readonly managerList: readonly Manager[];
 }
 
+/** Matches CaptionEntry.java exactly (com.jilali.comment.dto) — verified against the live
+ *  GET /captions/history response, not just the DTO's @JsonProperty annotations, several of
+ *  which aren't currently honored by the running BFF (see room-api.ts's fetchCaptionHistory
+ *  doc comment). No cname/headUrl/roleType/resultId — those aren't in the response at all. */
 export interface CaptionEntry {
-  readonly id: string;
-  readonly cname: string;
+  readonly _id: string;
   readonly userId: number;
   readonly nickName: string;
-  readonly headUrl: string | null;
   readonly nationality: string | null;
-  readonly roleType: number;
-  readonly resultId: string;
   readonly text: string;
-  readonly createdAt: number;
-  readonly updateAt: number;
+  readonly createAt: number;
 }
 
 export interface CaptionHistoryResponse {

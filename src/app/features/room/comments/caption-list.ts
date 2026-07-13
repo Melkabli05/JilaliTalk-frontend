@@ -13,11 +13,10 @@ const formatTime = formatClockTime;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="caption-list" role="log" aria-label="Captions">
-      @for (caption of captions(); track caption.id) {
+      @for (caption of captions(); track caption._id) {
         <div class="entry">
           <app-avatar
             class="entry-avatar"
-            [src]="caption.headUrl || ''"
             [initials]="caption.nickName.slice(0, 2)"
             size="sm"
             [alt]="caption.nickName"
@@ -28,7 +27,7 @@ const formatTime = formatClockTime;
               @if (caption.nationality) {
                 <app-country-flag [code]="caption.nationality" [compact]="true" />
               }
-              <span class="time">{{ formatTime(caption.createdAt) }}</span>
+              <span class="time">{{ formatTime(caption.createAt * 1000) }}</span>
             </div>
             <p class="text">{{ caption.text }}</p>
           </div>

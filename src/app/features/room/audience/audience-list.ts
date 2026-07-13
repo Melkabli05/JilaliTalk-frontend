@@ -1,11 +1,11 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, computed, effect } from '@angular/core';
 import { AudienceUser } from '../models/room-model';
 import { UserRole } from '@core/models/user-role';
-import { getLanguageById, getLanguageFlag } from '@shared/data/languages';
+import { getLanguageById } from '@shared/data/languages';
 import { createSearchMatcher, injectIsMobileViewport, partitionBy } from '@shared/utils';
 import { AudienceListBarComponent } from './audience-list-bar';
 import { AudienceListGridComponent } from './audience-list-grid';
-import { ViewMode, LanguageGroup } from './audience-list-shared';
+import { ViewMode, LanguageGroup, groupUsersByLanguage } from './audience-list-shared';
 
 @Component({
   selector: 'app-audience-list',
@@ -159,30 +159,9 @@ export class AudienceListComponent {
   readonly displayUsers = this.filteredUsers;
   readonly filteredCount = computed(() => this.filteredUsers().length);
 
-  readonly languageGroups = computed<readonly LanguageGroup[]>(() => {
-    const users = this.filteredUsers();
-    const ghosts = users.filter((u) => u.isGhost);
-    const map = new Map<string, LanguageGroup>();
-    for (const u of users) {
-      if (u.isGhost) continue;
-      const langId = u.base?.nativeLang ?? -1;
-      const langName = getLanguageById(langId)?.name ?? 'Unknown';
-      const langFlag = getLanguageFlag(langId);
-      if (!map.has(langName)) map.set(langName, { language: langName, flag: langFlag, users: [] });
-      map.get(langName)!.users.push(u);
-    }
-    let groups = Array.from(map.values())
-      .sort((a, b) => b.users.length - a.users.length || a.language.localeCompare(b.language));
-
-    const singletons = groups.filter((g) => g.users.length === 1);
-    if (singletons.length > 3) {
-      const rest = groups.filter((g) => g.users.length > 1);
-      const other = singletons.flatMap((g) => g.users);
-      groups = [...rest, { language: 'Other languages', flag: '🌐', users: other }];
-    }
-
-    return ghosts.length ? [{ language: 'Ghosts', flag: '👻', users: ghosts }, ...groups] : groups;
-  });
+  readonly languageGroups = computed<readonly LanguageGroup[]>(() =>
+    groupUsersByLanguage(this.filteredUsers()),
+  );
 
   toggleSearch(): void {
     this.showSearch.update((v) => !v);
