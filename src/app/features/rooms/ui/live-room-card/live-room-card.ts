@@ -131,7 +131,7 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
     </article>
   `,
   styles: [`
-    :host { display: block; height: 100%; flex: 1; min-width: 200px; }
+    :host { display: block; height: 100%; flex: 1; min-width: 180px; }
 
     .live-card {
       background-color: var(--color-card);
@@ -277,6 +277,24 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
       gap: var(--space-2);
       flex: 1;
       min-width: 0;
+    }
+
+    @media (width <= 640px) {
+      .card-thumbnail {
+        aspect-ratio: 16 / 9;
+        max-height: 120px;
+      }
+      .card-body {
+        padding: var(--space-2);
+        gap: var(--space-1);
+      }
+      .card-title {
+        -webkit-line-clamp: 1;
+        font-size: var(--text-xs);
+      }
+      .card-actions {
+        gap: var(--space-1);
+      }
     }
 
     .host-row {

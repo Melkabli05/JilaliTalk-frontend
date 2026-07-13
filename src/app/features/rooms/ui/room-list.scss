@@ -11,6 +11,124 @@
   }
 }
 
+/* Recommended carousel — shared by voice-list and live-list (both render
+   the same .recommended-rooms markup). Angular component styles are
+   scoped per-component, so this has to live in the shared partial rather
+   than either page's own .scss for both to actually get it. */
+.recommended-rooms {
+  margin-bottom: var(--space-10);
+
+  @media (width <= 640px) {
+    margin-bottom: var(--space-4);
+  }
+
+  @media (width >= 641px) and (width <= 1024px) {
+    margin-bottom: var(--space-8);
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+
+  @media (width <= 640px) {
+    margin-bottom: var(--space-3);
+  }
+}
+
+.flame-icon {
+  color: var(--color-warm-500);
+}
+
+.section-title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  margin: 0;
+}
+
+.carousel-nav {
+  display: flex;
+  gap: var(--space-1);
+  margin-left: auto;
+
+  @media (width <= 640px) {
+    display: none;
+  }
+}
+
+.carousel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-card);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-primary-200);
+    color: var(--color-primary-600);
+    background-color: var(--color-primary-50);
+  }
+
+  &:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  :host-context(.dark) & {
+    background-color: var(--color-neutral-800);
+    border-color: var(--color-neutral-700);
+    color: var(--color-neutral-300);
+
+    &:hover {
+      border-color: var(--color-primary-700);
+      color: var(--color-primary-300);
+      background-color: var(--color-primary-900);
+    }
+  }
+}
+
+.recommended-rooms-scroll {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (width <= 640px) {
+    gap: var(--space-2);
+    padding-top: 0;
+    padding-bottom: var(--space-1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recommended-rooms {
+    margin-bottom: var(--space-6);
+  }
+}
+
 .page-header {
   margin-bottom: var(--space-8);
 
