@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, computed, viewChild, ElementRef, effect } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { LucideCrown } from '@lucide/angular';
 import { getCountryByCode } from '@shared/data/countries';
@@ -30,6 +30,9 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
     '[attr.role]': 'showImage() ? null : "img"',
     '[attr.aria-label]': 'showImage() ? null : computedLabel()',
     '[attr.tabindex]': 'clickable() ? 0 : null',
+    '(click)': 'onHostClick($event)',
+    '(keydown.enter)': 'onHostClick($event)',
+    '(keydown.space)': 'onHostClick($event); $event.preventDefault()',
   },
   template: `
     @if (loading()) {
@@ -73,6 +76,31 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
         height="10"
         loading="lazy"
       />
+    }
+
+    @if (previewing()) {
+      <div
+        class="avatar-preview-backdrop"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="alt()"
+        (click)="closePreview($event)"
+        (keydown.escape)="closePreview($event)"
+        tabindex="-1"
+        #previewBackdrop
+      >
+        <button type="button" class="avatar-preview-close" aria-label="Close preview" (click)="closePreview($event)">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+        <img
+          class="avatar-preview-img"
+          [src]="src()"
+          [alt]="alt()"
+          (click)="$event.stopPropagation()"
+        />
+      </div>
     }
   `,
   styles: [
@@ -291,6 +319,62 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
         width: 16px;
         height: 16px;
       }
+
+      .avatar-preview-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: var(--z-modal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-6) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        padding-top: max(var(--space-6), env(safe-area-inset-top));
+        background: color-mix(in srgb, var(--color-black) 80%, transparent);
+        backdrop-filter: blur(4px);
+        cursor: zoom-out;
+        animation: avatar-preview-fade-in 0.15s ease-out;
+      }
+      @keyframes avatar-preview-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .avatar-preview-img {
+        max-width: min(90vw, 480px);
+        max-height: 80vh;
+        width: auto;
+        height: auto;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-modal);
+        cursor: default;
+        object-fit: contain;
+      }
+      .avatar-preview-close {
+        position: absolute;
+        top: max(var(--space-4), env(safe-area-inset-top));
+        right: var(--space-4);
+        width: var(--touch-target-min);
+        height: var(--touch-target-min);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-full);
+        border: none;
+        background: color-mix(in srgb, var(--color-black) 40%, transparent);
+        color: white;
+        cursor: pointer;
+      }
+      .avatar-preview-close svg {
+        width: 18px;
+        height: 18px;
+      }
+      .avatar-preview-close:focus-visible,
+      .avatar-preview-backdrop:focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: var(--focus-ring-offset);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .avatar-preview-backdrop { animation: none; }
+      }
     `,
   ],
 })
@@ -309,7 +393,7 @@ export class AvatarComponent {
   readonly loading = input<boolean>(false);
   readonly clickable = input<boolean>(false);
   readonly priority = input<boolean>(false);
-  readonly avatarClick = output<MouseEvent>();
+  readonly avatarClick = output<MouseEvent | KeyboardEvent>();
 
   protected readonly failed = signal(false);
 
@@ -357,9 +441,28 @@ export class AvatarComponent {
     this.failed.set(true);
   }
 
-  onHostClick(event: MouseEvent): void {
-    if (this.clickable()) {
-      this.avatarClick.emit(event);
+  protected readonly previewing = signal(false);
+  private readonly previewBackdrop = viewChild<ElementRef<HTMLElement>>('previewBackdrop');
+
+  constructor() {
+    effect(() => {
+      if (this.previewing()) {
+        this.previewBackdrop()?.nativeElement.focus();
+      }
+    });
+  }
+
+  onHostClick(event: Event): void {
+    if (!this.clickable()) return;
+    event.stopPropagation();
+    if (this.showImage()) {
+      this.previewing.set(true);
     }
+    this.avatarClick.emit(event as MouseEvent | KeyboardEvent);
+  }
+
+  closePreview(event: Event): void {
+    event.stopPropagation();
+    this.previewing.set(false);
   }
 }

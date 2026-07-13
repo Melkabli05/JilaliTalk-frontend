@@ -17,6 +17,7 @@ import { LucideCrown } from '@lucide/angular';
         [alt]="displayName()"
         [ringColor]="isTopVip() ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
         [priority]="true"
+        [clickable]="true"
       />
       <div class="identity-main">
         <div class="name-row">
