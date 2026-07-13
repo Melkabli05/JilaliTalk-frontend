@@ -323,14 +323,15 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
       .avatar-preview-backdrop {
         position: fixed;
         inset: 0;
-        z-index: var(--z-modal);
+        z-index: 9999;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: var(--space-6) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         padding-top: max(var(--space-6), env(safe-area-inset-top));
-        background: color-mix(in srgb, var(--color-black) 80%, transparent);
-        backdrop-filter: blur(4px);
+        background: transparent;
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
         cursor: zoom-out;
         animation: avatar-preview-fade-in 0.15s ease-out;
       }
