@@ -412,7 +412,7 @@ import { handIcon as resolveHandIcon, handTooltip as resolveHandTooltip, wsStatu
             </button>
           </div>
           @if (showSettings()) {
-            <app-av-settings (onClose)="showSettings.set(false)" />
+            <app-av-settings variant="inline" (onClose)="showSettings.set(false)" />
           }
         }
 

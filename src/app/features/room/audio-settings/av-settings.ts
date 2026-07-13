@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input, output } from '@angular/core';
 import { LucideWaves } from '@lucide/angular';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import type { AudioNoiseSuppressionLevel } from '@core/realtime/agora-rtc.service';
@@ -15,6 +15,9 @@ const NOISE_LEVELS: { value: AudioNoiseSuppressionLevel; label: string; descript
 
   imports: [LucideWaves],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.inline]': "variant() === 'inline'",
+  },
   template: `
     <div class="dropdown-panel" role="menu">
       <div class="dropdown-header">
@@ -67,6 +70,27 @@ const NOISE_LEVELS: { value: AudioNoiseSuppressionLevel; label: string; descript
       --avs-selected-fg:  var(--color-primary-700);
       --avs-check-fg:     var(--color-primary-600);
     }
+    /* "inline" variant — used inside the mobile overflow bottom-sheet (room-header.ts), which
+       is itself position:fixed and anchored to the viewport bottom. The default dropdown
+       positioning (position:absolute; top:calc(100% + 6px)) resolves against *that* box in
+       that context, not the row the user clicked, and renders the whole panel below the
+       viewport — invisible, looking like the click did nothing. Inline mode drops the
+       self-positioning and just flows as a normal full-width block in the sheet instead. */
+    :host.inline {
+      position: static;
+      top: auto;
+      right: auto;
+      z-index: auto;
+      width: 100%;
+      margin-top: var(--space-2);
+    }
+    :host.inline .dropdown-panel {
+      width: 100%;
+    }
+    :host.inline .dropdown-panel::before {
+      display: none;
+    }
+
     :host-context(.dark) {
       --avs-bg:           var(--color-neutral-800);
       --avs-border:       var(--color-neutral-700);
@@ -197,6 +221,7 @@ const NOISE_LEVELS: { value: AudioNoiseSuppressionLevel; label: string; descript
 })
 export class AvSettingsComponent {
   readonly room = inject(RoomConnectionService);
+  readonly variant = input<'dropdown' | 'inline'>('dropdown');
   readonly onClose = output<void>();
   readonly noiseLevels = NOISE_LEVELS;
 
