@@ -24,6 +24,11 @@ export function nameColorIndex(userId: number): number {
   return userId % NAME_COLOR_COUNT;
 }
 
+export function detectViewerTargetLang(): string {
+  const lang = typeof navigator !== 'undefined' ? navigator.language : 'en';
+  return lang.split('-')[0]?.toLowerCase() || 'en';
+}
+
 export const formatTime = formatClockTime;
 
 function formatDateLabel(timestamp: number): string {

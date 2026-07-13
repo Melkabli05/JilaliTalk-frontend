@@ -13,9 +13,11 @@ import {
 } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { Clipboard } from '@angular/cdk/clipboard';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { UserRole } from '@core/models/user-role';
+import { TranslateService } from '@core/services/translate.service';
 import { Comment, CommentOrEvent } from '../models/room-model';
 import { EventCardComponent } from '../ui/event-card';
 import { COMMENTS_READER, COMMENTS_WRITER } from './comments-store';
@@ -26,6 +28,8 @@ import {
   LucideCornerUpLeft,
   LucideCrown,
   LucideHeart,
+  LucideLanguages,
+  LucideLoader,
 } from '@lucide/angular';
 import {
   CommentGroup,
@@ -147,6 +151,8 @@ export class NewMessagesPillComponent {
     LucideCornerUpLeft,
     LucideCrown,
     LucideHeart,
+    LucideLanguages,
+    LucideLoader,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -277,8 +283,32 @@ export class NewMessagesPillComponent {
                         >
                           <svg aria-hidden="true" lucideCornerUpLeft [size]="11" />
                         </button>
+                        <button
+                          type="button"
+                          class="action-btn"
+                          (click)="onTranslate(comment)"
+                          [disabled]="translatingId() === comment._id"
+                          [attr.aria-label]="translations().has(comment._id) ? 'Hide translation' : 'Translate to Arabic'"
+                        >
+                          @if (translatingId() === comment._id) {
+                            <svg aria-hidden="true" lucideLoader [size]="11" class="spin" />
+                          } @else if (translations().has(comment._id)) {
+                            <svg aria-hidden="true" lucideLanguages [size]="11" class="active" />
+                          } @else {
+                            <svg aria-hidden="true" lucideLanguages [size]="11" />
+                          }
+                        </button>
                       </span>
                     </div>
+                    @if (translations().get(comment._id); as translated) {
+                      <div class="translation">
+                        <span class="translation__label">
+                          <svg aria-hidden="true" lucideLanguages [size]="10" />
+                          Arabic
+                        </span>
+                        <span class="translation__text" dir="rtl" lang="ar">{{ translated }}</span>
+                      </div>
+                    }
                   </div>
                 }
               </div>
@@ -653,6 +683,58 @@ export class NewMessagesPillComponent {
          replyDisabled() input. */
       .action-btn.is-hidden { display: none; }
 
+      .action-btn svg.active {
+        color: var(--color-primary-500);
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .spin {
+        animation: spin 0.8s linear infinite;
+      }
+
+      .translation {
+        margin-top: var(--space-1);
+        margin-inline-start: var(--space-2);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-md);
+        background: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
+        border-inline-start: 3px solid var(--color-primary-500);
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-width: 90%;
+      }
+      .message.own .translation {
+        margin-inline-start: auto;
+        margin-inline-end: var(--space-2);
+        background: color-mix(in srgb, var(--color-on-color) 12%, transparent);
+        border-inline-start-color: color-mix(in srgb, var(--color-on-color) 60%, transparent);
+      }
+      .translation__label {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: var(--text-2xs);
+        font-weight: var(--font-semibold);
+        color: var(--color-primary-600);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .message.own .translation__label {
+        color: color-mix(in srgb, var(--color-on-color) 80%, transparent);
+      }
+      .translation__text {
+        font-size: var(--text-sm);
+        line-height: var(--leading-snug);
+        color: var(--cl-text);
+        word-break: break-word;
+      }
+      :host-context(.dark) .translation {
+        background: color-mix(in srgb, var(--color-primary-400) 14%, transparent);
+      }
+
       @container room-page (max-width: 1023.98px) and (min-height: 500px) {
         /* WCAG 2.5.5 AAA — primary interactive controls must hit 44×44.
            min-width/min-height would work for a toolbar button, but these
@@ -720,8 +802,7 @@ export class NewMessagesPillComponent {
       }
 
       @media (prefers-reduced-motion: reduce) {
-        /* No animations are used; nothing to disable here. Block reserved
-           so future motion-adding edits are forced to opt-in. */
+        .spin { animation: none; }
       }
     `,
   ],
@@ -735,10 +816,13 @@ export class CommentListComponent {
 
   readonly copiedId = signal<string | null>(null);
   readonly highlightId = signal<string | null>(null);
+  readonly translations = signal<ReadonlyMap<string, string>>(new Map());
+  readonly translatingId = signal<string | null>(null);
   private copyResetTimer: ReturnType<typeof setTimeout> | null = null;
   private highlightTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly clipboard = inject(Clipboard);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly translateService = inject(TranslateService);
   private readonly scrollContainer = viewChild<ElementRef<HTMLDivElement>>('scrollContainer');
   private readonly commentsReader = inject(COMMENTS_READER);
   private readonly commentsWriter = inject(COMMENTS_WRITER);
@@ -902,6 +986,31 @@ export class CommentListComponent {
 
   onReply(comment: Comment): void {
     this.reply.emit(comment);
+  }
+
+  onTranslate(comment: Comment): void {
+    const id = comment._id;
+    if (this.translations().has(id)) {
+      const next = new Map(this.translations());
+      next.delete(id);
+      this.translations.set(next);
+      return;
+    }
+    this.translatingId.set(id);
+    this.translateService
+      .translate(comment.msg.text.text)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          const next = new Map(this.translations());
+          next.set(id, result.translatedText);
+          this.translations.set(next);
+          this.translatingId.set(null);
+        },
+        error: () => {
+          this.translatingId.set(null);
+        },
+      });
   }
 
   onReplyQuoteClick(comment: Comment, ri: ReplyInfo): void {
