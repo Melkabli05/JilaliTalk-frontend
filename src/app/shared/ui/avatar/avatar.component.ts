@@ -1,7 +1,9 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed, viewChild, ElementRef, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
+import { Dialog } from '@angular/cdk/dialog';
 import { LucideCrown } from '@lucide/angular';
 import { getCountryByCode } from '@shared/data/countries';
+import { AvatarPreviewDialogComponent } from './avatar-preview-dialog.component';
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 export type AvatarShape = 'circle' | 'rounded' | 'square';
@@ -76,31 +78,6 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
         height="10"
         loading="lazy"
       />
-    }
-
-    @if (previewing()) {
-      <div
-        class="avatar-preview-backdrop"
-        role="dialog"
-        aria-modal="true"
-        [attr.aria-label]="alt()"
-        (click)="closePreview($event)"
-        (keydown.escape)="closePreview($event)"
-        tabindex="-1"
-        #previewBackdrop
-      >
-        <button type="button" class="avatar-preview-close" aria-label="Close preview" (click)="closePreview($event)">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
-        </button>
-        <img
-          class="avatar-preview-img"
-          [src]="src()"
-          [alt]="alt()"
-          (click)="$event.stopPropagation()"
-        />
-      </div>
     }
   `,
   styles: [
@@ -319,63 +296,6 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
         width: 16px;
         height: 16px;
       }
-
-      .avatar-preview-backdrop {
-        position: fixed;
-        inset: 0;
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: var(--space-6) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-        padding-top: max(var(--space-6), env(safe-area-inset-top));
-        background: transparent;
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        cursor: zoom-out;
-        animation: avatar-preview-fade-in 0.15s ease-out;
-      }
-      @keyframes avatar-preview-fade-in {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      .avatar-preview-img {
-        max-width: min(94vw, 720px);
-        max-height: 90vh;
-        width: auto;
-        height: auto;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-modal);
-        cursor: default;
-        object-fit: contain;
-      }
-      .avatar-preview-close {
-        position: absolute;
-        top: max(var(--space-4), env(safe-area-inset-top));
-        right: var(--space-4);
-        width: var(--touch-target-min);
-        height: var(--touch-target-min);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--radius-full);
-        border: none;
-        background: color-mix(in srgb, var(--color-black) 40%, transparent);
-        color: white;
-        cursor: pointer;
-      }
-      .avatar-preview-close svg {
-        width: 18px;
-        height: 18px;
-      }
-      .avatar-preview-close:focus-visible,
-      .avatar-preview-backdrop:focus-visible {
-        outline: var(--focus-ring);
-        outline-offset: var(--focus-ring-offset);
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .avatar-preview-backdrop { animation: none; }
-      }
     `,
   ],
 })
@@ -442,28 +362,16 @@ export class AvatarComponent {
     this.failed.set(true);
   }
 
-  protected readonly previewing = signal(false);
-  private readonly previewBackdrop = viewChild<ElementRef<HTMLElement>>('previewBackdrop');
-
-  constructor() {
-    effect(() => {
-      if (this.previewing()) {
-        this.previewBackdrop()?.nativeElement.focus();
-      }
-    });
-  }
+  private readonly dialog = inject(Dialog);
 
   onHostClick(event: Event): void {
     if (!this.clickable()) return;
     event.stopPropagation();
     if (this.showImage()) {
-      this.previewing.set(true);
+      this.dialog.open(AvatarPreviewDialogComponent, {
+        data: { src: this.src(), alt: this.alt() },
+      });
     }
     this.avatarClick.emit(event as MouseEvent | KeyboardEvent);
-  }
-
-  closePreview(event: Event): void {
-    event.stopPropagation();
-    this.previewing.set(false);
   }
 }
