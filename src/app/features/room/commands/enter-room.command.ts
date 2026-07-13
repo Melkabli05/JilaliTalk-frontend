@@ -26,9 +26,7 @@ import { ActiveCallStore } from '@store/active-call.store';
  *    downstream call (bffWs.connect, rosterStore.setCname, rcs.connect); voice never does
  *    this and uses the original routed `cname` throughout.
  * Other real, intentional differences kept apart: voice sets `roomLevelInfo` and OS
- * mediaSession metadata on RTC connect, video does neither; voice's active-call snapshot
- * update calls `syncCurrentRoom` + conditionally `restore()`, video calls `minimize()`
- * instead (see the inline comment in enterVideoRoom for why); voice's bffWs.connect passes
+ * mediaSession metadata on RTC connect, video does neither; voice's bffWs.connect passes
  * a heartbeatSecond 4th argument, video's does not.
  */
 export interface EnterVoiceRoomDeps {
@@ -265,13 +263,17 @@ export async function enterVideoRoom(
   // state. (The previous `clear()` made cname null while the user was in
   // a full-screen room, which broke the modal's "already in this room"
   // detection entirely.)
-  activeCallStore.minimize(
+  activeCallStore.syncCurrentRoom(
     cname,
     busiType,
     roomStore.name(),
     roomStore.isMicOn(),
     !roomStore.isVisible(),
   );
+
+  if (isRestore) {
+    activeCallStore.restore();
+  }
 
   // For a fresh (just-created) room we only call liveRoomInfo; upstream's stage/list
   // + comment endpoints reliably 500 on a cname created moments earlier, requiring
