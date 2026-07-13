@@ -127,6 +127,7 @@ import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user'
       }
 
       .fullscreen-btn {
+        position: relative;
         width: var(--icon-btn-size);
         height: var(--icon-btn-size);
         display: flex;
@@ -137,6 +138,13 @@ import { VideoStageUserComponent, PlayableVideoTrack } from './video-stage-user'
         border: none;
         cursor: pointer;
         color: var(--color-text-muted);
+      }
+      @media (max-width: 1023.98px) {
+        .fullscreen-btn::before {
+          content: '';
+          position: absolute;
+          inset: calc((var(--icon-btn-size) - var(--touch-target-min)) / 2);
+        }
       }
       .fullscreen-btn:hover {
         background: var(--vsg-icon-hover-bg);
