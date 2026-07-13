@@ -14,6 +14,7 @@
         @for (room of recommendedRooms().slice(0, 6); track room.channel.cname) {
           <app-live-room-card
             [room]="room"
+            [recommended]="true"
             (joinRoom)="onJoinRoom($event)"
           />
         }

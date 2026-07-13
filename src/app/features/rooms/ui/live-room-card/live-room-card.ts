@@ -15,7 +15,9 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
 
 @Component({
   selector: 'app-live-room-card',
-
+  host: {
+    '[class.recommended]': 'recommended()',
+  },
   imports: [NgOptimizedImage, AvatarComponent, ButtonComponent, CountryFlagComponent, LanguageTagComponent, LucideFlame, LucideUsers, LucideCrown, LucideEyeOff],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -347,6 +349,10 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
       overflow: hidden;
     }
 
+    :host.recommended .card-title {
+      -webkit-line-clamp: 1;
+    }
+
     .tags-row {
       display: flex;
       flex-wrap: wrap;
@@ -450,6 +456,7 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
 })
 export class LiveRoomCardComponent {
   readonly room = input.required<ChannelListItem>();
+  readonly recommended = input(false);
   readonly joinRoom = output<{ room: ChannelListItem; visible: boolean }>();
 
   heat = computed(() => this.room().channel.heatValue ?? 0);
