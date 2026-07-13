@@ -14,7 +14,7 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
 import { RoomPresenceBannerComponent } from '@shared/ui/room-presence-banner';
 import { cnameToBusiType } from '@shared/utils';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
-import { LucideX, LucideCrown, LucideUserPlus, LucideUserCheck, LucideLoader, LucideMessageCircle } from '@lucide/angular';
+import { LucideX, LucideCrown, LucideUserPlus, LucideUserCheck, LucideLoader, LucideMessageCircle, LucideHeartHandshake } from '@lucide/angular';
 
 export interface UserInfoModalData {
   readonly userId: number;
@@ -26,11 +26,15 @@ export interface UserInfoModalData {
    *  per row). Omit when unknown — the modal falls back to `null` (unknown)
    *  and the button reads "Follow" until the user actually toggles it. */
   readonly isFollowing?: boolean | null;
+  /** Mutual/friend status — true when the viewer and target follow each other. Shows the
+   *  "Partner" chip. Same meaning as the profile page's Followers/Following tabs'
+   *  `SocialUser.isMutual`. */
+  readonly isMutual?: boolean | null;
   /** Room context (cname + busiType) for the target user, when the caller has one and
-   *  `isFollowing` wasn't already known. Lets the modal fetch the room-scoped follow status
-   *  itself via `UserInfoService.fetchRoomFollowStatus` (the one upstream call that exposes
-   *  the viewer's follow relation to an arbitrary user) instead of starting unknown. Ignored
-   *  when `isFollowing` is already set. */
+   *  `isFollowing`/`isMutual` weren't already known. Lets the modal fetch the room-scoped
+   *  follow status itself via `UserInfoService.fetchRoomFollowStatus` (the one upstream call
+   *  that exposes the viewer's follow relation to an arbitrary user) instead of starting
+   *  unknown. Ignored when `isFollowing` is already set. */
   readonly roomContext?: { readonly cname: string; readonly busiType: number } | null;
 }
 
@@ -53,6 +57,7 @@ export interface UserInfoModalData {
     LucideUserPlus,
     LucideUserCheck,
     LucideLoader,
+    LucideHeartHandshake,
     LucideMessageCircle,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -87,6 +92,9 @@ export interface UserInfoModalData {
                 <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
               } @else if (vipType() > 0 && vipType() < 100) {
                 <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+              }
+              @if (isMutual()) {
+                <span class="chip chip-partner"><svg aria-hidden="true" lucideHeartHandshake [size]="9"></svg>Partner</span>
               }
               @if (onlineStatus(); as status) {
                 <span class="chip" [class]="onlineChipClass()">{{ status }}</span>
@@ -461,6 +469,14 @@ export interface UserInfoModalData {
         background: var(--color-gold-50);
         color: var(--color-gold-600);
       }
+      .chip-partner {
+        background: var(--color-berry-50);
+        color: var(--color-berry-600);
+      }
+      :host-context(.dark) .chip-partner {
+        background: color-mix(in srgb, var(--color-berry-500) 20%, transparent);
+        color: var(--color-berry-300);
+      }
       :host-context(.dark) .chip-offline {
         background: var(--color-neutral-700);
         color: var(--color-neutral-300);
@@ -762,8 +778,10 @@ export class UserInfoModalComponent {
     if (this.data.isFollowing == null && room) {
       void this.userInfoService
         .fetchRoomFollowStatus(this.data.userId, room.cname, room.busiType)
-        .then((isFollowing) => {
-          if (isFollowing != null) this._isFollowing.set(isFollowing);
+        .then((result) => {
+          if (!result) return;
+          this._isFollowing.set(result.isFollowing);
+          this._isMutual.set(result.isMutual);
         });
     }
   }
@@ -919,9 +937,11 @@ export class UserInfoModalComponent {
   // actually taps the button.
 
   private readonly _isFollowing = signal<boolean | null>(this.data.isFollowing ?? null);
+  private readonly _isMutual = signal<boolean>(this.data.isMutual ?? false);
   private readonly _isTogglingFollow = signal(false);
 
   readonly isFollowing = this._isFollowing.asReadonly();
+  readonly isMutual = this._isMutual.asReadonly();
   readonly isTogglingFollow = this._isTogglingFollow.asReadonly();
 
   /** True when the current user is NOT viewing their own profile. */
@@ -951,7 +971,9 @@ export class UserInfoModalComponent {
     try {
       const result = await firstValueFrom(request$);
       if (result.status === 0) {
-        this._isFollowing.set(result.data?.status === 1);
+        const nowFollowing = result.data?.status === 1;
+        this._isFollowing.set(nowFollowing);
+        if (!nowFollowing) this._isMutual.set(false);
       } else {
         this.toast.error(result.message || 'Could not update follow status. Please try again.');
       }

@@ -303,10 +303,16 @@ export class UserInfoService {
    * the one upstream call that exposes the viewer's follow relation to an arbitrary user
    * (`/api/users/info` above never does — see UserInfoModalComponent's follow-state comment).
    * Only usable when the target user is known to be in a specific room (`cname`), since that's
-   * what the upstream endpoint is scoped to. Returns `null` on any failure, matching the
-   * modal's existing "unknown" fallback rather than surfacing a toast for a non-critical hint.
+   * what the upstream endpoint is scoped to. `status`: 0 = not following, 1 = following,
+   * 2 = mutual/friend — `isMutual` is `status === 2`, same meaning as the profile page's
+   * Followers/Following tabs' `SocialUser.isMutual`. Returns `null` on any failure, matching
+   * the modal's existing "unknown" fallback rather than surfacing a toast for a non-critical hint.
    */
-  async fetchRoomFollowStatus(userId: number, cname: string, busiType: number): Promise<boolean | null> {
+  async fetchRoomFollowStatus(
+    userId: number,
+    cname: string,
+    busiType: number,
+  ): Promise<{ readonly isFollowing: boolean; readonly isMutual: boolean } | null> {
     if (!(userId > 0) || !cname) return null;
     try {
       const res = await firstValueFrom(
@@ -316,7 +322,8 @@ export class UserInfoService {
         ),
       );
       const status = res.data?.followStat?.status;
-      return status == null ? null : status !== 0;
+      if (status == null) return null;
+      return { isFollowing: status !== 0, isMutual: status === 2 };
     } catch {
       return null;
     }

@@ -47,9 +47,17 @@ export class ProfilePageComponent {
     headUrl: string | null,
     nationality: string | null,
     isFollowing: boolean | null = null,
+    isMutual: boolean | null = null,
   ): void {
     this.dialog.open(UserInfoModalComponent, {
-      data: { userId, nickname, headUrl, nationality, isFollowing } satisfies UserInfoModalData,
+      data: {
+        userId,
+        nickname,
+        headUrl,
+        nationality,
+        isFollowing,
+        isMutual,
+      } satisfies UserInfoModalData,
       backdropClass: 'app-modal-backdrop',
     });
   }
