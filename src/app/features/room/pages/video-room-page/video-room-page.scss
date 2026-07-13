@@ -1,6 +1,3 @@
-/* Container queries: parent (.app-main) owns viewport height and
-   bottom-nav padding. The room page must NOT compute its own vh.
-   Layout adapts to the slot width via @container, not viewport. */
 :host {
   display: block;
   height: 100%;
@@ -9,69 +6,77 @@
   container-name: video-room room-page;
 }
 
+/* Mobile-first: flex column, same shape as the voice room (room-page.scss).
+   Stage caps at 45svh, audience auto-sizes, comments absorb the rest. */
 .room-layout {
-  display: grid;
-  grid-template-rows: 1fr;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   overflow: hidden;
 }
 
 .room-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .left-column {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: var(--room-header-height) minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
   overflow: hidden;
-  min-height: 0;
 }
 
 .room-header {
-  overflow: visible;
+  flex-shrink: 0;
   position: relative;
   z-index: var(--z-overlay);
 }
 
 .stage-section {
+  flex-shrink: 0;
+  max-height: 45svh;
   overflow: hidden;
-  min-height: 0;
-  display: grid;
-  grid-template-rows: 1fr;
   border-radius: var(--radius-xl);
 }
 .stage-section app-video-stage-grid {
   height: 100%;
   overflow: hidden;
 }
+
 .audience-section {
-  overflow: hidden;
-  min-height: 0;
-  min-width: 0;
   flex-shrink: 0;
-}
-.comments-section {
-  height: 100%;
   overflow: hidden;
-  min-height: 0;
 }
 
-/* Mobile: single-column body. Comments are visible (matches the voice
-   room's mobile shape) so users can read and post on mobile. The
-   comments section gets the remaining flex space; the stage and
-   audience use their natural heights. */
-@container video-room (max-width: 1023.98px) {
+.comments-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Desktop: two-column sidebar layout. Same width/height gate as the voice
+   room — landscape phones and small tablets have enough width but not
+   enough height for the sidebar to be useful. */
+@container room-page (min-width: 1024px) and (min-height: 500px) {
   .room-body {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
+  }
+  .left-column {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--room-header-height) minmax(0, 1fr) auto;
+  }
+  .stage-section {
+    max-height: none;
+    display: grid;
+    grid-template-rows: 1fr;
   }
   .comments-section {
-    height: auto;
-    min-height: 240px;
-    max-height: 50%;
+    height: 100%;
   }
 }
