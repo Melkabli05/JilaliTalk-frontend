@@ -133,10 +133,6 @@ export class MessageNewContactPanelComponent {
     return (u as SocialUser).isMutual === true;
   }
 
-  /** Whatever had focus right before the panel opened (always one of the three buttons
-   *  that can trigger it — sidebar header, mobile FAB, or the empty-state button — restored
-   *  when it closes, so keyboard/screen-reader users land back where they started instead
-   *  of at the top of the document. */
   private previouslyFocused: HTMLElement | null = null;
 
   constructor() {
@@ -144,8 +140,6 @@ export class MessageNewContactPanelComponent {
       if (this.open() && this.tab() === 'visitors') this.fetchVisitors(false);
     });
 
-    // role="dialog" without moving focus into it isn't actually a dialog for keyboard/
-    // screen-reader users — nothing here previously did that at all.
     effect(() => {
       if (this.open()) {
         this.previouslyFocused = document.activeElement as HTMLElement | null;
@@ -170,6 +164,7 @@ export class MessageNewContactPanelComponent {
 
   protected onTabClick(tab: TabId): void { this.tab.set(tab); }
   protected onClose(): void { this.closed.emit(); }
+  protected onOverlayClick(): void { this.closed.emit(); }
   protected onPick(userId: number): void { this.picked.emit(userId); }
 
   protected onIdQuery(value: string): void {
@@ -226,15 +221,5 @@ export class MessageNewContactPanelComponent {
   @HostListener('keydown.escape')
   protected onEscape(): void {
     if (this.open()) this.closed.emit();
-  }
-
-  @HostListener('document:click', ['$event'])
-  protected onDocumentClick(ev: MouseEvent): void {
-    if (!this.open()) return;
-    const panel = this.panel()?.nativeElement;
-    const target = ev.target as Node | null;
-    if (!panel || !target) return;
-    if (panel.contains(target)) return;
-    this.closed.emit();
   }
 }

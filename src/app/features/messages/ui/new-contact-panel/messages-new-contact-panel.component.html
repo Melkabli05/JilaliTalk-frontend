@@ -1,13 +1,13 @@
-<div class="new-contact-host" [class.open]="open()">
+@if (open()) {
+  <div class="new-contact-host" [class.sheet]="isMobile()" (click)="onOverlayClick()" role="presentation"></div>
   <div
     #panel
     class="new-contact-panel"
+    [class.sheet]="isMobile()"
     role="dialog"
     aria-modal="true"
     aria-label="New message"
     tabindex="-1"
-    [class.open]="open()"
-    [attr.aria-hidden]="!open()"
   >
     <header class="panel-header">
       <h2 class="panel-title">New message</h2>
@@ -140,4 +140,4 @@
       }
     </div>
   </div>
-</div>
+}
