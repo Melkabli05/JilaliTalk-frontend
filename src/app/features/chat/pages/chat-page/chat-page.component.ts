@@ -119,7 +119,13 @@ const FOLLOWERS_LIMIT = 50;
             [body]="searchQuery() ? ('Nothing matches \\'' + searchQuery() + '\\'') : 'Start a new chat from the + button.'"
           />
         } @else {
-          <ul class="conversations" role="listbox" aria-label="Conversations">
+          <ul
+            class="conversations"
+            role="listbox"
+            aria-label="Conversations"
+            (keydown)="onConversationsKeydown($event)"
+            tabindex="0"
+          >
             @for (conv of filteredConversations(); track conv.peerUserId) {
               <li role="option" [attr.aria-selected]="store.selectedPeerId() === conv.peerUserId">
                 <app-chat-conversation-row
@@ -160,7 +166,7 @@ const FOLLOWERS_LIMIT = 50;
             }
           </header>
 
-          <div class="feed" #feed role="log" aria-live="polite">
+          <div class="feed" #feed role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation messages">
             @for (msg of conv.messages; track msg.id; let i = $index) {
               @let label = formatDay(conv.messages, i);
               @if (label) {
@@ -296,6 +302,10 @@ const FOLLOWERS_LIMIT = 50;
       display: flex; align-items: center; justify-content: space-between;
       padding: var(--space-4); flex-shrink: 0;
       border-bottom: 1px solid var(--color-border);
+      position: sticky; top: 0; z-index: 2;
+      background: color-mix(in srgb, var(--color-card) 92%, transparent);
+      backdrop-filter: blur(12px) saturate(180%);
+      -webkit-backdrop-filter: blur(12px) saturate(180%);
     }
     .sidebar-title {
       margin: 0; font-size: var(--text-xl); font-weight: var(--font-bold);
@@ -344,8 +354,11 @@ const FOLLOWERS_LIMIT = 50;
     .thread-bar {
       display: flex; align-items: center; gap: var(--space-2);
       padding: var(--space-2) var(--space-3);
-      background: var(--color-card); border-bottom: 1px solid var(--color-border);
+      background: color-mix(in srgb, var(--color-card) 92%, transparent);
+      border-bottom: 1px solid var(--color-border);
       flex-shrink: 0;
+      backdrop-filter: blur(12px) saturate(180%);
+      -webkit-backdrop-filter: blur(12px) saturate(180%);
     }
     .back-btn {
       width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
@@ -364,13 +377,15 @@ const FOLLOWERS_LIMIT = 50;
     .thread-identity:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
     .thread-name { font-weight: var(--font-semibold); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .typing-label { font-size: var(--text-xs); color: var(--color-primary-500); font-style: italic; padding-right: var(--space-2); }
-    .feed { flex: 1; overflow-y: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); overscroll-behavior-y: contain; }
+    .feed { flex: 1; overflow-y: auto; padding: var(--space-4) var(--space-4) var(--space-6); display: flex; flex-direction: column; gap: var(--space-1); overscroll-behavior-y: contain; }
     .msg-row {
       display: flex; align-items: flex-end; gap: 6px; max-width: min(75%, 420px);
       animation: msgIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
     }
     .msg-row.is-outbound { align-self: flex-end; flex-direction: row; }
     .msg-row:not(.is-outbound) { align-self: flex-start; }
+    :host-context([dir='rtl']) .msg-row.is-outbound { align-self: flex-start; }
+    :host-context([dir='rtl']) .msg-row:not(.is-outbound) { align-self: flex-end; }
     @keyframes msgIn {
       from { opacity: 0; transform: translateY(6px) scale(0.98); }
       to { opacity: 1; transform: translateY(0) scale(1); }
@@ -525,6 +540,21 @@ export class ChatPageComponent {
 
   protected onSelect(peerUserId: string): void {
     this.store.select(peerUserId);
+  }
+
+  protected onConversationsKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    const items = this.filteredConversations();
+    if (items.length === 0) return;
+    event.preventDefault();
+    const idx = items.findIndex((c) => c.peerUserId === this.store.selectedPeerId());
+    const cursor = idx < 0 ? -1 : idx;
+    const nextIdx = event.key === 'ArrowDown'
+      ? Math.min(items.length - 1, cursor + 1)
+      : Math.max(0, cursor - 1);
+    const target = items[nextIdx];
+    if (!target || nextIdx === idx) return;
+    this.store.select(target.peerUserId);
   }
 
   protected onViewProfile(userId: string | number, nickname: string, headUrl: string | null): void {

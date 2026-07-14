@@ -45,6 +45,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       box-shadow: var(--shadow-xs);
     }
     .intro-bubble.is-outbound { background: var(--color-primary-50); align-self: flex-end; }
+    :host-context([dir='rtl']) .intro-bubble.is-outbound { align-self: flex-start; }
     :host-context(.dark) .intro-bubble { background: var(--color-neutral-800); }
     :host-context(.dark) .intro-bubble.is-outbound { background: var(--color-primary-900); }
     .intro-context { font-size: var(--text-xs); color: var(--color-text-muted); }

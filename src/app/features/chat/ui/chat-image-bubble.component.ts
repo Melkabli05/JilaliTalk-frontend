@@ -9,6 +9,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     .bubble-image {
       max-width: 220px; max-height: 220px;
       border-radius: 12px; display: block;
+      box-shadow: var(--shadow-sm);
+      cursor: zoom-in;
     }
   `],
 })

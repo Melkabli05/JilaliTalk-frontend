@@ -28,6 +28,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       animation: msgIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
     }
     .share-card.is-outbound { align-self: flex-end; background: var(--color-neutral-200); }
+    :host-context([dir='rtl']) .share-card.is-outbound { align-self: flex-start; }
     :host-context(.dark) .share-card { background: var(--color-neutral-800); }
     :host-context(.dark) .share-card.is-outbound { background: var(--color-neutral-700); }
     .share-label { font-size: var(--text-xs); font-weight: var(--font-semibold); }

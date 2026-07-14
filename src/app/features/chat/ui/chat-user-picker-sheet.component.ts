@@ -115,7 +115,8 @@ const PICKER_TABS: ReadonlyArray<{ readonly id: ChatUserPickerTab; readonly labe
     .backdrop.open { background: hsl(0deg 0% 0% / 50%); opacity: 1; pointer-events: auto; }
     .sheet {
       position: fixed; left: 0; right: 0; bottom: 0; top: auto;
-      height: calc(100dvh - var(--app-header-height));
+      max-height: calc(100dvh - var(--app-header-height, 0px) - var(--bottom-nav-height, 0px) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+      height: min(85dvh, calc(100dvh - var(--app-header-height, 0px) - var(--bottom-nav-height, 0px) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
       z-index: var(--z-modal);
       background: var(--color-card);
       border-top-left-radius: 14px; border-top-right-radius: 14px;
@@ -133,11 +134,12 @@ const PICKER_TABS: ReadonlyArray<{ readonly id: ChatUserPickerTab; readonly labe
     }
     .sheet-title { font-size: var(--text-base); font-weight: var(--font-semibold); }
     .sheet-close {
-      width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center;
       border: 0; background: transparent; color: var(--color-text-muted);
       border-radius: var(--radius-full); cursor: pointer;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      transition: background-color 150ms ease, color 150ms ease;
     }
     .sheet-close:hover { background: var(--color-neutral-100); color: var(--color-text); }
     .sheet-close:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }

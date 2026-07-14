@@ -10,7 +10,7 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
   imports: [AvatarComponent, TooltipDirective, LucideSend, LucideUserPlus, LucideX],
   template: `
     @if (stagedIntroduction(); as intro) {
-      <div class="composer-staged" role="status">
+      <div class="composer-staged">
         <app-avatar [src]="intro.headUrl ?? ''" [initials]="intro.nickname.slice(0, 2)" [alt]="intro.nickname" size="xs" />
         <span class="composer-staged-meta">
           <span class="composer-staged-label">Sharing</span>
@@ -76,14 +76,19 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
     .composer-staged-label { font-size: var(--text-2xs); color: var(--color-text-muted); }
     .composer-staged-name { font-size: var(--text-sm); font-weight: var(--font-medium); }
     .composer-staged-remove {
-      width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
       background: transparent; border: 0; color: var(--color-text-muted);
       border-radius: var(--radius-full); cursor: pointer;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+      transition: background-color 150ms ease, color 150ms ease;
     }
     .composer-staged-remove:hover { background: var(--color-neutral-100); color: var(--color-text); }
     .composer-staged-remove:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+    @media (max-width: 767.98px) {
+      .composer-staged-remove { width: 44px; height: 44px; }
+    }
     .composer {
       display: flex; align-items: flex-end; gap: 6px;
       padding: 8px 10px;
