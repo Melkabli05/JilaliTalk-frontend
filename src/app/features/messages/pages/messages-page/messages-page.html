@@ -37,14 +37,28 @@
     ></app-messages-new-contact>
 
     <div class="search-wrap">
-      <input
-        type="search"
-        class="search-input"
-        placeholder="Search…"
-        aria-label="Search conversations"
-        [value]="searchQuery()"
-        (input)="searchQuery.set($any($event.target).value)"
-      />
+      <div class="search-field">
+        <svg aria-hidden="true" lucideSearch [size]="14" class="search-icon"></svg>
+        <input
+          #searchInput
+          type="search"
+          class="search-input"
+          placeholder="Search conversations"
+          aria-label="Search conversations"
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)"
+        />
+        @if (searchQuery()) {
+          <button
+            type="button"
+            class="search-clear"
+            aria-label="Clear search"
+            (click)="clearSearch(searchInput)"
+          >
+            <svg aria-hidden="true" lucideX [size]="14"></svg>
+          </button>
+        }
+      </div>
     </div>
 
     @if (filteredConversations().length === 0) {
@@ -58,10 +72,19 @@
         <p class="empty-body">
           @if (searchQuery()) {
             Nothing matches "{{ searchQuery() }}"
+          } @else if (imSocket.status() === 'disconnected') {
+            Messages are paused — tap the dot at the top to reconnect.
           } @else {
             Direct messages will appear here as they arrive in real time.
           }
         </p>
+        @if (!searchQuery() && imSocket.status() === 'disconnected') {
+          <button
+            type="button"
+            class="empty-reconnect"
+            (click)="onConnStatusClick()"
+          >Reconnect</button>
+        }
       </div>
     } @else {
       <ul role="listbox" aria-label="Conversations">
@@ -265,7 +288,8 @@
           <button
             type="button"
             class="compose-staged-remove"
-            aria-label="Remove shared profile"
+            [attr.aria-label]="'Remove shared profile of ' + intro.nickname"
+            [title]="'Remove shared profile of ' + intro.nickname"
             (click)="onStagedIntroRemove()"
           >
             <svg aria-hidden="true" lucideX [size]="14"></svg>
@@ -284,7 +308,8 @@
           (click)="toggleIntroPicker()"
           [attr.aria-label]="introPickerOpen() ? 'Close share profile' : 'Share a profile'"
           [attr.aria-expanded]="introPickerOpen()"
-          title="Share a profile"
+          [appTooltip]="introPickerOpen() ? 'Close share profile' : 'Share a profile'"
+          tooltipPosition="top"
         >
           <svg aria-hidden="true" lucideUserPlus [size]="16"></svg>
         </button>

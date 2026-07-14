@@ -26,6 +26,7 @@ import { ToastService } from '@core/services/toast.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal/user-info-modal.component';
+import { TooltipDirective } from '@shared/directives/tooltip.directive';
 import { relativeTime } from '@shared/utils';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
 import { ShareIntroductionPickerComponent } from '../../ui/share-introduction-picker/share-introduction-picker.component';
@@ -49,6 +50,7 @@ const TYPING_STOP_DELAY_MS = 3_000;
     ShareIntroductionPickerComponent,
     AvatarComponent,
     CountryFlagComponent,
+    TooltipDirective,
     LucideChevronLeft,
     LucideInbox,
     LucideMessageCircle,
@@ -105,6 +107,7 @@ export class MessagesPageComponent {
   });
 
   private readonly feedEl = viewChild<ElementRef<HTMLElement>>('feed');
+  private readonly searchInputEl = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
   private readonly typingBroadcaster = new DmTypingBroadcaster(
     (peerId, isTyping) => this.store.sendTyping(peerId, isTyping),
@@ -159,6 +162,11 @@ export class MessagesPageComponent {
   protected onContactPicked(userId: number): void {
     this.panelOpen.set(false);
     this.store.select(String(userId));
+  }
+
+  protected clearSearch(input?: HTMLInputElement): void {
+    this.searchQuery.set('');
+    queueMicrotask(() => input?.focus());
   }
 
   protected toggleIntroPicker(): void {
