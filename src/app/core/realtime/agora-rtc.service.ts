@@ -27,6 +27,10 @@ export class AgoraRtcService implements RealtimeLifecycle {
   private readonly denoiser = new AgoraDenoiserController();
   private readonly autoplayRecovery = new AutoplayAudioRecovery(() => this.remoteAudioTracks.values());
 
+  constructor() {
+    this.denoiser.onDegraded = (reason) => this.onDenoiserDegraded?.(reason);
+  }
+
   private readonly _state = signal<RtcConnectionState>('disconnected');
   private readonly _remoteUsers = signal<readonly RemoteUser[]>([]);
   private readonly _speakingUids = signal<readonly number[]>([]);
@@ -108,6 +112,12 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this._localAudioTrack.set(null);
     if (!this.isGhostMode) await this.client?.setClientRole('audience').catch(() => {});
   }
+
+  /** Optional callback the room UI can hook to surface a "mic degraded — AI denoiser offline"
+   *  badge when the denoiser overloads or the pipe fails. Called on every degraded event;
+   *  the consumer is responsible for de-bouncing / clearing the badge when its own healthy-state
+   *  check resolves it. */
+  onDenoiserDegraded: ((reason: 'overload' | 'pipe-error') => void) | null = null;
 
   async stopVideo(): Promise<void> {
     if (!this.videoTrack) return;
