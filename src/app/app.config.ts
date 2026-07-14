@@ -1,7 +1,7 @@
 import { ApplicationConfig, ErrorHandler, provideZonelessChangeDetection, APP_INITIALIZER, inject, computed, EnvironmentProviders } from '@angular/core';
 import { IMAGE_CONFIG } from '@angular/common';
 import { provideRouter, withComponentInputBinding, Router } from '@angular/router';
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors, HttpErrorResponse } from '@angular/common/http';
 import { provideLucideIcons, provideLucideConfig, LucideMoon, LucideSun } from '@lucide/angular';
 import { provideServiceWorker } from '@angular/service-worker';
 import { firstValueFrom } from 'rxjs';
@@ -32,7 +32,9 @@ function restoreSession() {
     const authService = inject(AuthService);
     return firstValueFrom(authService.me())
       .then(res => auth.login(res.user))
-      .catch(() => undefined);
+      .catch((err: unknown) => {
+        if (err instanceof HttpErrorResponse && err.status === 401) auth.logout();
+      });
   };
 }
 
