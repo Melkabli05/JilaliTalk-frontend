@@ -74,7 +74,7 @@ import type { AuthUser } from '@core/auth/auth.store';
       background: transparent;
       border: 1px solid transparent;
       cursor: pointer;
-      color: var(--color-text-primary);
+      color: var(--color-text);
       transition: background-color 0.15s ease, border-color 0.15s ease;
       max-width: 180px;
     }
@@ -175,7 +175,7 @@ import type { AuthUser } from '@core/auth/auth.store';
       padding: var(--space-2) var(--space-3);
       background: transparent;
       border: none;
-      color: var(--color-text-primary);
+      color: var(--color-text);
       font-size: var(--text-sm);
       text-align: left;
       text-decoration: none;

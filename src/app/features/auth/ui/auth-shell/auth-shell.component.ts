@@ -1,18 +1,28 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+interface ShowcaseRoom {
+  readonly title: string;
+  readonly initials: readonly string[];
+  readonly hues: readonly ('primary' | 'accent' | 'warm' | 'gold' | 'social' | 'berry')[];
+  readonly live?: boolean;
+  readonly count: string;
+}
+
 /**
  * Shared chrome for the two fullscreen, chromeless auth routes (/login, /signup — see
  * app.routes.ts's `fullscreen: true` data flag, which strips the global header/sidenav/
- * mobile-nav for these). Both pages need the exact same brand mark and card frame; only the
- * icon, copy, form fields, and footer link differ, so those are content projection slots
- * rather than two copies of the same layout.
+ * mobile-nav for these).
  *
- * Deliberately plain: flat card on flat background, the same icon-tint and shadow tokens
- * used for every other card/badge in this app (see managers-modal.ts's `.empty-icon-circle`
- * for the precedent) — no blurred glass, no drifting gradient blobs. Those read as generic
- * SaaS-template chrome; a real HelloTalk login screen doesn't need a backdrop effect to look
- * intentional, and this page borrows nothing that the rest of JilaliTalk doesn't already do.
+ * The split isn't decorative padding: the left panel is the one place in this redesign that
+ * says what JilaliTalk actually is (live voice rooms, real people, several languages at
+ * once) instead of a content-free auth-template background. The three room previews are
+ * static illustration, not live data — `aria-hidden`, never wired to RoomApi — built from
+ * this app's own category hues (see badge.component.ts's primary/accent/warm/gold set,
+ * extended here with the social/berry tones `avatar`-adjacent surfaces already use) rather
+ * than a two-stop brand gradient. Collapses away below 1024px: a phone screen doesn't have
+ * room to spare on illustration, so mobile gets a slim colored strip and goes straight to
+ * the form.
  */
 @Component({
   selector: 'app-auth-shell',
@@ -20,9 +30,36 @@ import { RouterLink } from '@angular/router';
   imports: [RouterLink],
   template: `
     <div class="auth-shell">
+      <aside class="showcase" aria-hidden="true">
+        <div class="showcase-content">
+          <p class="showcase-eyebrow">JilaliTalk</p>
+          <h2 class="showcase-headline">Real conversations,<br />with real people, live.</h2>
+          <ul class="room-list">
+            @for (room of rooms; track room.title) {
+              <li class="room-chip">
+                <span class="room-avatars">
+                  @for (initial of room.initials; track $index) {
+                    <span class="room-avatar" [class]="'hue-' + room.hues[$index]">{{ initial }}</span>
+                  }
+                </span>
+                <span class="room-info">
+                  <span class="room-title">{{ room.title }}</span>
+                  <span class="room-meta">
+                    @if (room.live) {
+                      <span class="live-dot"></span>
+                    }
+                    {{ room.count }}
+                  </span>
+                </span>
+              </li>
+            }
+          </ul>
+        </div>
+      </aside>
+
       <main class="auth-main" id="main-content" tabindex="-1">
         <a routerLink="/rooms" class="brand-mark" aria-label="JilaliTalk home">
-          <svg aria-hidden="true" width="26" height="26" viewBox="0 0 32 32" fill="none">
+          <svg aria-hidden="true" width="24" height="24" viewBox="0 0 32 32" fill="none">
             <defs>
               <linearGradient id="authBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stop-color="var(--color-primary-500)"/>
@@ -36,13 +73,13 @@ import { RouterLink } from '@angular/router';
           <span class="brand-name">JilaliTalk</span>
         </a>
 
-        <section class="auth-card" role="region" [attr.aria-labelledby]="titleId">
-          <header class="card-header">
-            <span class="card-icon" aria-hidden="true">
+        <div class="form-wrap" role="region" [attr.aria-labelledby]="titleId">
+          <header class="form-header">
+            <span class="form-icon" aria-hidden="true">
               <ng-content select="[auth-icon]" />
             </span>
-            <h1 class="card-title" [id]="titleId">{{ title() }}</h1>
-            <p class="card-sub">
+            <h1 class="form-title" [id]="titleId">{{ title() }}</h1>
+            <p class="form-sub">
               <ng-content select="[auth-subtitle]" />
             </p>
           </header>
@@ -52,7 +89,7 @@ import { RouterLink } from '@angular/router';
           <p class="alt">
             <ng-content select="[auth-footer]" />
           </p>
-        </section>
+        </div>
       </main>
     </div>
   `,
@@ -60,24 +97,134 @@ import { RouterLink } from '@angular/router';
     :host { display: contents; }
 
     .auth-shell {
+      display: grid;
+      grid-template-columns: 1fr;
       min-height: 100dvh;
       min-height: 100svh;
       background: var(--color-bg);
     }
+    @media (min-width: 1024px) {
+      .auth-shell { grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); }
+    }
 
-    .auth-main {
-      min-height: 100dvh;
-      min-height: 100svh;
+    /* ── Showcase panel (desktop only) ── */
+    .showcase {
+      display: none;
+      background: var(--color-primary-900);
+      padding: var(--space-10) var(--space-10);
+      align-items: center;
+    }
+    @media (min-width: 1024px) {
+      .showcase { display: flex; }
+    }
+    .showcase-content {
+      max-width: 420px;
+      margin-inline: auto;
       display: flex;
       flex-direction: column;
+      gap: var(--space-8);
+    }
+    .showcase-eyebrow {
+      margin: 0;
+      font-size: var(--text-xs);
+      font-weight: var(--font-bold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--color-primary-200) 80%, transparent);
+    }
+    .showcase-headline {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.2;
+      font-weight: var(--font-bold);
+      letter-spacing: -0.01em;
+      color: white;
+      text-wrap: balance;
+    }
+
+    .room-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .room-chip {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-lg);
+      background: color-mix(in srgb, white 6%, transparent);
+      border: 1px solid color-mix(in srgb, white 10%, transparent);
+    }
+    .room-avatars {
+      display: flex;
+      flex-shrink: 0;
+    }
+    .room-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-full);
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: var(--space-6);
-      padding: max(var(--space-8), env(safe-area-inset-top)) var(--space-4) max(var(--space-8), env(safe-area-inset-bottom));
+      font-size: 12px;
+      font-weight: var(--font-bold);
+      color: white;
+      border: 2px solid var(--color-primary-900);
+      margin-left: -8px;
+    }
+    .room-avatar:first-child { margin-left: 0; }
+    .hue-primary { background: var(--color-primary-400); }
+    .hue-accent  { background: var(--color-accent-400); }
+    .hue-warm    { background: var(--color-warm-400); }
+    .hue-gold    { background: var(--color-gold-400); }
+    .hue-social  { background: var(--color-social-400); }
+    .hue-berry   { background: var(--color-berry-400); }
+
+    .room-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .room-title {
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      color: white;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .room-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--text-xs);
+      color: color-mix(in srgb, white 60%, transparent);
+    }
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-live);
+      flex-shrink: 0;
+    }
+
+    /* ── Form panel ── */
+    .auth-main {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      min-height: 100svh;
+      padding: max(var(--space-5), env(safe-area-inset-top)) max(var(--space-5), env(safe-area-inset-right)) max(var(--space-6), env(safe-area-inset-bottom)) max(var(--space-5), env(safe-area-inset-left));
     }
 
     .brand-mark {
       display: inline-flex;
+      align-self: flex-start;
       align-items: center;
       gap: var(--space-2);
       text-decoration: none;
@@ -91,36 +238,32 @@ import { RouterLink } from '@angular/router';
       font-size: var(--text-base);
       font-weight: var(--font-bold);
       letter-spacing: -0.02em;
-      color: var(--color-text-primary);
+      color: var(--color-text);
+    }
+    @media (min-width: 1024px) {
+      .brand-mark { display: none; }
     }
 
-    .auth-card {
+    .form-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       width: 100%;
-      max-width: 380px;
-      padding: var(--space-6) var(--space-6) var(--space-5);
-      border-radius: var(--radius-xl);
-      background: var(--color-card);
-      border: 1px solid var(--color-border);
-      box-shadow: var(--shadow-card);
-      display: flex;
-      flex-direction: column;
+      max-width: 400px;
+      margin-inline: auto;
       gap: var(--space-5);
-    }
-    .dark .auth-card {
-      background: var(--color-neutral-900);
-      border-color: var(--color-neutral-800);
+      padding-block: var(--space-6);
     }
 
-    .card-header {
+    .form-header {
       display: flex;
       flex-direction: column;
-      align-items: center;
       gap: var(--space-2);
-      text-align: center;
     }
-    .card-icon {
-      width: 44px;
-      height: 44px;
+    .form-icon {
+      width: 40px;
+      height: 40px;
       border-radius: var(--radius-full);
       display: inline-flex;
       align-items: center;
@@ -129,27 +272,28 @@ import { RouterLink } from '@angular/router';
       color: var(--color-primary-600);
       margin-bottom: var(--space-1);
     }
-    .dark .card-icon {
+    .dark .form-icon {
       background: color-mix(in srgb, var(--color-primary-600) 25%, transparent);
       color: var(--color-primary-300);
     }
-    .card-title {
-      font-size: var(--text-xl);
+    @media (min-width: 1024px) {
+      .form-icon { display: none; }
+    }
+    .form-title {
+      font-size: 26px;
       font-weight: var(--font-bold);
-      letter-spacing: -0.01em;
-      color: var(--color-text-primary);
+      letter-spacing: -0.02em;
+      color: var(--color-text);
       margin: 0;
     }
-    .card-sub {
+    .form-sub {
       font-size: var(--text-sm);
       color: var(--color-text-muted);
       margin: 0;
-      max-width: 30ch;
     }
-    .card-sub strong { color: var(--color-text-primary); font-weight: var(--font-medium); }
+    .form-sub strong { color: var(--color-text); font-weight: var(--font-medium); }
 
     .alt {
-      text-align: center;
       font-size: var(--text-sm);
       color: var(--color-text-muted);
       margin: 0;
@@ -161,4 +305,10 @@ export class AuthShellComponent {
 
   private static nextId = 0;
   protected readonly titleId = `auth-shell-title-${AuthShellComponent.nextId++}`;
+
+  protected readonly rooms: readonly ShowcaseRoom[] = [
+    { title: 'English ↔ Spanish', initials: ['M', 'L', 'A'], hues: ['primary', 'accent', 'gold'], live: true, count: '18 in the room' },
+    { title: '日本語 Practice Circle', initials: ['K', 'Y'], hues: ['berry', 'social'], live: true, count: '7 in the room' },
+    { title: 'Learn French Together', initials: ['S', 'R', 'N'], hues: ['warm', 'primary', 'accent'], count: 'Starts in 10 min' },
+  ];
 }
