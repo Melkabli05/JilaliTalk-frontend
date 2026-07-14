@@ -102,7 +102,7 @@
               [src]="conv.headUrl ?? ''"
               [initials]="conv.nickname.slice(0, 2)"
               [alt]="conv.nickname"
-              size="md"
+              [size]="isMobileViewport() ? 'lg' : 'md'"
               [ringColor]="store.selectedId() === conv.userId ? 'var(--color-primary-500)' : null"
             />
             <div class="row-body">
@@ -341,13 +341,6 @@
           <svg aria-hidden="true" lucideSend [size]="16"></svg>
         </button>
       </form>
-
-      @if (introPickerOpen()) {
-        <app-share-introduction-picker
-          (picked)="onIntroductionPicked($event)"
-          (closed)="closeIntroPicker()"
-        />
-      }
     } @else {
       <div class="no-selection">
         <button
@@ -370,4 +363,11 @@
       </div>
     }
   </main>
+
+  @if (introPickerOpen()) {
+    <app-share-introduction-picker
+      (picked)="onIntroductionPicked($event)"
+      (closed)="closeIntroPicker()"
+    />
+  }
 </div>

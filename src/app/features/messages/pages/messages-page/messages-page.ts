@@ -28,6 +28,7 @@ import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal/user-info-modal.component';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
 import { relativeTime } from '@shared/utils';
+import { injectIsMobileViewport } from '@shared/utils/viewport.util';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
 import { ShareIntroductionPickerComponent } from '../../ui/share-introduction-picker/share-introduction-picker.component';
 import { MessagesStore } from '../../store/messages.store';
@@ -70,6 +71,7 @@ export class MessagesPageComponent {
   private readonly dialog = inject(Dialog);
   protected readonly relativeTime = relativeTime;
   protected readonly preview = preview;
+  protected readonly isMobileViewport = injectIsMobileViewport();
 
   /** Humanized label for the connection dot's tooltip and screen-reader text — mirrors
    *  room-header.ts's wsTooltip, which the messages page's status dot never had an

@@ -192,6 +192,11 @@ type EmptyLabel = 'following' | 'followers';
         overflow: hidden;
         animation: slideUp 0.18s ease-out;
       }
+      @media (max-width: 767.98px) {
+        .backdrop {
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+      }
       @media (min-width: 768px) {
         .backdrop { align-items: center; padding: var(--space-4); }
         .sheet {

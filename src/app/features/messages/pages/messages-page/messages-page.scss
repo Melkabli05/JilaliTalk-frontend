@@ -152,6 +152,7 @@
 }
 @media (max-width: 1023.98px) {
   .search-input { height: 44px; font-size: var(--text-base); }
+  .search-clear { width: 44px; height: 44px; right: 0; }
 }
 
 /* ─── Conversation list ──────────────────────────── */
@@ -384,6 +385,7 @@ li.unread .row-ts {
   gap: var(--space-1);
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
+  overscroll-behavior-y: contain;
 }
 .date-pill {
   align-self: center;
@@ -877,5 +879,17 @@ li.unread .row-ts {
   .compose-staged-remove {
     width: 44px;
     height: 44px;
+  }
+
+  ul {
+    padding: 0 var(--space-2) var(--space-2);
+  }
+  li {
+    padding: var(--space-3) var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .sidebar-header {
+    padding: var(--space-3) var(--space-4) var(--space-3);
   }
 }
