@@ -65,6 +65,7 @@ import { lastMessagePreview } from '../utils/chat-preview.util';
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .unread .row-name { font-weight: var(--font-bold); }
+    :host-context([dir='rtl']) .row { direction: rtl; }
     .row-ts { font-size: var(--text-2xs); color: var(--color-text-muted); }
     .unread .row-ts { color: var(--color-accent-600); font-weight: var(--font-medium); }
     .row-preview {
@@ -100,6 +101,13 @@ export class ChatConversationRowComponent {
 
   readonly unread = computed(() => this.conversation().unread);
   readonly preview = computed(() => lastMessagePreview(this.conversation()));
-  readonly initials = computed(() => this.conversation().nickname.slice(0, 2));
+  readonly initials = computed(() => deriveInitials(this.conversation().nickname));
   readonly relativeTime = (ts: number): string => this.formatTime()(ts);
+}
+
+function deriveInitials(nickname: string): string {
+  const trimmed = nickname.trim();
+  if (!trimmed) return '?';
+  const first = [...trimmed][0];
+  return first ? first.toUpperCase() : '?';
 }

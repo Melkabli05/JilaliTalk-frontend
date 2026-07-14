@@ -38,8 +38,16 @@ import { connectionStatusLabel } from '../utils/chat-status-label.util';
       cursor: pointer; padding: 8px 12px;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      transition: background-color 150ms ease, transform 100ms ease;
     }
+    .pill.tappable:hover { background: var(--color-neutral-200); }
+    :host-context(.dark) .pill.tappable:hover { background: var(--color-neutral-700); }
+    .pill.tappable:active { transform: scale(0.96); }
     .pill.tappable:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      .pill.tappable { transition: none; }
+      .pill.tappable:active { transform: none; }
+    }
     :host-context(.dark) .pill { background: var(--color-neutral-800); border-color: var(--color-neutral-700); }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-neutral-300); transition: background-color 200ms ease; }
     .connected .dot { background: var(--color-accent-500); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-500) 25%, transparent); }
