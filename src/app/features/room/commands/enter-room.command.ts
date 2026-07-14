@@ -13,6 +13,34 @@ import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { ToastService } from '@core/services/toast.service';
 import { ActiveCallStore } from '@store/active-call.store';
+import { AuthStore } from '@core/auth/auth.store';
+
+/**
+ * Refuses to adopt `reqUserInfo` as "this browser's identity" when it disagrees with the
+ * session AuthStore already holds. Under normal operation these always match — the BFF's
+ * SessionAuthClientFilter stamps the real session's identity onto every upstream call. But
+ * that filter only sets auth headers "if not already present" (see its Javadoc), so a
+ * request that ever reaches upstream without a valid session silently falls back to the
+ * shared default service-account token instead of failing loudly. If that ever happens
+ * mid-room, reqUserInfo would come back as the *shared* account, and blindly trusting it
+ * would show another account's room identity as "you" — own-message delete permissions,
+ * mic ownership, roster highlighting, all keyed off a uid that isn't actually the signed-in
+ * user. Treat a mismatch as a session-integrity failure: sign out locally and send the user
+ * back through login rather than rendering room state under someone else's identity.
+ */
+function assertReqUserMatchesSession(
+  reqUserId: number,
+  authStore: AuthStore,
+  toast: ToastService,
+  router: Router,
+): boolean {
+  const sessionUserId = authStore.user()?.userId;
+  if (sessionUserId == null || sessionUserId === reqUserId) return true;
+  authStore.logout();
+  toast.error('Your session is out of sync — please sign in again.');
+  void router.navigate(['/login']);
+  return false;
+}
 
 /**
  * The "join the room" flow, split into two functions rather than one — voice and video
@@ -43,6 +71,7 @@ export interface EnterVoiceRoomDeps {
   destroyRef: DestroyRef;
   agoraAppId: string;
   reqUserId: WritableSignal<number>;
+  authStore: AuthStore;
   leaveNavTarget: string[];
   resolveRoomEntry: (cname: string) => Promise<boolean>;
   destroying: () => boolean;
@@ -55,7 +84,7 @@ export async function enterVoiceRoom(
   visible: boolean,
   deps: EnterVoiceRoomDeps,
 ): Promise<void> {
-  const { roomStore, rosterStore, commentsStore, rtmStore, activeCallStore, api, bffWs, rcs, router, toast, destroyRef, agoraAppId, reqUserId, leaveNavTarget, resolveRoomEntry, destroying } = deps;
+  const { roomStore, rosterStore, commentsStore, rtmStore, activeCallStore, api, bffWs, rcs, router, toast, destroyRef, agoraAppId, reqUserId, authStore, leaveNavTarget, resolveRoomEntry, destroying } = deps;
 
   const isRestore = await resolveRoomEntry(cname);
   rosterStore.setRoomContext(cname, busiType);
@@ -139,6 +168,7 @@ export async function enterVoiceRoom(
   roomStore.setRoomLevelInfo(voiceInfo.roomLevelInfo ?? null);
   const reqUser = voiceInfo.reqUserInfo;
   if (reqUser?.userId) {
+    if (!assertReqUserMatchesSession(reqUser.userId, authStore, toast, router)) return;
     reqUserId.set(reqUser.userId);
     roomStore.setUserId(reqUser.userId);
     commentsStore.setCurrentUserId(reqUser.userId);
@@ -225,6 +255,7 @@ export interface EnterVideoRoomDeps {
   destroyRef: DestroyRef;
   agoraAppId: string;
   reqUserId: WritableSignal<number>;
+  authStore: AuthStore;
   resolveRoomEntry: (cname: string) => Promise<boolean>;
   destroying: () => boolean;
 }
@@ -236,7 +267,7 @@ export async function enterVideoRoom(
   visible: boolean,
   deps: EnterVideoRoomDeps,
 ): Promise<void> {
-  const { roomStore, rosterStore, commentsStore, rtmStore, activeCallStore, api, bffWs, rcs, router, toast, destroyRef, agoraAppId, reqUserId, resolveRoomEntry, destroying } = deps;
+  const { roomStore, rosterStore, commentsStore, rtmStore, activeCallStore, api, bffWs, rcs, router, toast, destroyRef, agoraAppId, reqUserId, authStore, resolveRoomEntry, destroying } = deps;
 
   const isRestore = await resolveRoomEntry(cname);
   rosterStore.setRoomContext(cname, busiType);
@@ -322,6 +353,7 @@ export async function enterVideoRoom(
   roomStore.setRtcInfo(ch?.rtcInfo ?? null);
   const reqUser = liveInfo.reqUserInfo;
   if (reqUser?.userId) {
+    if (!assertReqUserMatchesSession(reqUser.userId, authStore, toast, router)) return;
     reqUserId.set(reqUser.userId);
     roomStore.setUserId(reqUser.userId);
     commentsStore.setCurrentUserId(reqUser.userId);

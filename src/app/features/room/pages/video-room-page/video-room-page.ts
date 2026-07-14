@@ -23,6 +23,7 @@ import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.servi
 import { ToastService } from '@core/services/toast.service';
 import { RoomApi } from '../../api/room-api';
 import { ActiveCallStore } from '@store/active-call.store';
+import { AuthStore } from '@core/auth/auth.store';
 import { RoomFacade } from '../../facade/room-facade';
 import { sendVideoComment } from '../../commands/send-comment.command';
 import { toggleCam } from '../../commands/toggle-cam.command';
@@ -89,6 +90,7 @@ export class VideoRoomPageComponent {
   readonly bffWs = inject(HtRoomConnectionService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly authStore = inject(AuthStore);
 
   protected readonly facade = inject(RoomFacade);
 
@@ -190,6 +192,7 @@ export class VideoRoomPageComponent {
       destroyRef: this.destroyRef,
       agoraAppId: this.agoraAppId,
       reqUserId: this.facade.reqUserId,
+      authStore: this.authStore,
       resolveRoomEntry: (c) => this.facade.resolveRoomEntry(c),
       destroying: () => this.facade.destroying(),
     });

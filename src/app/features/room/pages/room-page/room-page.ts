@@ -22,6 +22,7 @@ import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { HtRoomConnectionService } from '@core/realtime/ht-room-connection.service';
 import { ToastService } from '@core/services/toast.service';
 import { ActiveCallStore } from '@store/active-call.store';
+import { AuthStore } from '@core/auth/auth.store';
 import { RoomFacade } from '../../facade/room-facade';
 import { sendVoiceComment } from '../../commands/send-comment.command';
 import { toggleMic } from '../../commands/toggle-mic.command';
@@ -94,6 +95,7 @@ export class RoomPageComponent {
   readonly bffWs = inject(HtRoomConnectionService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly authStore = inject(AuthStore);
 
   protected readonly facade = inject(RoomFacade);
   protected readonly roomsPrefs = inject(RoomsPreferencesStore);
@@ -185,6 +187,7 @@ export class RoomPageComponent {
       destroyRef: this.destroyRef,
       agoraAppId: this.agoraAppId,
       reqUserId: this.facade.reqUserId,
+      authStore: this.authStore,
       leaveNavTarget: this.leaveNavTarget,
       resolveRoomEntry: (c) => this.facade.resolveRoomEntry(c),
       destroying: () => this.facade.destroying(),
