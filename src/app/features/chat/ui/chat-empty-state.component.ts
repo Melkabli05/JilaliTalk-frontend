@@ -12,7 +12,6 @@ import { LucideInbox } from '@lucide/angular';
       </div>
       <p class="empty-title">{{ title() }}</p>
       <p class="empty-body">{{ body() }}</p>
-      <ng-content />
     </div>
   `,
   styles: [`

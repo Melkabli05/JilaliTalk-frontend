@@ -30,11 +30,10 @@ export const routes: Routes = [
   },
   {
     path: 'messages',
-    title: 'Messages',
+    title: 'Chat',
     canActivate: [authGuard],
     data: { standalone: true },
-    loadComponent: () =>
-      import('./features/messages').then((m) => m.MessagesPageComponent),
+    loadChildren: () => import('./features/chat').then((m) => m.CHAT_ROUTES),
   },
   { path: 'rtm', redirectTo: 'messages', pathMatch: 'full' },
   {

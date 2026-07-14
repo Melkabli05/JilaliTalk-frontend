@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import type { ChatConnectionStatus } from '../models/chat-message.model';
 import { connectionStatusLabel } from '../utils/chat-status-label.util';
 
@@ -46,7 +46,5 @@ export class ChatConnectionPillComponent {
   readonly status = input.required<ChatConnectionStatus>();
   readonly retry = output<void>();
 
-  label(): string {
-    return connectionStatusLabel(this.status());
-  }
+  readonly label = computed(() => connectionStatusLabel(this.status()));
 }

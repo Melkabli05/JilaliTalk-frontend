@@ -1,12 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { of } from 'rxjs';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { LucideSearch, LucideX } from '@lucide/angular';
 import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
 import type { ChatUserPickerTab, ChatUserSummary } from '../models/chat-message.model';
-import type { ChatProfileDirectory, ChatProfilePage } from '../data-access/chat.port';
-
-const EMPTY_PAGE: ChatProfilePage = { list: [], more: false, pageIndex: null };
+import { asNumericPeerId } from '../utils/chat-ids';
 
 const PICKER_TABS: ReadonlyArray<{ readonly id: ChatUserPickerTab; readonly label: string }> = [
   { id: 'following', label: 'Following' },
@@ -216,7 +212,5 @@ export class ChatUserPickerSheetComponent {
     this.pick.emit(u);
   }
 
-  asUserId(id: string): number {
-    return Number(id);
-  }
+  protected readonly asUserId = asNumericPeerId;
 }

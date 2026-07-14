@@ -11,7 +11,7 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
   template: `
     @if (stagedIntroduction(); as intro) {
       <div class="composer-staged" role="status">
-        <app-avatar [src]="intro.headUrl ?? ''" [initials]="initials(intro.nickname)" [alt]="intro.nickname" size="xs" />
+        <app-avatar [src]="intro.headUrl ?? ''" [initials]="intro.nickname.slice(0, 2)" [alt]="intro.nickname" size="xs" />
         <span class="composer-staged-meta">
           <span class="composer-staged-label">Sharing</span>
           <span class="composer-staged-name">{{ intro.nickname }}</span>
@@ -52,7 +52,6 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
         (keydown)="onKeydown($event)"
         (blur)="blur.emit()"
         [attr.aria-label]="'Message to ' + (recipientName() || 'this conversation')"
-        [disabled]="!enabled()"
       ></textarea>
       <button
         type="submit"
@@ -112,7 +111,6 @@ export class ChatComposerComponent {
   readonly stagedIntroduction = input<IntroductionPayload | null>(null);
   readonly attachOpen = input<boolean>(false);
   readonly canSend = input<boolean>(false);
-  readonly enabled = input<boolean>(true);
   readonly recipientName = input<string>('');
 
   readonly draftChange = output<string>();
@@ -120,10 +118,6 @@ export class ChatComposerComponent {
   readonly toggleAttach = output<void>();
   readonly removeStaged = output<void>();
   readonly blur = output<void>();
-
-  initials(name: string): string {
-    return name.slice(0, 2);
-  }
 
   onInput(value: string): void {
     this.draftChange.emit(value);

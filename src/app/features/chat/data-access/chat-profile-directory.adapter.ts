@@ -49,14 +49,13 @@ export class ChatProfileDirectoryAdapter implements ChatProfileDirectory {
 }
 
 function toUserSummary(u: SocialUser): ChatUserSummary {
-  const summary: ChatUserSummary = {
+  return {
     userId: String(u.userId),
     nickname: u.nickName ?? 'User',
     headUrl: u.headUrl,
     nationality: u.nationality,
     isMutual: u.isMutual,
   };
-  return summary;
 }
 
 function toUserSummaryFromVisitor(u: VisitorUser): ChatUserSummary {

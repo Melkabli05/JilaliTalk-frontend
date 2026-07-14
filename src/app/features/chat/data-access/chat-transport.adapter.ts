@@ -1,7 +1,7 @@
 import { Injectable, Signal, computed, inject } from '@angular/core';
 import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
 import type { ImEvent } from '@core/realtime/im-events';
-import type { ChatConnectionStatus, ChatMessageType } from '../models/chat-message.model';
+import type { ChatConnectionStatus } from '../models/chat-message.model';
 import type {
   ChatOutboundIntroduction,
   ChatOutboundText,
@@ -55,11 +55,11 @@ export class ChatTransportAdapter implements ChatTransport {
 function toChatTransportEvent(ev: ImEvent): ChatTransportEvent | null {
   switch (ev.type) {
     case 'text_message':
-      return { type: 'text_message', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.fromHeadUrl ?? null, text: ev.text, ts: ev.ts, msgId: '' };
+      return { type: 'text_message', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.fromHeadUrl ?? null, text: ev.text, ts: ev.ts };
     case 'image_message':
-      return { type: 'image_message', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.fromHeadUrl ?? null, imageUrl: ev.imageUrl, ts: ev.ts, msgId: '' };
+      return { type: 'image_message', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.fromHeadUrl ?? null, imageUrl: ev.imageUrl, ts: ev.ts };
     case 'gift_message':
-      return { type: 'gift_message', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.fromHeadUrl ?? null, giftId: ev.giftId, count: ev.count, ts: Date.now(), msgId: '' };
+      return { type: 'gift_message', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.fromHeadUrl ?? null, giftId: ev.giftId, count: ev.count, ts: Date.now() };
     case 'introduction_message':
       return {
         type: 'introduction_message',
@@ -67,7 +67,6 @@ function toChatTransportEvent(ev: ImEvent): ChatTransportEvent | null {
         fromNickname: ev.fromNickname,
         fromHeadUrl: ev.fromHeadUrl ?? null,
         ts: Date.now(),
-        msgId: '',
         target: {
           userId: Number(ev.targetUserId),
           nickname: ev.targetNickname,
@@ -79,9 +78,9 @@ function toChatTransportEvent(ev: ImEvent): ChatTransportEvent | null {
         },
       };
     case 'voice_room_shared':
-      return { type: 'voice_room_shared', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.headUrl, cname: ev.cname, ts: Date.now(), msgId: '', ...(ev.count != null ? { listenerCount: ev.count } : {}) };
+      return { type: 'voice_room_shared', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.headUrl, cname: ev.cname, ts: Date.now(), ...(ev.count != null ? { listenerCount: ev.count } : {}) };
     case 'live_room_shared':
-      return { type: 'live_room_shared', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.headUrl, cname: ev.cname, ts: Date.now(), msgId: '' };
+      return { type: 'live_room_shared', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.headUrl, cname: ev.cname, ts: Date.now() };
     case 'typing_indicator':
       return { type: 'typing_indicator', peerUserId: ev.fromUserId, isTyping: ev.isTyping };
     case 'read_receipt':
@@ -92,5 +91,3 @@ function toChatTransportEvent(ev: ImEvent): ChatTransportEvent | null {
       return null;
   }
 }
-
-export type { ChatMessageType };

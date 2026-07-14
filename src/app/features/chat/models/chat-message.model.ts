@@ -1,13 +1,5 @@
 import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
 
-export type ChatMessageType =
-  | 'text'
-  | 'image'
-  | 'gift'
-  | 'introduction'
-  | 'voice_room_shared'
-  | 'live_room_shared';
-
 export type ChatDelivery = 'sent' | 'delivered' | 'read';
 
 export type ChatMessage =
@@ -77,10 +69,8 @@ export interface ChatUserSummary {
   readonly isMutual?: boolean;
 }
 
-export type ChatConnectionStatus =
-  | 'connecting'
-  | 'connected'
-  | 'reconnecting'
-  | 'disconnected';
+export type ChatConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
 
 export type ChatUserPickerTab = 'following' | 'followers' | 'visitors' | 'byId';
+
+export type ChatMessageType = ChatMessage['type'];

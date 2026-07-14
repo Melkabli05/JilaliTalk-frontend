@@ -12,7 +12,3 @@ export function connectionStatusLabel(status: ChatConnectionStatus): string {
       return 'Disconnected — tap to retry';
   }
 }
-
-export function isConnectionRetryable(status: ChatConnectionStatus): boolean {
-  return status === 'disconnected';
-}

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import type { ChatConversation } from '../models/chat-message.model';
 import { lastMessagePreview } from '../utils/chat-preview.util';
@@ -85,8 +85,8 @@ export class ChatConversationRowComponent {
 
   readonly select = output<void>();
 
-  readonly unread = (): number => this.conversation().unread;
-  readonly preview = (): string => lastMessagePreview(this.conversation());
-  readonly initials = (): string => this.conversation().nickname.slice(0, 2);
+  readonly unread = computed(() => this.conversation().unread);
+  readonly preview = computed(() => lastMessagePreview(this.conversation()));
+  readonly initials = computed(() => this.conversation().nickname.slice(0, 2));
   readonly relativeTime = (ts: number): string => this.formatTime()(ts);
 }

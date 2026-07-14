@@ -4,21 +4,26 @@ export interface TypingBroadcaster {
   stopAll(): void;
 }
 
+interface ActiveEntry {
+  typingSent: boolean;
+  stopTimer: ReturnType<typeof setTimeout> | null;
+}
+
 export function createTypingBroadcaster(
   send: (peerId: number, isTyping: boolean) => void,
   stopDelayMs: number,
 ): TypingBroadcaster {
-  const activePeers = new Map<number, { typingSent: boolean; stopTimer: ReturnType<typeof setTimeout> | null }>();
+  const activePeers = new Map<number, ActiveEntry>();
 
-  function clearStop(peerId: number): void {
+  const clearStop = (peerId: number): void => {
     const entry = activePeers.get(peerId);
     if (entry?.stopTimer) {
       clearTimeout(entry.stopTimer);
       entry.stopTimer = null;
     }
-  }
+  };
 
-  function scheduleStop(peerId: number): void {
+  const scheduleStop = (peerId: number): void => {
     const entry = activePeers.get(peerId);
     if (!entry) return;
     if (entry.stopTimer) clearTimeout(entry.stopTimer);
@@ -26,7 +31,7 @@ export function createTypingBroadcaster(
       send(peerId, false);
       activePeers.delete(peerId);
     }, stopDelayMs);
-  }
+  };
 
   return {
     notifyInput(peerId: number): void {

@@ -2,12 +2,13 @@ import { Service, DestroyRef, computed, effect, inject, signal } from '@angular/
 import { StorageService } from '@core/services/storage.service';
 import { UserInfoService } from '@core/services/user-info.service';
 import { AuthStore } from '@core/auth/auth.store';
+import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
 import type {
   ChatConversation,
+  ChatDelivery,
   ChatMessage,
-  ChatUserSummary,
 } from '../models/chat-message.model';
-import { asPeerId } from '../utils/chat-ids';
+import { asNumericPeerId, asPeerId } from '../utils/chat-ids';
 import { sortConversationsByRecency } from '../utils/chat-sort.util';
 import {
   markConversationRead,
@@ -75,7 +76,7 @@ export class ChatStore {
     effect(() => {
       for (const c of this._conversations().values()) {
         if (c.nickname !== c.peerUserId && c.headUrl) continue;
-        const numeric = Number(c.peerUserId);
+        const numeric = asNumericPeerId(c.peerUserId);
         if (Number.isFinite(numeric)) this.userInfo.ensureFresh(numeric);
       }
     });
@@ -86,7 +87,7 @@ export class ChatStore {
   select(peerUserId: string | number): void {
     const id = asPeerId(peerUserId);
     this._selectedPeerId.set(id);
-    const numeric = Number(id);
+    const numeric = asNumericPeerId(id);
     const info = Number.isFinite(numeric) ? this.userInfo.getUserInfo(numeric) : null;
     const fallbackNickname = info?.nickname?.trim() || info?.username?.trim() || id;
     const fallbackHeadUrl = info?.details?.base?.headUrl ?? null;
@@ -127,7 +128,7 @@ export class ChatStore {
     return true;
   }
 
-  sendIntroduction(peerId: number, target: import('@core/realtime/ht-protocol/packet-framer.util').IntroductionPayload): boolean {
+  sendIntroduction(peerId: number, target: IntroductionPayload): boolean {
     const me = this.authStore.user();
     if (!me) return false;
     const msgId = crypto.randomUUID();
@@ -165,10 +166,6 @@ export class ChatStore {
     this.transport.connect();
   }
 
-  pickProfile(user: ChatUserSummary): void {
-    this.select(user.userId);
-  }
-
   private push(peerId: string | number, message: ChatMessage): void {
     const peerUserId = asPeerId(peerId);
     const isSelected = this._selectedPeerId() === peerUserId;
@@ -182,7 +179,7 @@ export class ChatStore {
     switch (ev.type) {
       case 'text_message': {
         this.push(ev.peerUserId, {
-          id: ev.msgId || crypto.randomUUID(),
+          id: crypto.randomUUID(),
           type: 'text',
           text: ev.text,
           ts: ev.ts,
@@ -194,7 +191,7 @@ export class ChatStore {
       }
       case 'image_message': {
         this.push(ev.peerUserId, {
-          id: ev.msgId || crypto.randomUUID(),
+          id: crypto.randomUUID(),
           type: 'image',
           imageUrl: ev.imageUrl,
           ts: ev.ts,
@@ -206,7 +203,7 @@ export class ChatStore {
       }
       case 'gift_message': {
         this.push(ev.peerUserId, {
-          id: ev.msgId || crypto.randomUUID(),
+          id: crypto.randomUUID(),
           type: 'gift',
           giftId: ev.giftId,
           count: ev.count,
@@ -219,7 +216,7 @@ export class ChatStore {
       }
       case 'introduction_message': {
         this.push(ev.peerUserId, {
-          id: ev.msgId || crypto.randomUUID(),
+          id: crypto.randomUUID(),
           type: 'introduction',
           target: ev.target,
           ts: ev.ts,
@@ -230,8 +227,8 @@ export class ChatStore {
         return;
       }
       case 'voice_room_shared': {
-        this.push(ev.peerUserId, {
-          id: ev.msgId || crypto.randomUUID(),
+        const msg: ChatMessage = {
+          id: crypto.randomUUID(),
           type: 'voice_room_shared',
           cname: ev.cname,
           ts: ev.ts,
@@ -239,12 +236,13 @@ export class ChatStore {
           fromNickname: ev.fromNickname,
           fromHeadUrl: ev.fromHeadUrl,
           ...(ev.listenerCount != null ? { listenerCount: ev.listenerCount } : {}),
-        });
+        };
+        this.push(ev.peerUserId, msg);
         return;
       }
       case 'live_room_shared': {
         this.push(ev.peerUserId, {
-          id: ev.msgId || crypto.randomUUID(),
+          id: crypto.randomUUID(),
           type: 'live_room_shared',
           cname: ev.cname,
           ts: ev.ts,
@@ -269,7 +267,7 @@ export class ChatStore {
     }
   }
 
-  private updateDelivery(msgId: string, to: import('../models/chat-message.model').ChatDelivery | null, ...from: readonly import('../models/chat-message.model').ChatDelivery[]): void {
+  private updateDelivery(msgId: string, to: ChatDelivery | null, ...from: readonly ChatDelivery[]): void {
     if (!to || !msgId) return;
     const peerUserId = this.msgIndex.get(msgId);
     if (!peerUserId) return;
@@ -288,7 +286,7 @@ export class ChatStore {
 
   private resolveDisplayIdentity(conv: ChatConversation): ChatConversation {
     if (conv.nickname !== conv.peerUserId && conv.headUrl) return conv;
-    const numeric = Number(conv.peerUserId);
+    const numeric = asNumericPeerId(conv.peerUserId);
     const info = Number.isFinite(numeric) ? this.userInfo.getUserInfo(numeric) : null;
     if (!info) return conv;
     return resolveIdentity(conv, info.nickname ?? null, info.details?.base?.headUrl ?? null);

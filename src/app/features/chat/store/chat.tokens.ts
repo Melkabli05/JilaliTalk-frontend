@@ -1,8 +1,7 @@
 import { InjectionToken, inject } from '@angular/core';
 import { ChatTransportAdapter } from '../data-access/chat-transport.adapter';
 import { ChatProfileDirectoryAdapter } from '../data-access/chat-profile-directory.adapter';
-import type { ChatTransport } from '../data-access/chat.port';
-import type { ChatProfileDirectory } from '../data-access/chat.port';
+import type { ChatProfileDirectory, ChatTransport } from '../data-access/chat.port';
 
 export const CHAT_TRANSPORT = new InjectionToken<ChatTransport>('CHAT_TRANSPORT', {
   providedIn: 'root',

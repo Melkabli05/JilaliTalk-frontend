@@ -11,10 +11,11 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { Dialog } from '@angular/cdk/dialog';
+import { from, of } from 'rxjs';
 import {
   LucideChevronLeft,
-  LucideMessageCircle,
   LucidePlus,
   LucideSearch,
   LucideX,
@@ -22,10 +23,11 @@ import {
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal';
 import { injectIsMobileViewport, relativeTime } from '@shared/utils';
+import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
 import { ChatStore } from '../../store/chat.store';
 import { CHAT_PROFILE_DIRECTORY } from '../../store/chat.tokens';
 import type { ChatProfileDirectory } from '../../data-access/chat.port';
-import type { ChatUserPickerTab, ChatUserSummary } from '../../models/chat-message.model';
+import type { ChatMessage, ChatUserPickerTab, ChatUserSummary } from '../../models/chat-message.model';
 import { asNumericPeerId } from '../../utils/chat-ids';
 import { filterConversationsByQuery } from '../../utils/chat-sort.util';
 import { dayLabel } from '../../utils/chat-day-label.util';
@@ -41,8 +43,6 @@ import { ChatConversationRowComponent } from '../../ui/chat-conversation-row.com
 import { ChatConnectionPillComponent } from '../../ui/chat-connection-pill.component';
 import { ChatUserPickerSheetComponent } from '../../ui/chat-user-picker-sheet.component';
 import { ChatEmptyStateComponent } from '../../ui/chat-empty-state.component';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { from, of } from 'rxjs';
 
 const TYPING_STOP_DELAY_MS = 3000;
 const FOLLOWING_LIMIT = 50;
@@ -66,7 +66,6 @@ const FOLLOWERS_LIMIT = 50;
     ChatUserPickerSheetComponent,
     ChatEmptyStateComponent,
     LucideChevronLeft,
-    LucideMessageCircle,
     LucidePlus,
     LucideSearch,
     LucideX,
@@ -168,7 +167,7 @@ const FOLLOWERS_LIMIT = 50;
                   <div class="msg-row" [class.is-outbound]="!!msg.delivery">
                     <app-chat-text-bubble [text]="msg.text" [isOutbound]="!!msg.delivery" />
                     @if (msg.delivery) {
-                      <app-chat-delivery-mark [delivery]="msg.delivery ?? null" />
+                      <app-chat-delivery-mark [delivery]="msg.delivery" />
                     }
                   </div>
                 }
@@ -176,7 +175,7 @@ const FOLLOWERS_LIMIT = 50;
                   <div class="msg-row" [class.is-outbound]="!!msg.delivery">
                     <app-chat-image-bubble [url]="msg.imageUrl" />
                     @if (msg.delivery) {
-                      <app-chat-delivery-mark [delivery]="msg.delivery ?? null" />
+                      <app-chat-delivery-mark [delivery]="msg.delivery" />
                     }
                   </div>
                 }
@@ -184,7 +183,7 @@ const FOLLOWERS_LIMIT = 50;
                   <div class="msg-row" [class.is-outbound]="!!msg.delivery">
                     <app-chat-gift-bubble [count]="msg.count" [isOutbound]="!!msg.delivery" />
                     @if (msg.delivery) {
-                      <app-chat-delivery-mark [delivery]="msg.delivery ?? null" />
+                      <app-chat-delivery-mark [delivery]="msg.delivery" />
                     }
                   </div>
                 }
@@ -197,7 +196,7 @@ const FOLLOWERS_LIMIT = 50;
                       (viewProfile)="onViewProfile(msg.target.userId, msg.target.nickname, msg.target.headUrl ?? null)"
                     />
                     @if (msg.delivery) {
-                      <app-chat-delivery-mark [delivery]="msg.delivery ?? null" />
+                      <app-chat-delivery-mark [delivery]="msg.delivery" />
                     }
                   </div>
                 }
@@ -397,7 +396,7 @@ export class ChatPageComponent {
   );
 
   protected readonly draft = signal('');
-  protected readonly stagedIntroduction = signal<import('@core/realtime/ht-protocol/packet-framer.util').IntroductionPayload | null>(null);
+  protected readonly stagedIntroduction = signal<IntroductionPayload | null>(null);
   protected readonly canSend = computed(() => this.draft().trim().length > 0 || this.stagedIntroduction() !== null);
 
   protected readonly pickerOpen = signal<'newConversation' | 'shareProfile' | null>(null);
@@ -405,7 +404,6 @@ export class ChatPageComponent {
   protected readonly pickerByIdQuery = signal('');
   protected readonly pickerByIdValid = computed(() => /^\d+$/.test(this.pickerByIdQuery().trim()));
   protected readonly pickerByIdQueryId = signal<number | null>(null);
-  protected readonly pickerByIdResult = signal<ChatUserSummary | null>(null);
 
   private readonly followingRes = rxResource<readonly ChatUserSummary[], boolean | undefined>({
     params: () => (this.pickerOpen() && this.pickerTab() === 'following' ? true : undefined),
@@ -427,6 +425,7 @@ export class ChatPageComponent {
     stream: ({ params }) => params == null ? of(null) : from(this.profileDirectory.byId(params)),
     defaultValue: null,
   });
+  protected readonly pickerByIdResult = this.byIdRes.value;
 
   protected readonly pickerUsers = computed<readonly ChatUserSummary[]>(() => {
     switch (this.pickerTab()) {
@@ -467,7 +466,6 @@ export class ChatPageComponent {
   });
 
   private readonly feedEl = viewChild<ElementRef<HTMLElement>>('feed');
-  private readonly searchInputEl = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
   private readonly typingBroadcaster = createTypingBroadcaster(
     (peerId, isTyping) => this.store.notifyTyping(peerId),
@@ -475,7 +473,7 @@ export class ChatPageComponent {
   );
 
   formatTime = (ts: number) => relativeTime(ts);
-  formatDay = (messages: readonly import('../../models/chat-message.model').ChatMessage[], index: number) => dayLabel(messages, index);
+  formatDay = (messages: readonly ChatMessage[], index: number) => dayLabel(messages, index);
 
   constructor() {
     effect(() => {
@@ -486,17 +484,8 @@ export class ChatPageComponent {
 
     effect(() => {
       if (!this.store.selectedConversation()) return;
-      const messages = this.store.selectedConversation()?.messages.length;
-      const isTyping = this.store.selectedConversation()?.isTyping;
-      void messages;
-      void isTyping;
       const el = this.feedEl()?.nativeElement;
       if (el) Promise.resolve().then(() => { el.scrollTop = el.scrollHeight; });
-    });
-
-    effect(() => {
-      const byId = this.byIdRes.value();
-      this.pickerByIdResult.set(byId);
     });
 
     this.destroyRef.onDestroy(() => this.typingBroadcaster.stopAll());
@@ -530,27 +519,26 @@ export class ChatPageComponent {
       return;
     }
     this.pickerOpen.set(kind);
-    this.pickerTab.set(kind === 'shareProfile' ? 'following' : 'following');
+    this.pickerTab.set('following');
     this.pickerByIdQuery.set('');
     this.pickerByIdQueryId.set(null);
-    this.pickerByIdResult.set(null);
   }
 
   protected closePicker(): void {
     this.pickerOpen.set(null);
     this.pickerByIdQuery.set('');
-    this.pickerByIdResult.set(null);
+    this.pickerByIdQueryId.set(null);
   }
 
   protected onPickerTabChange(tab: ChatUserPickerTab): void {
     this.pickerTab.set(tab);
     if (tab !== 'byId') {
-      this.pickerByIdResult.set(null);
+      this.pickerByIdQueryId.set(null);
     }
   }
 
   protected onPickerPick(user: ChatUserSummary): void {
-    const peerId = Number(user.userId);
+    const peerId = asNumericPeerId(user.userId);
     if (this.pickerOpen() === 'shareProfile') {
       this.stagedIntroduction.set({
         userId: peerId,
@@ -578,7 +566,7 @@ export class ChatPageComponent {
     this.draft.set(value);
     const conv = this.store.selectedConversation();
     if (conv) {
-      const peerId = Number(conv.peerUserId);
+      const peerId = asNumericPeerId(conv.peerUserId);
       if (Number.isFinite(peerId)) this.typingBroadcaster.notifyInput(peerId);
     }
   }
@@ -586,14 +574,14 @@ export class ChatPageComponent {
   protected onComposerBlur(): void {
     const conv = this.store.selectedConversation();
     if (!conv) return;
-    const peerId = Number(conv.peerUserId);
+    const peerId = asNumericPeerId(conv.peerUserId);
     if (Number.isFinite(peerId)) this.typingBroadcaster.stop(peerId);
   }
 
   protected onSend(): void {
     const conv = this.store.selectedConversation();
     if (!conv) return;
-    const peerId = Number(conv.peerUserId);
+    const peerId = asNumericPeerId(conv.peerUserId);
     if (!Number.isFinite(peerId)) return;
     const intro = this.stagedIntroduction();
     if (intro) {
