@@ -27,10 +27,11 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
 import { ChatStore } from '../../store/chat.store';
 import { CHAT_PROFILE_DIRECTORY } from '../../store/chat.tokens';
 import type { ChatProfileDirectory } from '../../data-access/chat.port';
-import type { ChatMessage, ChatUserPickerTab, ChatUserSummary } from '../../models/chat-message.model';
+import type { ChatConversation, ChatMessage, ChatUserPickerTab, ChatUserSummary } from '../../models/chat-message.model';
 import { asNumericPeerId } from '../../utils/chat-ids';
 import { filterConversationsByQuery } from '../../utils/chat-sort.util';
 import { dayLabel } from '../../utils/chat-day-label.util';
+import { chatMessageAriaLabel } from '../../utils/chat-preview.util';
 import { createTypingBroadcaster } from '../../utils/chat-typing-debouncer';
 import { ChatTextBubbleComponent } from '../../ui/chat-text-bubble.component';
 import { ChatImageBubbleComponent } from '../../ui/chat-image-bubble.component';
@@ -71,7 +72,7 @@ const FOLLOWERS_LIMIT = 50;
     LucideX,
   ],
   template: `
-    <div class="chat-shell">
+    <div class="chat-shell" [inert]="pickerOpen() !== null">
       <aside class="sidebar" [class.hidden]="store.selectedConversation()">
         <header class="sidebar-header">
           <h1 class="sidebar-title">Chat</h1>
@@ -164,7 +165,7 @@ const FOLLOWERS_LIMIT = 50;
 
               @switch (msg.type) {
                 @case ('text') {
-                  <div class="msg-row" [class.is-outbound]="!!msg.delivery">
+                  <div class="msg-row" [class.is-outbound]="!!msg.delivery" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-text-bubble [text]="msg.text" [isOutbound]="!!msg.delivery" />
                     @if (msg.delivery) {
                       <app-chat-delivery-mark [delivery]="msg.delivery" />
@@ -172,7 +173,7 @@ const FOLLOWERS_LIMIT = 50;
                   </div>
                 }
                 @case ('image') {
-                  <div class="msg-row" [class.is-outbound]="!!msg.delivery">
+                  <div class="msg-row" [class.is-outbound]="!!msg.delivery" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-image-bubble [url]="msg.imageUrl" />
                     @if (msg.delivery) {
                       <app-chat-delivery-mark [delivery]="msg.delivery" />
@@ -180,7 +181,7 @@ const FOLLOWERS_LIMIT = 50;
                   </div>
                 }
                 @case ('gift') {
-                  <div class="msg-row" [class.is-outbound]="!!msg.delivery">
+                  <div class="msg-row" [class.is-outbound]="!!msg.delivery" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-gift-bubble [count]="msg.count" [isOutbound]="!!msg.delivery" />
                     @if (msg.delivery) {
                       <app-chat-delivery-mark [delivery]="msg.delivery" />
@@ -188,7 +189,7 @@ const FOLLOWERS_LIMIT = 50;
                   </div>
                 }
                 @case ('introduction') {
-                  <div class="msg-row" [class.is-outbound]="!!msg.delivery">
+                  <div class="msg-row" [class.is-outbound]="!!msg.delivery" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-introduction-bubble
                       [target]="msg.target"
                       [context]="(msg.fromNickname || conv.nickname) + ' shared a profile'"
@@ -276,6 +277,10 @@ const FOLLOWERS_LIMIT = 50;
       display: flex; height: 100%;
       overflow: hidden; position: relative;
     }
+    .chat-shell button, .chat-shell [role="option"], .chat-shell [role="tab"] {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
     .sidebar {
       width: 320px; flex-shrink: 0; display: flex;
       flex-direction: column; background: var(--color-card);
@@ -298,6 +303,7 @@ const FOLLOWERS_LIMIT = 50;
       border-radius: var(--radius-full); cursor: pointer;
     }
     .icon-btn:hover { background: var(--color-primary-600); }
+    .icon-btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
     .search-wrap {
       position: relative; padding: var(--space-2) var(--space-3); flex-shrink: 0;
     }
@@ -321,6 +327,8 @@ const FOLLOWERS_LIMIT = 50;
       border: 0; background: transparent; color: var(--color-text-muted);
       border-radius: var(--radius-full); cursor: pointer;
     }
+    .search-clear:hover { background: var(--color-neutral-200); color: var(--color-text); }
+    .search-clear:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
     .conversations {
       flex: 1; overflow-y: auto; list-style: none; margin: 0;
       padding: var(--space-1) var(--space-2) var(--space-2);
@@ -339,6 +347,8 @@ const FOLLOWERS_LIMIT = 50;
       border: 0; background: transparent; color: var(--color-primary-500);
       border-radius: var(--radius-md); cursor: pointer; flex-shrink: 0;
     }
+    .back-btn:hover { background: var(--color-neutral-100); }
+    .back-btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
     .thread-identity {
       display: inline-flex; align-items: center; gap: var(--space-2);
       border: 0; background: transparent; cursor: pointer; flex: 1;
@@ -346,6 +356,7 @@ const FOLLOWERS_LIMIT = 50;
       color: var(--color-text); min-width: 0;
     }
     .thread-identity:hover { background: var(--color-neutral-100); }
+    .thread-identity:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
     .thread-name { font-weight: var(--font-semibold); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .typing-label { font-size: var(--text-xs); color: var(--color-primary-500); font-style: italic; padding-right: var(--space-2); }
     .feed { flex: 1; overflow-y: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); overscroll-behavior-y: contain; }
@@ -378,6 +389,9 @@ const FOLLOWERS_LIMIT = 50;
       .thread.open { transform: translateX(0); visibility: visible; pointer-events: auto; }
       .search-input { height: 44px; }
       .icon-btn { width: 44px; height: 44px; }
+      .search-clear { width: 44px; height: 44px; right: var(--space-2); }
+      .back-btn { width: 44px; height: 44px; }
+      .thread-identity { min-height: 44px; }
     }
   `],
 })
@@ -472,6 +486,8 @@ export class ChatPageComponent {
 
   protected readonly formatTime = (ts: number): string => relativeTime(ts);
   protected readonly formatDay = (messages: readonly ChatMessage[], index: number): string => dayLabel(messages, index);
+  protected readonly messageAriaLabel = (msg: ChatMessage, conv: ChatConversation): string =>
+    chatMessageAriaLabel(msg, msg.delivery ? 'You' : conv.nickname, this.formatTime);
 
   constructor() {
     effect(() => {

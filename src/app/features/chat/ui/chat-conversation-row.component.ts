@@ -47,12 +47,15 @@ import { lastMessagePreview } from '../utils/chat-preview.util';
       display: grid;
       grid-template-columns: auto 1fr auto;
       align-items: center; gap: 12px;
-      width: 100%; padding: 10px 12px;
+      width: 100%; min-height: 44px; padding: 10px 12px;
       background: transparent; border: 0; cursor: pointer;
       border-radius: 12px; text-align: left; color: inherit;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     .row:hover { background: var(--color-neutral-100); }
     .row.active { background: color-mix(in srgb, var(--color-primary-500) 10%, transparent); }
+    .row:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
     :host-context(.dark) .row:hover { background: var(--color-neutral-700); }
     :host-context(.dark) .row.active { background: color-mix(in srgb, var(--color-primary-500) 16%, transparent); }
     .row-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

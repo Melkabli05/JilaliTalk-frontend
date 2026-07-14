@@ -52,7 +52,10 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       border-radius: 10px; background: var(--color-card); border: 1px solid var(--color-border);
       text-align: left; cursor: pointer; align-items: center;
       color: var(--color-text);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
+    .intro-card:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
     .intro-body { display: flex; flex-direction: column; gap: 2px; }
     .intro-name { font-weight: var(--font-semibold); font-size: var(--text-sm); }
     .intro-bio { font-size: var(--text-xs); color: var(--color-text-muted); }

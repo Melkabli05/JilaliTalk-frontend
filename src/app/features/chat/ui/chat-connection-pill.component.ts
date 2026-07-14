@@ -34,7 +34,12 @@ import { connectionStatusLabel } from '../utils/chat-status-label.util';
       font-size: var(--text-xs); font-weight: var(--font-medium);
       cursor: default; user-select: none;
     }
-    .pill.tappable { cursor: pointer; }
+    .pill.tappable {
+      cursor: pointer; padding: 8px 12px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pill.tappable:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
     :host-context(.dark) .pill { background: var(--color-neutral-800); border-color: var(--color-neutral-700); }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-neutral-300); }
     .connected .dot { background: var(--color-accent-500); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-500) 25%, transparent); }

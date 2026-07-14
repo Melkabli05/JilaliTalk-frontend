@@ -79,8 +79,11 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
       width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
       background: transparent; border: 0; color: var(--color-text-muted);
       border-radius: var(--radius-full); cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     .composer-staged-remove:hover { background: var(--color-neutral-100); color: var(--color-text); }
+    .composer-staged-remove:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
     .composer {
       display: flex; align-items: flex-end; gap: 6px;
       padding: 8px 10px;
@@ -92,7 +95,10 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
       display: inline-flex; align-items: center; justify-content: center;
       border-radius: 50%; border: 0; cursor: pointer; background: transparent;
       color: var(--color-primary-600);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
+    .composer-attach:focus-visible, .composer-send:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
     .composer-send { background: var(--color-primary-500); color: var(--color-on-color); }
     .composer-send:disabled { opacity: 0.4; cursor: not-allowed; }
     .composer-attach:hover { background: var(--color-neutral-100); }
@@ -104,6 +110,9 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
       outline: none;
     }
     .composer-field:focus { border-color: var(--color-primary-400); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 14%, transparent); }
+    @media (max-width: 767.98px) {
+      .composer-attach, .composer-send { width: 44px; height: 44px; }
+    }
   `],
 })
 export class ChatComposerComponent {

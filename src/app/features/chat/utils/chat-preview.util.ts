@@ -22,3 +22,11 @@ export function messagePreviewText(msg: ChatMessage): string {
       return 'Shared a live room';
   }
 }
+
+export function chatMessageAriaLabel(
+  msg: ChatMessage,
+  senderName: string,
+  formatTime: (ts: number) => string,
+): string {
+  return `${senderName}, ${formatTime(msg.ts)}: ${messagePreviewText(msg)}`;
+}
