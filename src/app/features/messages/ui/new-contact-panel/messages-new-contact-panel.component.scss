@@ -202,10 +202,19 @@
 
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 640px) {
+  .new-contact-host {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal-backdrop);
+  }
   .new-contact-panel {
-    top: var(--shell-inset-top);
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
     bottom: 0;
-    height: calc(100dvh - var(--shell-inset-top));
+    height: calc(100dvh - var(--app-header-height));
+    z-index: var(--z-modal);
     transform: translateY(100%);
     border-radius: 14px 14px 0 0;
   }

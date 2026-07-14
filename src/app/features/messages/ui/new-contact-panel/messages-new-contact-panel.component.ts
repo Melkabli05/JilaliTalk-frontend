@@ -17,8 +17,11 @@ import { of } from 'rxjs';
 import { LucideX } from '@lucide/angular';
 import { ProfileApi } from '@features/profile/data-access/profile-api';
 import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
+import { injectIsMobileViewport } from '@shared/utils';
 import type { SocialListPage, SocialUser, VisitorUser } from '@features/profile/models/profile.model';
 import type { UserInfo } from '@core/services/user-info.service';
+
+const SHEET_BREAKPOINT_QUERY = '(max-width: 640px)';
 
 export type TabId = 'following' | 'followers' | 'visitors' | 'byId';
 
@@ -59,6 +62,7 @@ export class MessageNewContactPanelComponent {
   private readonly api = inject(ProfileApi);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+  protected readonly isMobile = injectIsMobileViewport(SHEET_BREAKPOINT_QUERY);
 
   private readonly followingRes = rxResource<SocialListPage, boolean | undefined>({
     params: () => (this.open() && this.tab() === 'following' ? true : undefined),
@@ -150,6 +154,17 @@ export class MessageNewContactPanelComponent {
         this.previouslyFocused.focus();
         this.previouslyFocused = null;
       }
+    });
+
+    effect(() => {
+      if (!this.isMobile()) return;
+      if (this.open()) {
+        document.body.style.overflow = 'hidden';
+        return () => {
+          document.body.style.overflow = '';
+        };
+      }
+      return;
     });
   }
 
