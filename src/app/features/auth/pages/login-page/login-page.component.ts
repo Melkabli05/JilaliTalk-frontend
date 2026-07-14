@@ -66,6 +66,13 @@ import { AuthShellComponent } from '../../ui/auth-shell/auth-shell.component';
     </app-auth-shell>
   `,
   styles: [`
+    /* Route-level component with no explicit display defaults to CSS's inline for unknown
+       elements — AuthShellComponent's own :host is display:contents, so without this the
+       whole chain down to .auth-shell (display:grid) never gets a proper block-level
+       ancestor, and the grid free to size to its content's max-content width instead of the
+       viewport. That's what caused the page to overflow horizontally on narrow phones. */
+    :host { display: block; }
+
     form {
       display: flex;
       flex-direction: column;
@@ -94,7 +101,8 @@ export class LoginPageComponent {
   readonly submitting = signal(false);
   readonly errorText = signal<string | null>(null);
 
-  private readonly loginModel = signal({ email: '', password: '' });
+  // TODO: temporary test-account defaults for manual QA — remove before any real release.
+  private readonly loginModel = signal({ email: 'cahaja5804@bittnex.com', password: '12345678' });
   readonly loginForm = form(this.loginModel, (path) => {
     required(path.email, { message: 'Email is required' });
     email(path.email, { message: 'Enter a valid email' });

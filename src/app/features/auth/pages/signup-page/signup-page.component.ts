@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, signal, inject, computed } from '@a
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { form, validate, FormField } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
-import { LucideUserPlus } from '@lucide/angular';
+import { LucideUserPlus, LucideCheck, LucideChevronLeft } from '@lucide/angular';
 import { InputComponent } from '@shared/ui/input/input.component';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { ErrorBannerComponent } from '@shared/ui/error-banner/error-banner.component';
@@ -13,6 +13,7 @@ import { firstError, validateEmail, validatePasswordMin } from '@shared/utils/au
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
 import { sameOriginReturnUrl } from '../../utils/return-url.util';
 import { AuthShellComponent } from '../../ui/auth-shell/auth-shell.component';
+import { AutofocusDirective } from '@shared/directives';
 
 type SignupStep = 'account' | 'code';
 
@@ -30,11 +31,12 @@ type SignupStep = 'account' | 'code';
  */
 const CODE_LENGTH = 4;
 const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
+const STEPS = ['account', 'code'] as const;
 
 @Component({
   selector: 'app-signup-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, FormField, InputComponent, ButtonComponent, ErrorBannerComponent, AuthShellComponent, LucideUserPlus],
+  imports: [RouterLink, FormField, InputComponent, ButtonComponent, ErrorBannerComponent, AuthShellComponent, AutofocusDirective, LucideUserPlus, LucideCheck, LucideChevronLeft],
   template: `
     <app-auth-shell title="Create your JilaliTalk account">
       <svg auth-icon aria-hidden="true" lucideUserPlus [size]="24"></svg>
@@ -45,6 +47,27 @@ const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
           We sent a {{ codeLength }}-digit code to <strong>{{ accountModel().email }}</strong>
         }
       </span>
+
+      <div class="step-progress" role="group" aria-label="Sign-up steps">
+        <div class="step-item" [class.step-item--done]="step() === 'code'">
+          <span class="step-circle" [class.step-circle--active]="step() === 'account'">
+            @if (step() === 'code') {
+              <svg aria-hidden="true" lucideCheck [size]="11" [strokeWidth]="3"></svg>
+            } @else {
+              1
+            }
+          </span>
+          <span class="step-label">Account</span>
+        </div>
+        <span class="step-line" [class.step-line--done]="step() === 'code'" aria-hidden="true"></span>
+        <div class="step-item">
+          <span class="step-circle" [class.step-circle--active]="step() === 'code'">2</span>
+          <span class="step-label">Verify</span>
+        </div>
+      </div>
+      <p class="sr-only" aria-live="polite">
+        {{ step() === 'account' ? 'Step 1 of 2, account details' : 'Step 2 of 2, verify your email' }}
+      </p>
 
       @if (step() === 'account') {
         <form (submit)="onAccountSubmit($event)" novalidate>
@@ -57,6 +80,7 @@ const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
             enterkeyhint="next"
             [formField]="accountForm.email"
             [errorMessage]="firstError(accountForm.email())"
+            [appAutofocus]="true"
           />
 
           <app-input
@@ -99,6 +123,7 @@ const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
               enterkeyhint="go"
               [value]="code()"
               (input)="onCodeInput($event)"
+              [appAutofocus]="true"
             />
           </div>
 
@@ -114,9 +139,16 @@ const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
           >
             Create account
           </app-button>
-          <button type="button" class="resend-btn" [disabled]="submitting()" (click)="resendCode()">
-            Didn't get it? Send again
-          </button>
+
+          <div class="step-actions">
+            <button type="button" class="text-link" [disabled]="submitting()" (click)="backToAccount()">
+              <svg aria-hidden="true" lucideChevronLeft [size]="13"></svg>
+              Change email
+            </button>
+            <button type="button" class="text-link" [disabled]="submitting()" (click)="resendCode()">
+              Resend code
+            </button>
+          </div>
         </form>
       }
 
@@ -127,6 +159,11 @@ const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
     </app-auth-shell>
   `,
   styles: [`
+    /* See login-page.component.ts's identical rule for why this matters: without it, this
+       route-level component defaults to display:inline and the auth-shell grid inside it
+       overflows narrow viewports instead of being constrained by the page width. */
+    :host { display: block; }
+
     form {
       display: flex;
       flex-direction: column;
@@ -141,6 +178,61 @@ const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
       margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0);
       white-space: nowrap; border: 0;
     }
+
+    /* ── Step progress ── */
+    .step-progress {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 0;
+      margin-top: calc(-1 * var(--space-2));
+    }
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+    }
+    .step-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: var(--font-semibold);
+      color: var(--color-text-muted);
+      background: var(--color-card);
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .step-circle--active {
+      border-color: var(--color-primary-500);
+      color: var(--color-primary-600);
+    }
+    .dark .step-circle--active { color: var(--color-primary-300); }
+    .step-item--done .step-circle {
+      border-color: var(--color-primary-500);
+      background: var(--color-primary-500);
+      color: var(--color-on-color);
+    }
+    .step-label {
+      font-size: 11px;
+      font-weight: var(--font-medium);
+      color: var(--color-text-muted);
+    }
+    .step-line {
+      width: 40px;
+      height: 2px;
+      background: var(--color-border);
+      margin: 11px var(--space-2) 0;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .step-line--done { background: var(--color-primary-500); }
+
     .code-field { display: flex; flex-direction: column; gap: var(--space-1); }
     .code-input {
       width: 100%; height: 56px; padding: 0 var(--space-4);
@@ -157,14 +249,24 @@ const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
       border-color: var(--color-primary-500);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 10%, transparent);
     }
-    .resend-btn {
-      width: 100%; border: none; background: transparent;
-      color: var(--color-text-muted); font-size: var(--text-xs); font-weight: var(--font-medium);
-      cursor: pointer; padding: var(--space-2); text-align: center; transition: color 0.15s;
+
+    .step-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
     }
-    .resend-btn:hover { color: var(--color-text); }
-    .resend-btn:disabled { opacity: 0.5; cursor: default; }
-    .resend-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); border-radius: var(--radius-sm); }
+    .text-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      border: none; background: transparent;
+      color: var(--color-text-muted); font-size: var(--text-xs); font-weight: var(--font-medium);
+      cursor: pointer; padding: var(--space-2); transition: color 0.15s;
+    }
+    .text-link:hover { color: var(--color-text); }
+    .text-link:disabled { opacity: 0.5; cursor: default; }
+    .text-link:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); border-radius: var(--radius-sm); }
     .alt-link {
       color: var(--color-primary-600);
       text-decoration: none;
@@ -182,6 +284,7 @@ export class SignupPageComponent {
   private readonly toast = inject(ToastService);
 
   protected readonly codeLength = CODE_LENGTH;
+  protected readonly steps = STEPS;
 
   readonly step = signal<SignupStep>('account');
   readonly submitting = signal(false);
@@ -219,6 +322,12 @@ export class SignupPageComponent {
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  backToAccount(): void {
+    this.step.set('account');
+    this.errorText.set(null);
+    this.code.set('');
   }
 
   async resendCode(): Promise<void> {

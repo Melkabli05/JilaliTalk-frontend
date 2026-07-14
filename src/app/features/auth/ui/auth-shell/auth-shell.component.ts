@@ -98,7 +98,12 @@ interface ShowcaseRoom {
 
     .auth-shell {
       display: grid;
-      grid-template-columns: 1fr;
+      /* minmax(0, 1fr), not a bare 1fr: grid items default to min-width:auto, which floors
+         their shrink at the content's min-content size — on a narrow phone that content
+         (the "Send verification code" button, the email input) is wider than the viewport,
+         so without the explicit 0 floor the whole page overflows horizontally instead of
+         the form wrapping/shrinking to fit. Same reasoning on .auth-main/.form-wrap below. */
+      grid-template-columns: minmax(0, 1fr);
       min-height: 100dvh;
       min-height: 100svh;
       background: var(--color-bg);
@@ -217,9 +222,11 @@ interface ShowcaseRoom {
     .auth-main {
       display: flex;
       flex-direction: column;
+      min-width: 0;
       min-height: 100dvh;
       min-height: 100svh;
       padding: max(var(--space-5), env(safe-area-inset-top)) max(var(--space-5), env(safe-area-inset-right)) max(var(--space-6), env(safe-area-inset-bottom)) max(var(--space-5), env(safe-area-inset-left));
+      box-sizing: border-box;
     }
 
     .brand-mark {
@@ -246,31 +253,51 @@ interface ShowcaseRoom {
 
     .form-wrap {
       flex: 1;
+      min-width: 0;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      /* Top-aligned on mobile, not vertically centered: centering left the icon/title
+         floating in the middle of a mostly-empty screen with the form itself pushed down
+         near the bottom half — the more familiar pattern (Duolingo, most iOS sign-in
+         screens) starts the form a fixed distance from the top so it's the first thing in
+         view, with no keyboard-driven jump when a field gets focus. The desktop form panel
+         is paired with a same-height showcase panel, where vertical centering reads as
+         intentional balance rather than empty space, so only mobile changes. */
+      justify-content: flex-start;
+      padding-top: var(--space-8);
       width: 100%;
       max-width: 400px;
       margin-inline: auto;
       gap: var(--space-5);
-      padding-block: var(--space-6);
+      padding-block-end: var(--space-6);
+      box-sizing: border-box;
+    }
+    @media (min-width: 1024px) {
+      .form-wrap {
+        justify-content: center;
+        padding-top: 0;
+      }
     }
 
     .form-header {
       display: flex;
       flex-direction: column;
-      gap: var(--space-2);
+      gap: var(--space-3);
+      align-items: center;
     }
     .form-icon {
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       border-radius: var(--radius-full);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       background: var(--color-primary-50);
       color: var(--color-primary-600);
-      margin-bottom: var(--space-1);
+    }
+    .form-icon svg {
+      width: 24px;
+      height: 24px;
     }
     .dark .form-icon {
       background: color-mix(in srgb, var(--color-primary-600) 25%, transparent);

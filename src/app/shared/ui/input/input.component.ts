@@ -5,14 +5,17 @@ import {
   model,
   output,
   computed,
+  signal,
 } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
+import { LucideEye, LucideEyeOff } from '@lucide/angular';
 
 let nextId = 0;
 
 @Component({
   selector: 'app-input',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LucideEye, LucideEyeOff],
   template: `
     <div class="input-wrapper">
       @if (label()) {
@@ -26,12 +29,13 @@ let nextId = 0;
       <div class="input-inner">
         <input
           [id]="inputId"
-          [type]="type()"
+          [type]="effectiveType()"
           [placeholder]="placeholder()"
           [disabled]="disabled()"
           [readonly]="readonly()"
           [required]="required()"
           [class]="sizeClass()"
+          [class.input-has-toggle]="type() === 'password'"
           [value]="value()"
           [attr.inputmode]="inputmode() || null"
           [attr.enterkeyhint]="enterkeyhint() || null"
@@ -43,6 +47,21 @@ let nextId = 0;
           (input)="onInput($event)"
           (blur)="onBlur()"
         />
+        @if (type() === 'password') {
+          <button
+            type="button"
+            class="password-toggle"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            [attr.aria-pressed]="showPassword()"
+            (click)="togglePasswordVisibility()"
+          >
+            @if (showPassword()) {
+              <svg aria-hidden="true" lucideEyeOff [size]="17"></svg>
+            } @else {
+              <svg aria-hidden="true" lucideEye [size]="17"></svg>
+            }
+          </button>
+        }
         <ng-content />
       </div>
       @if (showError()) {
@@ -118,6 +137,31 @@ let nextId = 0;
     .input-sm { height: 36px; padding: 0 var(--space-3); font-size: max(16px, var(--text-xs)); }
     .input-md { height: 44px; padding: 0 var(--space-4); font-size: max(16px, var(--text-sm)); }
     .input-lg { height: 48px; padding: 0 var(--space-4); font-size: var(--text-base); }
+    .input-has-toggle { padding-right: 44px; }
+
+    .password-toggle {
+      position: absolute;
+      right: 2px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-md);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+    .password-toggle:hover { color: var(--color-text); }
+    .password-toggle:focus-visible {
+      outline: var(--focus-ring);
+      outline-offset: -2px;
+    }
+    :host-context(.dark) .password-toggle:hover { color: var(--color-neutral-100); }
 
     .input-error {
       font-size: var(--text-xs);
@@ -162,6 +206,18 @@ export class InputComponent implements FormValueControl<string> {
   protected readonly errorId = `${this.inputId}-error`;
 
   protected readonly sizeClass = computed(() => `input input-${this.size()}`);
+
+  /** Only `type="password"` fields get a reveal toggle — for every other type this is just
+   *  `type()` unchanged, so the toggle button and its state never appear on e.g. email/text
+   *  inputs. */
+  protected readonly showPassword = signal(false);
+  protected readonly effectiveType = computed(() =>
+    this.type() === 'password' && this.showPassword() ? 'text' : this.type(),
+  );
+
+  protected togglePasswordVisibility(): void {
+    this.showPassword.update((v) => !v);
+  }
 
   /** `invalid`/`errors` from signal-form's [formField] binding reflect live validation
    *  state, independent of touch — a required-but-empty field is "invalid" from the moment

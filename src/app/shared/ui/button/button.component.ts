@@ -60,13 +60,16 @@ type IconPosition = 'start' | 'end';
     .btn-xs  { height: 28px; padding: 0 var(--space-2); font-size: var(--text-xs); }
     .btn-sm  { height: 32px; padding: 0 var(--space-3); font-size: var(--text-xs); }
     .btn-md  { height: 36px; padding: 0 var(--space-4); font-size: var(--text-sm); }
-    .btn-lg  { height: 40px; padding: 0 var(--space-6); font-size: var(--text-base); }
+    /* 44px, not 40: Apple HIG and WCAG 2.5.5 both put the minimum comfortable touch target
+       at 44x44pt — lg is the size primary/submit CTAs use, so it's the one worth holding to
+       that floor. */
+    .btn-lg  { height: 44px; padding: 0 var(--space-6); font-size: var(--text-base); }
 
     /* Icon only */
     .btn-icon-only.btn-xs { width: 28px; padding: 0; }
     .btn-icon-only.btn-sm { width: 32px; padding: 0; }
     .btn-icon-only.btn-md { width: 36px; padding: 0; }
-    .btn-icon-only.btn-lg { width: 40px; padding: 0; }
+    .btn-icon-only.btn-lg { width: 44px; padding: 0; }
 
     /* Pill */
     .btn-pill { border-radius: var(--radius-full); }
