@@ -220,3 +220,10 @@ export const COUNTRIES: readonly CountryEntry[] = [
 export function getCountryByCode(code: string): CountryEntry | undefined {
   return COUNTRIES.find((c) => c.code === code);
 }
+
+export function pickCountries(codes: readonly string[]): readonly CountryEntry[] {
+  const map = new Map(COUNTRIES.map((c) => [c.code, c]));
+  return codes
+    .map((code) => map.get(code))
+    .filter((c): c is CountryEntry => c !== undefined);
+}

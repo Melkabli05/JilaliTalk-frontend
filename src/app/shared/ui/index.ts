@@ -3,6 +3,8 @@ export { ButtonComponent } from './button/button.component';
 export { AvatarComponent } from './avatar/avatar.component';
 export { BadgeComponent } from './badge/badge.component';
 export { InputComponent } from './input/input.component';
+export { ErrorBannerComponent } from './error-banner/error-banner.component';
+export { AuthSuccessViewComponent } from './auth-success-view/auth-success-view.component';
 export { ThemeToggleComponent } from './theme/theme-toggle.component';
 export { CountryFlagComponent } from './host-flag/country-flag';
 export { LanguageTagComponent } from './host-flag/language-tag';

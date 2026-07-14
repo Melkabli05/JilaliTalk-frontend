@@ -5,7 +5,6 @@ import {
   signal,
   computed,
   DestroyRef,
-  OnInit,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DialogRef } from '@angular/cdk/dialog';
@@ -21,54 +20,62 @@ import {
   FieldState,
 } from '@angular/forms/signals';
 import { InputComponent } from '../input/input.component';
+import { ButtonComponent } from '../button/button.component';
+import { ErrorBannerComponent } from '../error-banner/error-banner.component';
+import { AuthSuccessViewComponent } from '../auth-success-view/auth-success-view.component';
+import { AutofocusDirective } from '@shared/directives';
+import { pickCountries, type CountryEntry } from '@shared/data/countries';
+import { SrAnnouncer } from '@shared/utils/sr-announcer';
 import { AuthService, LoginRequest, RegisterRequest } from '@core/auth/auth.service';
 import { AuthStore } from '@core/auth/auth.store';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
+import { LucideArrowRight, LucideX, LucideCheck, LucideEye, LucideEyeOff } from '@lucide/angular';
 
 type AuthTab = 'login' | 'register';
 type RegisterStep = 1 | 2 | 3;
+type AuthPhase = 'idle' | 'login' | 'sendCode' | 'verifyCode' | 'createAccount';
 
 const EMAIL_REQUIRED = 'Email is required';
-const INVALID_EMAIL = 'That doesn\'t look like an email';
+const INVALID_EMAIL = "That doesn't look like an email";
 const PASSWORD_REQUIRED = 'Password is required';
 const PASSWORD_MIN = 8;
 const NICKNAME_REQUIRED = 'Pick a nickname';
 const CODE_INVALID = 'Code must be 6 digits';
+const SUCCESS_AUTO_CLOSE_MS = 2800;
 
 @Component({
   selector: 'app-auth-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormField, InputComponent],
+  imports: [
+    FormField,
+    InputComponent,
+    ButtonComponent,
+    ErrorBannerComponent,
+    AuthSuccessViewComponent,
+    AutofocusDirective,
+    LucideArrowRight,
+    LucideX,
+    LucideCheck,
+    LucideEye,
+    LucideEyeOff,
+  ],
   host: {
     'aria-labelledby': 'auth-nav-label',
   },
   template: `
-    <div class="sr-only" aria-live="polite" aria-atomic="true" role="status">{{ announcer() }}</div>
+    <div class="sr-only" aria-live="polite" aria-atomic="true" role="status">{{ announcer.message() }}</div>
 
     <div class="auth-backdrop" (click)="close()"></div>
 
     <div class="auth-card" role="document">
 
       <button type="button" class="close-btn" (click)="close()" aria-label="Close dialog, cancel authentication">
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
+        <svg aria-hidden="true" lucideX [size]="16"></svg>
       </button>
 
       @switch (view()) {
         @case ('success') {
-          <div class="success-view" role="main">
-            <div class="success-avatar" aria-hidden="true">{{ successInitial() }}</div>
-            <h2 class="success-title" id="auth-dialog-heading">Welcome</h2>
-            <p class="success-name" aria-live="polite">{{ successName() }}</p>
-            <p class="success-hint">Your account is ready.</p>
-            <button type="button" class="btn-primary-full" (click)="close()">
-              Enter JilaliTalk
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-              </svg>
-            </button>
-          </div>
+          <app-auth-success-view [nickname]="successName()" (enter)="close()" />
         }
 
         @default {
@@ -97,6 +104,7 @@ const CODE_INVALID = 'Code must be 6 digits';
                 enterkeyhint="next"
                 [formField]="loginForm.email"
                 [errorMessage]="fieldError(loginForm.email())"
+                [appAutofocus]="activeTab()"
               />
               <div class="password-field">
                 <app-input
@@ -111,44 +119,32 @@ const CODE_INVALID = 'Code must be 6 digits';
                 <button type="button" class="password-toggle"
                   (click)="showPassword.set(!showPassword())"
                   [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
-                  [attr.aria-pressed]="showPassword()">
+                  [attr.aria-pressed]="showPassword()"
+                >
                   @if (showPassword()) {
-                    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                      <line x1="1" y1="1" x2="23" y2="23"/>
-                    </svg>
+                    <svg aria-hidden="true" lucideEyeOff [size]="15"></svg>
                   } @else {
-                    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
+                    <svg aria-hidden="true" lucideEye [size]="15"></svg>
                   }
                 </button>
               </div>
 
-              @if (errorMessage()) {
-                <div class="error-banner" role="alert" aria-live="assertive">
-                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                  </svg>
-                  {{ errorMessage() }}
-                </div>
-              }
+              <app-error-banner [message]="errorMessage()" />
 
-              <button type="submit" class="btn-primary-full"
-                [disabled]="loginForm().invalid() || loading()"
-                [attr.aria-busy]="loading()">
-                @if (loading()) {
-                  <span class="spinner" aria-hidden="true"></span>
-                  <span>Singing in…</span>
+              <app-button
+                type="submit"
+                variant="primary"
+                size="md"
+                [disabled]="loginForm().invalid() || isLoading()"
+                [loading]="phase() === 'login'"
+              >
+                @if (phase() === 'login') {
+                  <span>Signing in…</span>
                 } @else {
                   <span>Sign in</span>
-                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                  </svg>
+                  <svg aria-hidden="true" lucideArrowRight [size]="14"></svg>
                 }
-              </button>
+              </app-button>
             </form>
           }
 
@@ -160,9 +156,7 @@ const CODE_INVALID = 'Code must be 6 digits';
                   <div class="step-item" [class.step-item--done]="regStep() > s">
                     <span class="step-circle" [class.step-circle--active]="regStep() === s">
                       @if (regStep() > s) {
-                        <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
+                        <svg aria-hidden="true" lucideCheck [size]="10" [strokeWidth]="3"></svg>
                       } @else {
                         {{ s }}
                       }
@@ -186,6 +180,7 @@ const CODE_INVALID = 'Code must be 6 digits';
                   enterkeyhint="next"
                   [formField]="regForm1.email"
                   [errorMessage]="fieldError(regForm1.email())"
+                  [appAutofocus]="regStep()"
                 />
                 <div class="password-field">
                   <app-input
@@ -200,36 +195,27 @@ const CODE_INVALID = 'Code must be 6 digits';
                   <button type="button" class="password-toggle"
                     (click)="showPassword.set(!showPassword())"
                     [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
-                    [attr.aria-pressed]="showPassword()">
+                    [attr.aria-pressed]="showPassword()"
+                  >
                     @if (showPassword()) {
-                      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                        <line x1="1" y1="1" x2="23" y2="23"/>
-                      </svg>
+                      <svg aria-hidden="true" lucideEyeOff [size]="15"></svg>
                     } @else {
-                      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
+                      <svg aria-hidden="true" lucideEye [size]="15"></svg>
                     }
                   </button>
                 </div>
 
-                @if (errorMessage()) {
-                  <div class="error-banner" role="alert" aria-live="assertive">
-                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {{ errorMessage() }}
-                  </div>
-                }
+                <app-error-banner [message]="errorMessage()" />
 
-                <button type="submit" class="btn-primary-full"
-                  [disabled]="regForm1().invalid() || sendingCode()"
-                  [attr.aria-busy]="sendingCode()">
-                  {{ sendingCode() ? 'Sending code…' : 'Next — Send Code' }}
-                </button>
+                <app-button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  [disabled]="regForm1().invalid() || isLoading()"
+                  [loading]="phase() === 'sendCode'"
+                >
+                  {{ phase() === 'sendCode' ? 'Sending code…' : 'Next — Send Code' }}
+                </app-button>
               }
 
               @if (regStep() === 2) {
@@ -252,6 +238,7 @@ const CODE_INVALID = 'Code must be 6 digits';
                     enterkeyhint="done"
                     [value]="codeValue()"
                     (input)="onCodeInput($event)"
+                    [appAutofocus]="regStep()"
                     aria-describedby="code-error-msg"
                     [attr.aria-invalid]="codeError().length > 0"
                   />
@@ -260,11 +247,15 @@ const CODE_INVALID = 'Code must be 6 digits';
                   }
                 </div>
 
-                <button type="submit" class="btn-primary-full"
-                  [disabled]="codeValue().length < 6 || verifyingCode()"
-                  [attr.aria-busy]="verifyingCode()">
-                  {{ verifyingCode() ? 'Verifying…' : 'Verify Code' }}
-                </button>
+                <app-button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  [disabled]="codeValue().length < 6 || isLoading()"
+                  [loading]="phase() === 'verifyCode'"
+                >
+                  {{ phase() === 'verifyCode' ? 'Verifying…' : 'Verify Code' }}
+                </app-button>
                 <button type="button" class="btn-link" (click)="resendCode()">Didn't receive it? Send again</button>
               }
 
@@ -280,6 +271,7 @@ const CODE_INVALID = 'Code must be 6 digits';
                   enterkeyhint="done"
                   [formField]="regForm3.nickname"
                   [errorMessage]="fieldError(regForm3.nickname())"
+                  [appAutofocus]="regStep()"
                 />
 
                 <div class="field-group">
@@ -295,40 +287,23 @@ const CODE_INVALID = 'Code must be 6 digits';
                   <label for="reg-country" class="field-label">Country</label>
                   <select id="reg-country" class="select-input" (change)="onCountryChange($event)">
                     <option value="">Select your country</option>
-                    <option value="MA">🇲🇦 Morocco</option>
-                    <option value="FR">🇫🇷 France</option>
-                    <option value="US">🇺🇸 United States</option>
-                    <option value="GB">🇬🇧 United Kingdom</option>
-                    <option value="DE">🇩🇪 Germany</option>
-                    <option value="ES">🇪🇸 Spain</option>
-                    <option value="IT">🇮🇹 Italy</option>
-                    <option value="JP">🇯🇵 Japan</option>
-                    <option value="CN">🇨🇳 China</option>
-                    <option value="BR">🇧🇷 Brazil</option>
-                    <option value="DZ">🇩🇿 Algeria</option>
-                    <option value="EG">🇪🇬 Egypt</option>
-                    <option value="SA">🇸🇦 Saudi Arabia</option>
-                    <option value="AE">🇦🇪 UAE</option>
-                    <option value="TR">🇹🇷 Turkey</option>
-                    <option value="IN">🇮🇳 India</option>
-                    <option value="KR">🇰🇷 South Korea</option>
+                    @for (c of countryOptions; track c.code) {
+                      <option [value]="c.code">{{ c.flag }} {{ c.name }}</option>
+                    }
                   </select>
                 </div>
 
-                @if (errorMessage()) {
-                  <div class="error-banner" role="alert" aria-live="assertive">
-                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {{ errorMessage() }}
-                  </div>
-                }
+                <app-error-banner [message]="errorMessage()" />
 
-                <button type="submit" class="btn-primary-full"
-                  [disabled]="regForm3().invalid() || !reg3Model().country || creatingAccount()"
-                  [attr.aria-busy]="creatingAccount()">
-                  {{ creatingAccount() ? 'Creating account…' : 'Create Account' }}
-                </button>
+                <app-button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  [disabled]="regForm3().invalid() || !reg3Model().country || isLoading()"
+                  [loading]="phase() === 'createAccount'"
+                >
+                  {{ phase() === 'createAccount' ? 'Creating account…' : 'Create Account' }}
+                </app-button>
               }
             </form>
           }
@@ -400,7 +375,7 @@ const CODE_INVALID = 'Code must be 6 digits';
     .tab-indicator {
       position: absolute; bottom: -1px; left: 0;
       width: calc(50% - var(--space-1)); height: 2px;
-      background: var(--color-warm-500); border-radius: 2px 2px 0 0;
+      background: var(--color-warm-500); border-radius: 2px 0 0 0;
       transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .tab-indicator--right { transform: translateX(calc(100% + var(--space-2))); }
@@ -490,27 +465,8 @@ const CODE_INVALID = 'Code must be 6 digits';
     .code-input--error { border-color: var(--color-error-500); }
     .code-input--error:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error-500) 10%, transparent); }
 
-    .error-banner {
-      display: flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-3); background: var(--color-error-50);
-      border: 1px solid var(--color-error-200); border-radius: var(--radius-md);
-      font-size: var(--text-xs); color: var(--color-error-700);
-    }
-    :host-context(.dark) .error-banner { background: var(--color-error-900); border-color: var(--color-error-700); color: var(--color-error-200); }
     .error-text { margin: 0; font-size: var(--text-xs); color: var(--color-error-600); }
     :host-context(.dark) .error-text { color: var(--color-error-300); }
-
-    .btn-primary-full {
-      width: 100%; padding: var(--space-3) var(--space-4); border: none;
-      border-radius: var(--radius-md); background: var(--color-warm-500); color: var(--color-on-color);
-      font-size: var(--text-sm); font-weight: var(--font-semibold); cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: var(--space-2);
-      transition: background 0.15s, transform 0.1s; margin-top: var(--space-1);
-    }
-    .btn-primary-full:hover:not(:disabled) { background: var(--color-warm-600); }
-    .btn-primary-full:active:not(:disabled) { transform: scale(0.99); }
-    .btn-primary-full:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-primary-full:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
 
     .btn-link {
       width: 100%; border: none; background: transparent;
@@ -520,42 +476,6 @@ const CODE_INVALID = 'Code must be 6 digits';
     .btn-link:hover { color: var(--color-text); }
     .btn-link:focus-visible { outline: var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-sm); }
 
-    .spinner {
-      width: 14px; height: 14px; flex-shrink: 0;
-      border: 2px solid hsl(0deg 0% 100% / 25%); border-top-color: var(--color-on-color);
-      border-radius: 50%; animation: spin 0.7s linear infinite;
-    }
-
-    .success-view {
-      display: flex; flex-direction: column; align-items: center; text-align: center;
-      padding: var(--space-4) 0 var(--space-2);
-      animation: success-pop 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) both;
-    }
-    .success-avatar {
-      width: 72px; height: 72px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--color-warm-400), var(--color-warm-500));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px; font-weight: var(--font-bold); color: var(--color-on-color);
-      box-shadow: 0 0 28px var(--color-warm-500 / 40%);
-      margin-bottom: var(--space-4);
-    }
-    .success-title {
-      font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--color-text); margin: 0 0 var(--space-1);
-    }
-    .success-name { font-size: var(--text-sm); color: var(--color-warm-500); font-weight: var(--font-semibold); margin: 0 0 var(--space-2); }
-    .success-hint { font-size: var(--text-xs); color: var(--color-text-muted); margin: 0 0 var(--space-6); }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes success-pop {
-      0% { opacity: 0; transform: scale(0.8); }
-      60% { transform: scale(1.05); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .spinner { animation-duration: 1.2s; }
-      .success-view { animation: none; }
-    }
-
     @media (max-width: 640px) {
       .auth-card {
         padding: var(--space-5) var(--space-4) var(--space-5);
@@ -564,28 +484,15 @@ const CODE_INVALID = 'Code must be 6 digits';
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
       }
-      .close-btn {
-        width: 44px; height: 44px;
-      }
-      .nav-tab {
-        padding: var(--space-3) 0;
-        min-height: 44px;
-      }
+      .close-btn { width: 44px; height: 44px; }
+      .nav-tab { padding: var(--space-3) 0; min-height: 44px; }
       .password-toggle {
         width: 44px; height: 44px;
-        top: 50%;
-        transform: translateY(-50%);
+        top: 50%; transform: translateY(-50%);
       }
       .password-toggle:active { transform: translateY(-50%) scale(0.92); }
-      .select-input {
-        height: 44px;
-        font-size: max(16px, var(--text-sm));
-      }
-      .btn-link {
-        min-height: 44px;
-        padding: var(--space-3) var(--space-2);
-        font-size: var(--text-sm);
-      }
+      .select-input { height: 44px; font-size: max(16px, var(--text-sm)); }
+      .btn-link { min-height: 44px; padding: var(--space-3) var(--space-2); font-size: var(--text-sm); }
       .error-text { font-size: var(--text-sm); }
       .step-line { width: 24px; margin: 0 2px; }
     }
@@ -595,32 +502,30 @@ const CODE_INVALID = 'Code must be 6 digits';
     }
   `],
 })
-export class AuthDialogComponent implements OnInit {
+export class AuthDialogComponent {
   private readonly ref = inject(DialogRef);
   private readonly authService = inject(AuthService);
   private readonly authStore = inject(AuthStore);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly announcer = inject(SrAnnouncer);
 
-  readonly announcer = signal('');
+  protected readonly countryOptions: readonly CountryEntry[] = pickCountries([
+    'MA', 'FR', 'US', 'GB', 'DE', 'ES', 'IT',
+    'JP', 'CN', 'BR', 'DZ', 'EG', 'SA', 'AE',
+    'TR', 'IN', 'KR',
+  ]);
 
   readonly view = signal<'login' | 'register' | 'success'>('login');
   readonly activeTab = signal<AuthTab>('login');
   readonly regStep = signal<RegisterStep>(1);
-  readonly loading = signal(false);
-  readonly sendingCode = signal(false);
-  readonly verifyingCode = signal(false);
-  readonly creatingAccount = signal(false);
+  readonly phase = signal<AuthPhase>('idle');
+  readonly isLoading = computed(() => this.phase() !== 'idle');
   readonly errorMessage = signal<string | null>(null);
   readonly showPassword = signal(false);
   readonly codeValue = signal('');
   readonly codeError = signal('');
   readonly reg1Email = signal('');
-
   readonly successName = signal('');
-  readonly successInitial = computed(() => {
-    const name = this.successName();
-    return name ? name.charAt(0).toUpperCase() : '?';
-  });
 
   private readonly loginModel = signal({ email: '', password: '' });
   readonly loginForm = form(this.loginModel, (path) => {
@@ -658,44 +563,10 @@ export class AuthDialogComponent implements OnInit {
     required(path.nickname, { message: NICKNAME_REQUIRED });
   });
 
-  ngOnInit(): void {
-    this.focusFirstInput();
-  }
-
-  private announce(message: string): void {
-    this.announcer.set('');
-    setTimeout(() => this.announcer.set(message), 50);
-  }
-
-  private focusFirstInput(): void {
-    setTimeout(() => {
-      const el = document.querySelector<HTMLElement>('[autocomplete="email"]');
-      el?.focus();
-    }, 80);
-  }
-
-  private focusCodeInput(): void {
-    setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement>('#reg-code');
-      el?.focus();
-    }, 80);
-  }
-
-  private focusNickInput(): void {
-    setTimeout(() => {
-      const el = document.querySelector<HTMLElement>('[autocomplete="nickname"]');
-      el?.focus();
-    }, 80);
-  }
-
   fieldError(field: FieldState<string>): string {
     return field.touched() && field.errors().length > 0
       ? (field.errors()[0]?.message ?? '')
       : '';
-  }
-
-  private getInputValue(event: Event): string {
-    return (event.target as HTMLInputElement).value;
   }
 
   switchTab(tab: AuthTab): void {
@@ -709,7 +580,7 @@ export class AuthDialogComponent implements OnInit {
   close(): void { this.ref.close(); }
 
   onCodeInput(event: Event): void {
-    const raw = this.getInputValue(event).replace(/\D/g, '').slice(0, 6);
+    const raw = (event.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, 6);
     this.codeValue.set(raw);
     this.codeError.set('');
     (event.target as HTMLInputElement).value = raw;
@@ -718,25 +589,24 @@ export class AuthDialogComponent implements OnInit {
   onCountryChange(event: Event): void {
     const val = (event.target as HTMLSelectElement).value;
     this._reg3Model.update(m => ({ ...m, country: val }));
-    void event;
   }
 
   async onLoginSubmit(event: Event): Promise<void> {
     event.preventDefault();
     this.errorMessage.set(null);
     await submit(this.loginForm, async () => {
-      this.loading.set(true);
-      this.announce('Signing in…');
+      this.phase.set('login');
+      this.announcer.announce('Signing in…');
       try {
         const req: LoginRequest = { email: this.loginModel().email.trim(), password: this.loginModel().password };
         this.authService.login(req).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: (res) => { this.authStore.login(res.user); this.showSuccess(res.user.nickname); },
           error: (err: unknown) => {
             this.errorMessage.set(httpErrorMessage(err, 'Invalid email or password.'));
-            this.announce(this.errorMessage() ?? '');
+            this.announcer.announce(this.errorMessage() ?? '');
           },
         });
-      } finally { this.loading.set(false); }
+      } finally { this.phase.set('idle'); }
     });
   }
 
@@ -746,14 +616,13 @@ export class AuthDialogComponent implements OnInit {
 
     if (this.regStep() === 1) {
       await submit(this.regForm1, async () => {
-        this.sendingCode.set(true);
-        this.announce('Sending verification code…');
+        this.phase.set('sendCode');
+        this.announcer.announce('Sending verification code…');
         this.reg1Email.set(this.reg1Model().email.trim());
         await new Promise(r => setTimeout(r, 900));
-        this.sendingCode.set(false);
+        this.phase.set('idle');
         this.regStep.set(2);
-        this.announce('Code sent. Check your email. Step 2 of 3.');
-        this.focusCodeInput();
+        this.announcer.announce('Code sent. Check your email. Step 2 of 3.');
       });
       return;
     }
@@ -763,19 +632,18 @@ export class AuthDialogComponent implements OnInit {
         this.codeError.set(CODE_INVALID);
         return;
       }
-      this.verifyingCode.set(true);
-      this.announce('Verifying code…');
+      this.phase.set('verifyCode');
+      this.announcer.announce('Verifying code…');
       await new Promise(r => setTimeout(r, 700));
-      this.verifyingCode.set(false);
+      this.phase.set('idle');
       this.regStep.set(3);
-      this.announce('Code verified. Step 3 of 3. Complete your profile.');
-      this.focusNickInput();
+      this.announcer.announce('Code verified. Step 3 of 3. Complete your profile.');
       return;
     }
 
     if (this.regStep() === 3) {
-      this.creatingAccount.set(true);
-      this.announce('Creating account…');
+      this.phase.set('createAccount');
+      this.announcer.announce('Creating account…');
       try {
         const req: RegisterRequest = {
           nickname: this.reg3Model().nickname.trim(),
@@ -786,23 +654,23 @@ export class AuthDialogComponent implements OnInit {
           next: (res) => { this.authStore.login(res.user); this.showSuccess(res.user.nickname); },
           error: (err: unknown) => {
             this.errorMessage.set(httpErrorMessage(err, 'Could not create your account.'));
-            this.announce(this.errorMessage() ?? '');
+            this.announcer.announce(this.errorMessage() ?? '');
           },
         });
-      } finally { this.creatingAccount.set(false); }
+      } finally { this.phase.set('idle'); }
     }
   }
 
   resendCode(): void {
     this.codeValue.set('');
     this.codeError.set('');
-    this.announce('Code resent. Check your email.');
+    this.announcer.announce('Code resent. Check your email.');
   }
 
   private showSuccess(nickname: string): void {
     this.successName.set(nickname);
     this.view.set('success');
-    this.announce('Welcome ' + nickname + '. You are now signed in.');
-    setTimeout(() => this.ref.close(), 2800);
+    this.announcer.announce('Welcome ' + nickname + '. You are now signed in.');
+    setTimeout(() => this.ref.close(), SUCCESS_AUTO_CLOSE_MS);
   }
 }
