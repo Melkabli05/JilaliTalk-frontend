@@ -164,6 +164,9 @@
                     />
                     <span class="intro-body">
                       <span class="intro-name">{{ msg.targetNickname || 'Profile' }}</span>
+                      @if (msg.targetNationality) {
+                        <app-country-flag [code]="msg.targetNationality" [compact]="true" class="intro-flag" />
+                      }
                       @if (msg.targetBio) {
                         <span class="intro-bio">{{ msg.targetBio }}</span>
                       }
@@ -193,6 +196,9 @@
                     />
                     <span class="intro-body">
                       <span class="intro-name">{{ msg.targetNickname || 'Profile' }}</span>
+                      @if (msg.targetNationality) {
+                        <app-country-flag [code]="msg.targetNationality" [compact]="true" class="intro-flag" />
+                      }
                       @if (msg.targetBio) {
                         <span class="intro-bio">{{ msg.targetBio }}</span>
                       }

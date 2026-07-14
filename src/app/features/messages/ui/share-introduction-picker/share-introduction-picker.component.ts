@@ -18,7 +18,9 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
 
 const EMPTY_PAGE: SocialListPage = { pageIndex: null, more: false, count: 0, list: [] };
 
-type TabId = 'following' | 'byId';
+type TabId = 'following' | 'followers' | 'byId';
+
+type EmptyLabel = 'following' | 'followers';
 
 @Component({
   selector: 'app-share-introduction-picker',
@@ -57,6 +59,14 @@ type TabId = 'following' | 'byId';
             type="button"
             role="tab"
             class="tab"
+            [class.tab--active]="tab() === 'followers'"
+            [attr.aria-selected]="tab() === 'followers'"
+            (click)="tab.set('followers')"
+          >Followers</button>
+          <button
+            type="button"
+            role="tab"
+            class="tab"
             [class.tab--active]="tab() === 'byId'"
             [attr.aria-selected]="tab() === 'byId'"
             (click)="tab.set('byId')"
@@ -65,25 +75,55 @@ type TabId = 'following' | 'byId';
 
         @switch (tab()) {
           @case ('following') {
-            <div class="list">
+            <div class="list" role="tabpanel">
               @if (followingLoading()) {
                 <p class="status">Loading…</p>
               } @else if (followingError()) {
                 <p class="status status--error">Could not load following.</p>
-              } @else if (followingUsers().length === 0) {
-                <p class="status">You're not following anyone yet.</p>
               } @else {
-                @for (u of followingUsers(); track u.userId) {
-                  <app-user-list-item
-                    [userId]="u.userId"
-                    [name]="u.nickName ?? 'User'"
-                    [headUrl]="u.headUrl"
-                    [nationality]="u.nationality"
-                    [vipType]="u.vipType"
-                    [isMutual]="u.isMutual"
-                    variant="following"
-                    (userClick)="onFollowingPicked(u)"
-                  />
+                @let users = followingUsers();
+                @if (users.length === 0) {
+                  <p class="status">{{ emptyCopy('following') }}</p>
+                } @else {
+                  @for (u of users; track u.userId) {
+                    <app-user-list-item
+                      [userId]="u.userId"
+                      [name]="u.nickName ?? 'User'"
+                      [headUrl]="u.headUrl"
+                      [nationality]="u.nationality"
+                      [vipType]="u.vipType"
+                      [isMutual]="u.isMutual"
+                      variant="following"
+                      (userClick)="onFollowingPicked(u)"
+                    />
+                  }
+                }
+              }
+            </div>
+          }
+          @case ('followers') {
+            <div class="list" role="tabpanel">
+              @if (followersLoading()) {
+                <p class="status">Loading…</p>
+              } @else if (followersError()) {
+                <p class="status status--error">Could not load followers.</p>
+              } @else {
+                @let users = followersUsers();
+                @if (users.length === 0) {
+                  <p class="status">{{ emptyCopy('followers') }}</p>
+                } @else {
+                  @for (u of users; track u.userId) {
+                    <app-user-list-item
+                      [userId]="u.userId"
+                      [name]="u.nickName ?? 'User'"
+                      [headUrl]="u.headUrl"
+                      [nationality]="u.nationality"
+                      [vipType]="u.vipType"
+                      [isMutual]="u.isMutual"
+                      variant="following"
+                      (userClick)="onFollowingPicked(u)"
+                    />
+                  }
                 }
               }
             </div>
@@ -104,7 +144,7 @@ type TabId = 'following' | 'byId';
               />
               <button type="submit" class="byid-submit" [disabled]="!byIdValid()">Find</button>
             </form>
-            <div class="list">
+            <div class="list" role="tabpanel">
               @if (byIdState() === 'searching') {
                 <p class="status">Searching…</p>
               } @else if (byIdState() === 'error') {
@@ -319,9 +359,15 @@ export class ShareIntroductionPickerComponent {
 
   protected readonly byIdValid = computed(() => /^\d+$/.test(this.byIdDraft().trim()));
 
-  private readonly followingRes = rxResource<SocialListPage, boolean>({
-    params: () => this.tab() === 'following',
-    stream: () => this.api.following(50),
+  private readonly followingRes = rxResource<SocialListPage, boolean | undefined>({
+    params: () => (this.tab() === 'following' ? true : undefined),
+    stream: ({ params }) => (params === undefined ? of(EMPTY_PAGE) : this.api.following(50)),
+    defaultValue: EMPTY_PAGE,
+  });
+
+  private readonly followersRes = rxResource<SocialListPage, boolean | undefined>({
+    params: () => (this.tab() === 'followers' ? true : undefined),
+    stream: ({ params }) => (params === undefined ? of(EMPTY_PAGE) : this.api.followers('1', 50)),
     defaultValue: EMPTY_PAGE,
   });
 
@@ -339,6 +385,14 @@ export class ShareIntroductionPickerComponent {
     this.followingRes.error() ? 'Could not load following.' : null,
   );
 
+  protected readonly followersUsers = computed<readonly SocialUser[]>(
+    () => this.followersRes.value().list,
+  );
+  protected readonly followersLoading = computed(() => this.followersRes.isLoading());
+  protected readonly followersError = computed(() =>
+    this.followersRes.error() ? 'Could not load followers.' : null,
+  );
+
   protected readonly byIdResult = computed(() => this.byIdRes.value());
   protected readonly byIdState = computed<'idle' | 'searching' | 'error' | 'found'>(() => {
     const id = this.submittedById();
@@ -348,6 +402,10 @@ export class ShareIntroductionPickerComponent {
     if (this.byIdRes.value()) return 'found';
     return 'idle';
   });
+
+  protected emptyCopy(which: EmptyLabel): string {
+    return which === 'following' ? "You're not following anyone yet." : 'No followers yet.';
+  }
 
   protected onFollowingPicked(u: SocialUser): void {
     this.picked.emit({

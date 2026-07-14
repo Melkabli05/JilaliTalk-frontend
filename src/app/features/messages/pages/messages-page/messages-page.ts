@@ -24,6 +24,7 @@ import {
 import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
 import { ToastService } from '@core/services/toast.service';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
+import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal/user-info-modal.component';
 import { relativeTime } from '@shared/utils';
 import { MessageNewContactPanelComponent } from '../../ui/new-contact-panel/messages-new-contact-panel.component';
@@ -47,6 +48,7 @@ const TYPING_STOP_DELAY_MS = 3_000;
     MessageNewContactPanelComponent,
     ShareIntroductionPickerComponent,
     AvatarComponent,
+    CountryFlagComponent,
     LucideChevronLeft,
     LucideInbox,
     LucideMessageCircle,
@@ -159,8 +161,28 @@ export class MessagesPageComponent {
     this.store.select(String(userId));
   }
 
-  protected toggleIntroPicker(): void { this.introPickerOpen.update(v => !v); }
-  protected closeIntroPicker(): void { this.introPickerOpen.set(false); }
+  protected toggleIntroPicker(): void {
+    if (this.introPickerOpen()) {
+      this.introPickerOpen.set(false);
+      this.restorePickerTriggerFocus();
+    } else {
+      this.pickerTriggerEl = document.activeElement as HTMLElement | null;
+      this.introPickerOpen.set(true);
+    }
+  }
+  protected closeIntroPicker(): void {
+    this.introPickerOpen.set(false);
+    this.restorePickerTriggerFocus();
+  }
+
+  private pickerTriggerEl: HTMLElement | null = null;
+  private restorePickerTriggerFocus(): void {
+    const el = this.pickerTriggerEl;
+    this.pickerTriggerEl = null;
+    if (el && typeof el.focus === 'function') {
+      queueMicrotask(() => el.focus());
+    }
+  }
 
   protected onIntroductionPicked(payload: IntroductionPayload): void {
     this.stagedIntroduction.set(payload);
