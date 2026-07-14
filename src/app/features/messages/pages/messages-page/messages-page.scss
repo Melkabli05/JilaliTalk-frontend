@@ -5,6 +5,17 @@
   overflow: hidden;
 }
 
+.shell button,
+.shell [role="button"],
+.shell li[role="option"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+textarea {
+  touch-action: manipulation;
+}
+
 .shell {
   display: flex;
   height: 100%;
@@ -78,6 +89,7 @@
   cursor: pointer;
 }
 .sidebar-new-contact:hover { background: var(--color-primary-600); }
+.sidebar-new-contact:active { transform: scale(0.92); }
 .sidebar-new-contact:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
 .sidebar-new-contact[aria-expanded="true"] {
   background: var(--color-neutral-200);
@@ -139,6 +151,7 @@
   background: var(--color-neutral-200);
   color: var(--color-text);
 }
+.search-clear:active { transform: scale(0.9); }
 .search-clear:focus-visible {
   outline: var(--focus-ring);
   outline-offset: 2px;
@@ -343,7 +356,9 @@ li.unread .row-ts {
   flex-shrink: 0;
 }
 .back-btn:hover { background: var(--color-neutral-100); }
+.back-btn:active { background: var(--color-neutral-200); }
 :host-context(.dark) .back-btn:hover { background: var(--color-neutral-700); }
+:host-context(.dark) .back-btn:active { background: var(--color-neutral-600); }
 .mobile-bar-identity {
   display: flex;
   align-items: center;
@@ -614,6 +629,7 @@ li.unread .row-ts {
   color: var(--color-primary-500);
   border-color: var(--color-primary-200);
 }
+.compose-attach:active { transform: scale(0.94); }
 .compose-attach:focus-visible {
   outline: var(--focus-ring);
   outline-offset: 2px;
@@ -721,6 +737,7 @@ li.unread .row-ts {
   flex-shrink: 0;
 }
 .compose-send:hover:not(:disabled) { background: var(--color-primary-600); }
+.compose-send:active:not(:disabled) { transform: scale(0.94); }
 .compose-send:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
@@ -891,5 +908,21 @@ li.unread .row-ts {
 
   .sidebar-header {
     padding: var(--space-3) var(--space-4) var(--space-3);
+  }
+
+  .row-ts { font-size: var(--text-xs); }
+  .unread-badge {
+    min-width: 22px;
+    height: 22px;
+    font-size: var(--text-xs);
+  }
+  .date-pill { font-size: var(--text-xs); padding: 4px var(--space-3); }
+  .delivery-mark { font-size: var(--text-xs); }
+  .meta-card-detail { font-size: var(--text-xs); }
+  .intro-context { font-size: var(--text-xs); }
+  .empty-body { font-size: var(--text-sm); }
+  .empty-icon {
+    width: 80px;
+    height: 80px;
   }
 }

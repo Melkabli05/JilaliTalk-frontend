@@ -139,7 +139,7 @@
           (click)="onViewProfile(conv.userId, conv.nickname, conv.headUrl)"
           [attr.aria-label]="'View ' + conv.nickname + '’s profile'"
         >
-          <app-avatar [src]="conv.headUrl ?? ''" [initials]="conv.nickname.slice(0, 2)" [alt]="conv.nickname" size="xs" />
+          <app-avatar [src]="conv.headUrl ?? ''" [initials]="conv.nickname.slice(0, 2)" [alt]="conv.nickname" size="sm" />
           <span class="mobile-bar-name">{{ conv.nickname }}</span>
         </button>
         @if (conv.isTyping) {
