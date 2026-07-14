@@ -42,6 +42,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       padding: 8px 12px; border-radius: 12px;
       background: var(--color-neutral-100); color: var(--color-text);
       max-width: min(75%, 420px);
+      box-shadow: var(--shadow-xs);
     }
     .intro-bubble.is-outbound { background: var(--color-primary-50); align-self: flex-end; }
     :host-context(.dark) .intro-bubble { background: var(--color-neutral-800); }
@@ -54,8 +55,15 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       color: var(--color-text);
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      transition: transform 100ms ease, border-color 150ms ease;
     }
+    .intro-card:hover { border-color: var(--color-primary-300); }
+    .intro-card:active { transform: scale(0.98); }
     .intro-card:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      .intro-card { transition: none; }
+      .intro-card:active { transform: none; }
+    }
     .intro-body { display: flex; flex-direction: column; gap: 2px; }
     .intro-name { font-weight: var(--font-semibold); font-size: var(--text-sm); }
     .intro-bio { font-size: var(--text-xs); color: var(--color-text-muted); }

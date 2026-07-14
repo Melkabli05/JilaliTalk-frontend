@@ -11,6 +11,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       background: var(--color-neutral-100); color: var(--color-text);
       font-style: italic; opacity: 0.95;
       max-width: min(75%, 420px);
+      box-shadow: var(--shadow-xs);
     }
     .bubble.is-outbound { background: var(--color-primary-500); color: var(--color-on-color); align-self: flex-end; }
   `],

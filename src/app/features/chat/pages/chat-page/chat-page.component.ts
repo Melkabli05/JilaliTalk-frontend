@@ -360,9 +360,16 @@ const FOLLOWERS_LIMIT = 50;
     .thread-name { font-weight: var(--font-semibold); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .typing-label { font-size: var(--text-xs); color: var(--color-primary-500); font-style: italic; padding-right: var(--space-2); }
     .feed { flex: 1; overflow-y: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); overscroll-behavior-y: contain; }
-    .msg-row { display: flex; align-items: flex-end; gap: 6px; max-width: min(75%, 420px); }
+    .msg-row {
+      display: flex; align-items: flex-end; gap: 6px; max-width: min(75%, 420px);
+      animation: msgIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
     .msg-row.is-outbound { align-self: flex-end; flex-direction: row; }
     .msg-row:not(.is-outbound) { align-self: flex-start; }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(6px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
     .date-pill { align-self: center; padding: 3px var(--space-3); background: var(--color-neutral-100); border: 1px solid var(--color-border); border-radius: var(--radius-full); font-size: var(--text-2xs); font-weight: var(--font-medium); color: var(--color-text-muted); }
     :host-context(.dark) .date-pill { background: var(--color-neutral-800); }
     .typing-row { gap: var(--space-2); }
@@ -376,6 +383,8 @@ const FOLLOWERS_LIMIT = 50;
     }
     @media (prefers-reduced-motion: reduce) {
       .typing-dots .dot { animation: none; }
+      .msg-row { animation: none; }
+      .sidebar, .thread { transition: none; }
     }
 
     @media (max-width: 767.98px) {
@@ -384,9 +393,11 @@ const FOLLOWERS_LIMIT = 50;
         width: 100%; z-index: 1;
         border-right: none;
       }
-      .sidebar.hidden { transform: translateX(-100%); visibility: hidden; pointer-events: none; }
+      .sidebar, .thread { transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1); }
+      .sidebar.hidden { transform: translateX(-100%); visibility: hidden; pointer-events: none; transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0ms 280ms; }
       .thread { position: absolute; inset: 0; transform: translateX(100%); visibility: hidden; pointer-events: none; }
       .thread.open { transform: translateX(0); visibility: visible; pointer-events: auto; }
+      .thread:not(.open) { transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0ms 280ms; }
       .search-input { height: 44px; }
       .icon-btn { width: 44px; height: 44px; }
       .search-clear { width: 44px; height: 44px; right: var(--space-2); }

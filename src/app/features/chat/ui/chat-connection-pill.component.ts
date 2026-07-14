@@ -41,10 +41,17 @@ import { connectionStatusLabel } from '../utils/chat-status-label.util';
     }
     .pill.tappable:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
     :host-context(.dark) .pill { background: var(--color-neutral-800); border-color: var(--color-neutral-700); }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-neutral-300); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-neutral-300); transition: background-color 200ms ease; }
     .connected .dot { background: var(--color-accent-500); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-500) 25%, transparent); }
-    .connecting .dot { background: var(--color-gold-400); }
+    .connecting .dot { background: var(--color-gold-400); animation: pillPulse 1.2s ease-in-out infinite; }
     .disconnected .dot { background: var(--color-warm-500); }
+    @keyframes pillPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .dot { animation: none; }
+    }
   `],
 })
 export class ChatConnectionPillComponent {

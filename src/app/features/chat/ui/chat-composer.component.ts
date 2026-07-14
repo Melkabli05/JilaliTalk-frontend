@@ -97,10 +97,12 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
       color: var(--color-primary-600);
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      transition: transform 100ms ease, background-color 150ms ease, box-shadow 150ms ease;
     }
     .composer-attach:focus-visible, .composer-send:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    .composer-send { background: var(--color-primary-500); color: var(--color-on-color); }
-    .composer-send:disabled { opacity: 0.4; cursor: not-allowed; }
+    .composer-attach:active, .composer-send:not(:disabled):active { transform: scale(0.9); }
+    .composer-send { background: var(--color-primary-500); color: var(--color-on-color); box-shadow: var(--shadow-primary-sm); }
+    .composer-send:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
     .composer-attach:hover { background: var(--color-neutral-100); }
     .composer-field {
       flex: 1; min-height: 36px; max-height: 120px; resize: none;
@@ -108,10 +110,15 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
       border-radius: var(--radius-md); background: var(--color-bg);
       font-family: inherit; font-size: max(16px, var(--text-sm)); color: var(--color-text);
       outline: none;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
     }
     .composer-field:focus { border-color: var(--color-primary-400); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 14%, transparent); }
     @media (max-width: 767.98px) {
       .composer-attach, .composer-send { width: 44px; height: 44px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .composer-attach, .composer-send { transition: none; }
+      .composer-attach:active, .composer-send:active { transform: none; }
     }
   `],
 })

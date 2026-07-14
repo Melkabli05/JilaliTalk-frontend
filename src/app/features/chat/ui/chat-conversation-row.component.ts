@@ -52,6 +52,7 @@ import { lastMessagePreview } from '../utils/chat-preview.util';
       border-radius: 12px; text-align: left; color: inherit;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      transition: background-color 150ms ease;
     }
     .row:hover { background: var(--color-neutral-100); }
     .row.active { background: color-mix(in srgb, var(--color-primary-500) 10%, transparent); }
@@ -77,6 +78,15 @@ import { lastMessagePreview } from '../utils/chat-preview.util';
       border-radius: var(--radius-full);
       background: var(--color-accent-500); color: var(--color-on-color);
       font-size: var(--text-2xs); font-weight: var(--font-bold);
+      animation: badgeIn 200ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes badgeIn {
+      from { opacity: 0; transform: scale(0.5); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .row { transition: none; }
+      .unread-badge { animation: none; }
     }
   `],
 })
