@@ -38,6 +38,11 @@ export const routes: Routes = [
   },
   { path: 'rtm', redirectTo: 'messages', pathMatch: 'full' },
   {
+    path: 'chat',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/chat').then((m) => m.CHAT_ROUTES),
+  },
+  {
     path: 'profile',
     title: 'Profile',
     canActivate: [authGuard],

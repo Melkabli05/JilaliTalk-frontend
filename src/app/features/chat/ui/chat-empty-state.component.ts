@@ -1,0 +1,42 @@
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { LucideInbox } from '@lucide/angular';
+
+@Component({
+  selector: 'app-chat-empty-state',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LucideInbox],
+  template: `
+    <div class="empty-state" role="status">
+      <div class="empty-icon" aria-hidden="true">
+        <svg lucideInbox [size]="28"></svg>
+      </div>
+      <p class="empty-title">{{ title() }}</p>
+      <p class="empty-body">{{ body() }}</p>
+      <ng-content />
+    </div>
+  `,
+  styles: [`
+    :host { display: block; }
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: var(--space-2);
+      padding: var(--space-8) var(--space-4); text-align: center;
+      color: var(--color-text-muted);
+    }
+    .empty-icon {
+      width: 64px; height: 64px; border-radius: var(--radius-xl);
+      background: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
+      color: var(--color-primary-500);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .empty-title {
+      font-size: var(--text-sm); font-weight: var(--font-semibold);
+      color: var(--color-text); margin: 0;
+    }
+    .empty-body { font-size: var(--text-xs); margin: 0; max-width: 220px; }
+  `],
+})
+export class ChatEmptyStateComponent {
+  readonly title = input.required<string>();
+  readonly body = input.required<string>();
+}
