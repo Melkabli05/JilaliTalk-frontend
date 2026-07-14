@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
@@ -66,7 +66,5 @@ export class ChatIntroductionBubbleComponent {
 
   readonly viewProfile = output<void>();
 
-  initials(): string {
-    return (this.target().nickname || '?').slice(0, 2);
-  }
+  protected readonly initials = computed(() => (this.target().nickname || '?').slice(0, 2));
 }

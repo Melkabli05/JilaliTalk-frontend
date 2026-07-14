@@ -1,11 +1,11 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ProfileApi } from '@features/profile/data-access/profile-api';
 import type { SocialUser, VisitorUser } from '@features/profile/models/profile.model';
 import type { ChatUserSummary } from '../models/chat-message.model';
 import type { ChatProfileDirectory, ChatProfilePage } from './chat.port';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ChatProfileDirectoryAdapter implements ChatProfileDirectory {
   private readonly api = inject(ProfileApi);
 

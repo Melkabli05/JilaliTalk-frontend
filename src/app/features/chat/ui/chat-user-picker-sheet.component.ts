@@ -200,15 +200,15 @@ export class ChatUserPickerSheetComponent {
 
   protected readonly tabs = PICKER_TABS;
 
-  onBackdropClick(event: MouseEvent): void {
+  protected onBackdropClick(event: MouseEvent): void {
     if (event.target === event.currentTarget) this.close.emit();
   }
 
-  submitById(): void {
+  protected submitById(): void {
     this.submitByIdEvent.emit();
   }
 
-  onByIdPicked(u: ChatUserSummary): void {
+  protected onByIdPicked(u: ChatUserSummary): void {
     this.pick.emit(u);
   }
 

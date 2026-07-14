@@ -468,12 +468,12 @@ export class ChatPageComponent {
   private readonly feedEl = viewChild<ElementRef<HTMLElement>>('feed');
 
   private readonly typingBroadcaster = createTypingBroadcaster(
-    (peerId, isTyping) => this.store.notifyTyping(peerId),
+    (peerId, isTyping) => (isTyping ? this.store.notifyTyping(peerId) : this.store.stopTyping(peerId)),
     TYPING_STOP_DELAY_MS,
   );
 
-  formatTime = (ts: number) => relativeTime(ts);
-  formatDay = (messages: readonly ChatMessage[], index: number) => dayLabel(messages, index);
+  protected readonly formatTime = (ts: number): string => relativeTime(ts);
+  protected readonly formatDay = (messages: readonly ChatMessage[], index: number): string => dayLabel(messages, index);
 
   constructor() {
     effect(() => {

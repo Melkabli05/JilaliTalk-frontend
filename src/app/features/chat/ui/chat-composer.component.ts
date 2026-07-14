@@ -119,11 +119,11 @@ export class ChatComposerComponent {
   readonly removeStaged = output<void>();
   readonly blur = output<void>();
 
-  onInput(value: string): void {
+  protected onInput(value: string): void {
     this.draftChange.emit(value);
   }
 
-  onKeydown(event: Event): void {
+  protected onKeydown(event: Event): void {
     const ke = event as KeyboardEvent;
     if (ke.key !== 'Enter' || ke.shiftKey) return;
     ke.preventDefault();

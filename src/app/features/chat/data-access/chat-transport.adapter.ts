@@ -1,4 +1,4 @@
-import { Injectable, Signal, computed, inject } from '@angular/core';
+import { Service, Signal, computed, inject } from '@angular/core';
 import { HtImConnectionService } from '@core/realtime/ht-im-connection.service';
 import type { ImEvent } from '@core/realtime/im-events';
 import type { ChatConnectionStatus } from '../models/chat-message.model';
@@ -9,7 +9,7 @@ import type {
   ChatTransportEvent,
 } from './chat.port';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ChatTransportAdapter implements ChatTransport {
   private readonly im = inject(HtImConnectionService);
 
