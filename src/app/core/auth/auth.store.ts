@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { signal, computed, inject, Service } from '@angular/core';
 import { StorageService } from '@core/services/storage.service';
 
 export interface AuthUser {
@@ -19,7 +19,7 @@ export interface ImCredentials {
 
 export const IM_CREDENTIALS_STORAGE_KEY = 'jilali_im_credentials';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class AuthStore {
   private readonly storage = inject(StorageService);
   private readonly _user = signal<AuthUser | null>(null);

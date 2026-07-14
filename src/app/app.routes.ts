@@ -11,6 +11,7 @@ export const routes: Routes = [
   },
   {
     path: 'rooms',
+    canActivate: [authGuard],
     loadChildren: () => import('./features/rooms').then((m) => m.roomsRoutes),
   },
   {
@@ -54,6 +55,7 @@ export const routes: Routes = [
   },
   {
     path: 'dev/packets',
+    canActivate: [authGuard],
     loadChildren: () => import('./features/dev-tools').then((m) => m.devToolsRoutes),
   },
   { path: 'error/401', title: 'Unauthorized', component: ErrorPageComponent, data: { code: 401 } },
