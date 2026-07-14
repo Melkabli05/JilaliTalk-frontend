@@ -5,14 +5,18 @@
   inset: 0;
   z-index: var(--z-modal-backdrop);
   background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1), background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.new-contact-host.sheet {
+.new-contact-host.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.new-contact-host.sheet.open {
   background: hsl(0deg 0% 0% / 50%);
-  animation: hostFadeIn 180ms ease-out;
-}
-@keyframes hostFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .new-contact-panel {
@@ -24,14 +28,24 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 12px 24px hsl(0deg 0% 0% / 8%);
-  animation: panelSlideIn 180ms ease-out;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1), transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-@keyframes panelSlideIn {
-  from { opacity: 0; transform: translateY(-12px); }
-  to { opacity: 1; transform: translateY(0); }
+.new-contact-panel.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 .new-contact-panel:focus {
   outline: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .new-contact-host,
+  .new-contact-panel {
+    transition-duration: 0.001ms;
+  }
 }
 
 .panel-header {
@@ -207,12 +221,12 @@
   height: calc(100dvh - var(--app-header-height));
   z-index: var(--z-modal);
   border-radius: 14px 14px 0 0;
-  animation: sheetSlideIn 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: translateY(100%);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease;
 }
-@keyframes sheetSlideIn {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+.new-contact-panel.sheet.open {
+  transform: translateY(0);
 }
 
 @media (max-width: 640px) {
