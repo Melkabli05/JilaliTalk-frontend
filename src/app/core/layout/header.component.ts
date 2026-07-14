@@ -3,10 +3,11 @@ import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { Observable, catchError, filter, finalize, of, switchMap, tap } from 'rxjs';
-import { LucidePlus, LucideLogIn, LucideLogOut, LucideBell, LucideTerminal } from '@lucide/angular';
+import { LucidePlus, LucideLogIn, LucideBell, LucideTerminal } from '@lucide/angular';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { ThemeToggleComponent } from '@shared/ui/theme/theme-toggle.component';
 import { AuthDialogComponent } from '@shared/ui/auth-dialog/auth-dialog.component';
+import { UserMenuComponent } from '@shared/ui/user-menu/user-menu.component';
 import { CreateRoomModalComponent, CreateRoomModalData, CreateRoomResult } from '@shared/ui/create-room-modal/create-room-modal.component';
 import { NotificationPanelComponent } from '@shared/ui/notification-panel/notification-panel.component';
 import { NotificationStore } from '@store/notification.store';
@@ -25,9 +26,9 @@ import { environment } from '@env/environment';
     RouterLink,
     ButtonComponent,
     ThemeToggleComponent,
+    UserMenuComponent,
     LucidePlus,
     LucideLogIn,
-    LucideLogOut,
     LucideBell,
     LucideTerminal,
     NotificationPanelComponent,
@@ -80,17 +81,8 @@ import { environment } from '@env/environment';
           }
         </button>
 
-        @if (isAuthenticated()) {
-          <app-button 
-            variant="soft-neutral" 
-            size="sm" 
-            class="auth-btn"
-            aria-label="Logout of JilaliTalk" 
-            (click)="logout()"
-          >
-            <svg aria-hidden="true" lucideLogOut [size]="15"></svg>
-            <span class="btn-text">Logout</span>
-          </app-button>
+        @if (authStore.user(); as user) {
+          <app-user-menu [user]="user" (logout)="logout()" />
         } @else {
           <app-button 
             variant="soft-primary" 
@@ -338,12 +330,11 @@ export class HeaderComponent {
   private readonly createRoomService = inject(CreateRoomService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly authStore = inject(AuthStore);
+  protected readonly authStore = inject(AuthStore);
   private readonly authService = inject(AuthService);
   readonly notificationStore = inject(NotificationStore);
 
   readonly isConnected = signal(typeof navigator !== 'undefined' ? navigator.onLine : true);
-  readonly isAuthenticated = this.authStore.isAuthenticated;
   readonly creatingRoom = signal(false);
   readonly isDevMode = !environment.production;
 
