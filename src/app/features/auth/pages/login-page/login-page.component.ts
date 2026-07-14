@@ -12,122 +12,60 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstError } from '@shared/utils/auth-validation.util';
 import { sameOriginReturnUrl } from '../../utils/return-url.util';
 import { ErrorBannerComponent } from '@shared/ui/error-banner/error-banner.component';
+import { AuthShellComponent } from '../../ui/auth-shell/auth-shell.component';
 
 @Component({
   selector: 'app-login-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, FormField, InputComponent, ButtonComponent, ErrorBannerComponent, LucideLogIn],
+  imports: [RouterLink, FormField, InputComponent, ButtonComponent, ErrorBannerComponent, AuthShellComponent, LucideLogIn],
   template: `
-    <main class="login-shell" aria-labelledby="login-title">
-      <section class="login-card" role="region">
-        <header class="card-header">
-          <span class="card-icon" aria-hidden="true">
-            <svg lucideLogIn [size]="22"></svg>
-          </span>
-          <h1 class="card-title" id="login-title">Sign in to JilaliTalk</h1>
-          <p class="card-sub">Use your HelloTalk email and password.</p>
-        </header>
+    <app-auth-shell title="Sign in to JilaliTalk">
+      <svg auth-icon aria-hidden="true" lucideLogIn [size]="24"></svg>
+      <span auth-subtitle>Use your HelloTalk email and password.</span>
 
-        <form (submit)="onSubmit($event)" novalidate>
-          <app-input
-            label="Email"
-            type="email"
-            placeholder="you@example.com"
-            inputmode="email"
-            autocomplete="email"
-            enterkeyhint="next"
-            [formField]="loginForm.email"
-            [errorMessage]="firstError(loginForm.email())"
-          />
+      <form (submit)="onSubmit($event)" novalidate>
+        <app-input
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          inputmode="email"
+          autocomplete="email"
+          enterkeyhint="next"
+          [formField]="loginForm.email"
+          [errorMessage]="firstError(loginForm.email())"
+        />
 
-          <app-input
-            label="Password"
-            type="password"
-            placeholder="Your password"
-            autocomplete="current-password"
-            enterkeyhint="go"
-            [formField]="loginForm.password"
-            [errorMessage]="firstError(loginForm.password())"
-          />
+        <app-input
+          label="Password"
+          type="password"
+          placeholder="Your password"
+          autocomplete="current-password"
+          enterkeyhint="go"
+          [formField]="loginForm.password"
+          [errorMessage]="firstError(loginForm.password())"
+        />
 
-          <app-error-banner [message]="errorText()" />
+        <app-error-banner [message]="errorText()" />
 
-          <app-button
-            type="submit"
-            variant="primary"
-            size="lg"
-            class="submit-btn"
-            [loading]="submitting()"
-            [disabled]="!canSubmit()"
-          >
-            Sign in
-          </app-button>
-        </form>
+        <app-button
+          type="submit"
+          variant="primary"
+          size="lg"
+          class="submit-btn"
+          [loading]="submitting()"
+          [disabled]="!canSubmit()"
+        >
+          Sign in
+        </app-button>
+      </form>
 
-        <p class="alt">
-          No account?
-          <a routerLink="/signup" class="alt-link">Create one</a>
-        </p>
-      </section>
-    </main>
+      <ng-container auth-footer>
+        No account?
+        <a routerLink="/signup" class="alt-link">Create one</a>
+      </ng-container>
+    </app-auth-shell>
   `,
   styles: [`
-    .login-shell {
-      min-height: calc(100dvh - var(--app-header-height));
-      display: grid;
-      place-items: center;
-      padding: var(--space-6) var(--space-4);
-    }
-    .login-card {
-      width: 100%;
-      max-width: 380px;
-      padding: var(--space-6) var(--space-6) var(--space-5);
-      border-radius: var(--radius-xl);
-      background: var(--color-card);
-      border: 1px solid var(--color-border);
-      box-shadow: var(--shadow-card);
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-5);
-    }
-    .dark .login-card {
-      background: var(--color-neutral-900);
-      border-color: var(--color-neutral-800);
-    }
-    .card-header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: var(--space-2);
-      text-align: center;
-    }
-    .card-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: color-mix(in srgb, var(--color-primary-500) 14%, transparent);
-      color: var(--color-primary-600);
-      margin-bottom: var(--space-1);
-    }
-    .dark .card-icon {
-      background: color-mix(in srgb, var(--color-primary-400) 18%, transparent);
-      color: var(--color-primary-300);
-    }
-    .card-title {
-      font-size: var(--text-xl);
-      font-weight: var(--font-bold);
-      letter-spacing: -0.01em;
-      color: var(--color-text-primary);
-      margin: 0;
-    }
-    .card-sub {
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-      margin: 0;
-    }
     form {
       display: flex;
       flex-direction: column;
@@ -136,12 +74,6 @@ import { ErrorBannerComponent } from '@shared/ui/error-banner/error-banner.compo
     .submit-btn {
       margin-top: var(--space-2);
       width: 100%;
-    }
-    .alt {
-      text-align: center;
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-      margin: 0;
     }
     .alt-link {
       color: var(--color-primary-600);

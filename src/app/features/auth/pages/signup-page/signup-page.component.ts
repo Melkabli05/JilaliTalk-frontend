@@ -12,6 +12,7 @@ import { ToastService } from '@core/services/toast.service';
 import { firstError, validateEmail, validatePasswordMin } from '@shared/utils/auth-validation.util';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
 import { sameOriginReturnUrl } from '../../utils/return-url.util';
+import { AuthShellComponent } from '../../ui/auth-shell/auth-shell.component';
 
 type SignupStep = 'account' | 'code';
 
@@ -23,170 +24,109 @@ type SignupStep = 'account' | 'code';
  * the old mocked flow but never wired to anything real, so it's dropped here rather than
  * kept as UI theater. Users can set a nickname later once a real profile-edit endpoint
  * exists (see jilalibff's ProfileEditRequest docs for that gap).
+ *
+ * Code length is 4 digits — HelloTalk's real email-verification code, confirmed against a
+ * live code received during testing (not the 6-digit placeholder the old mocked flow used).
  */
-const CODE_LENGTH = 6;
+const CODE_LENGTH = 4;
 const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
 
 @Component({
   selector: 'app-signup-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, FormField, InputComponent, ButtonComponent, ErrorBannerComponent, LucideUserPlus],
+  imports: [RouterLink, FormField, InputComponent, ButtonComponent, ErrorBannerComponent, AuthShellComponent, LucideUserPlus],
   template: `
-    <main class="signup-shell" aria-labelledby="signup-title">
-      <section class="signup-card" role="region">
-        <header class="card-header">
-          <span class="card-icon" aria-hidden="true">
-            <svg lucideUserPlus [size]="22"></svg>
-          </span>
-          <h1 class="card-title" id="signup-title">Create your JilaliTalk account</h1>
-          <p class="card-sub">
-            @if (step() === 'account') {
-              Uses your real HelloTalk email and a new password.
-            } @else {
-              We sent a {{ codeLength }}-digit code to <strong>{{ accountModel().email }}</strong>
-            }
-          </p>
-        </header>
-
+    <app-auth-shell title="Create your JilaliTalk account">
+      <svg auth-icon aria-hidden="true" lucideUserPlus [size]="24"></svg>
+      <span auth-subtitle>
         @if (step() === 'account') {
-          <form (submit)="onAccountSubmit($event)" novalidate>
-            <app-input
-              label="Email"
-              type="email"
-              placeholder="you@example.com"
-              inputmode="email"
-              autocomplete="email"
-              enterkeyhint="next"
-              [formField]="accountForm.email"
-              [errorMessage]="firstError(accountForm.email())"
-            />
-
-            <app-input
-              label="Password"
-              type="password"
-              placeholder="At least 8 characters"
-              autocomplete="new-password"
-              enterkeyhint="go"
-              [formField]="accountForm.password"
-              [errorMessage]="firstError(accountForm.password())"
-            />
-
-            <app-error-banner [message]="errorText()" />
-
-            <app-button
-              type="submit"
-              variant="primary"
-              size="lg"
-              class="submit-btn"
-              [loading]="submitting()"
-              [disabled]="!canSubmitAccount()"
-            >
-              Send verification code
-            </app-button>
-          </form>
+          Uses your real HelloTalk email and a new password.
         } @else {
-          <form (submit)="onCodeSubmit($event)" novalidate>
-            <div class="code-field">
-              <label for="signup-code" class="sr-only">Verification code</label>
-              <input
-                id="signup-code"
-                type="text"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                [attr.maxlength]="codeLength"
-                class="code-input"
-                placeholder="000000"
-                autocomplete="one-time-code"
-                autocapitalize="off"
-                enterkeyhint="go"
-                [value]="code()"
-                (input)="onCodeInput($event)"
-              />
-            </div>
-
-            <app-error-banner [message]="errorText()" />
-
-            <app-button
-              type="submit"
-              variant="primary"
-              size="lg"
-              class="submit-btn"
-              [loading]="submitting()"
-              [disabled]="code().length !== codeLength || submitting()"
-            >
-              Create account
-            </app-button>
-            <button type="button" class="resend-btn" [disabled]="submitting()" (click)="resendCode()">
-              Didn't get it? Send again
-            </button>
-          </form>
+          We sent a {{ codeLength }}-digit code to <strong>{{ accountModel().email }}</strong>
         }
+      </span>
 
-        <p class="alt">
-          Already have an account?
-          <a routerLink="/login" class="alt-link">Sign in</a>
-        </p>
-      </section>
-    </main>
+      @if (step() === 'account') {
+        <form (submit)="onAccountSubmit($event)" novalidate>
+          <app-input
+            label="Email"
+            type="email"
+            placeholder="you@example.com"
+            inputmode="email"
+            autocomplete="email"
+            enterkeyhint="next"
+            [formField]="accountForm.email"
+            [errorMessage]="firstError(accountForm.email())"
+          />
+
+          <app-input
+            label="Password"
+            type="password"
+            placeholder="At least 8 characters"
+            autocomplete="new-password"
+            enterkeyhint="go"
+            [formField]="accountForm.password"
+            [errorMessage]="firstError(accountForm.password())"
+          />
+
+          <app-error-banner [message]="errorText()" />
+
+          <app-button
+            type="submit"
+            variant="primary"
+            size="lg"
+            class="submit-btn"
+            [loading]="submitting()"
+            [disabled]="!canSubmitAccount()"
+          >
+            Send verification code
+          </app-button>
+        </form>
+      } @else {
+        <form (submit)="onCodeSubmit($event)" novalidate>
+          <div class="code-field">
+            <label for="signup-code" class="sr-only">Verification code</label>
+            <input
+              id="signup-code"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              [attr.maxlength]="codeLength"
+              class="code-input"
+              placeholder="0000"
+              autocomplete="one-time-code"
+              autocapitalize="off"
+              enterkeyhint="go"
+              [value]="code()"
+              (input)="onCodeInput($event)"
+            />
+          </div>
+
+          <app-error-banner [message]="errorText()" />
+
+          <app-button
+            type="submit"
+            variant="primary"
+            size="lg"
+            class="submit-btn"
+            [loading]="submitting()"
+            [disabled]="code().length !== codeLength || submitting()"
+          >
+            Create account
+          </app-button>
+          <button type="button" class="resend-btn" [disabled]="submitting()" (click)="resendCode()">
+            Didn't get it? Send again
+          </button>
+        </form>
+      }
+
+      <ng-container auth-footer>
+        Already have an account?
+        <a routerLink="/login" class="alt-link">Sign in</a>
+      </ng-container>
+    </app-auth-shell>
   `,
   styles: [`
-    .signup-shell {
-      min-height: calc(100dvh - var(--app-header-height));
-      display: grid;
-      place-items: center;
-      padding: var(--space-6) var(--space-4);
-    }
-    .signup-card {
-      width: 100%;
-      max-width: 380px;
-      padding: var(--space-6) var(--space-6) var(--space-5);
-      border-radius: var(--radius-xl);
-      background: var(--color-card);
-      border: 1px solid var(--color-border);
-      box-shadow: var(--shadow-card);
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-5);
-    }
-    .dark .signup-card {
-      background: var(--color-neutral-900);
-      border-color: var(--color-neutral-800);
-    }
-    .card-header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: var(--space-2);
-      text-align: center;
-    }
-    .card-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: color-mix(in srgb, var(--color-primary-500) 14%, transparent);
-      color: var(--color-primary-600);
-      margin-bottom: var(--space-1);
-    }
-    .dark .card-icon {
-      background: color-mix(in srgb, var(--color-primary-400) 18%, transparent);
-      color: var(--color-primary-300);
-    }
-    .card-title {
-      font-size: var(--text-xl);
-      font-weight: var(--font-bold);
-      letter-spacing: -0.01em;
-      color: var(--color-text-primary);
-      margin: 0;
-    }
-    .card-sub {
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-      margin: 0;
-    }
-    .card-sub strong { color: var(--color-text-primary); font-weight: var(--font-medium); }
     form {
       display: flex;
       flex-direction: column;
@@ -203,15 +143,16 @@ const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
     }
     .code-field { display: flex; flex-direction: column; gap: var(--space-1); }
     .code-input {
-      width: 100%; height: 52px; padding: 0 var(--space-4);
+      width: 100%; height: 56px; padding: 0 var(--space-4);
       border: 1px solid var(--color-border); border-radius: var(--radius-md);
       background: var(--color-card); color: var(--color-text);
-      font-size: 22px; font-weight: var(--font-bold); letter-spacing: 10px;
+      font-size: 28px; font-weight: var(--font-bold); letter-spacing: 16px;
+      text-indent: 16px;
       text-align: center; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
       box-sizing: border-box; font-family: inherit;
     }
     .dark .code-input { background: var(--color-neutral-800); color: var(--color-neutral-100); }
-    .code-input::placeholder { color: var(--color-neutral-300); letter-spacing: 4px; font-weight: var(--font-normal); font-size: 18px; }
+    .code-input::placeholder { color: var(--color-neutral-300); letter-spacing: 8px; font-weight: var(--font-normal); font-size: 20px; }
     .code-input:focus {
       border-color: var(--color-primary-500);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 10%, transparent);
@@ -224,12 +165,6 @@ const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
     .resend-btn:hover { color: var(--color-text); }
     .resend-btn:disabled { opacity: 0.5; cursor: default; }
     .resend-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); border-radius: var(--radius-sm); }
-    .alt {
-      text-align: center;
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-      margin: 0;
-    }
     .alt-link {
       color: var(--color-primary-600);
       text-decoration: none;

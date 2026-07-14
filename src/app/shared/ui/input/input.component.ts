@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   input,
   model,
+  output,
   computed,
 } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
@@ -40,7 +41,7 @@ let nextId = 0;
           [attr.aria-describedby]="ariaDescribedBy()"
           [attr.autocomplete]="autocomplete() || null"
           (input)="onInput($event)"
-          (blur)="touched.set(true)"
+          (blur)="onBlur()"
         />
         <ng-content />
       </div>
@@ -133,7 +134,15 @@ let nextId = 0;
 export class InputComponent implements FormValueControl<string> {
   readonly value = model<string>('');
   readonly disabled = input<boolean>(false);
-  readonly touched = model<boolean>(false);
+  /** Written by the signal-forms `Field`/`FormField` directive from `field.touched()` — see
+   *  `touch` below for the other half of this contract (`FormValueControl.touch` /
+   *  `FormUiControl.touched`, `@angular/forms/signals`). This must stay a plain `input()`, not
+   *  a `model()`: `model()` auto-generates a `touchedChange` output, which the framework's
+   *  custom-control binding does NOT listen for (it listens for an output literally named
+   *  `touch`, void-typed) — a `model()` here silently breaks the touched relay instead of
+   *  erroring, since every property on this contract is optional. */
+  readonly touched = input<boolean>(false);
+  readonly touch = output<void>();
   readonly errors = input<readonly ValidationError[]>([]);
   readonly invalid = input<boolean>(false);
   readonly readonly = input<boolean>(false);
@@ -154,9 +163,17 @@ export class InputComponent implements FormValueControl<string> {
 
   protected readonly sizeClass = computed(() => `input input-${this.size()}`);
 
-  /** Combines both the explicit errorMessage input AND errors from signal-form's [formField] binding. */
+  /** `invalid`/`errors` from signal-form's [formField] binding reflect live validation
+   *  state, independent of touch — a required-but-empty field is "invalid" from the moment
+   *  the form is constructed, not just after the user does something. Gating on `touched()`
+   *  is what turns that into "don't show it until the user has actually interacted with this
+   *  field" (or the form was submitted, which the `touched` input also picks up — see
+   *  `HelloTalkAuthClientImpl` equivalent... no, see the signal-forms `Field` directive,
+   *  which marks all descendants touched on a failed submit attempt). The explicit
+   *  `errorMessage` input bypasses this gate entirely — callers that pass it are opting into
+   *  showing it unconditionally. */
   protected readonly showError = computed(
-    () => this.invalid() || !!this.errorMessage() || this.errors().length > 0,
+    () => !!this.errorMessage() || (this.touched() && (this.invalid() || this.errors().length > 0)),
   );
 
   protected readonly errorText = computed(
@@ -164,7 +181,7 @@ export class InputComponent implements FormValueControl<string> {
   );
 
   protected readonly ariaInvalid = computed(
-    () => this.invalid() || this.errors().length > 0,
+    () => this.touched() && (this.invalid() || this.errors().length > 0),
   );
 
   protected readonly ariaDescribedBy = computed(() =>
@@ -173,5 +190,9 @@ export class InputComponent implements FormValueControl<string> {
 
   protected onInput(event: Event): void {
     this.value.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onBlur(): void {
+    this.touch.emit();
   }
 }

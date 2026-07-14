@@ -16,14 +16,14 @@ export const routes: Routes = [
   {
     path: 'login',
     title: 'Sign in',
-    data: { standalone: true },
+    data: { fullscreen: true },
     loadComponent: () =>
       import('./features/auth/pages/login-page/login-page.component').then((m) => m.LoginPageComponent),
   },
   {
     path: 'signup',
     title: 'Create account',
-    data: { standalone: true },
+    data: { fullscreen: true },
     loadComponent: () =>
       import('./features/auth/pages/signup-page/signup-page.component').then((m) => m.SignupPageComponent),
   },

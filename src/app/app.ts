@@ -14,7 +14,7 @@ import { PwaUpdateService } from '@core/services/pwa-update.service';
 import { ActiveCallStore } from '@store/active-call.store';
 import { injectIsMobileViewport } from '@shared/utils';
 
-function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standalone'): boolean {
+function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standalone' | 'fullscreen'): boolean {
   let node = root;
   while (node.firstChild) node = node.firstChild;
   return node.data[key] === true;
@@ -25,16 +25,18 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, SidenavComponent, MobileNavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent, MinimizedRoomBarComponent, NotificationToastComponent],
   template: `
-    <div class="app-shell" [class.immersive]="immersive()" [class.standalone]="standalone()">
-      @if (!hideSidenav()) {
+    <div class="app-shell" [class.immersive]="immersive()" [class.standalone]="standalone()" [class.fullscreen]="fullscreen()">
+      @if (!hideSidenav() && !fullscreen()) {
         <app-sidenav />
       }
       <div class="main-wrapper">
-        <app-header />
+        @if (!fullscreen()) {
+          <app-header />
+        }
         <main class="app-main" id="main-content" tabindex="-1">
           <router-outlet />
         </main>
-        @if (!hideSidenav()) {
+        @if (!hideSidenav() && !fullscreen()) {
           <app-mobile-nav />
         }
       </div>
@@ -76,6 +78,17 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
         .app-shell.standalone {
           grid-template-columns: 1fr;
         }
+      }
+
+      /* Fullscreen routes (login/signup — chromeless auth pages) drop every
+         piece of shell chrome (sidenav, header, mobile-nav) on every
+         viewport, not just mobile like .immersive does, and collapse the
+         insets to zero so the page itself owns the full 100svh/100dvh and
+         is responsible for its own safe-area padding. */
+      .app-shell.fullscreen {
+        grid-template-columns: 1fr;
+        --shell-inset-top: 0px;
+        --shell-inset-bottom: 0px;
       }
 
       .main-wrapper {
@@ -138,14 +151,19 @@ export class App {
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
       map(() => {
         const root = this.router.routerState.snapshot.root;
-        return { immersive: isRouteFlagSet(root, 'immersive'), standalone: isRouteFlagSet(root, 'standalone') };
+        return {
+          immersive: isRouteFlagSet(root, 'immersive'),
+          standalone: isRouteFlagSet(root, 'standalone'),
+          fullscreen: isRouteFlagSet(root, 'fullscreen'),
+        };
       }),
     ),
-    { initialValue: { immersive: false, standalone: false } },
+    { initialValue: { immersive: false, standalone: false, fullscreen: false } },
   );
 
   readonly immersive = computed(() => this.routeFlags().immersive);
   readonly standalone = computed(() => this.routeFlags().standalone);
+  readonly fullscreen = computed(() => this.routeFlags().fullscreen);
 
   /**
    * CSS alone can hide the sidenav's content on mobile, but not remove
