@@ -109,10 +109,10 @@ const PICKER_TABS: ReadonlyArray<{ readonly id: ChatUserPickerTab; readonly labe
     :host { display: contents; }
     .backdrop {
       position: fixed; inset: 0; z-index: var(--z-modal-backdrop);
-      background: transparent; opacity: 0;
+      background: transparent; opacity: 0; pointer-events: none;
       transition: opacity 220ms ease, background-color 220ms ease;
     }
-    .backdrop.open { background: hsl(0deg 0% 0% / 50%); opacity: 1; }
+    .backdrop.open { background: hsl(0deg 0% 0% / 50%); opacity: 1; pointer-events: auto; }
     .sheet {
       position: fixed; left: 0; right: 0; bottom: 0; top: auto;
       height: calc(100dvh - var(--app-header-height));
