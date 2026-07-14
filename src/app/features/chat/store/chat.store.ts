@@ -154,12 +154,8 @@ export class ChatStore {
     return true;
   }
 
-  notifyTyping(peerId: number): void {
-    this.transport.sendTyping(peerId, true);
-  }
-
-  stopTyping(peerId: number): void {
-    this.transport.sendTyping(peerId, false);
+  setTyping(peerId: number, isTyping: boolean): void {
+    this.transport.sendTyping(peerId, isTyping);
   }
 
   retryConnection(): void {

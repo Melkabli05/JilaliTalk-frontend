@@ -50,7 +50,7 @@ const PICKER_TABS: ReadonlyArray<{ readonly id: ChatUserPickerTab; readonly labe
       </nav>
       @switch (tab()) {
         @case ('byId') {
-          <form class="byid-form" (submit)="$event.preventDefault(); submitById()">
+          <form class="byid-form" (submit)="$event.preventDefault(); submitById.emit()">
             <svg aria-hidden="true" lucideSearch [size]="14" class="byid-icon"></svg>
             <input
               type="text"
@@ -195,17 +195,13 @@ export class ChatUserPickerSheetComponent {
   readonly close = output<void>();
   readonly tabChange = output<ChatUserPickerTab>();
   readonly pick = output<ChatUserSummary>();
-  readonly submitByIdEvent = output<void>();
+  readonly submitById = output<void>();
   readonly byIdQueryChange = output<string>();
 
   protected readonly tabs = PICKER_TABS;
 
   protected onBackdropClick(event: MouseEvent): void {
     if (event.target === event.currentTarget) this.close.emit();
-  }
-
-  protected submitById(): void {
-    this.submitByIdEvent.emit();
   }
 
   protected onByIdPicked(u: ChatUserSummary): void {

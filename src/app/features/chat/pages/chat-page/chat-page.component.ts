@@ -266,7 +266,7 @@ const FOLLOWERS_LIMIT = 50;
       (close)="closePicker()"
       (tabChange)="onPickerTabChange($event)"
       (pick)="onPickerPick($event)"
-      (submitByIdEvent)="submitById()"
+      (submitById)="submitById()"
       (byIdQueryChange)="pickerByIdQuery.set($event)"
     />
   `,
@@ -444,14 +444,12 @@ export class ChatPageComponent {
     }
   });
   protected readonly pickerError = computed(() => {
-    const tab = this.pickerTab();
-    const errMap: Record<ChatUserPickerTab, string | null> = {
-      following: this.followingRes.error() ? 'Could not load following.' : null,
-      followers: this.followersRes.error() ? 'Could not load followers.' : null,
-      visitors: this.visitorsRes.error() ? 'Could not load visitors.' : null,
-      byId: null,
-    };
-    return errMap[tab];
+    switch (this.pickerTab()) {
+      case 'following': return this.followingRes.error() ? 'Could not load following.' : null;
+      case 'followers': return this.followersRes.error() ? 'Could not load followers.' : null;
+      case 'visitors': return this.visitorsRes.error() ? 'Could not load visitors.' : null;
+      case 'byId': return null;
+    }
   });
   protected readonly pickerTitle = computed(() => {
     if (this.pickerOpen() === 'shareProfile') return 'Share a profile';
@@ -468,7 +466,7 @@ export class ChatPageComponent {
   private readonly feedEl = viewChild<ElementRef<HTMLElement>>('feed');
 
   private readonly typingBroadcaster = createTypingBroadcaster(
-    (peerId, isTyping) => (isTyping ? this.store.notifyTyping(peerId) : this.store.stopTyping(peerId)),
+    (peerId, isTyping) => this.store.setTyping(peerId, isTyping),
     TYPING_STOP_DELAY_MS,
   );
 
@@ -564,25 +562,18 @@ export class ChatPageComponent {
 
   protected onDraft(value: string): void {
     this.draft.set(value);
-    const conv = this.store.selectedConversation();
-    if (conv) {
-      const peerId = asNumericPeerId(conv.peerUserId);
-      if (Number.isFinite(peerId)) this.typingBroadcaster.notifyInput(peerId);
-    }
+    const peerId = this.selectedNumericPeerId();
+    if (peerId != null) this.typingBroadcaster.notifyInput(peerId);
   }
 
   protected onComposerBlur(): void {
-    const conv = this.store.selectedConversation();
-    if (!conv) return;
-    const peerId = asNumericPeerId(conv.peerUserId);
-    if (Number.isFinite(peerId)) this.typingBroadcaster.stop(peerId);
+    const peerId = this.selectedNumericPeerId();
+    if (peerId != null) this.typingBroadcaster.stop(peerId);
   }
 
   protected onSend(): void {
-    const conv = this.store.selectedConversation();
-    if (!conv) return;
-    const peerId = asNumericPeerId(conv.peerUserId);
-    if (!Number.isFinite(peerId)) return;
+    const peerId = this.selectedNumericPeerId();
+    if (peerId == null) return;
     const intro = this.stagedIntroduction();
     if (intro) {
       this.store.sendIntroduction(peerId, intro);
@@ -594,6 +585,13 @@ export class ChatPageComponent {
     }
     this.draft.set('');
     this.typingBroadcaster.stop(peerId);
+  }
+
+  private selectedNumericPeerId(): number | null {
+    const conv = this.store.selectedConversation();
+    if (!conv) return null;
+    const peerId = asNumericPeerId(conv.peerUserId);
+    return Number.isFinite(peerId) ? peerId : null;
   }
 
   @HostListener('keydown.escape')
