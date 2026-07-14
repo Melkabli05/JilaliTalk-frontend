@@ -6,7 +6,6 @@ import { Observable, catchError, filter, finalize, of, switchMap, tap } from 'rx
 import { LucidePlus, LucideLogIn, LucideBell, LucideTerminal } from '@lucide/angular';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { ThemeToggleComponent } from '@shared/ui/theme/theme-toggle.component';
-import { AuthDialogComponent } from '@shared/ui/auth-dialog/auth-dialog.component';
 import { UserMenuComponent } from '@shared/ui/user-menu/user-menu.component';
 import { CreateRoomModalComponent, CreateRoomModalData, CreateRoomResult } from '@shared/ui/create-room-modal/create-room-modal.component';
 import { NotificationPanelComponent } from '@shared/ui/notification-panel/notification-panel.component';
@@ -325,8 +324,8 @@ import { environment } from '@env/environment';
   `]
 })
 export class HeaderComponent {
-  private readonly dialog = inject(Dialog);
   private readonly router = inject(Router);
+  private readonly dialog = inject(Dialog);
   private readonly createRoomService = inject(CreateRoomService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
@@ -357,6 +356,13 @@ export class HeaderComponent {
   }
 
   openCreateRoomModal(): void {
+    // Hard gate at the action level, not just the UI level — authGuard on /room/* protects
+    // the destination, but the create modal itself was previously reachable by clicking Create
+    // regardless of session state. Route to /login first so the user comes back here after.
+    if (!this.authStore.isAuthenticated()) {
+      void this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url || '/rooms' } });
+      return;
+    }
     this.creatingRoom.set(true);
     this.createRoomService
       .fetchActiveChannel()
@@ -377,10 +383,10 @@ export class HeaderComponent {
   }
 
   login(): void {
-    this.dialog.open(AuthDialogComponent, {
-      backdropClass: 'app-modal-backdrop',
-      ariaLabelledBy: 'auth-dialog-title',
-    });
+    // Navigate to /login (a real page, not a modal dialog) so the user can bookmark/share the
+    // sign-in URL, and so deep links like /login?returnUrl=/messages work uniformly. The page
+    // itself bounces them back here after a successful login.
+    void this.router.navigate(['/login']);
   }
 
   logout(): void {

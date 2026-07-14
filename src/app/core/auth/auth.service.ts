@@ -10,10 +10,10 @@ export interface LoginRequest {
   readonly password: string;
 }
 
-export interface RegisterRequest {
+export interface SignupCheckRequest {
   readonly email: string;
   readonly password: string;
-  readonly nickname: string;
+  readonly emailVerifyCode: string;
 }
 
 export interface AuthResponse {
@@ -35,8 +35,22 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${this.baseUrl}/auth/login`, req, { context: new HttpContext().set(SKIP_AUTH_REDIRECT, true) });
   }
 
-  register(req: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/register`, req, { context: new HttpContext().set(SKIP_AUTH_REDIRECT, true) });
+  /** Step 1 (optional, best-effort): mirrors the real app's `reg/prepare` call. Failures here
+   *  are never fatal to signup — see jilalibff's HelloTalkAuthService.signupPrepare. */
+  signupPrepare(): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/auth/signup/prepare`, {}, { context: new HttpContext().set(SKIP_AUTH_REDIRECT, true) });
+  }
+
+  /** Step 2: sends the 6-digit email verification code used by {@link signupCheck}. */
+  signupSendEmailCode(email: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/auth/signup/send-email-code`, { email }, { context: new HttpContext().set(SKIP_AUTH_REDIRECT, true) });
+  }
+
+  /** Terminal step: creates the account and, on success, logs the browser in immediately
+   *  (jilalibff runs a real login right after `/v3/check` since that upstream call never
+   *  returns a JWT of its own). */
+  signupCheck(req: SignupCheckRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/signup/check`, req, { context: new HttpContext().set(SKIP_AUTH_REDIRECT, true) });
   }
 
   /** Resolves the current session from its cookie — 401 means simply "not logged in". */

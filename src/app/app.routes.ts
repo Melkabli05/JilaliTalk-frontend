@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { ErrorPageComponent } from '@core/error/error-page/error-page.component';
+import { authGuard } from '@core/guards/auth.guard';
 import { profileBundleResolver } from './features/profile/data-access/profile-bundle.resolver';
 
 export const routes: Routes = [
@@ -13,8 +14,23 @@ export const routes: Routes = [
     loadChildren: () => import('./features/rooms').then((m) => m.roomsRoutes),
   },
   {
+    path: 'login',
+    title: 'Sign in',
+    data: { standalone: true },
+    loadComponent: () =>
+      import('./features/auth/pages/login-page/login-page.component').then((m) => m.LoginPageComponent),
+  },
+  {
+    path: 'signup',
+    title: 'Create account',
+    data: { standalone: true },
+    loadComponent: () =>
+      import('./features/auth/pages/signup-page/signup-page.component').then((m) => m.SignupPageComponent),
+  },
+  {
     path: 'messages',
     title: 'Messages',
+    canActivate: [authGuard],
     data: { standalone: true },
     loadComponent: () =>
       import('./features/messages').then((m) => m.MessagesPageComponent),
@@ -23,6 +39,7 @@ export const routes: Routes = [
   {
     path: 'profile',
     title: 'Profile',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/profile').then((m) => m.ProfilePageComponent),
     /**
