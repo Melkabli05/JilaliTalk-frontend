@@ -22,6 +22,7 @@ import {
 } from '@lucide/angular';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal';
+import { KeyboardInsetService } from '@core/services/keyboard-inset.service';
 import { injectIsMobileViewport, relativeTime } from '@shared/utils';
 import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
 import { ChatStore } from '../../store/chat.store';
@@ -53,6 +54,9 @@ const FOLLOWERS_LIMIT = 50;
   selector: 'app-chat-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [ChatStore],
+  host: {
+    '[style.--kb-inset.px]': 'keyboardInsetPx()',
+  },
   imports: [
     AvatarComponent,
     ChatTextBubbleComponent,
@@ -275,6 +279,7 @@ const FOLLOWERS_LIMIT = 50;
     :host { display: block; height: 100%; }
     .chat-shell {
       display: flex; height: 100%;
+      height: calc(100dvh - var(--app-header-height, 0px) - var(--bottom-nav-height, 0px) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--kb-inset, 0px));
       overflow: hidden; position: relative;
     }
     .chat-shell button, .chat-shell [role="option"], .chat-shell [role="tab"] {
@@ -412,6 +417,8 @@ export class ChatPageComponent {
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly profileDirectory: ChatProfileDirectory = inject(CHAT_PROFILE_DIRECTORY);
+  private readonly keyboardInset = inject(KeyboardInsetService);
+  protected readonly keyboardInsetPx = this.keyboardInset.keyboardInsetPx;
 
   readonly userId = input<number | null>(null);
 
