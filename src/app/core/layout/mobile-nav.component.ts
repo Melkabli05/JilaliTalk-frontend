@@ -67,7 +67,16 @@ function mobileLabel(full: string): string {
 
     /* ─── Mobile Bottom Nav ─────────────────────────── */
     .mobile-nav {
-      display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: var(--z-shell-sidenav);
+      display: flex; flex-direction: column; position: fixed; bottom: 0; left: 0; right: 0;
+      z-index: var(--z-shell-sidenav);
+      background-color: color-mix(in srgb, var(--color-card) 92%, transparent);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border-top: 1px solid var(--color-border);
+    }
+    .dark .mobile-nav {
+      background-color: color-mix(in srgb, var(--color-neutral-900) 92%, transparent);
+      border-color: var(--color-neutral-700);
     }
     @media (min-width: 1024px) { .mobile-nav { display: none; } }
     /* Immersive routes (mobile room pages) hide the bottom nav so the room gets the
@@ -84,10 +93,6 @@ function mobileLabel(full: string): string {
       width: 100%; height: var(--bottom-nav-height);
       display: flex; align-items: center; justify-content: space-around;
       padding: 0 var(--space-2);
-      background-color: color-mix(in srgb, var(--color-card) 90%, transparent);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      border-top: 1px solid var(--color-border);
     }
 
     .mobile-nav-item {
@@ -124,13 +129,9 @@ function mobileLabel(full: string): string {
     }
 
     .mobile-nav-label { margin-top: var(--space-1); }
-    .safe-area-spacer { height: env(safe-area-inset-bottom); background-color: var(--color-card); }
+    .safe-area-spacer { width: 100%; height: env(safe-area-inset-bottom); }
 
     /* ─── Dark mode ───────────────────────────────── */
-    .dark .mobile-nav-inner {
-      background-color: color-mix(in srgb, var(--color-neutral-900) 90%, transparent);
-      border-color: var(--color-neutral-700);
-    }
     .dark .mobile-nav-item { color: var(--color-neutral-500); }
     .dark .mobile-nav-item:hover {
       background-color: color-mix(in srgb, var(--color-primary-400) 10%, transparent);
@@ -138,8 +139,7 @@ function mobileLabel(full: string): string {
     }
     .dark .mobile-nav-item.active { color: var(--color-primary-300); }
     .dark .nav-badge { background-color: var(--color-warm-400); }
-    .dark .safe-area-spacer { background-color: var(--color-neutral-900); }
-  `]
+      `]
 })
 export class MobileNavComponent {
   readonly navItems: NavItem[] = [
