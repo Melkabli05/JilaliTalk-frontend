@@ -13,11 +13,7 @@ import {
   submit,
   required,
   validate,
-  requiredError,
-  emailError,
-  minLengthError,
   FormField,
-  FieldState,
 } from '@angular/forms/signals';
 import { InputComponent } from '../input/input.component';
 import { ButtonComponent } from '../button/button.component';
@@ -26,6 +22,12 @@ import { AuthSuccessViewComponent } from '../auth-success-view/auth-success-view
 import { AutofocusDirective } from '@shared/directives';
 import { pickCountries, type CountryEntry } from '@shared/data/countries';
 import { SrAnnouncer } from '@shared/utils/sr-announcer';
+import {
+  firstError,
+  validateEmail,
+  validatePasswordMin,
+  NICKNAME_REQUIRED,
+} from '@shared/utils/auth-validation.util';
 import { AuthService, LoginRequest, RegisterRequest } from '@core/auth/auth.service';
 import { AuthStore } from '@core/auth/auth.store';
 import { httpErrorMessage } from '@shared/utils/http-error-message.util';
@@ -35,11 +37,7 @@ type AuthTab = 'login' | 'register';
 type RegisterStep = 1 | 2 | 3;
 type AuthPhase = 'idle' | 'login' | 'sendCode' | 'verifyCode' | 'createAccount';
 
-const EMAIL_REQUIRED = 'Email is required';
-const INVALID_EMAIL = "That doesn't look like an email";
-const PASSWORD_REQUIRED = 'Password is required';
-const PASSWORD_MIN = 8;
-const NICKNAME_REQUIRED = 'Pick a nickname';
+const STEPS = [1, 2, 3] as const;
 const CODE_INVALID = 'Code must be 6 digits';
 const SUCCESS_AUTO_CLOSE_MS = 2800;
 
@@ -103,7 +101,7 @@ const SUCCESS_AUTO_CLOSE_MS = 2800;
                 inputmode="email"
                 enterkeyhint="next"
                 [formField]="loginForm.email"
-                [errorMessage]="fieldError(loginForm.email())"
+                [errorMessage]="firstError(loginForm.email())"
                 [appAutofocus]="activeTab()"
               />
               <div class="password-field">
@@ -114,19 +112,21 @@ const SUCCESS_AUTO_CLOSE_MS = 2800;
                   autocomplete="current-password"
                   enterkeyhint="done"
                   [formField]="loginForm.password"
-                  [errorMessage]="fieldError(loginForm.password())"
+                  [errorMessage]="firstError(loginForm.password())"
                 />
-                <button type="button" class="password-toggle"
-                  (click)="showPassword.set(!showPassword())"
-                  [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
-                  [attr.aria-pressed]="showPassword()"
-                >
-                  @if (showPassword()) {
-                    <svg aria-hidden="true" lucideEyeOff [size]="15"></svg>
-                  } @else {
-                    <svg aria-hidden="true" lucideEye [size]="15"></svg>
-                  }
-                </button>
+                <span class="password-toggle-slot">
+                  <button type="button" class="password-toggle"
+                    (click)="showPassword.set(!showPassword())"
+                    [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+                    [attr.aria-pressed]="showPassword()"
+                  >
+                    @if (showPassword()) {
+                      <svg aria-hidden="true" lucideEyeOff [size]="15"></svg>
+                    } @else {
+                      <svg aria-hidden="true" lucideEye [size]="15"></svg>
+                    }
+                  </button>
+                </span>
               </div>
 
               <app-error-banner [message]="errorMessage()" />
@@ -152,7 +152,7 @@ const SUCCESS_AUTO_CLOSE_MS = 2800;
             <form class="auth-form" (submit)="onRegisterSubmit($event)" aria-label="Create account" novalidate>
 
               <div class="step-progress" role="group" aria-label="Registration steps">
-                @for (s of [1, 2, 3]; track s) {
+                @for (s of steps; track s) {
                   <div class="step-item" [class.step-item--done]="regStep() > s">
                     <span class="step-circle" [class.step-circle--active]="regStep() === s">
                       @if (regStep() > s) {
@@ -179,7 +179,7 @@ const SUCCESS_AUTO_CLOSE_MS = 2800;
                   inputmode="email"
                   enterkeyhint="next"
                   [formField]="regForm1.email"
-                  [errorMessage]="fieldError(regForm1.email())"
+                  [errorMessage]="firstError(regForm1.email())"
                   [appAutofocus]="regStep()"
                 />
                 <div class="password-field">
@@ -190,19 +190,21 @@ const SUCCESS_AUTO_CLOSE_MS = 2800;
                     autocomplete="new-password"
                     enterkeyhint="done"
                     [formField]="regForm1.password"
-                    [errorMessage]="fieldError(regForm1.password())"
+                    [errorMessage]="firstError(regForm1.password())"
                   />
-                  <button type="button" class="password-toggle"
-                    (click)="showPassword.set(!showPassword())"
-                    [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
-                    [attr.aria-pressed]="showPassword()"
-                  >
-                    @if (showPassword()) {
-                      <svg aria-hidden="true" lucideEyeOff [size]="15"></svg>
-                    } @else {
-                      <svg aria-hidden="true" lucideEye [size]="15"></svg>
-                    }
-                  </button>
+                  <span class="password-toggle-slot">
+                    <button type="button" class="password-toggle"
+                      (click)="showPassword.set(!showPassword())"
+                      [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+                      [attr.aria-pressed]="showPassword()"
+                    >
+                      @if (showPassword()) {
+                        <svg aria-hidden="true" lucideEyeOff [size]="15"></svg>
+                      } @else {
+                        <svg aria-hidden="true" lucideEye [size]="15"></svg>
+                      }
+                    </button>
+                  </span>
                 </div>
 
                 <app-error-banner [message]="errorMessage()" />
@@ -270,7 +272,7 @@ const SUCCESS_AUTO_CLOSE_MS = 2800;
                   autocapitalize="words"
                   enterkeyhint="done"
                   [formField]="regForm3.nickname"
-                  [errorMessage]="fieldError(regForm3.nickname())"
+                  [errorMessage]="firstError(regForm3.nickname())"
                   [appAutofocus]="regStep()"
                 />
 
@@ -421,8 +423,13 @@ const SUCCESS_AUTO_CLOSE_MS = 2800;
     .auth-form { display: flex; flex-direction: column; gap: var(--space-3); }
 
     .password-field { position: relative; }
+    .password-toggle-slot {
+      position: absolute; right: var(--space-2);
+      top: 50%; bottom: auto;
+      transform: translateY(-50%);
+      display: flex; align-items: center; justify-content: center;
+    }
     .password-toggle {
-      position: absolute; right: var(--space-3); top: 18px;
       border: none; background: transparent;
       color: var(--color-text-muted); cursor: pointer;
       padding: var(--space-1); display: flex; align-items: center;
@@ -486,11 +493,9 @@ const SUCCESS_AUTO_CLOSE_MS = 2800;
       }
       .close-btn { width: 44px; height: 44px; }
       .nav-tab { padding: var(--space-3) 0; min-height: 44px; }
-      .password-toggle {
+      .password-toggle-slot {
         width: 44px; height: 44px;
-        top: 50%; transform: translateY(-50%);
       }
-      .password-toggle:active { transform: translateY(-50%) scale(0.92); }
       .select-input { height: 44px; font-size: max(16px, var(--text-sm)); }
       .btn-link { min-height: 44px; padding: var(--space-3) var(--space-2); font-size: var(--text-sm); }
       .error-text { font-size: var(--text-sm); }
@@ -508,6 +513,8 @@ export class AuthDialogComponent {
   private readonly authStore = inject(AuthStore);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly announcer = inject(SrAnnouncer);
+
+  protected readonly steps = STEPS;
 
   protected readonly countryOptions: readonly CountryEntry[] = pickCountries([
     'MA', 'FR', 'US', 'GB', 'DE', 'ES', 'IT',
@@ -529,32 +536,14 @@ export class AuthDialogComponent {
 
   private readonly loginModel = signal({ email: '', password: '' });
   readonly loginForm = form(this.loginModel, (path) => {
-    validate(path.email, ({ value }) =>
-      !value().trim()
-        ? requiredError({ message: EMAIL_REQUIRED })
-        : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value())
-          ? emailError({ message: INVALID_EMAIL })
-          : undefined,
-    );
-    required(path.password, { message: PASSWORD_REQUIRED });
+    validate(path.email, ({ value }) => validateEmail(value));
+    required(path.password, { message: 'Password is required' });
   });
 
   private readonly reg1Model = signal({ email: '', password: '' });
   readonly regForm1 = form(this.reg1Model, (path) => {
-    validate(path.email, ({ value }) =>
-      !value().trim()
-        ? requiredError({ message: EMAIL_REQUIRED })
-        : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value())
-          ? emailError({ message: INVALID_EMAIL })
-          : undefined,
-    );
-    validate(path.password, ({ value }) =>
-      value().trim().length === 0
-        ? requiredError({ message: PASSWORD_REQUIRED })
-        : value().length < PASSWORD_MIN
-          ? minLengthError(PASSWORD_MIN, { message: `At least ${PASSWORD_MIN} characters` })
-          : undefined,
-    );
+    validate(path.email, ({ value }) => validateEmail(value));
+    validate(path.password, ({ value }) => validatePasswordMin(value));
   });
 
   private readonly _reg3Model = signal<{ nickname: string; country: string }>({ nickname: '', country: '' });
@@ -563,11 +552,7 @@ export class AuthDialogComponent {
     required(path.nickname, { message: NICKNAME_REQUIRED });
   });
 
-  fieldError(field: FieldState<string>): string {
-    return field.touched() && field.errors().length > 0
-      ? (field.errors()[0]?.message ?? '')
-      : '';
-  }
+  protected readonly firstError = firstError;
 
   switchTab(tab: AuthTab): void {
     this.activeTab.set(tab);
@@ -577,7 +562,13 @@ export class AuthDialogComponent {
     this.codeValue.set('');
   }
 
-  close(): void { this.ref.close(); }
+  close(): void {
+    if (this.successCloseTimer !== null) {
+      clearTimeout(this.successCloseTimer);
+      this.successCloseTimer = null;
+    }
+    this.ref.close();
+  }
 
   onCodeInput(event: Event): void {
     const raw = (event.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, 6);
@@ -667,10 +658,15 @@ export class AuthDialogComponent {
     this.announcer.announce('Code resent. Check your email.');
   }
 
+  private successCloseTimer: ReturnType<typeof setTimeout> | null = null;
+
   private showSuccess(nickname: string): void {
     this.successName.set(nickname);
     this.view.set('success');
     this.announcer.announce('Welcome ' + nickname + '. You are now signed in.');
-    setTimeout(() => this.ref.close(), SUCCESS_AUTO_CLOSE_MS);
+    this.successCloseTimer = setTimeout(() => {
+      this.successCloseTimer = null;
+      this.ref.close();
+    }, SUCCESS_AUTO_CLOSE_MS);
   }
 }
