@@ -93,6 +93,8 @@ const CODE_INVALID = 'Code must be 6 digits';
                 type="email"
                 placeholder="you@example.com"
                 autocomplete="email"
+                inputmode="email"
+                enterkeyhint="next"
                 [formField]="loginForm.email"
                 [errorMessage]="fieldError(loginForm.email())"
               />
@@ -102,6 +104,7 @@ const CODE_INVALID = 'Code must be 6 digits';
                   [type]="showPassword() ? 'text' : 'password'"
                   placeholder="Your password"
                   autocomplete="current-password"
+                  enterkeyhint="done"
                   [formField]="loginForm.password"
                   [errorMessage]="fieldError(loginForm.password())"
                 />
@@ -179,6 +182,8 @@ const CODE_INVALID = 'Code must be 6 digits';
                   type="email"
                   placeholder="you@example.com"
                   autocomplete="email"
+                  inputmode="email"
+                  enterkeyhint="next"
                   [formField]="regForm1.email"
                   [errorMessage]="fieldError(regForm1.email())"
                 />
@@ -188,6 +193,7 @@ const CODE_INVALID = 'Code must be 6 digits';
                     [type]="showPassword() ? 'text' : 'password'"
                     placeholder="Choose a password"
                     autocomplete="new-password"
+                    enterkeyhint="done"
                     [formField]="regForm1.password"
                     [errorMessage]="fieldError(regForm1.password())"
                   />
@@ -242,6 +248,8 @@ const CODE_INVALID = 'Code must be 6 digits';
                     [class.code-input--error]="codeError().length > 0"
                     placeholder="000000"
                     autocomplete="one-time-code"
+                    autocapitalize="off"
+                    enterkeyhint="done"
                     [value]="codeValue()"
                     (input)="onCodeInput($event)"
                     aria-describedby="code-error-msg"
@@ -268,6 +276,8 @@ const CODE_INVALID = 'Code must be 6 digits';
                   type="text"
                   placeholder="How should people call you?"
                   autocomplete="nickname"
+                  autocapitalize="words"
+                  enterkeyhint="done"
                   [formField]="regForm3.nickname"
                   [errorMessage]="fieldError(regForm3.nickname())"
                 />
@@ -328,6 +338,14 @@ const CODE_INVALID = 'Code must be 6 digits';
   `,
   styles: [`
     :host { display: contents; }
+
+    button,
+    input,
+    select,
+    textarea {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     .sr-only {
       position: absolute; width: 1px; height: 1px; padding: 0;
@@ -536,6 +554,44 @@ const CODE_INVALID = 'Code must be 6 digits';
     @media (prefers-reduced-motion: reduce) {
       .spinner { animation-duration: 1.2s; }
       .success-view { animation: none; }
+    }
+
+    @media (max-width: 640px) {
+      .auth-card {
+        padding: var(--space-5) var(--space-4) var(--space-5);
+        max-height: calc(100dvh - var(--space-6));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+      .close-btn {
+        width: 44px; height: 44px;
+      }
+      .nav-tab {
+        padding: var(--space-3) 0;
+        min-height: 44px;
+      }
+      .password-toggle {
+        width: 44px; height: 44px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .password-toggle:active { transform: translateY(-50%) scale(0.92); }
+      .select-input {
+        height: 44px;
+        font-size: max(16px, var(--text-sm));
+      }
+      .btn-link {
+        min-height: 44px;
+        padding: var(--space-3) var(--space-2);
+        font-size: var(--text-sm);
+      }
+      .error-text { font-size: var(--text-sm); }
+      .step-line { width: 24px; margin: 0 2px; }
+    }
+
+    @media (max-height: 600px) {
+      .auth-card { max-height: calc(100dvh - var(--space-3)); }
     }
   `],
 })

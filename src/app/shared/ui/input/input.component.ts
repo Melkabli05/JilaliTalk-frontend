@@ -32,6 +32,9 @@ let nextId = 0;
           [required]="required()"
           [class]="sizeClass()"
           [value]="value()"
+          [attr.inputmode]="inputmode() || null"
+          [attr.enterkeyhint]="enterkeyhint() || null"
+          [attr.autocapitalize]="autocapitalize()"
           [attr.aria-invalid]="ariaInvalid() ? 'true' : null"
           [attr.aria-required]="required() ? 'true' : null"
           [attr.aria-describedby]="ariaDescribedBy()"
@@ -47,6 +50,13 @@ let nextId = 0;
     </div>
   `,
   styles: [`
+    :host { display: block; }
+
+    input {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     .input-wrapper {
       display: flex;
       flex-direction: column;
@@ -78,7 +88,7 @@ let nextId = 0;
       border-radius: var(--radius-md);
       background-color: var(--color-card);
       color: var(--color-text);
-      font-size: var(--text-sm);
+      font-size: max(16px, var(--text-sm));
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     .input::placeholder {
@@ -104,9 +114,9 @@ let nextId = 0;
       cursor: not-allowed;
     }
 
-    .input-sm { height: 32px; padding: 0 var(--space-3); font-size: var(--text-xs); }
-    .input-md { height: 36px; padding: 0 var(--space-4); font-size: var(--text-sm); }
-    .input-lg { height: 40px; padding: 0 var(--space-4); font-size: var(--text-base); }
+    .input-sm { height: 36px; padding: 0 var(--space-3); font-size: max(16px, var(--text-xs)); }
+    .input-md { height: 44px; padding: 0 var(--space-4); font-size: max(16px, var(--text-sm)); }
+    .input-lg { height: 48px; padding: 0 var(--space-4); font-size: var(--text-base); }
 
     .input-error {
       font-size: var(--text-xs);
@@ -135,6 +145,9 @@ export class InputComponent implements FormValueControl<string> {
   readonly label = input<string>('');
   readonly errorMessage = input<string>('');
   readonly autocomplete = input<string>('');
+  readonly inputmode = input<'text' | 'numeric' | 'decimal' | 'email' | 'tel' | 'url' | 'search'>('text');
+  readonly enterkeyhint = input<'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send'>('enter');
+  readonly autocapitalize = input<'off' | 'none' | 'on' | 'sentences' | 'words' | 'characters'>('off');
 
   protected readonly inputId = `app-input-${nextId++}`;
   protected readonly errorId = `${this.inputId}-error`;
