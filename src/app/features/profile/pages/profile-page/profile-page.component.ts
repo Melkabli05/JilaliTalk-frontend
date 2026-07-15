@@ -5,6 +5,8 @@ import { ProfileStore } from '../../store/profile.store';
 import { ProfileHeaderComponent } from '../../ui/profile-header';
 import { ProfileStatsBarComponent } from '../../ui/profile-stats-bar';
 import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
+import { SkeletonLineComponent } from '@shared/ui/skeleton-line/skeleton-line.component';
+import { SkeletonRowComponent } from '@shared/ui/skeleton-row/skeleton-row.component';
 import { BlockedListComponent } from '../../ui/blocked-list';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import {
@@ -27,6 +29,8 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
     UserListItemComponent,
     BlockedListComponent,
     ButtonComponent,
+    SkeletonLineComponent,
+    SkeletonRowComponent,
   ],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.scss',

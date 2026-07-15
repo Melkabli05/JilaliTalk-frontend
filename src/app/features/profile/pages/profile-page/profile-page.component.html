@@ -3,8 +3,8 @@
     <div class="header-skeleton">
       <div class="skeleton-avatar"></div>
       <div class="skeleton-lines">
-        <div class="skeleton-line skeleton-line--wide"></div>
-        <div class="skeleton-line"></div>
+        <app-skeleton-line width="wide" />
+        <app-skeleton-line />
       </div>
     </div>
   } @else if (store.bundleError(); as err) {
@@ -35,7 +35,7 @@
         @if (store.followersLoading() && store.followers().length === 0) {
           <div class="list-skeleton">
             @for (i of [1, 2, 3]; track i) {
-              <div class="skeleton-row"></div>
+              <app-skeleton-row />
             }
           </div>
         } @else if (store.followersError(); as err) {
@@ -78,7 +78,7 @@
         @if (store.followingLoading() && store.following().length === 0) {
           <div class="list-skeleton">
             @for (i of [1, 2, 3]; track i) {
-              <div class="skeleton-row"></div>
+              <app-skeleton-row />
             }
           </div>
         } @else if (store.followingError(); as err) {
@@ -112,7 +112,7 @@
         @if (store.visitorsLoading() && store.visitors().length === 0) {
           <div class="list-skeleton">
             @for (i of [1, 2, 3]; track i) {
-              <div class="skeleton-row"></div>
+              <app-skeleton-row />
             }
           </div>
         } @else if (store.visitorsError(); as err) {
@@ -156,7 +156,7 @@
         @if (store.blockedLoading()) {
           <div class="list-skeleton">
             @for (i of [1, 2]; track i) {
-              <div class="skeleton-row"></div>
+              <app-skeleton-row />
             }
           </div>
         } @else if (store.blockedError(); as err) {

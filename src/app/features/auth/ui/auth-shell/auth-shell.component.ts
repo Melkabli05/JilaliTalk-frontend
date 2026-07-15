@@ -106,7 +106,6 @@ interface ShowcaseRoom {
          the form wrapping/shrinking to fit. Same reasoning on .auth-main/.form-wrap below. */
       grid-template-columns: minmax(0, 1fr);
       min-height: 100dvh;
-      min-height: 100svh;
       background: var(--color-bg);
     }
     @media (min-width: 1024px) {
@@ -225,7 +224,6 @@ interface ShowcaseRoom {
       flex-direction: column;
       min-width: 0;
       min-height: 100dvh;
-      min-height: 100svh;
       padding: max(var(--space-5), env(safe-area-inset-top)) max(var(--space-5), env(safe-area-inset-right)) max(var(--space-6), env(safe-area-inset-bottom)) max(var(--space-5), env(safe-area-inset-left));
       box-sizing: border-box;
     }

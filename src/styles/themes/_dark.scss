@@ -24,4 +24,12 @@
   --shadow-dropdown:    0 4px 16px hsl(220deg 30% 4% / 45%);
   --shadow-primary-sm:  0 4px 12px -4px hsl(230deg 60% 50% / 45%);
   --shadow-primary-md:  0 6px 16px -4px hsl(230deg 60% 50% / 60%);
+
+  /* Elevation aliases: the :root declarations in tokens.scss resolved
+     to the *light* --shadow-* values, so we must re-resolve them here
+     against the dark --shadow-* values set above. */
+  --elevation-1: var(--shadow-sm);
+  --elevation-2: var(--shadow-md);
+  --elevation-3: var(--shadow-lg);
+  --elevation-modal: var(--shadow-modal);
 }

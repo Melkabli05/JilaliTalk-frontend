@@ -117,6 +117,24 @@ select {
   outline-offset: var(--focus-ring-offset);
 }
 
+/* ─── Page Transitions ──────────────────────────────────────
+   View Transitions API driven by provideRouter(..., withViewTransitions())
+   in app.config.ts. The browser snaps a snapshot of the old view and a
+   snapshot of the new view, then cross-fades them. We tune the timing
+   curve here; per-element shared transitions would assign
+   view-transition-name in component CSS. Firefox doesn't support the
+   API yet (behind a flag) — withViewTransitions() falls back gracefully
+   to an instant swap, so this CSS is a progressive enhancement. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+}
+
 /* ─── Reduced Motion ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -26,19 +26,13 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
   imports: [RouterOutlet, SidenavComponent, MobileNavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent, MinimizedRoomBarComponent, NotificationToastComponent],
   template: `
     <div class="app-shell" [class.immersive]="immersive()" [class.standalone]="standalone()" [class.fullscreen]="fullscreen()">
-      @if (!hideSidenav() && !fullscreen()) {
-        <app-sidenav />
-      }
+      <app-sidenav [hidden]="hideSidenav() || fullscreen()" />
       <div class="main-wrapper">
-        @if (!fullscreen()) {
-          <app-header />
-        }
+        <app-header [hidden]="fullscreen()" />
         <main class="app-main" id="main-content" tabindex="-1">
           <router-outlet />
         </main>
-        @if (!hideSidenav() && !fullscreen()) {
-          <app-mobile-nav />
-        }
+        <app-mobile-nav [hidden]="hideSidenav() || fullscreen()" />
       </div>
     </div>
     <app-toast-container />
@@ -59,7 +53,7 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
            re-derives app-header-height / bottom-nav-height / safe-area
            itself. The .app-shell.immersive ruleset (and the @media override
            below) flip these for the immersive-route case. */
-        --shell-inset-top: calc(var(--app-header-height) + env(safe-area-inset-top, 0px));
+        --shell-inset-top: var(--app-header-height);
         --shell-inset-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
       }
 

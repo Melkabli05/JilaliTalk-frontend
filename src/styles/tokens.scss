@@ -130,6 +130,12 @@
   --text-lg: 18px;
   --text-xl: 20px;
   --text-2xl: 24px;
+  /* Fluid heading scale: clamps between a 320px and 1280px viewport so
+     the same token scales from mobile-first to desktop without media
+     queries. Use for page titles, section headings, brand text. */
+  --text-display: clamp(28px, 4vw + 14px, 48px);
+  --text-headline: clamp(22px, 2vw + 16px, 32px);
+  --text-title: clamp(18px, 1vw + 16px, 24px);
   --text-3xl: 30px;
   --font-normal: 400;
   --font-medium: 500;
@@ -161,6 +167,14 @@
   --shadow-dropdown: 0 4px 16px hsl(0deg 0% 0% / 12%);
   --shadow-primary-sm: 0 4px 12px -4px hsl(230deg 28% 53% / 35%);
   --shadow-primary-md: 0 6px 16px -4px hsl(230deg 28% 53% / 50%);
+
+  /* ── Elevation alias scale ──
+     Three levels, named by purpose rather than blur radius. Components
+     consume these so swapping a token re-skins the whole app coherently. */
+  --elevation-1: var(--shadow-sm);
+  --elevation-2: var(--shadow-md);
+  --elevation-3: var(--shadow-lg);
+  --elevation-modal: var(--shadow-modal);
 
   /* ── Layout ── */
   --sidebar-width: 84px;
