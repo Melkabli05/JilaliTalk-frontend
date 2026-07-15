@@ -68,13 +68,15 @@ import type { AuthUser } from '@core/auth/auth.store';
       display: flex;
       align-items: center;
       gap: var(--space-2);
-      height: 36px;
+      min-height: 44px;
       padding: 0 var(--space-2) 0 6px;
       border-radius: var(--radius-full);
       background: transparent;
       border: 1px solid transparent;
       cursor: pointer;
       color: var(--color-text);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
       transition: background-color 0.15s ease, border-color 0.15s ease;
       max-width: 180px;
     }

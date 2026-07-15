@@ -312,9 +312,11 @@ import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
 
         .invisible-btn {
       display: flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px;
+      width: 44px; height: 44px;
       border: 1.5px solid var(--color-border); border-radius: var(--radius-lg);
       background: transparent; color: var(--color-text-muted); cursor: pointer; flex-shrink: 0;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
       transition: border-color 0.15s, color 0.15s, background-color 0.15s;
       &:hover { border-color: var(--color-primary-200); color: var(--color-primary-600); background-color: var(--color-primary-50); }
       &:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }

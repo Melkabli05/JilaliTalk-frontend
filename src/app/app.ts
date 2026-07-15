@@ -59,8 +59,8 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
            re-derives app-header-height / bottom-nav-height / safe-area
            itself. The .app-shell.immersive ruleset (and the @media override
            below) flip these for the immersive-route case. */
-        --shell-inset-top: var(--app-header-height);
-        --shell-inset-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+        --shell-inset-top: calc(var(--app-header-height) + env(safe-area-inset-top, 0px));
+        --shell-inset-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
       }
 
       .app-shell {

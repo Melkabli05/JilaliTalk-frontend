@@ -101,6 +101,10 @@ import { LucideCrown } from '@lucide/angular';
       font-size: var(--text-xl);
       font-weight: var(--font-bold);
       color: var(--color-text);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     :host-context(.dark) .user-name {
       color: var(--color-neutral-100);

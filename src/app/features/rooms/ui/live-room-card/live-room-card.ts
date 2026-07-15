@@ -4,6 +4,7 @@ import {
   input,
   output,
   computed,
+  signal,
 } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { LucideFlame, LucideUsers, LucideCrown, LucideEyeOff } from '@lucide/angular';
@@ -40,8 +41,9 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
           <div class="thumbnail-placeholder">
             <img
               class="placeholder-flag"
-              [src]="'https://flagcdn.com/w80/' + (room().hostUser.nationality?.toLowerCase() ?? 'un') + '.png'"
+              [src]="flagUrl()"
               [alt]="room().channel.name"
+              (error)="flagError.set(true)"
             />
           </div>
         }
@@ -368,9 +370,11 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
 
     .invisible-btn {
       display: flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px;
+      width: 44px; height: 44px;
       border: 1.5px solid var(--color-border); border-radius: var(--radius-lg);
       background: transparent; color: var(--color-text-muted); cursor: pointer; flex-shrink: 0;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
       transition: border-color 0.15s, color 0.15s, background-color 0.15s;
       &:hover { border-color: var(--color-primary-200); color: var(--color-primary-600); background-color: var(--color-primary-50); }
       &:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
@@ -458,6 +462,13 @@ export class LiveRoomCardComponent {
   readonly room = input.required<ChannelListItem>();
   readonly recommended = input(false);
   readonly joinRoom = output<{ room: ChannelListItem; visible: boolean }>();
+
+  protected readonly flagError = signal(false);
+  protected readonly flagUrl = computed(() => {
+    if (this.flagError()) return '';
+    const n = this.room().hostUser.nationality?.toLowerCase();
+    return n ? `https://flagcdn.com/w80/${n}.png` : '';
+  });
 
   heat = computed(() => this.room().channel.heatValue ?? 0);
 

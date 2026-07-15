@@ -39,9 +39,15 @@
             }
           </div>
         } @else if (store.followersError(); as err) {
-          <div class="error-state"><p>{{ err }}</p></div>
+          <div class="error-state">
+            <p>{{ err }}</p>
+            <app-button variant="soft-neutral" size="sm" (click)="store.reloadBundle()">Retry</app-button>
+          </div>
         } @else if (store.followers().length === 0) {
-          <div class="empty-state"><p>No followers yet</p></div>
+          <div class="empty-state">
+            <p class="empty-title">No followers yet</p>
+            <p class="empty-body">When someone follows you, they'll show up here.</p>
+          </div>
         } @else {
           @for (user of store.followers(); track user.userId) {
             <app-user-list-item
@@ -76,9 +82,15 @@
             }
           </div>
         } @else if (store.followingError(); as err) {
-          <div class="error-state"><p>{{ err }}</p></div>
+          <div class="error-state">
+            <p>{{ err }}</p>
+            <app-button variant="soft-neutral" size="sm" (click)="store.reloadBundle()">Retry</app-button>
+          </div>
         } @else if (store.following().length === 0) {
-          <div class="empty-state"><p>You're not following anyone yet</p></div>
+          <div class="empty-state">
+            <p class="empty-title">You're not following anyone yet</p>
+            <p class="empty-body">Find people to follow from Voice or Live rooms.</p>
+          </div>
         } @else {
           @for (user of store.following(); track user.userId) {
             <app-user-list-item
@@ -104,9 +116,15 @@
             }
           </div>
         } @else if (store.visitorsError(); as err) {
-          <div class="error-state"><p>{{ err }}</p></div>
+          <div class="error-state">
+            <p>{{ err }}</p>
+            <app-button variant="soft-neutral" size="sm" (click)="store.reloadBundle()">Retry</app-button>
+          </div>
         } @else if (store.visitors().length === 0) {
-          <div class="empty-state"><p>No visitors yet</p></div>
+          <div class="empty-state">
+            <p class="empty-title">No visitors yet</p>
+            <p class="empty-body">People who view your profile will appear here.</p>
+          </div>
         } @else {
           @for (user of store.visitors(); track user.userid) {
             <app-user-list-item
@@ -142,7 +160,10 @@
             }
           </div>
         } @else if (store.blockedError(); as err) {
-          <div class="error-state"><p>{{ err }}</p></div>
+          <div class="error-state">
+            <p>{{ err }}</p>
+            <app-button variant="soft-neutral" size="sm" (click)="store.reloadBundle()">Retry</app-button>
+          </div>
         } @else {
           <app-blocked-list [users]="store.blocked()" />
         }

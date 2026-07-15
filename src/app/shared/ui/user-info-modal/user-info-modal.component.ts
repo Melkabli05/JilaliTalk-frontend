@@ -338,13 +338,15 @@ export interface UserInfoModalData {
         position: absolute;
         top: var(--space-3);
         right: var(--space-3);
-        width: 26px;
-        height: 26px;
+        width: 44px;
+        height: 44px;
         border-radius: var(--radius-full);
         border: none;
         background: var(--color-neutral-100);
         color: var(--color-text-muted);
         cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
         display: flex;
         align-items: center;
         justify-content: center;

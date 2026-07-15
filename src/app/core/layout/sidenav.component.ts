@@ -1,7 +1,6 @@
 import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LucideGlobe, LucideTv, LucideLock, LucideServer, LucideMessageCircle, LucideUser, LucideLogIn } from '@lucide/angular';
-import { ButtonComponent } from '@shared/ui/button/button.component';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
 
 type TabType = 'voice' | 'live' | 'private' | 'server' | 'messages' | 'profile';
@@ -23,7 +22,7 @@ interface NavGroup {
 
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [RouterLink, RouterLinkActive, ButtonComponent, TooltipDirective, LucideGlobe, LucideTv, LucideLock, LucideServer, LucideMessageCircle, LucideUser, LucideLogIn],
+  imports: [RouterLink, RouterLinkActive, TooltipDirective, LucideGlobe, LucideTv, LucideLock, LucideServer, LucideMessageCircle, LucideUser, LucideLogIn],
   template: `
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
@@ -73,9 +72,14 @@ interface NavGroup {
       </div>
 
       <div class="sidebar-footer">
-        <app-button variant="ghost" size="sm" aria-label="Profile">
+        <a
+          [routerLink]="'/profile'"
+          routerLinkActive="active"
+          class="sidebar-profile-link"
+          [attr.aria-label]="'Open profile'"
+        >
           <svg aria-hidden="true" lucideLogIn [size]="16"></svg>
-        </app-button>
+        </a>
       </div>
     </nav>
   `,
@@ -168,6 +172,17 @@ interface NavGroup {
       border-top: 1px solid var(--color-border);
       margin-top: var(--space-2);
     }
+    .sidebar-profile-link {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 44px; min-height: 44px; border-radius: var(--radius-lg);
+      color: var(--color-text-muted); transition: background-color 0.15s ease, color 0.15s ease;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sidebar-profile-link:hover { background: var(--color-neutral-100); color: var(--color-text); }
+    .sidebar-profile-link:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+    .sidebar-profile-link.active { color: var(--color-primary-600); }
+    :host-context(.dark) .sidebar-profile-link:hover { background: var(--color-neutral-700); }
 
     /* ─── Dark mode ───────────────────────────────── */
     .dark .sidebar-desktop { background-color: var(--color-neutral-900); border-color: var(--color-neutral-700); }

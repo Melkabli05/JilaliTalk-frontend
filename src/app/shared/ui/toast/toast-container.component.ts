@@ -69,11 +69,10 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, Luc
   styles: [`
     .toast-container {
       position: fixed;
-      /* 56px = app-header height; --space-3 = 12px breathing room */
-      top: calc(56px + var(--space-3));
+      top: calc(var(--app-header-height) + env(safe-area-inset-top, 0px) + var(--space-3));
       left: 50%;
       transform: translateX(-50%);
-      z-index: 9999;
+      z-index: var(--z-toast);
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -231,13 +230,15 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, Luc
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 24px;
-      height: 24px;
+      width: 44px;
+      height: 44px;
       border-radius: var(--radius-sm);
       border: none;
       background: transparent;
       color: var(--color-text-muted);
       cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
       transition: background-color 0.15s ease, color 0.15s ease;
     }
 

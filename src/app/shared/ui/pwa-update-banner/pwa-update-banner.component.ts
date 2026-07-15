@@ -34,10 +34,10 @@ import { LucideRefreshCw } from '@lucide/angular';
 
     .update-toast {
       position: fixed;
-      top: calc(var(--app-header-height) + var(--space-3));
+      top: calc(var(--app-header-height) + env(safe-area-inset-top, 0px) + var(--space-3));
       left: 50%;
       transform: translateX(var(--update-toast-translate, -50%));
-      z-index: calc(var(--z-toast) + 1);
+      z-index: var(--z-toast);
       display: flex;
       align-items: center;
       gap: 12px;

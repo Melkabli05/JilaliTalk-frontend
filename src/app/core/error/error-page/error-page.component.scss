@@ -36,7 +36,8 @@
 }
 
 .btn {
-  padding: var(--space-2) var(--space-4);
+  min-height: 44px;
+  padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
@@ -45,7 +46,13 @@
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
+.btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+.btn:active { transform: scale(0.97); }
 
 .btn-primary {
   background: var(--color-primary-500);

@@ -47,8 +47,8 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
   styles: [`
     .notification-toast {
       position: fixed;
-      top: calc(var(--app-header-height) + var(--space-3));
-      right: var(--space-4);
+      top: calc(var(--app-header-height) + env(safe-area-inset-top, 0px) + var(--space-3));
+      right: max(var(--space-4), env(safe-area-inset-right, 0px));
       z-index: var(--z-toast);
       display: flex;
       align-items: flex-start;
@@ -60,9 +60,13 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       border: 1px solid var(--color-border);
       box-shadow: var(--shadow-xl);
       cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
       text-align: left;
+      min-height: 44px;
       animation: toast-preview-enter 0.2s ease-out;
     }
+    .notification-toast:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
     @keyframes toast-preview-enter {
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }

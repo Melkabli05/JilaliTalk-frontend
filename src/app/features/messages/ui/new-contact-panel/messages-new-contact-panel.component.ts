@@ -13,6 +13,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { A11yModule } from '@angular/cdk/a11y';
 import { of } from 'rxjs';
 import { LucideX } from '@lucide/angular';
 import { ProfileApi } from '@features/profile/data-access/profile-api';
@@ -32,7 +33,7 @@ const EMPTY_SOCIAL_PAGE: SocialListPage = { pageIndex: null, more: false, count:
 @Component({
   selector: 'app-messages-new-contact',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideX, UserListItemComponent],
+  imports: [A11yModule, LucideX, UserListItemComponent],
   templateUrl: './messages-new-contact-panel.component.html',
   styleUrl: './messages-new-contact-panel.component.scss',
 })

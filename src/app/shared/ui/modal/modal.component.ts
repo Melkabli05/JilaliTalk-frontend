@@ -89,13 +89,15 @@ import { LucideX } from '@lucide/angular';
     }
 
     .close-btn {
-      width: 28px;
-      height: 28px;
+      width: 44px;
+      height: 44px;
       border-radius: var(--radius-full);
       border: none;
       background: var(--color-neutral-100);
       color: var(--color-text-muted);
       cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
       display: flex;
       align-items: center;
       justify-content: center;

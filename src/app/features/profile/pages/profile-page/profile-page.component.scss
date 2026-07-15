@@ -30,14 +30,18 @@
   background: var(--color-neutral-800);
 }
 .tab-btn {
-  padding: var(--space-2) var(--space-4);
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--color-text-muted);
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
+.tab-btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
 .tab-btn[aria-selected='true'] {
   background: var(--color-card);
   color: var(--color-primary-600);
@@ -59,10 +63,26 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
   padding: var(--space-8) var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+  text-align: center;
+  min-height: 180px;
+}
+.empty-state .empty-title,
+.error-state p:first-child {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+.empty-state .empty-body {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  max-width: 280px;
+  margin: 0;
 }
 :host-context(.dark) .empty-state,
 :host-context(.dark) .error-state {

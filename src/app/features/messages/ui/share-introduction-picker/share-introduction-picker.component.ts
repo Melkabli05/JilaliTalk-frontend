@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { A11yModule } from '@angular/cdk/a11y';
 import { of } from 'rxjs';
 import { LucideSearch, LucideUserPlus, LucideX } from '@lucide/angular';
 import { ProfileApi } from '@features/profile/data-access/profile-api';
@@ -25,7 +26,7 @@ type EmptyLabel = 'following' | 'followers';
 @Component({
   selector: 'app-share-introduction-picker',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [UserListItemComponent, LucideSearch, LucideUserPlus, LucideX],
+  imports: [A11yModule, UserListItemComponent, LucideSearch, LucideUserPlus, LucideX],
   template: `
     <div class="backdrop" (click)="onBackdropClick($event)">
       <div
@@ -34,6 +35,9 @@ type EmptyLabel = 'following' | 'followers';
         role="dialog"
         aria-modal="true"
         aria-label="Share a profile"
+        tabindex="-1"
+        [cdkTrapFocus]="true"
+        cdkTrapFocusAutoCapture
         (click)="$event.stopPropagation()"
       >
         <header class="sheet-header">
