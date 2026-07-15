@@ -68,7 +68,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
     .intro-body { display: flex; flex-direction: column; gap: 2px; }
     .intro-name { font-weight: var(--font-semibold); font-size: var(--text-sm); }
     .intro-bio { font-size: var(--text-xs); color: var(--color-text-muted); }
-    .intro-cta { font-size: var(--text-xs); color: var(--color-primary-600); font-weight: var(--font-medium); }
+    .intro-cta { font-size: var(--text-xs); color: var(--color-primary-text); font-weight: var(--font-medium); }
   `],
 })
 export class ChatIntroductionBubbleComponent {

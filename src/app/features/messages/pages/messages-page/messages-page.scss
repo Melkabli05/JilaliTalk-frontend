@@ -636,7 +636,7 @@ li.unread .row-ts {
 }
 .compose-attach--active {
   background: var(--color-primary-50);
-  color: var(--color-primary-600);
+  color: var(--color-primary-text);
   border-color: var(--color-primary-300);
 }
 :host-context(.dark) .compose-attach { background: var(--color-neutral-800); color: var(--color-neutral-300); }
@@ -661,7 +661,7 @@ li.unread .row-ts {
 }
 .compose-staged-label {
   font-size: var(--text-2xs);
-  color: var(--color-primary-600);
+  color: var(--color-primary-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: var(--font-medium);
@@ -688,7 +688,7 @@ li.unread .row-ts {
 }
 .compose-staged-remove:hover {
   background: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
-  color: var(--color-primary-600);
+  color: var(--color-primary-text);
 }
 .compose-staged-remove:focus-visible {
   outline: var(--focus-ring);

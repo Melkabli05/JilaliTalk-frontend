@@ -273,7 +273,7 @@ import { environment } from '@env/environment';
 
     .notification-btn:hover {
       background: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
     }
 
     .notification-btn:focus-visible {

@@ -445,7 +445,7 @@ export interface UserInfoModalData {
       }
       .chip-primary {
         background: var(--color-primary-50);
-        color: var(--color-primary-600);
+        color: var(--color-primary-text);
       }
       .chip-gold {
         background: var(--color-gold-50);
@@ -619,7 +619,7 @@ export interface UserInfoModalData {
         align-items: center;
         gap: 4px;
         font-size: var(--text-xs);
-        color: var(--color-primary-600);
+        color: var(--color-primary-text);
         text-decoration: none;
         font-weight: var(--font-medium);
       }

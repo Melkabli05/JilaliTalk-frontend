@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, input, output } from '@angular/core
 import { AudienceUserComponent } from '../ui/audience-user';
 import { AudienceUser } from '../models/room-model';
 import { LucideUsers } from '@lucide/angular';
+import { EmptyStateComponent } from '@shared/ui/empty-state/empty-state.component';
 import { ViewMode, LanguageGroup } from './audience-list-shared';
 
 /**
@@ -11,7 +12,7 @@ import { ViewMode, LanguageGroup } from './audience-list-shared';
  */
 @Component({
   selector: 'app-audience-list-grid',
-  imports: [AudienceUserComponent, LucideUsers],
+  imports: [AudienceUserComponent, LucideUsers, EmptyStateComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="audience-scroll">
@@ -56,19 +57,16 @@ import { ViewMode, LanguageGroup } from './audience-list-shared';
       }
 
       @if (displayUsers().length === 0) {
-        <div class="empty-state">
-          <div class="empty-icon">
-            <svg aria-hidden="true" lucideUsers [size]="20"></svg>
-          </div>
-          @if (searchQuery()) {
-            <p class="empty-text">No matches for "{{ searchQuery() }}"</p>
-            <p class="empty-sub">Try a different name or language</p>
-            <button class="clear-search-btn" type="button" (click)="clearSearch.emit()">Clear search</button>
-          } @else {
-            <p class="empty-text">No listeners yet</p>
-            <p class="empty-sub">Share this room to invite people to join the conversation</p>
-          }
-        </div>
+        @if (searchQuery(); as query) {
+          <app-empty-state [compact]="true" [title]="'No matches for “' + query + '”'" body="Try a different name or language">
+            <svg empty-state-icon aria-hidden="true" lucideUsers [size]="20"></svg>
+            <button empty-state-actions class="clear-search-btn" type="button" (click)="clearSearch.emit()">Clear search</button>
+          </app-empty-state>
+        } @else {
+          <app-empty-state [compact]="true" title="No listeners yet" body="Share this room to invite people to join the conversation">
+            <svg empty-state-icon aria-hidden="true" lucideUsers [size]="20"></svg>
+          </app-empty-state>
+        }
       }
     </div>
   `,
@@ -145,44 +143,10 @@ import { ViewMode, LanguageGroup } from './audience-list-shared';
       gap: var(--space-1);
     }
 
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: var(--space-6) var(--space-4);
-      text-align: center;
-    }
-
-    .empty-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-xl);
-      background: var(--color-neutral-100);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: var(--space-2);
-      color: var(--color-text-muted);
-    }
-
-    .empty-text {
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      color: var(--color-text);
-      margin: 0 0 var(--space-1);
-    }
-
-    .empty-sub {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      max-width: 200px;
-      line-height: 1.5;
-    }
-
     .clear-search-btn {
       margin-top: var(--space-2);
-      padding: var(--space-1) var(--space-3);
+      min-height: 36px;
+      padding: var(--space-2) var(--space-3);
       border-radius: var(--radius-md);
       border: 1px solid var(--color-border);
       background: var(--color-card);
@@ -190,11 +154,16 @@ import { ViewMode, LanguageGroup } from './audience-list-shared';
       font-size: var(--text-xs);
       font-weight: var(--font-medium);
       cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
       transition: background 0.15s;
     }
 
     .clear-search-btn:hover {
       background: var(--color-neutral-50);
+    }
+    .clear-search-btn:focus-visible {
+      outline: var(--focus-ring); outline-offset: 2px;
     }
 
     .clear-search-btn:focus-visible {

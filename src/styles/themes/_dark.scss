@@ -9,6 +9,7 @@
   --color-text-muted: hsl(35deg 10% 65%);
   --color-text-secondary: hsl(35deg 15% 75%);
   --color-border: hsl(220deg 12% 20%);
+  --color-primary-text: var(--color-primary-300);
 
   /* Slightly cooler-tinted shadow base for dark mode. Pure black shadows over a near-black
      background produce no visible depth, so dark mode shadows use a desaturated near-black

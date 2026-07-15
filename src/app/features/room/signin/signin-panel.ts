@@ -629,7 +629,7 @@ import { giftEmojiFor } from './signin-panel.util';
     .room-level-label {
       font-size: var(--text-sm);
       font-weight: var(--font-semibold);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
     }
     :host-context(.dark) .room-level-label { color: var(--color-primary-300); }
 

@@ -292,7 +292,7 @@ interface ShowcaseRoom {
       align-items: center;
       justify-content: center;
       background: var(--color-primary-50);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
     }
     .form-icon svg {
       width: 24px;

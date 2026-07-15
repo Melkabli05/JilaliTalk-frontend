@@ -110,11 +110,11 @@ function mobileLabel(full: string): string {
     }
     .mobile-nav-item:hover {
       background-color: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
     }
     .mobile-nav-item:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
     .mobile-nav-item.active {
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
       font-weight: var(--font-bold);
     }
 

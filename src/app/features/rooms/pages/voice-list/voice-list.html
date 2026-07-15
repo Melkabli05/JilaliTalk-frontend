@@ -104,18 +104,12 @@
       }
     </div>
   } @else if (filteredRooms().length === 0) {
-    <div class="empty-state">
-      <div class="empty-icon">
-        <svg aria-hidden="true" lucideSearch [size]="28"></svg>
-      </div>
-      <p class="empty-title">No rooms found</p>
-      <p class="empty-subtitle">
-        Try adjusting your filters or search query to discover more rooms
-      </p>
-      <button type="button" class="empty-reset-btn" (click)="resetFilters()">
+    <app-empty-state title="No rooms found" body="Try adjusting your filters or search query to discover more rooms">
+      <svg empty-state-icon aria-hidden="true" lucideSearch [size]="28"></svg>
+      <button empty-state-actions type="button" class="empty-reset-btn" (click)="resetFilters()">
         Reset Filters
       </button>
-    </div>
+    </app-empty-state>
   } @else {
     <div class="room-grid" [class.list-view]="viewMode() === 'list'">
       @for (room of filteredRooms(); track room.channel.cname; let i = $index) {

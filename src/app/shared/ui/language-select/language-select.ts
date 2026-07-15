@@ -239,7 +239,7 @@ import { LucideChevronDown, LucideSearch, LucideCheck, LucideX } from '@lucide/a
     }
     .lang-option:hover { background-color: var(--color-neutral-50); color: var(--color-text); }
     .lang-option:focus-visible { outline: none; background-color: var(--color-neutral-50); }
-    .lang-option.selected { color: var(--color-primary-600); background-color: var(--color-primary-50); font-weight: var(--font-medium); }
+    .lang-option.selected { color: var(--color-primary-text); background-color: var(--color-primary-50); font-weight: var(--font-medium); }
     .lang-option.focused { background-color: var(--color-neutral-50); }
     .lang-option.selected.focused { background-color: var(--color-primary-50); }
     :host-context(.dark) .lang-option { color: var(--color-neutral-300); }
@@ -248,7 +248,7 @@ import { LucideChevronDown, LucideSearch, LucideCheck, LucideX } from '@lucide/a
     :host-context(.dark) .lang-option.focused { background-color: var(--color-neutral-800); }
 
     .lang-option-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .check-icon { color: var(--color-primary-600); flex-shrink: 0; }
+    .check-icon { color: var(--color-primary-text); flex-shrink: 0; }
     :host-context(.dark) .check-icon { color: var(--color-primary-300); }
 
     .flag-icon-sm { width: 20px; height: 14px; border-radius: 2px; object-fit: cover; flex-shrink: 0; }

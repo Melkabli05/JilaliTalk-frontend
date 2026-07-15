@@ -376,7 +376,7 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
       transition: border-color 0.15s, color 0.15s, background-color 0.15s;
-      &:hover { border-color: var(--color-primary-200); color: var(--color-primary-600); background-color: var(--color-primary-50); }
+      &:hover { border-color: var(--color-primary-200); color: var(--color-primary-text); background-color: var(--color-primary-50); }
       &:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
       :host-context(.dark) & { border-color: var(--color-neutral-600); color: var(--color-neutral-400); background: transparent;
         &:hover { border-color: var(--color-primary-700); color: var(--color-primary-300); background-color: var(--color-primary-900); } }
@@ -397,7 +397,7 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
 
     .category-tag {
       background-color: var(--color-primary-50);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
 
       :host-context(.dark) & {
         background-color: var(--color-primary-900);

@@ -197,7 +197,7 @@ import { ViewMode } from './audience-list-shared';
 
     .toggle-btn.active {
       background: var(--color-card);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
     }
 
     .toggle-btn:active:not(.active) {

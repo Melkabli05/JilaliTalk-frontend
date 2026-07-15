@@ -2,16 +2,16 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { BlockedUser } from '../models/profile.model';
 import { LucideShieldOff } from '@lucide/angular';
+import { EmptyStateComponent } from '@shared/ui/empty-state/empty-state.component';
 @Component({
   selector: 'app-blocked-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarComponent, LucideShieldOff],
+  imports: [AvatarComponent, LucideShieldOff, EmptyStateComponent],
   template: `
     @if (users().length === 0) {
-      <div class="empty-state">
-        <svg aria-hidden="true" lucideShieldOff [size]="28" class="empty-icon" />
-        <p class="empty-text">No blocked users</p>
-      </div>
+      <app-empty-state title="No blocked users" [compact]="true">
+        <svg empty-state-icon aria-hidden="true" lucideShieldOff [size]="24"></svg>
+      </app-empty-state>
     } @else {
       <ul class="list">
         @for (user of users(); track user.userId) {
@@ -29,25 +29,6 @@ import { LucideShieldOff } from '@lucide/angular';
     }
   `,
   styles: `
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: var(--space-2);
-      padding: var(--space-8) var(--space-4);
-      color: var(--color-text-muted);
-    }
-    :host-context(.dark) .empty-state {
-      color: var(--color-neutral-400);
-    }
-    .empty-icon {
-      opacity: 0.5;
-    }
-    .empty-text {
-      margin: 0;
-      font-size: var(--text-sm);
-    }
     .list {
       list-style: none;
       margin: 0;

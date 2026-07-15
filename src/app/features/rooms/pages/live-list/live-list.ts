@@ -16,6 +16,7 @@ import { LiveRoomCardComponent } from '../../ui/live-room-card/live-room-card';
 import { InfiniteScrollDirective } from '@shared/directives/infinite-scroll.directive';
 import { SearchBarComponent } from '@shared/ui/search-bar/search-bar';
 import { CardSkeletonComponent } from '@shared/ui/card-skeleton/card-skeleton';
+import { EmptyStateComponent } from '@shared/ui/empty-state/empty-state.component';
 import {
   LucideLayoutGrid,
   LucideList,
@@ -33,6 +34,7 @@ type ViewMode = 'grid' | 'list';
     SearchBarComponent,
     LiveRoomCardComponent,
     CardSkeletonComponent,
+    EmptyStateComponent,
     InfiniteScrollDirective,
     LucideLayoutGrid,
     LucideList,

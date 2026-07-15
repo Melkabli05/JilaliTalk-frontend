@@ -215,7 +215,7 @@ import {
 
     /* ─── Follow card ─── */
     .follow { --ec-left: var(--color-primary-400); }
-    .follow .event-nickname { color: var(--color-primary-600); }
+    .follow .event-nickname { color: var(--color-primary-text); }
     :host-context(.dark) .follow { --ec-left: var(--color-primary-600); }
     :host-context(.dark) .follow .event-nickname { color: var(--color-primary-300); }
 

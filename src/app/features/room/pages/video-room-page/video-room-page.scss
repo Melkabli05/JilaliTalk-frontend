@@ -51,12 +51,13 @@
 
 .audience-section {
   flex-shrink: 0;
+  max-height: 18svh;
   overflow: hidden;
 }
 
 .comments-section {
   flex: 0 0 30%;
-  min-height: 0;
+  min-height: max(140px, 20svh);
   overflow: hidden;
 }
 
@@ -78,7 +79,11 @@
     display: grid;
     grid-template-rows: 1fr;
   }
+  .audience-section {
+    max-height: none;
+  }
   .comments-section {
     height: 100%;
+    min-height: 0;
   }
 }

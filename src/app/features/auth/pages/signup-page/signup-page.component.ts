@@ -210,7 +210,7 @@ const STEPS = ['account', 'code'] as const;
     }
     .step-circle--active {
       border-color: var(--color-primary-500);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
     }
     .dark .step-circle--active { color: var(--color-primary-300); }
     .step-item--done .step-circle {
@@ -268,7 +268,7 @@ const STEPS = ['account', 'code'] as const;
     .text-link:disabled { opacity: 0.5; cursor: default; }
     .text-link:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); border-radius: var(--radius-sm); }
     .alt-link {
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
       text-decoration: none;
       font-weight: var(--font-medium);
     }

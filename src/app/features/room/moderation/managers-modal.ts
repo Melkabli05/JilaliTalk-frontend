@@ -9,6 +9,7 @@ import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { ModalComponent } from '@shared/ui/modal/modal.component';
+import { EmptyStateComponent } from '@shared/ui/empty-state/empty-state.component';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
 import { firstValueFrom } from 'rxjs';
 import { initialsFrom } from '@shared/utils';
@@ -26,6 +27,7 @@ export interface ManagersModalData {
     ModalComponent,
     AvatarComponent,
     CountryFlagComponent,
+    EmptyStateComponent,
     TooltipDirective,
     Listbox,
     Option,
@@ -54,13 +56,9 @@ export interface ManagersModalData {
           </button>
         </div>
       } @else if (reader.managers().length === 0) {
-        <div class="empty-state">
-          <span class="empty-icon-circle">
-            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </span>
-          <p class="empty-text">No managers yet</p>
-          <p class="empty-sub">Promote members to help manage this room</p>
-        </div>
+        <app-empty-state [compact]="true" title="No managers yet" body="Promote members to help manage this room">
+          <svg empty-state-icon xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </app-empty-state>
       } @else {
         <ul ngListbox [readonly]="true" [multi]="false" aria-label="Room managers" class="managers-list">
           @for (manager of reader.managers(); track manager.userId; let i = $index) {
@@ -293,7 +291,7 @@ export interface ManagersModalData {
       gap: 3px;
       font-size: var(--text-2xs);
       font-weight: var(--font-medium);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
       background: var(--color-primary-50);
       border-radius: var(--radius-full);
       padding: 1px 6px;

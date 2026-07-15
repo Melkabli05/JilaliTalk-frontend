@@ -152,12 +152,12 @@ interface NavGroup {
     }
     .nav-item:hover {
       background-color: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
     }
     .nav-item:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
     .nav-item.active {
       background-color: color-mix(in srgb, var(--color-primary-500) 12%, transparent);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
     }
 
     .nav-badge {
@@ -185,7 +185,7 @@ interface NavGroup {
     }
     .sidebar-profile-link:hover { background: var(--color-neutral-100); color: var(--color-text); }
     .sidebar-profile-link:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    .sidebar-profile-link.active { color: var(--color-primary-600); }
+    .sidebar-profile-link.active { color: var(--color-primary-text); }
     :host-context(.dark) .sidebar-profile-link:hover { background: var(--color-neutral-700); }
 
     /* ─── Dark mode ───────────────────────────────── */

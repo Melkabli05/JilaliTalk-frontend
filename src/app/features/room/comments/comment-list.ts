@@ -16,6 +16,7 @@ import { Clipboard } from '@angular/cdk/clipboard';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
+import { EmptyStateComponent } from '@shared/ui/empty-state/empty-state.component';
 import { UserRole } from '@core/models/user-role';
 import { TranslateService } from '@core/services/translate.service';
 import { Comment, CommentOrEvent } from '../models/room-model';
@@ -143,6 +144,7 @@ export class NewMessagesPillComponent {
   imports: [
     AvatarComponent,
     CountryFlagComponent,
+    EmptyStateComponent,
     NgOptimizedImage,
     EventCardComponent,
     NewMessagesPillComponent,
@@ -322,23 +324,20 @@ export class NewMessagesPillComponent {
       }
 
       @if (rows().length === 0) {
-        <div class="empty-state">
-          <div class="empty-icon">
-            <svg
-              aria-hidden="true"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-          </div>
-          <p class="empty-title">Nothing here yet</p>
-          <p class="empty-sub">Say something</p>
-        </div>
+        <app-empty-state [style.flex]="1" [compact]="true" title="Nothing here yet" body="Say something">
+          <svg
+            empty-state-icon
+            aria-hidden="true"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        </app-empty-state>
       }
     </div>
   `,
@@ -382,8 +381,6 @@ export class NewMessagesPillComponent {
         --cl-fg-border: color-mix(in srgb, var(--color-accent-500) 30%, transparent);
         --cl-quote-fg: var(--color-primary-600);
         --cl-quote-text: var(--cl-muted);
-        --cl-empty-bg: var(--color-primary-50);
-        --cl-empty-fg: var(--color-primary-400);
       }
       :host-context(.dark) {
         --cl-bg: var(--color-neutral-800);
@@ -415,8 +412,6 @@ export class NewMessagesPillComponent {
         --cl-fg-border: color-mix(in srgb, var(--color-accent-500) 40%, transparent);
         --cl-quote-fg: var(--color-primary-300);
         --cl-quote-text: var(--color-neutral-400);
-        --cl-empty-bg: var(--color-primary-900);
-        --cl-empty-fg: var(--color-primary-300);
       }
 
       .comment-list {
@@ -718,7 +713,7 @@ export class NewMessagesPillComponent {
         gap: 3px;
         font-size: var(--text-2xs);
         font-weight: var(--font-semibold);
-        color: var(--color-primary-600);
+        color: var(--color-primary-text);
         text-transform: uppercase;
         letter-spacing: 0.04em;
       }
@@ -764,42 +759,6 @@ export class NewMessagesPillComponent {
         }
       }
 
-      /* ─── Empty state ─── */
-      .empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        /* flex: 1 makes the empty-state consume the remaining column height so
-           justify-content: center actually centers vertically. Without it,
-           the empty-state is a regular flex-column item with intrinsic height
-           and sits at the top of the column. */
-        flex: 1;
-        padding: var(--space-6) var(--space-4);
-        text-align: center;
-      }
-      .empty-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: var(--radius-xl);
-        background: var(--cl-empty-bg);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: var(--space-2);
-        color: var(--cl-empty-fg);
-      }
-      .empty-title {
-        font-size: var(--text-sm);
-        font-weight: var(--font-medium);
-        color: var(--cl-text);
-        margin: 0 0 var(--space-1);
-      }
-      .empty-sub {
-        font-size: var(--text-xs);
-        color: var(--cl-muted);
-        margin: 0;
-      }
 
       @media (prefers-reduced-motion: reduce) {
         .spin { animation: none; }

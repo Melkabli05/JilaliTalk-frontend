@@ -44,7 +44,7 @@
 .tab-btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
 .tab-btn[aria-selected='true'] {
   background: var(--color-card);
-  color: var(--color-primary-600);
+  color: var(--color-primary-text);
 }
 :host-context(.dark) .tab-btn {
   color: var(--color-neutral-400);

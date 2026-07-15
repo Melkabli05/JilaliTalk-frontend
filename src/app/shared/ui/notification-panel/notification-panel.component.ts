@@ -8,6 +8,7 @@ import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-
 import { injectIsMobileViewport } from '@shared/utils';
 import { NotificationFilterTabsComponent } from './notification-filter-tabs.component';
 import { NotificationDayGroupComponent } from './notification-day-group.component';
+import { EmptyStateComponent } from '@shared/ui/empty-state/empty-state.component';
 import type { AppNotification } from './notification.model';
 
 const SHEET_CLOSE_THRESHOLD_PX = 80;
@@ -21,7 +22,7 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
   host: {
     '(document:keydown.escape)': 'store.close()',
   },
-  imports: [LucideBell, LucideCheck, LucideTrash2, NotificationFilterTabsComponent, NotificationDayGroupComponent],
+  imports: [LucideBell, LucideCheck, LucideTrash2, NotificationFilterTabsComponent, NotificationDayGroupComponent, EmptyStateComponent],
   template: `
     @if (store.isOpen()) {
       <div class="notification-overlay" [class.sheet]="isMobile()" (click)="onOverlayClick()" role="presentation"></div>
@@ -80,11 +81,9 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
 
         <main id="notification-list" class="panel-content" role="list" aria-label="Notification list" aria-live="polite" aria-atomic="false">
           @if (store.groupedItems().length === 0) {
-            <div class="empty-state" role="status">
-              <svg aria-hidden="true" lucideBell [size]="32" class="empty-icon"></svg>
-              <p class="empty-title">{{ emptyTitle() }}</p>
-              <p class="empty-description">We'll notify you when something happens</p>
-            </div>
+            <app-empty-state role="status" [title]="emptyTitle()" body="We'll notify you when something happens" [iconSize]="32">
+              <svg empty-state-icon aria-hidden="true" lucideBell [size]="32"></svg>
+            </app-empty-state>
           } @else {
             @for (group of store.groupedItems(); track group.bucket) {
               <app-notification-day-group
@@ -217,10 +216,6 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
     .panel-content::-webkit-scrollbar-thumb { background: var(--color-neutral-300); border-radius: 3px; }
     :host-context(.dark) .panel-content::-webkit-scrollbar-thumb { background: var(--color-neutral-600); }
 
-    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--space-10) var(--space-4); text-align: center; }
-    .empty-icon { color: var(--color-text-tertiary); opacity: 0.5; margin-bottom: var(--space-3); }
-    .empty-title { font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--color-text-secondary); margin: 0 0 var(--space-1); }
-    .empty-description { font-size: var(--text-xs); color: var(--color-text-tertiary); margin: 0; }
   `],
 })
 export class NotificationPanelComponent {

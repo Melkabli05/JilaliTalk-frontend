@@ -265,7 +265,7 @@ function trimmedMaxLengthError(value: string, max: number) {
       .visibility-option[aria-selected='true'] {
         border-color: var(--color-primary-500);
         background: var(--color-primary-50);
-        color: var(--color-primary-600);
+        color: var(--color-primary-text);
         box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--color-primary-500) 35%, transparent);
       }
       .visibility-option:focus-visible {
@@ -318,7 +318,7 @@ function trimmedMaxLengthError(value: string, max: number) {
         line-height: 1.2;
       }
       .visibility-option[aria-selected='true'] .option-title {
-        color: var(--color-primary-600);
+        color: var(--color-primary-text);
       }
       :host-context(.dark) .visibility-option[aria-selected='true'] .option-title {
         color: var(--color-primary-300);

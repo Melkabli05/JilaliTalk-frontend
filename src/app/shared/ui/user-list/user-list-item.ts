@@ -121,7 +121,7 @@ export type UserListItemVariant = 'followers' | 'following' | 'visitors';
     }
     .badge-mutual {
       background: var(--color-primary-50);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
     }
     :host-context(.dark) .badge-mutual {
       background: var(--color-primary-900);

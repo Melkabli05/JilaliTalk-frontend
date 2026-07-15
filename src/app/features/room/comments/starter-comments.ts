@@ -39,7 +39,7 @@ import { getStarterComments } from './starter-comments.util';
       border-radius: var(--radius-full);
       border: 1px solid var(--color-border);
       background: var(--color-card);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
       font-size: var(--text-xs);
       font-weight: var(--font-medium);
       cursor: pointer;

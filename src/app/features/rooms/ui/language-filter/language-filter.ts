@@ -158,7 +158,7 @@ import { LucideGlobe, LucideSearch, LucideChevronDown, LucideX } from '@lucide/a
     .lang-trigger:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
     .lang-trigger.active {
       background-color: var(--color-primary-50);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
       box-shadow: 0 0 0 1px var(--color-primary-200);
     }
     .flag-icon { width: 18px; height: 13px; border-radius: 3px; object-fit: cover; flex-shrink: 0; }
@@ -249,7 +249,7 @@ import { LucideGlobe, LucideSearch, LucideChevronDown, LucideX } from '@lucide/a
     .lang-option:hover { background-color: var(--color-neutral-50); color: var(--color-text); }
     .lang-option:focus-visible { outline: none; background-color: var(--color-neutral-50); }
     .lang-option.selected {
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
       background-color: var(--color-primary-50);
       font-weight: var(--font-medium);
     }

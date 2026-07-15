@@ -19,6 +19,7 @@ import { RoomCardComponent } from '../../ui/room-card/room-card';
 import { RecommendedRoomCardComponent } from '../../ui/recommended-room-card/recommended-room-card';
 import { SearchBarComponent } from '@shared/ui/search-bar/search-bar';
 import { CardSkeletonComponent } from '@shared/ui/card-skeleton/card-skeleton';
+import { EmptyStateComponent } from '@shared/ui/empty-state/empty-state.component';
 import { InfiniteScrollDirective } from '@shared/directives/infinite-scroll.directive';
 import {
   LucideLayoutGrid,
@@ -41,6 +42,7 @@ type ViewMode = 'grid' | 'list';
     RoomCardComponent,
     RecommendedRoomCardComponent,
     CardSkeletonComponent,
+    EmptyStateComponent,
     InfiniteScrollDirective,
     LucideLayoutGrid,
     LucideList,

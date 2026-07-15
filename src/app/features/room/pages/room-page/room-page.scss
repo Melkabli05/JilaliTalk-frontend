@@ -45,12 +45,13 @@
 
 .audience-section {
   flex-shrink: 0;
+  max-height: 22svh;
   overflow: hidden;
 }
 
 .comments-section {
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: max(140px, 20svh);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -80,8 +81,8 @@
 
   .room-header    { grid-area: header; max-height: none; }
   .stage-section  { grid-area: stage;  max-height: none; }
-  .audience-section { grid-area: audience; }
-  .comments-section { grid-area: comments; }
+  .audience-section { grid-area: audience; max-height: none; }
+  .comments-section { grid-area: comments; min-height: 0; }
 }
 
 .invisible-banner {

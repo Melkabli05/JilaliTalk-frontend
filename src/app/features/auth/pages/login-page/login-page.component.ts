@@ -83,7 +83,7 @@ import { AuthShellComponent } from '../../ui/auth-shell/auth-shell.component';
       width: 100%;
     }
     .alt-link {
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
       text-decoration: none;
       font-weight: var(--font-medium);
     }

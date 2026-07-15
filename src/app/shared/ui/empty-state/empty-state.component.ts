@@ -8,22 +8,27 @@ import { LucideInbox } from '@lucide/angular';
   template: `
     <div class="empty-state" [class.empty-state--compact]="compact()">
       <div class="empty-icon" aria-hidden="true">
-        <svg lucideInbox [size]="iconSize()"></svg>
+        <ng-content select="[empty-state-icon]">
+          <svg lucideInbox [size]="iconSize()"></svg>
+        </ng-content>
       </div>
       <p class="empty-title">{{ title() }}</p>
       @if (body()) {
         <p class="empty-body">{{ body() }}</p>
       }
+      <ng-content select="[empty-state-actions]" />
     </div>
   `,
   styles: [`
-    :host { display: block; }
+    :host { display: block; height: 100%; }
     .empty-state {
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: var(--space-2);
+      height: 100%;
       padding: var(--space-8) var(--space-4); text-align: center;
       color: var(--color-text-muted);
       animation: emptyIn 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      box-sizing: border-box;
     }
     .empty-state--compact {
       padding: var(--space-5) var(--space-3);

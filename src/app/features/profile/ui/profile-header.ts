@@ -174,7 +174,7 @@ import { LucideCrown } from '@lucide/angular';
     }
     .chip-primary {
       background: var(--color-primary-50);
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
     }
     :host-context(.dark) .chip-gold {
       background: color-mix(in srgb, var(--color-gold-500) 20%, transparent);

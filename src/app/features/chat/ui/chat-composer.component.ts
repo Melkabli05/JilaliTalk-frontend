@@ -99,7 +99,7 @@ import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-fram
       width: 36px; height: 36px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
       border-radius: 50%; border: 0; cursor: pointer; background: transparent;
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
       transition: transform 100ms ease, background-color 150ms ease, box-shadow 150ms ease;

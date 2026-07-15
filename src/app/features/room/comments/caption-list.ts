@@ -4,12 +4,13 @@ import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { CaptionEntry } from '../models/room-model';
 import { formatClockTime } from '@shared/utils';
 import { LucideCaptions } from '@lucide/angular';
+import { EmptyStateComponent } from '@shared/ui/empty-state/empty-state.component';
 
 const formatTime = formatClockTime;
 
 @Component({
   selector: 'app-caption-list',
-  imports: [AvatarComponent, CountryFlagComponent, LucideCaptions],
+  imports: [AvatarComponent, CountryFlagComponent, LucideCaptions, EmptyStateComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="caption-list" role="log" aria-label="Captions">
@@ -35,13 +36,9 @@ const formatTime = formatClockTime;
       }
 
       @if (captions().length === 0) {
-        <div class="empty-state">
-          <div class="empty-icon">
-            <svg aria-hidden="true" lucideCaptions [size]="20" />
-          </div>
-          <p class="empty-title">No captions yet</p>
-          <p class="empty-sub">Speech-to-text transcripts will appear here</p>
-        </div>
+        <app-empty-state [style.flex]="1" [compact]="true" title="No captions yet" body="Speech-to-text transcripts will appear here">
+          <svg empty-state-icon aria-hidden="true" lucideCaptions [size]="20"></svg>
+        </app-empty-state>
       }
     </div>
   `,
@@ -122,24 +119,6 @@ const formatTime = formatClockTime;
       max-width: 100%;
     }
 
-    .empty-state {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center;
-      /* flex: 1 lets the empty-state fill remaining column height so
-         justify-content: center actually centers it vertically. */
-      flex: 1;
-      padding: var(--space-6) var(--space-4); text-align: center;
-    }
-    .empty-icon {
-      width: 40px; height: 40px; border-radius: var(--radius-xl);
-      background: var(--color-primary-50);
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: var(--space-2);
-      color: var(--color-primary-400);
-    }
-    :host-context(.dark) .empty-icon { background: var(--color-primary-900); color: var(--color-primary-300); }
-    .empty-title { font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--cl-text); margin: 0 0 var(--space-1); }
-    .empty-sub { font-size: var(--text-xs); color: var(--cl-muted); margin: 0; }
   `],
 })
 export class CaptionListComponent {

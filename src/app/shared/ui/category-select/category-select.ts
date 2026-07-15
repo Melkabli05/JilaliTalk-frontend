@@ -251,7 +251,7 @@ import { LucideChevronDown, LucideCheck, LucideTag } from '@lucide/angular';
     }
 
     .check-icon {
-      color: var(--color-primary-600);
+      color: var(--color-primary-text);
       flex-shrink: 0;
       animation: checkPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
