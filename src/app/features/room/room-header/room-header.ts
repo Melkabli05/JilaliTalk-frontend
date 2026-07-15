@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { Clipboard } from '@angular/cdk/clipboard';
+import { A11yModule } from '@angular/cdk/a11y';
 import {
   LucideCopy,
   LucideCheck,
@@ -44,6 +45,7 @@ import { handIcon as resolveHandIcon, handTooltip as resolveHandTooltip, wsStatu
   selector: 'app-room-header',
 
   imports: [
+    A11yModule,
     MicButtonComponent,
     TooltipDirective,
     AvSettingsComponent,
@@ -113,6 +115,8 @@ import { handIcon as resolveHandIcon, handTooltip as resolveHandTooltip, wsStatu
               role="dialog"
               aria-modal="true"
               aria-label="Room info"
+              [cdkTrapFocus]="showRoomInfo()"
+              cdkTrapFocusAutoCapture
               tabindex="-1"
             >
               <div class="room-info-row">
@@ -337,6 +341,8 @@ import { handIcon as resolveHandIcon, handTooltip as resolveHandTooltip, wsStatu
         aria-modal="true"
         aria-label="More actions"
         tabindex="-1"
+        [cdkTrapFocus]="showOverflow()"
+        cdkTrapFocusAutoCapture
         (touchstart)="onTouchStart($event)"
         (touchmove)="onTouchMove($event)"
         (touchend)="onTouchEnd($event)"

@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { KeyboardInsetService } from '@core/services/keyboard-inset.service';
 
 interface ShowcaseRoom {
   readonly title: string;
@@ -29,7 +30,7 @@ interface ShowcaseRoom {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <div class="auth-shell">
+    <div class="auth-shell" [style.--kb-inset.px]="keyboardInsetPx()">
       <aside class="showcase" aria-hidden="true">
         <div class="showcase-content">
           <p class="showcase-eyebrow">JilaliTalk</p>
@@ -269,7 +270,7 @@ interface ShowcaseRoom {
       max-width: 400px;
       margin-inline: auto;
       gap: var(--space-5);
-      padding-block-end: var(--space-6);
+      padding-block-end: calc(var(--space-6) + var(--kb-inset, 0px));
       box-sizing: border-box;
     }
     @media (min-width: 1024px) {
@@ -329,6 +330,7 @@ interface ShowcaseRoom {
 })
 export class AuthShellComponent {
   readonly title = input.required<string>();
+  protected readonly keyboardInsetPx = inject(KeyboardInsetService).keyboardInsetPx;
 
   private static nextId = 0;
   protected readonly titleId = `auth-shell-title-${AuthShellComponent.nextId++}`;

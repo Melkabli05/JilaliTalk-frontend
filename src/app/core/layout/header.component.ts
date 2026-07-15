@@ -135,6 +135,8 @@ import { environment } from '@env/environment';
       /* Standalone routes collapse the grid to a single column — flush the
          header to the left edge. */
       .app-shell.standalone .app-header { left: 0; }
+      :host-context([dir='rtl']) .app-header { left: auto; right: var(--sidebar-width); }
+      :host-context([dir='rtl']) .app-shell.standalone .app-header { right: 0; }
     }
     /* Immersive routes (mobile room pages) hide the global header entirely — the
        room's own header becomes the only top chrome. Desktop is unaffected.

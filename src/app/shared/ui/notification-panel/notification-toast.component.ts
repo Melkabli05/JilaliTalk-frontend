@@ -67,9 +67,15 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       animation: toast-preview-enter 0.2s ease-out;
     }
     .notification-toast:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+    :host-context([dir='rtl']) .notification-toast {
+      right: auto; left: max(var(--space-4), env(safe-area-inset-left, 0px));
+    }
     @keyframes toast-preview-enter {
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .notification-toast { animation: none; }
     }
     .toast-avatar { flex-shrink: 0; align-self: flex-start; }
     .toast-icon { flex-shrink: 0; margin-top: 1px; }

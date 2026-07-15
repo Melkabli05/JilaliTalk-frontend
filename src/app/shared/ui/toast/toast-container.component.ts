@@ -141,6 +141,9 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, Luc
         transform: translateY(-8px) scale(0.96);
       }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .toast, .toast-leaving { animation: none; }
+    }
 
     /* ── Toast type variants ── */
     .toast-success {

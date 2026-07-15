@@ -136,6 +136,9 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    :host-context([dir='rtl']) .notification-panel {
+      right: auto; left: var(--space-4);
+    }
 
     .notification-panel.sheet {
       top: auto;
@@ -151,6 +154,9 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
     @keyframes sheetIn {
       from { opacity: 0; transform: translateY(24px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .notification-overlay, .notification-panel { animation: none; }
     }
     /* Drag-to-close only engages on this handle (not the whole sheet), so the
        scrollable list below and the horizontally-scrolling filter tabs are

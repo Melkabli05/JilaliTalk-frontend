@@ -133,6 +133,7 @@ import type { AuthUser } from '@core/auth/auth.store';
       from { opacity: 0; transform: translateY(-4px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    :host-context([dir='rtl']) .dropdown { right: auto; left: 0; }
     @media (prefers-reduced-motion: reduce) {
       .dropdown { animation: none; }
     }

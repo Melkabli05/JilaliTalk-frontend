@@ -1,15 +1,15 @@
-import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ViewEncapsulation, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideGlobe, LucideTv, LucideLock, LucideServer, LucideMessageCircle, LucideUser, LucideLogIn } from '@lucide/angular';
+import { LucideGlobe, LucideTv, LucideLock, LucideMessageCircle, LucideUser, LucideLogIn } from '@lucide/angular';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
+import { NotificationStore } from '@store/notification.store';
 
-type TabType = 'voice' | 'live' | 'private' | 'server' | 'messages' | 'profile';
+type TabType = 'voice' | 'live' | 'private' | 'messages' | 'profile';
 
 interface NavItem {
   id: TabType;
   iconName: string;
   label: string;
-  badge?: number;
   route: string;
 }
 
@@ -22,7 +22,7 @@ interface NavGroup {
 
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [RouterLink, RouterLinkActive, TooltipDirective, LucideGlobe, LucideTv, LucideLock, LucideServer, LucideMessageCircle, LucideUser, LucideLogIn],
+  imports: [RouterLink, RouterLinkActive, TooltipDirective, LucideGlobe, LucideTv, LucideLock, LucideMessageCircle, LucideUser, LucideLogIn],
   template: `
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
@@ -56,12 +56,11 @@ interface NavGroup {
                 @case ('globe') { <svg aria-hidden="true" lucideGlobe [size]="22"></svg> }
                 @case ('tv') { <svg aria-hidden="true" lucideTv [size]="22"></svg> }
                 @case ('lock') { <svg aria-hidden="true" lucideLock [size]="22"></svg> }
-                @case ('server') { <svg aria-hidden="true" lucideServer [size]="22"></svg> }
                 @case ('message') { <svg aria-hidden="true" lucideMessageCircle [size]="22"></svg> }
                 @case ('user') { <svg aria-hidden="true" lucideUser [size]="22"></svg> }
               }
-              @if (item.badge && item.badge > 0) {
-                <span class="nav-badge" aria-label="{{ item.badge }} notifications">{{ item.badge > 9 ? '9+' : item.badge }}</span>
+              @if (item.id === 'messages' && messagesBadge() > 0) {
+                <span class="nav-badge" [attr.aria-label]="messagesBadge() + ' unread'">{{ messagesBadge() > 9 ? '9+' : messagesBadge() }}</span>
               }
             </a>
           }
@@ -110,6 +109,11 @@ interface NavGroup {
       flex-direction: column;
       z-index: var(--z-shell-sidenav);
       padding: var(--space-4);
+    }
+    :host-context([dir='rtl']) .sidebar-desktop {
+      left: auto; right: 0;
+      border-right: none;
+      border-left: 1px solid var(--color-border);
     }
     @media (min-width: 1024px) { .sidebar-desktop { display: flex; } }
     /* Standalone routes (e.g. /messages) keep the mobile bottom nav but drop the
@@ -201,6 +205,9 @@ interface NavGroup {
   `]
 })
 export class SidenavComponent {
+  private readonly notificationStore = inject(NotificationStore);
+  protected readonly messagesBadge = computed(() => this.notificationStore.unreadCount());
+
   readonly navGroups: NavGroup[] = [
     {
       items: [
@@ -211,12 +218,7 @@ export class SidenavComponent {
     {
       items: [
         { id: 'private' as TabType, iconName: 'lock', label: 'Private Rooms', route: '/rooms/voice' },
-        { id: 'messages' as TabType, iconName: 'message', label: 'Messages', route: '/messages', badge: 5 },
-      ],
-    },
-    {
-      items: [
-        { id: 'server' as TabType, iconName: 'server', label: 'Servers', route: '/server', badge: 3 },
+        { id: 'messages' as TabType, iconName: 'message', label: 'Messages', route: '/messages' },
       ],
     },
     {

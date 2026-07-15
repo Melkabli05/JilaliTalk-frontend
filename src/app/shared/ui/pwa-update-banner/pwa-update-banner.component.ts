@@ -69,6 +69,9 @@ import { LucideRefreshCw } from '@lucide/angular';
           translateY(0) scale(1);
       }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .update-toast { animation: none; }
+    }
 
     .update-toast__icon {
       flex-shrink: 0;

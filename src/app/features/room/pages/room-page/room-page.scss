@@ -70,6 +70,13 @@
     grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
     grid-template-rows: auto auto minmax(22cqh, 1fr);
   }
+  :host-context([dir='rtl']) .room-layout {
+    grid-template-areas:
+      "comments header"
+      "comments stage"
+      "comments audience";
+    grid-template-columns: var(--comments-panel-width) minmax(0, 1fr);
+  }
 
   .room-header    { grid-area: header; max-height: none; }
   .stage-section  { grid-area: stage;  max-height: none; }
