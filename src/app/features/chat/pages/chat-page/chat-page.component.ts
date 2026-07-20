@@ -470,7 +470,13 @@ export class ChatPageComponent {
   private readonly keyboardInset = inject(KeyboardInsetService);
   protected readonly keyboardInsetPx = this.keyboardInset.keyboardInsetPx;
 
-  readonly userId = input<number | null>(null);
+  /** Bound from chat.routes.ts's ':userId' segment via withComponentInputBinding — the
+   *  router always delivers a raw route-param string (or undefined on the parameterless
+   *  '' route), never a number, so this needs the same transform pattern every other
+   *  routed numeric input in the app uses (see CLAUDE.md §11). */
+  readonly userId = input(null as number | null, {
+    transform: (v: string | number | null | undefined) => (v == null ? null : Number(v) || null),
+  });
 
   protected readonly searchQuery = signal('');
   protected readonly filteredConversations = computed(() =>
