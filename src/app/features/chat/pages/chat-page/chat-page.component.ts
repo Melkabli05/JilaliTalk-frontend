@@ -40,7 +40,7 @@ import { ChatGiftBubbleComponent } from '../../ui/chat-gift-bubble.component';
 import { ChatIntroductionBubbleComponent } from '../../ui/chat-introduction-bubble.component';
 import { ChatRoomShareCardComponent } from '../../ui/chat-room-share-card.component';
 import { ChatDeliveryMarkComponent } from '../../ui/chat-delivery-mark.component';
-import { ChatComposerComponent } from '../../ui/chat-composer.component';
+import { ChatComposerComponent, type ComposerAction } from '../../ui/chat-composer.component';
 import { ChatConversationRowComponent } from '../../ui/chat-conversation-row.component';
 import { ChatConnectionPillComponent } from '../../ui/chat-connection-pill.component';
 import { ChatUserPickerSheetComponent } from '../../ui/chat-user-picker-sheet.component';
@@ -273,6 +273,7 @@ const FOLLOWERS_LIMIT = 50;
             (toggleAttach)="togglePicker('shareProfile')"
             (removeStaged)="stagedIntroduction.set(null)"
             (blur)="onComposerBlur()"
+            (action)="onComposerAction($event)"
           />
         } @else {
           <app-chat-empty-state
@@ -674,6 +675,49 @@ export class ChatPageComponent {
   protected onComposerBlur(): void {
     const peerId = this.selectedNumericPeerId();
     if (peerId != null) this.typingBroadcaster.stop(peerId);
+  }
+
+  /**
+   * Dispatched by the composer's attach-menu (Photo / Gift / Voice room / Live link). For
+   * now we ship stub dialog prompts — production-grade pickers (image upload, gift catalog,
+   * live-room picker) will live in their own features and call into the store directly.
+   */
+  protected onComposerAction(action: ComposerAction): void {
+    const peerId = this.selectedNumericPeerId();
+    if (peerId == null) return;
+    switch (action) {
+      case 'image': {
+        const url = window.prompt('Image URL to send');
+        if (!url) return;
+        this.store.sendImage(peerId, { url });
+        return;
+      }
+      case 'gift': {
+        const idRaw = window.prompt('Gift ID to send');
+        const id = Number(idRaw);
+        if (!Number.isFinite(id) || id <= 0) return;
+        const name = window.prompt('Gift name') ?? '';
+        const pic = window.prompt('Gift small picture URL') ?? '';
+        this.store.sendGift(peerId, {
+          id,
+          name,
+          multiName: {},
+          smallPic: pic,
+          animUrl: '',
+          diamondVal: 0,
+          giftType: 1,
+        });
+        return;
+      }
+      case 'voice_room':
+      case 'live_link': {
+        const cname = window.prompt('Room cname to share');
+        if (!cname) return;
+        if (action === 'voice_room') this.store.sendVoiceRoom(peerId, cname);
+        else this.store.sendLiveLink(peerId, cname);
+        return;
+      }
+    }
   }
 
   protected onSend(): void {

@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { LucideSend, LucideUserPlus, LucideX } from '@lucide/angular';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { LucideSend, LucideUserPlus, LucideX, LucideImage, LucideGift, LucideRadio, LucideVideo } from '@lucide/angular';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
 import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
 
+export type ComposerAction = 'image' | 'gift' | 'voice_room' | 'live_link';
+
 @Component({
   selector: 'app-chat-composer',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarComponent, TooltipDirective, LucideSend, LucideUserPlus, LucideX],
+  imports: [AvatarComponent, TooltipDirective, LucideSend, LucideUserPlus, LucideX, LucideImage, LucideGift, LucideRadio, LucideVideo],
   template: `
     @if (stagedIntroduction(); as intro) {
       <div class="composer-staged">
@@ -27,6 +29,39 @@ import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
       </div>
     }
     <form class="composer" (submit)="$event.preventDefault(); send.emit()">
+      <div class="composer-attach-group">
+        <button
+          type="button"
+          class="composer-attach"
+          (click)="toggleAttachMenu()"
+          [attr.aria-label]="attachMenuOpen() ? 'Close attach menu' : 'Attach image, gift, voice room, or live room'"
+          [attr.aria-expanded]="attachMenuOpen()"
+          [appTooltip]="attachMenuOpen() ? 'Close' : 'Attach'"
+          tooltipPosition="top"
+        >
+          <svg aria-hidden="true" lucideUserPlus [size]="16"></svg>
+        </button>
+        @if (attachMenuOpen()) {
+          <div class="composer-attach-menu" role="menu">
+            <button type="button" class="composer-attach-item" role="menuitem" (click)="onAction('image')">
+              <svg aria-hidden="true" lucideImage [size]="16"></svg>
+              <span>Photo</span>
+            </button>
+            <button type="button" class="composer-attach-item" role="menuitem" (click)="onAction('gift')">
+              <svg aria-hidden="true" lucideGift [size]="16"></svg>
+              <span>Gift</span>
+            </button>
+            <button type="button" class="composer-attach-item" role="menuitem" (click)="onAction('voice_room')">
+              <svg aria-hidden="true" lucideRadio [size]="16"></svg>
+              <span>Voice room</span>
+            </button>
+            <button type="button" class="composer-attach-item" role="menuitem" (click)="onAction('live_link')">
+              <svg aria-hidden="true" lucideVideo [size]="16"></svg>
+              <span>Live link</span>
+            </button>
+          </div>
+        }
+      </div>
       <button
         type="button"
         class="composer-attach"
@@ -109,6 +144,38 @@ import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
     .composer-send { background: var(--color-primary-500); color: var(--color-on-color); box-shadow: var(--shadow-primary-sm); }
     .composer-send:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
     .composer-attach:hover { background: var(--color-neutral-100); }
+    .composer-attach-group { position: relative; }
+    .composer-attach-menu {
+      position: absolute; bottom: calc(100% + 6px); left: 0;
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      padding: 4px; min-width: 160px;
+      display: flex; flex-direction: column;
+      animation: composerMenuIn 140ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      z-index: 10;
+    }
+    @keyframes composerMenuIn {
+      from { opacity: 0; transform: translateY(4px) scale(0.96); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .composer-attach-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; background: transparent; border: 0;
+      color: var(--color-text); font-family: inherit; font-size: var(--text-sm);
+      text-align: start; cursor: pointer; border-radius: var(--radius-sm);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 120ms ease;
+    }
+    .composer-attach-item:hover, .composer-attach-item:focus-visible {
+      background: var(--color-neutral-100);
+      outline: none;
+    }
+    :host-context(.dark) .composer-attach-item:hover, :host-context(.dark) .composer-attach-item:focus-visible {
+      background: var(--color-neutral-800);
+    }
     .composer-field {
       flex: 1; min-height: 36px; max-height: 120px; resize: none;
       padding: 8px 10px; border: 1px solid var(--color-border);
@@ -139,6 +206,19 @@ export class ChatComposerComponent {
   readonly toggleAttach = output<void>();
   readonly removeStaged = output<void>();
   readonly blur = output<void>();
+  readonly action = output<ComposerAction>();
+
+  private readonly _attachMenuOpen = signal(false);
+  protected readonly attachMenuOpen = this._attachMenuOpen.asReadonly();
+
+  protected toggleAttachMenu(): void {
+    this._attachMenuOpen.update((v) => !v);
+  }
+
+  protected onAction(action: ComposerAction): void {
+    this._attachMenuOpen.set(false);
+    this.action.emit(action);
+  }
 
   protected onInput(value: string): void {
     this.draftChange.emit(value);
