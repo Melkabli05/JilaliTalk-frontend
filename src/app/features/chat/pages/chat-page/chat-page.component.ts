@@ -12,6 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { from, of } from 'rxjs';
 import {
@@ -234,6 +235,7 @@ const FOLLOWERS_LIMIT = 50;
                     kind="voice"
                     [listenerCount]="msg.listenerCount ?? null"
                     [isOutbound]="!!msg.delivery"
+                    (join)="onJoinRoom(msg.cname, 'voice')"
                   />
                 }
                 @case ('live_room_shared') {
@@ -242,6 +244,7 @@ const FOLLOWERS_LIMIT = 50;
                     [fromName]="msg.fromNickname || conv.nickname"
                     kind="live"
                     [isOutbound]="!!msg.delivery"
+                    (join)="onJoinRoom(msg.cname, 'live')"
                   />
                 }
               }
@@ -462,6 +465,7 @@ export class ChatPageComponent {
   protected readonly isMobileViewport = injectIsMobileViewport();
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
   private readonly profileDirectory: ChatProfileDirectory = inject(CHAT_PROFILE_DIRECTORY);
   private readonly keyboardInset = inject(KeyboardInsetService);
   protected readonly keyboardInsetPx = this.keyboardInset.keyboardInsetPx;
@@ -722,6 +726,21 @@ export class ChatPageComponent {
         else this.store.sendLiveLink(peerId, cname);
         return;
       }
+    }
+  }
+
+  /**
+   * Voice rooms live at /room/:cname/2 (RoomPageComponent's default busiType), live/video
+   * rooms at /room/video/:cname/1 (VideoRoomPageComponent's default busiType) — see
+   * room.routes.ts. Chat can't import the room feature directly (features never import
+   * features — CLAUDE.md §3), so this navigates by URL instead, the same decoupling the
+   * router itself is built for.
+   */
+  protected onJoinRoom(cname: string, kind: 'voice' | 'live'): void {
+    if (kind === 'voice') {
+      void this.router.navigate(['/room', cname, 2]);
+    } else {
+      void this.router.navigate(['/room', 'video', cname, 1]);
     }
   }
 
