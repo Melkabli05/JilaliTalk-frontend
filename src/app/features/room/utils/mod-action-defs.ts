@@ -13,7 +13,7 @@ export function buildModActionDefs(
     mute:              { call: () => api.muteUser(cname, busiType, uid, true),              toast: 'success', message: 'User muted' },
     raise_hand:        { call: () => api.raiseHand(cname, busiType, 2),                    toast: 'info',    message: 'Hand lowered' },
     add_manager:       { call: () => api.setManager(cname, busiType, uid, 1),             toast: 'success', message: 'User promoted to moderator' },
-    remove_manager:    { call: () => api.setManager(cname, busiType, uid, 2),             toast: 'success', message: 'Manager removed' },
+    remove_manager:    { call: () => api.setManager(cname, busiType, uid, 2),             toast: 'success', message: 'Moderator removed' },
     invite_to_stage:   { call: () => api.inviteToStage(cname, busiType, uid),             toast: 'info',    message: 'Invitation sent to stage' },
     ban:               { call: () => api.kickFromStage(cname, busiType, uid),             toast: 'success', message: 'User removed from stage' },
     approve_raise_hand:{ call: () => api.raiseHandApproval(cname, busiType, uid, 1),      toast: 'success', message: 'Hand approved' },

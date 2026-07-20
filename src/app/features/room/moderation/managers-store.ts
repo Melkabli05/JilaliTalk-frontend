@@ -50,7 +50,7 @@ export class ManagersStore {
 
   readonly managers = computed(() => (this.managersRef.value().managerList ?? []).filter((m) => m.role === UserRole.Moderator));
   readonly loading = this.managersRef.isLoading;
-  readonly error = computed(() => (this.managersRef.error() ? 'Failed to load managers' : null));
+  readonly error = computed(() => (this.managersRef.error() ? 'Failed to load moderators' : null));
 
   setParams(cname: string, hostId: number): void {
     this._cname.set(cname);

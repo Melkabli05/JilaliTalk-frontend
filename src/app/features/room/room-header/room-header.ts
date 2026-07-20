@@ -285,10 +285,10 @@ import { handIcon as resolveHandIcon, handTooltip as resolveHandTooltip, wsStatu
 
           <button
             class="toolbar-btn c-managers"
-            appTooltip="Managers"
+            appTooltip="Moderators"
             tooltipPosition="bottom"
             (click)="onManagers()"
-            aria-label="View room managers"
+            aria-label="View room moderators"
           >
             <svg aria-hidden="true" lucideShield [size]="18"></svg>
           </button>
@@ -367,7 +367,7 @@ import { handIcon as resolveHandIcon, handTooltip as resolveHandTooltip, wsStatu
           </button>
           <button class="overflow-row" (click)="onManagers()">
             <svg aria-hidden="true" lucideShield [size]="20"></svg>
-            <span class="row-label">Managers</span>
+            <span class="row-label">Moderators</span>
           </button>
         </div>
 

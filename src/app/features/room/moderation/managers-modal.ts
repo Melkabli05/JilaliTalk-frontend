@@ -34,7 +34,7 @@ export interface ManagersModalData {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal [title]="'Room managers'" [count]="reader.managers().length > 0 ? reader.managers().length : null">
+    <app-modal [title]="'Room moderators'" [count]="reader.managers().length > 0 ? reader.managers().length : null">
       @if (reader.loading()) {
         <div class="loading-list">
           @for (i of [1,2,3]; track i) {
@@ -56,11 +56,11 @@ export interface ManagersModalData {
           </button>
         </div>
       } @else if (reader.managers().length === 0) {
-        <app-empty-state [compact]="true" title="No managers yet" body="Promote members to help manage this room">
+        <app-empty-state [compact]="true" title="No moderators yet" body="Promote members to help manage this room">
           <svg empty-state-icon xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </app-empty-state>
       } @else {
-        <ul ngListbox [readonly]="true" [multi]="false" aria-label="Room managers" class="managers-list">
+        <ul ngListbox [readonly]="true" [multi]="false" aria-label="Room moderators" class="managers-list">
           @for (manager of reader.managers(); track manager.userId; let i = $index) {
             <li
               ngOption
@@ -104,7 +104,7 @@ export interface ManagersModalData {
                   class="remove-btn"
                   [disabled]="removingId() === manager.userId"
                   (click)="onRemove(manager.userId, $event)"
-                  [attr.aria-label]="'Remove ' + manager.nickname + ' as manager'"
+                  [attr.aria-label]="'Remove ' + manager.nickname + ' as moderator'"
                   appTooltip="Remove"
                   tooltipPosition="left"
                 >
@@ -380,7 +380,7 @@ export class ManagersModalComponent {
     this.removingId.set(userId);
     firstValueFrom(this.api.setManager(this.data.cname, this.data.busiType, userId, 2))
       .then(() => this.writer.reload())
-      .catch(() => this.toast.error('Could not remove manager. Try again.'))
+      .catch(() => this.toast.error('Could not remove moderator. Try again.'))
       .finally(() => this.removingId.set(null));
   }
 
