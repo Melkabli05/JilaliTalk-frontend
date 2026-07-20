@@ -1,4 +1,4 @@
-import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
+import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
 
 export type ChatDelivery = 'sent' | 'delivered' | 'read';
 

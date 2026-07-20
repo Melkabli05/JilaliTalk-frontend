@@ -22,8 +22,6 @@ import { environment } from '@env/environment';
 import { routes } from './app.routes';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
 import { WS_BASE_URL } from '@core/tokens/ws-base-url.token';
-import { IM_WS_URL } from '@core/tokens/im-ws-url.token';
-import { ROOM_WS_URL } from '@core/tokens/room-ws-url.token';
 import { AGORA_APP_ID_VOICE, AGORA_APP_ID_VIDEO } from '@core/tokens/agora-app-id.token';
 
 function restoreSession() {
@@ -51,8 +49,6 @@ export const appConfig: ApplicationConfig = {
     { provide: APP_INITIALIZER, useFactory: restoreSession, multi: true },
     { provide: API_BASE_URL, useValue: environment.apiUrl },
     { provide: WS_BASE_URL, useValue: environment.wsUrl },
-    { provide: IM_WS_URL, useValue: environment.imWsUrl },
-    { provide: ROOM_WS_URL, useValue: environment.roomWsUrl },
     { provide: AGORA_APP_ID_VOICE, useValue: environment.agoraAppIdVoice },
     { provide: AGORA_APP_ID_VIDEO, useValue: environment.agoraAppIdVideo },
 

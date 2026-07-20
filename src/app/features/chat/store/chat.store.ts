@@ -2,7 +2,7 @@ import { Service, DestroyRef, computed, effect, inject, signal } from '@angular/
 import { StorageService } from '@core/services/storage.service';
 import { UserInfoService } from '@core/services/user-info.service';
 import { AuthStore } from '@core/auth/auth.store';
-import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
+import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
 import type {
   ChatConversation,
   ChatDelivery,

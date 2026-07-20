@@ -205,8 +205,10 @@ export class ImBootstrapService {
       case 'account_status':
         if (event.status === 'banned') {
           this.toast.error('Your HelloTalk account has been banned.');
+          this.notifications.notify('error', 'Account banned', 'Your HelloTalk account has been banned. Messaging is unavailable.');
         } else {
           this.toast.warning('Logged in elsewhere — this session was disconnected.');
+          this.notifications.notify('warning', 'Session disconnected', 'Your HelloTalk account was logged in elsewhere, disconnecting this session.');
         }
         break;
       case 'error':

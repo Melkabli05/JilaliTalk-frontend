@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
+import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 

@@ -1,5 +1,5 @@
 import type { Signal } from '@angular/core';
-import type { DmSendPayload } from './ht-protocol/packet-framer.util';
+import type { DmSendPayload } from './dm-send-payload.model';
 import type { ImEvent } from './im-events';
 
 /**

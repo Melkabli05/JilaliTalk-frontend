@@ -24,7 +24,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal';
 import { KeyboardInsetService } from '@core/services/keyboard-inset.service';
 import { injectIsMobileViewport, relativeTime } from '@shared/utils';
-import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
+import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
 import { ChatStore } from '../../store/chat.store';
 import { CHAT_PROFILE_DIRECTORY } from '../../store/chat.tokens';
 import type { ChatProfileDirectory } from '../../data-access/chat.port';

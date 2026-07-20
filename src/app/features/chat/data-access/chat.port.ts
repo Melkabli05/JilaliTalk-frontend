@@ -1,5 +1,5 @@
 import type { Signal } from '@angular/core';
-import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
+import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
 import type { ChatConnectionStatus, ChatUserSummary } from '../models/chat-message.model';
 
 export interface ChatProfilePage {

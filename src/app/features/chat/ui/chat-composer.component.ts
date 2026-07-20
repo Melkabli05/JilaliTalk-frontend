@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { LucideSend, LucideUserPlus, LucideX } from '@lucide/angular';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
-import type { IntroductionPayload } from '@core/realtime/ht-protocol/packet-framer.util';
+import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
 
 @Component({
   selector: 'app-chat-composer',
