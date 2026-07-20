@@ -13,6 +13,7 @@ import { ChannelListItem } from '../../data/rooms-model';
 import { joinRoom as joinRoomCommand } from '../../data/join-room.util';
 import { LanguageFilterComponent } from '../../ui/language-filter/language-filter';
 import { LiveRoomCardComponent } from '../../ui/live-room-card/live-room-card';
+import { RoomSharePickerComponent } from '../../ui/room-share-picker/room-share-picker';
 import { InfiniteScrollDirective } from '@shared/directives/infinite-scroll.directive';
 import { SearchBarComponent } from '@shared/ui/search-bar/search-bar';
 import { CardSkeletonComponent } from '@shared/ui/card-skeleton/card-skeleton';
@@ -33,6 +34,7 @@ type ViewMode = 'grid' | 'list';
     LanguageFilterComponent,
     SearchBarComponent,
     LiveRoomCardComponent,
+    RoomSharePickerComponent,
     CardSkeletonComponent,
     EmptyStateComponent,
     InfiniteScrollDirective,
@@ -63,6 +65,8 @@ export class LiveList {
   readonly selectedLanguageId = this.store.selectedLanguageId;
   readonly searchQuery = this.store.searchQuery;
   readonly error = this.store.error;
+
+  readonly sharingRoom = signal<ChannelListItem | null>(null);
 
   readonly viewMode = signal<ViewMode>('grid');
   readonly skeletonItems = computed(() => Array(6).fill(0));
@@ -109,5 +113,9 @@ export class LiveList {
 
   onJoinRoom(payload: { room: ChannelListItem; visible: boolean }): void {
     void this.joinRoom(payload.room, payload.visible);
+  }
+
+  onShareRoom(room: ChannelListItem): void {
+    this.sharingRoom.set(room);
   }
 }

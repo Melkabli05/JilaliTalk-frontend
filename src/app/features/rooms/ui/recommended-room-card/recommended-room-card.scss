@@ -4,6 +4,7 @@
 }
 
 .rec-card {
+  position: relative;
   flex-shrink: 0;
   width: 240px;
   scroll-snap-align: start;
@@ -41,6 +42,27 @@
     width: 168px;
     padding: var(--space-2);
     gap: var(--space-1);
+  }
+}
+
+.rec-share-btn {
+  position: absolute; top: var(--space-2); right: var(--space-2); z-index: 1;
+  width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-card) 85%, transparent);
+  color: var(--color-text-muted); cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover { background: var(--color-primary-50); color: var(--color-primary-text); }
+  &:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+  :host-context(.dark) & {
+    background: color-mix(in srgb, var(--color-neutral-800) 85%, transparent);
+    color: var(--color-neutral-400);
+
+    &:hover { background: var(--color-primary-900); color: var(--color-primary-300); }
   }
 }
 

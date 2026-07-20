@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, input, output, computed, inject } from '@angular/core';
-import { LucideUsers, LucideCrown, LucideEye, LucideEyeOff } from '@lucide/angular';
+import { LucideUsers, LucideCrown, LucideEye, LucideEyeOff, LucideShare2 } from '@lucide/angular';
 import { ChannelListItem } from '../../data/rooms-model';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { ButtonComponent } from '@shared/ui/button/button.component';
@@ -11,7 +11,7 @@ import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
 @Component({
   selector: 'app-room-card',
 
-  imports: [AvatarComponent, ButtonComponent, CountryFlagComponent, LanguageTagComponent, TooltipDirective, LucideUsers, LucideCrown, LucideEye, LucideEyeOff],
+  imports: [AvatarComponent, ButtonComponent, CountryFlagComponent, LanguageTagComponent, TooltipDirective, LucideUsers, LucideCrown, LucideEye, LucideEyeOff, LucideShare2],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article
@@ -21,6 +21,15 @@ import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
       (keydown.enter)="handleJoin()"
       (keydown.space)="handleJoin()"
     >
+      <button
+        type="button"
+        class="share-btn"
+        [attr.aria-label]="'Share ' + room().channel.name"
+        (click)="handleShare($event)"
+      >
+        <svg aria-hidden="true" lucideShare2 [size]="14"></svg>
+      </button>
+
             <div class="card-header">
         <h3 class="card-title">{{ room().channel.name }}</h3>
         @if (room().categoryTopicTag?.topicName) {
@@ -120,6 +129,7 @@ import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
     }
 
     .room-card {
+      position: relative;
       background-color: var(--color-card);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-xl);
@@ -134,6 +144,24 @@ import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
       gap: var(--space-4);
       height: 100%;
       box-sizing: border-box;
+    }
+
+    .share-btn {
+      position: absolute; top: var(--space-2); right: var(--space-2); z-index: 1;
+      width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+      border: 0; border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--color-card) 85%, transparent);
+      color: var(--color-text-muted); cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .share-btn:hover { background: var(--color-primary-50); color: var(--color-primary-text); }
+    .share-btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+    :host-context(.dark) .share-btn { background: color-mix(in srgb, var(--color-neutral-800) 85%, transparent); color: var(--color-neutral-400); }
+    :host-context(.dark) .share-btn:hover { background: var(--color-primary-900); color: var(--color-primary-300); }
+    @media (max-width: 767.98px) {
+      .share-btn { width: 40px; height: 40px; }
     }
 
     .room-card:hover {
@@ -376,6 +404,7 @@ import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
 export class RoomCardComponent {
   readonly room = input.required<ChannelListItem>();
   readonly joinRoom = output<{ room: ChannelListItem; visible: boolean }>();
+  readonly share = output<ChannelListItem>();
 
   readonly prefs = inject(RoomsPreferencesStore);
 
@@ -400,5 +429,10 @@ export class RoomCardComponent {
     event.stopPropagation();
     this.prefs.markInvisibleTooltipSeen();
     this.joinRoom.emit({ room: this.room(), visible: false });
+  }
+
+  handleShare(event: Event): void {
+    event.stopPropagation();
+    this.share.emit(this.room());
   }
 }

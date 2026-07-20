@@ -17,6 +17,7 @@ import { CategoryFilterComponent } from '../../ui/category-filter/category-filte
 import { LanguageFilterComponent } from '../../ui/language-filter/language-filter';
 import { RoomCardComponent } from '../../ui/room-card/room-card';
 import { RecommendedRoomCardComponent } from '../../ui/recommended-room-card/recommended-room-card';
+import { RoomSharePickerComponent } from '../../ui/room-share-picker/room-share-picker';
 import { SearchBarComponent } from '@shared/ui/search-bar/search-bar';
 import { CardSkeletonComponent } from '@shared/ui/card-skeleton/card-skeleton';
 import { EmptyStateComponent } from '@shared/ui/empty-state/empty-state.component';
@@ -41,6 +42,7 @@ type ViewMode = 'grid' | 'list';
     SearchBarComponent,
     RoomCardComponent,
     RecommendedRoomCardComponent,
+    RoomSharePickerComponent,
     CardSkeletonComponent,
     EmptyStateComponent,
     InfiniteScrollDirective,
@@ -77,6 +79,8 @@ export class VoiceListComponent {
   readonly selectedLanguageId = this.store.selectedLanguageId;
   readonly searchQuery = this.store.searchQuery;
   readonly error = this.store.error;
+
+  readonly sharingRoom = signal<ChannelListItem | null>(null);
 
   readonly viewMode = signal<ViewMode>('grid');
   readonly skeletonItems = computed(() => Array(6).fill(0));
@@ -133,6 +137,10 @@ export class VoiceListComponent {
 
   onRecommendedJoin(payload: { room: ChannelListItem; visible: boolean }): void {
     void this.joinRoom(payload.room, payload.visible);
+  }
+
+  onShareRoom(room: ChannelListItem): void {
+    this.sharingRoom.set(room);
   }
 
   scrollCarousel(direction: 'prev' | 'next'): void {

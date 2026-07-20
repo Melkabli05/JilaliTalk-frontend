@@ -16,6 +16,7 @@
             [room]="room"
             [recommended]="true"
             (joinRoom)="onJoinRoom($event)"
+            (share)="onShareRoom($event)"
           />
         }
       </div>
@@ -93,6 +94,7 @@
         <app-live-room-card
           [room]="room"
           (joinRoom)="onJoinRoom($event)"
+          (share)="onShareRoom($event)"
           [style.animation-delay]="i * 30 + 'ms'"
           class="room-item"
         />
@@ -113,4 +115,10 @@
       </div>
     }
   }
+
+  <app-room-share-picker
+    [open]="sharingRoom() !== null"
+    [room]="sharingRoom()"
+    (closed)="sharingRoom.set(null)"
+  />
 </div>

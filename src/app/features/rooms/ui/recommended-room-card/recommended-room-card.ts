@@ -4,11 +4,11 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
-import { LucideEye, LucideEyeOff, LucideTrendingUp } from '@lucide/angular';
+import { LucideEye, LucideEyeOff, LucideTrendingUp, LucideShare2 } from '@lucide/angular';
 
 @Component({
   selector: 'app-recommended-room-card',
-  imports: [AvatarComponent, ButtonComponent, CountryFlagComponent, LanguageTagComponent, LucideEye, LucideEyeOff, LucideTrendingUp],
+  imports: [AvatarComponent, ButtonComponent, CountryFlagComponent, LanguageTagComponent, LucideEye, LucideEyeOff, LucideTrendingUp, LucideShare2],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './recommended-room-card.html',
   styleUrl: './recommended-room-card.scss',
@@ -16,9 +16,15 @@ import { LucideEye, LucideEyeOff, LucideTrendingUp } from '@lucide/angular';
 export class RecommendedRoomCardComponent {
   readonly room = input.required<ChannelListItem>();
   readonly joinRoom = output<{ room: ChannelListItem; visible: boolean }>();
+  readonly share = output<ChannelListItem>();
 
   handleJoin(visible: boolean, event?: Event): void {
     event?.stopPropagation();
     this.joinRoom.emit({ room: this.room(), visible });
+  }
+
+  handleShare(event: Event): void {
+    event.stopPropagation();
+    this.share.emit(this.room());
   }
 }

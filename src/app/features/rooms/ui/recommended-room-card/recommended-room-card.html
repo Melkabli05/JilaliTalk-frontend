@@ -8,6 +8,15 @@
   (keydown.enter)="handleJoin(true)"
   (keydown.space)="handleJoin(true, $event)"
 >
+  <button
+    type="button"
+    class="rec-share-btn"
+    [attr.aria-label]="'Share ' + room().channel.name"
+    (click)="handleShare($event)"
+  >
+    <svg aria-hidden="true" lucideShare2 [size]="12"></svg>
+  </button>
+
   <div class="rec-host">
     <app-avatar
       [src]="room().hostUser.headUrl || ''"

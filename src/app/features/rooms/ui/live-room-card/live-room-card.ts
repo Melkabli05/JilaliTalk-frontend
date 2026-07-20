@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { LucideFlame, LucideUsers, LucideCrown, LucideEyeOff } from '@lucide/angular';
+import { LucideFlame, LucideUsers, LucideCrown, LucideEyeOff, LucideShare2 } from '@lucide/angular';
 import { ChannelListItem } from '../../data/rooms-model';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { ButtonComponent } from '@shared/ui/button/button.component';
@@ -19,7 +19,7 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
   host: {
     '[class.recommended]': 'recommended()',
   },
-  imports: [NgOptimizedImage, AvatarComponent, ButtonComponent, CountryFlagComponent, LanguageTagComponent, LucideFlame, LucideUsers, LucideCrown, LucideEyeOff],
+  imports: [NgOptimizedImage, AvatarComponent, ButtonComponent, CountryFlagComponent, LanguageTagComponent, LucideFlame, LucideUsers, LucideCrown, LucideEyeOff, LucideShare2],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article
@@ -29,6 +29,15 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
       (keydown.enter)="handleJoin()"
       (keydown.space)="handleJoin()"
     >
+      <button
+        type="button"
+        class="share-btn"
+        [attr.aria-label]="'Share ' + room().channel.name"
+        (click)="handleShare($event)"
+      >
+        <svg aria-hidden="true" lucideShare2 [size]="14"></svg>
+      </button>
+
             <div class="card-thumbnail">
         @if (room().hostUser.headUrl; as headUrl) {
           <img
@@ -138,6 +147,7 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
     :host { display: block; height: 100%; flex: 1; min-width: 180px; }
 
     .live-card {
+      position: relative;
       background-color: var(--color-card);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-xl);
@@ -151,6 +161,22 @@ import { LanguageTagComponent } from '@shared/ui/host-flag/language-tag';
       flex-direction: column;
       height: 100%;
       box-sizing: border-box;
+    }
+
+    .share-btn {
+      position: absolute; top: var(--space-2); right: var(--space-2); z-index: 3;
+      width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+      border: 0; border-radius: var(--radius-full);
+      background: rgb(0 0 0 / 55%); backdrop-filter: blur(4px);
+      color: white; cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.15s ease;
+    }
+    .share-btn:hover { background: rgb(0 0 0 / 75%); }
+    .share-btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+    @media (max-width: 767.98px) {
+      .share-btn { width: 40px; height: 40px; }
     }
 
     .live-card:hover {
@@ -462,6 +488,7 @@ export class LiveRoomCardComponent {
   readonly room = input.required<ChannelListItem>();
   readonly recommended = input(false);
   readonly joinRoom = output<{ room: ChannelListItem; visible: boolean }>();
+  readonly share = output<ChannelListItem>();
 
   protected readonly flagError = signal(false);
   protected readonly flagUrl = computed(() => {
@@ -491,5 +518,10 @@ export class LiveRoomCardComponent {
     if (this.room().channel.totalUserCount > 0) {
       this.joinRoom.emit({ room: this.room(), visible: false });
     }
+  }
+
+  handleShare(event: Event): void {
+    event.stopPropagation();
+    this.share.emit(this.room());
   }
 }
