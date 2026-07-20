@@ -63,16 +63,6 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
         height: 100svh;
         overflow: hidden;
       }
-      @media (min-width: 1024px) {
-        .app-shell {
-          grid-template-columns: var(--sidebar-width) 1fr;
-        }
-        /* Standalone routes drop the sidebar at all viewports — collapse the
-           grid to a single column so content fills the viewport. */
-        .app-shell.standalone {
-          grid-template-columns: 1fr;
-        }
-      }
 
       /* Fullscreen routes (login/signup — chromeless auth pages) drop every
          piece of shell chrome (sidenav, header, mobile-nav) on every
@@ -80,7 +70,6 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
          insets to zero so the page itself owns the full 100svh/100dvh and
          is responsible for its own safe-area padding. */
       .app-shell.fullscreen {
-        grid-template-columns: 1fr;
         --shell-inset-top: 0px;
         --shell-inset-bottom: 0px;
       }
@@ -90,6 +79,26 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
         position: relative;
         min-height: 0;
         overflow: hidden;
+      }
+      /* app-sidenav's host is display:contents (its only visual child,
+         .sidebar-desktop, is position:fixed) — it never occupies a grid
+         track, so .app-shell can't rely on a two-column grid to reserve
+         space for it. Offset .main-wrapper with a margin instead, mirroring
+         how .app-header positions itself against the same fixed sidebar. */
+      @media (min-width: 1024px) {
+        .main-wrapper {
+          margin-left: var(--sidebar-width);
+        }
+        .app-shell.standalone .main-wrapper {
+          margin-left: 0;
+        }
+        :host-context([dir='rtl']) .main-wrapper {
+          margin-left: 0;
+          margin-right: var(--sidebar-width);
+        }
+        :host-context([dir='rtl']) .app-shell.standalone .main-wrapper {
+          margin-right: 0;
+        }
       }
 
       /* The ONLY scroll container. Fills the slot — header floats above.
