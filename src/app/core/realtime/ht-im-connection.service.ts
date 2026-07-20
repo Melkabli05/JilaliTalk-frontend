@@ -97,10 +97,22 @@ export class HtImConnectionService {
     ).catch((err: unknown) => logRealtime('send typing failed', err));
   }
 
+  /**
+   * Read-receipt body now includes {@code chatType: 1} (1:1 DM), per the real Android client's
+   * {@code HasReadRequest.smali} ({@code re_output/apktool_out/smali_classes13/.../HasReadRequest.smali}):
+   * the wire body is {@code [LE-u16 strLen+1][utf8 msgId][0x00 terminator][LE-u32 chatType]}.
+   * The BFF {@code ImSendController.read} defaults to {@code chatType=1} if the body omits it,
+   * so the field is optional — but we send it explicitly so the protocol contract is symmetric
+   * with the upstream client and ready for future group/voice-room contexts where chatType would
+   * differ.
+   */
   sendReadReceipt(peerId: number, msgId: string): void {
     logRealtime('send read receipt', { peerId, msgId });
     void firstValueFrom(
-      this.http.post(`${this.apiBaseUrl}/im/messages/${peerId}/read`, { msgId }),
+      this.http.post(`${this.apiBaseUrl}/im/messages/${peerId}/read`, {
+        msgId,
+        chatType: 1,
+      }),
     ).catch((err: unknown) => logRealtime('send read receipt failed', err));
   }
 

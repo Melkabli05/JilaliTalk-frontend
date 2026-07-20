@@ -7,9 +7,9 @@ export type ImEvent =
   | { readonly type: 'mod_removed'; readonly userId: string }
   | { readonly type: 'mod_unmuted'; readonly userId: string }
   | { readonly type: 'follow'; readonly userId: string; readonly nickname: string; readonly headUrl?: string; readonly status: number }
-  | { readonly type: 'text_message'; readonly fromUserId: string; readonly fromNickname: string; readonly fromHeadUrl?: string; readonly text: string; readonly ts: number }
-  | { readonly type: 'image_message'; readonly fromUserId: string; readonly fromNickname: string; readonly fromHeadUrl?: string; readonly imageUrl: string; readonly ts: number }
-  | { readonly type: 'gift_message'; readonly fromUserId: string; readonly fromNickname: string; readonly fromHeadUrl?: string; readonly giftId: number; readonly count: number }
+  | { readonly type: 'text_message'; readonly fromUserId: string; readonly fromNickname: string; readonly fromHeadUrl?: string; readonly text: string; readonly ts: number; readonly msgId?: string }
+  | { readonly type: 'image_message'; readonly fromUserId: string; readonly fromNickname: string; readonly fromHeadUrl?: string; readonly imageUrl: string; readonly ts: number; readonly msgId?: string }
+  | { readonly type: 'gift_message'; readonly fromUserId: string; readonly fromNickname: string; readonly fromHeadUrl?: string; readonly giftId: number; readonly count: number; readonly msgId?: string }
   | {
       readonly type: 'introduction_message';
       readonly fromUserId: string;
@@ -22,9 +22,10 @@ export type ImEvent =
       readonly targetAge?: number | null;
       readonly targetNationality?: string | null;
       readonly targetBio?: string | null;
+      readonly msgId?: string;
     }
-  | { readonly type: 'voice_room_shared'; readonly fromUserId: string; readonly fromNickname: string; readonly cname: string; readonly headUrl: string | null; readonly count?: number }
-  | { readonly type: 'live_room_shared'; readonly fromUserId: string; readonly fromNickname: string; readonly cname: string; readonly headUrl: string | null }
+  | { readonly type: 'voice_room_shared'; readonly fromUserId: string; readonly fromNickname: string; readonly cname: string; readonly headUrl: string | null; readonly count?: number; readonly msgId?: string }
+  | { readonly type: 'live_room_shared'; readonly fromUserId: string; readonly fromNickname: string; readonly cname: string; readonly headUrl: string | null; readonly msgId?: string }
   | { readonly type: 'group_message'; readonly senderId: string; readonly senderName: string; readonly roomName: string; readonly text: string }
   | { readonly type: 'typing_indicator'; readonly fromUserId: string; readonly isTyping: boolean }
   | { readonly type: 'read_receipt'; readonly msgId: string }
