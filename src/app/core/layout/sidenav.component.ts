@@ -116,11 +116,6 @@ interface NavGroup {
       border-left: 1px solid var(--color-border);
     }
     @media (min-width: 1024px) { .sidebar-desktop { display: flex; } }
-    /* Standalone routes (e.g. /messages) keep the mobile bottom nav but drop the
-       desktop sidebar — focused pages where the chrome strip is just noise. */
-    @media (min-width: 1024px) {
-      .app-shell.standalone .sidebar-desktop { display: none; }
-    }
 
     .sidebar-logo {
       height: var(--space-16);

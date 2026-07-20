@@ -284,8 +284,8 @@ const FOLLOWERS_LIMIT = 50;
   styles: [`
     :host { display: block; height: 100%; }
     .chat-shell {
-      display: flex; height: 100%;
-      height: calc(100dvh - var(--app-header-height, 0px) - var(--bottom-nav-height, 0px) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--kb-inset, 0px));
+      display: flex;
+      height: calc(100% - var(--kb-inset, 0px));
       overflow: hidden; position: relative;
     }
     .chat-shell button, .chat-shell [role="option"], .chat-shell [role="tab"] {

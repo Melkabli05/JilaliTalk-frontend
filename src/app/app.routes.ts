@@ -32,7 +32,6 @@ export const routes: Routes = [
     path: 'messages',
     title: 'Chat',
     canActivate: [authGuard],
-    data: { standalone: true },
     loadChildren: () => import('./features/chat').then((m) => m.CHAT_ROUTES),
   },
   { path: 'rtm', redirectTo: 'messages', pathMatch: 'full' },
@@ -56,11 +55,6 @@ export const routes: Routes = [
   {
     path: 'room',
     loadChildren: () => import('./features/room').then((m) => m.roomRoutes),
-  },
-  {
-    path: 'dev/packets',
-    canActivate: [authGuard],
-    loadChildren: () => import('./features/dev-tools').then((m) => m.devToolsRoutes),
   },
   { path: 'error/401', title: 'Unauthorized', component: ErrorPageComponent, data: { code: 401 } },
   { path: 'error/403', title: 'Forbidden', component: ErrorPageComponent, data: { code: 403 } },

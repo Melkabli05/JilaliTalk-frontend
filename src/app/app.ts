@@ -14,7 +14,7 @@ import { PwaUpdateService } from '@core/services/pwa-update.service';
 import { ActiveCallStore } from '@store/active-call.store';
 import { injectIsMobileViewport } from '@shared/utils';
 
-function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standalone' | 'fullscreen'): boolean {
+function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'fullscreen'): boolean {
   let node = root;
   while (node.firstChild) node = node.firstChild;
   return node.data[key] === true;
@@ -25,7 +25,7 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, SidenavComponent, MobileNavComponent, HeaderComponent, ToastContainerComponent, PwaUpdateBannerComponent, MinimizedRoomBarComponent, NotificationToastComponent],
   template: `
-    <div class="app-shell" [class.immersive]="immersive()" [class.standalone]="standalone()" [class.fullscreen]="fullscreen()">
+    <div class="app-shell" [class.immersive]="immersive()" [class.fullscreen]="fullscreen()">
       <app-sidenav [hidden]="hideSidenav() || fullscreen()" />
       <div class="main-wrapper">
         <app-header [hidden]="fullscreen()" />
@@ -55,6 +55,14 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
            below) flip these for the immersive-route case. */
         --shell-inset-top: var(--app-header-height);
         --shell-inset-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+      }
+      /* .mobile-nav (which --bottom-nav-height reserves space for) is
+         display:none above 1024px — the sidenav takes over and consumes no
+         vertical space, so nothing needs bottom clearance on desktop. */
+      @media (min-width: 1024px) {
+        :host {
+          --shell-inset-bottom: env(safe-area-inset-bottom, 0px);
+        }
       }
 
       .app-shell {
@@ -89,15 +97,9 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'standa
         .main-wrapper {
           margin-left: var(--sidebar-width);
         }
-        .app-shell.standalone .main-wrapper {
-          margin-left: 0;
-        }
         :host-context([dir='rtl']) .main-wrapper {
           margin-left: 0;
           margin-right: var(--sidebar-width);
-        }
-        :host-context([dir='rtl']) .app-shell.standalone .main-wrapper {
-          margin-right: 0;
         }
       }
 
@@ -156,16 +158,14 @@ export class App {
         const root = this.router.routerState.snapshot.root;
         return {
           immersive: isRouteFlagSet(root, 'immersive'),
-          standalone: isRouteFlagSet(root, 'standalone'),
           fullscreen: isRouteFlagSet(root, 'fullscreen'),
         };
       }),
     ),
-    { initialValue: { immersive: false, standalone: false, fullscreen: false } },
+    { initialValue: { immersive: false, fullscreen: false } },
   );
 
   readonly immersive = computed(() => this.routeFlags().immersive);
-  readonly standalone = computed(() => this.routeFlags().standalone);
   readonly fullscreen = computed(() => this.routeFlags().fullscreen);
 
   /**
