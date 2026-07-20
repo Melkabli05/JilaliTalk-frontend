@@ -1,15 +1,15 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
-import { LucideSend, LucideUserPlus, LucideX, LucideImage, LucideGift, LucideRadio, LucideVideo } from '@lucide/angular';
+import { LucideSend, LucidePlus, LucideX, LucideImage, LucideGift, LucideRadio, LucideVideo, LucideUserPlus } from '@lucide/angular';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
 import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
 
-export type ComposerAction = 'image' | 'gift' | 'voice_room' | 'live_link';
+export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 'live_link';
 
 @Component({
   selector: 'app-chat-composer',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarComponent, TooltipDirective, LucideSend, LucideUserPlus, LucideX, LucideImage, LucideGift, LucideRadio, LucideVideo],
+  imports: [AvatarComponent, TooltipDirective, LucideSend, LucidePlus, LucideX, LucideImage, LucideGift, LucideRadio, LucideVideo, LucideUserPlus],
   template: `
     @if (stagedIntroduction(); as intro) {
       <div class="composer-staged">
@@ -34,15 +34,19 @@ export type ComposerAction = 'image' | 'gift' | 'voice_room' | 'live_link';
           type="button"
           class="composer-attach"
           (click)="toggleAttachMenu()"
-          [attr.aria-label]="attachMenuOpen() ? 'Close attach menu' : 'Attach image, gift, voice room, or live room'"
+          [attr.aria-label]="attachMenuOpen() ? 'Close attach menu' : 'Attach photo, gift, voice room, live room, or share a profile'"
           [attr.aria-expanded]="attachMenuOpen()"
           [appTooltip]="attachMenuOpen() ? 'Close' : 'Attach'"
           tooltipPosition="top"
         >
-          <svg aria-hidden="true" lucideUserPlus [size]="16"></svg>
+          <svg aria-hidden="true" lucidePlus [size]="18"></svg>
         </button>
         @if (attachMenuOpen()) {
           <div class="composer-attach-menu" role="menu">
+            <button type="button" class="composer-attach-item" role="menuitem" (click)="onAction('shareProfile')">
+              <svg aria-hidden="true" lucideUserPlus [size]="16"></svg>
+              <span>Share profile</span>
+            </button>
             <button type="button" class="composer-attach-item" role="menuitem" (click)="onAction('image')">
               <svg aria-hidden="true" lucideImage [size]="16"></svg>
               <span>Photo</span>
@@ -62,17 +66,6 @@ export type ComposerAction = 'image' | 'gift' | 'voice_room' | 'live_link';
           </div>
         }
       </div>
-      <button
-        type="button"
-        class="composer-attach"
-        (click)="toggleAttach.emit()"
-        [attr.aria-label]="attachOpen() ? 'Close share profile' : 'Share a profile'"
-        [attr.aria-expanded]="attachOpen()"
-        [appTooltip]="attachOpen() ? 'Close share profile' : 'Share a profile'"
-        tooltipPosition="top"
-      >
-        <svg aria-hidden="true" lucideUserPlus [size]="16"></svg>
-      </button>
       <textarea
         class="composer-field"
         rows="1"
@@ -92,7 +85,7 @@ export type ComposerAction = 'image' | 'gift' | 'voice_room' | 'live_link';
         type="submit"
         class="composer-send"
         [disabled]="!canSend()"
-        [attr.aria-label]="canSend() ? (stagedIntroduction() ? 'Send introduction' : 'Send message') : 'Type a message or attach a profile to send'"
+        [attr.aria-label]="canSend() ? (stagedIntroduction() ? 'Send introduction' : 'Send message') : 'Type a message or pick an attach option to send'"
         [title]="stagedIntroduction() ? 'Send introduction' : 'Send'"
       >
         <svg aria-hidden="true" lucideSend [size]="16"></svg>
@@ -197,13 +190,11 @@ export type ComposerAction = 'image' | 'gift' | 'voice_room' | 'live_link';
 export class ChatComposerComponent {
   readonly draft = input<string>('');
   readonly stagedIntroduction = input<IntroductionPayload | null>(null);
-  readonly attachOpen = input<boolean>(false);
   readonly canSend = input<boolean>(false);
   readonly recipientName = input<string>('');
 
   readonly draftChange = output<string>();
   readonly send = output<void>();
-  readonly toggleAttach = output<void>();
   readonly removeStaged = output<void>();
   readonly blur = output<void>();
   readonly action = output<ComposerAction>();

@@ -265,12 +265,10 @@ const FOLLOWERS_LIMIT = 50;
           <app-chat-composer
             [draft]="draft()"
             [stagedIntroduction]="stagedIntroduction()"
-            [attachOpen]="pickerOpen() === 'shareProfile'"
             [canSend]="canSend()"
             [recipientName]="conv.nickname"
             (draftChange)="onDraft($event)"
             (send)="onSend()"
-            (toggleAttach)="togglePicker('shareProfile')"
             (removeStaged)="stagedIntroduction.set(null)"
             (blur)="onComposerBlur()"
             (action)="onComposerAction($event)"
@@ -683,16 +681,21 @@ export class ChatPageComponent {
    * live-room picker) will live in their own features and call into the store directly.
    */
   protected onComposerAction(action: ComposerAction): void {
-    const peerId = this.selectedNumericPeerId();
-    if (peerId == null) return;
     switch (action) {
+      case 'shareProfile':
+        this.togglePicker('shareProfile');
+        return;
       case 'image': {
+        const peerId = this.selectedNumericPeerId();
+        if (peerId == null) return;
         const url = window.prompt('Image URL to send');
         if (!url) return;
         this.store.sendImage(peerId, { url });
         return;
       }
       case 'gift': {
+        const peerId = this.selectedNumericPeerId();
+        if (peerId == null) return;
         const idRaw = window.prompt('Gift ID to send');
         const id = Number(idRaw);
         if (!Number.isFinite(id) || id <= 0) return;
@@ -711,6 +714,8 @@ export class ChatPageComponent {
       }
       case 'voice_room':
       case 'live_link': {
+        const peerId = this.selectedNumericPeerId();
+        if (peerId == null) return;
         const cname = window.prompt('Room cname to share');
         if (!cname) return;
         if (action === 'voice_room') this.store.sendVoiceRoom(peerId, cname);
