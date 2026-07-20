@@ -256,27 +256,30 @@ export class RoomRosterStore {
 
     // The one place a user moves audience -> stage: atomic, so the two rosters can't drift.
     this.bffWs.event$('stage_join').pipe(takeUntilDestroyed()).subscribe((event) => {
-      const uid = Number(event.stageUser.userId);
+      const su = event.stageUser;
+      const uid = Number(su.userId);
       const isNewJoiner = !this.isOnStage(uid);
       this.removeAudienceUser(uid);
+      // StageUserEvent now carries role/nationality/mic-cam/ripple straight off the wire
+      // (see HtNotifyMapper.mapStageUser on the BFF) — render with the real values instead
+      // of a role:3 placeholder, so a mod/host badge or ripple animation shows up on the
+      // very first push instead of waiting on reconcileStageRoster's round-trip below.
       this.addStageUser({
         userId: uid,
-        nickname: event.stageUser.nickname ?? 'Anonymous',
-        headUrl: event.stageUser.headUrl ?? null,
-        nationality: null,
-        role: 3,
-        isTurnOnMic: false,
-        isTurnOnCam: false,
+        nickname: su.nickname ?? 'Anonymous',
+        headUrl: su.headUrl ?? null,
+        nationality: su.nationality ?? null,
+        role: (su.role === 1 || su.role === 2 || su.role === 3 ? su.role : 3),
+        isTurnOnMic: su.isTurnOnMic,
+        isTurnOnCam: su.isTurnOnCam,
         isBannedComment: false,
         rippleId: -1,
-        rippleUrl: null,
-        rippleAnimalType: 0,
-        rippleAnimalUrl: null,
+        rippleUrl: su.rippleUrl,
+        rippleAnimalType: su.rippleAnimalType,
+        rippleAnimalUrl: su.rippleAnimalUrl,
         isAiUser: false,
       });
-      // StageUserEvent carries userId/nickname/headUrl only — no nationality — so the
-      // gate reduces to "missing avatar". Backend batch endpoint will fill the rest.
-      if (!event.stageUser.headUrl) {
+      if (!su.headUrl) {
         this.stageEnrichQueue.queue(uid);
       }
       // Only for a genuinely new joiner — the optimistic self-join case is already

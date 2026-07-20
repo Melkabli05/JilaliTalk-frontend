@@ -183,6 +183,64 @@ export interface KickEventCard {
   readonly managerName: string;
 }
 
+export interface TopicShareEventCard {
+  readonly kind: 'room_topic_share';
+  readonly id: string;
+  readonly ts: number;
+  readonly categoryId: number;
+  readonly topicId: number;
+  readonly name: string;
+}
+
+export interface PropsAppliedEventCard {
+  readonly kind: 'room_props_applied';
+  readonly id: string;
+  readonly ts: number;
+  readonly userId: number;
+  readonly nickname: string;
+  readonly headUrl: string | null;
+  readonly nationality: string | null;
+  readonly animalUrlV2: string | null;
+  readonly backgroundPaid: number;
+}
+
+export interface PurchaseVipEventCard {
+  readonly kind: 'purchase_vip';
+  readonly id: string;
+  readonly ts: number;
+  readonly sendUid: string | null;
+  readonly title: string | null;
+  readonly smallPic: string | null;
+}
+
+export interface ReceiveVipGiftsEventCard {
+  readonly kind: 'receive_vip_gifts';
+  readonly id: string;
+  readonly ts: number;
+  readonly sendUserId: string | null;
+  readonly sendNickName: string | null;
+}
+
+export interface FgUpgradeAwardEventCard {
+  readonly kind: 'fg_upgrade_award';
+  readonly id: string;
+  readonly ts: number;
+  readonly content: string | null;
+  readonly icon: string | null;
+}
+
+/** Emitted only when the wish's progress crosses a milestone (25/50/75/100%) — not on
+ *  every tick, which would spam the feed for a running total that updates continuously. */
+export interface GiftWishEventCard {
+  readonly kind: 'gift_wish';
+  readonly id: string;
+  readonly ts: number;
+  readonly smallPic: string | null;
+  readonly receivedGiftCount: number;
+  readonly configGiftCount: number;
+  readonly milestone: 25 | 50 | 75 | 100;
+}
+
 export type EventCard =
   | GiftEventCard
   | FollowEventCard
@@ -191,7 +249,13 @@ export type EventCard =
   | RaiseHandEventCard
   | WhiteboardEventCard
   | ModEventCard
-  | KickEventCard;
+  | KickEventCard
+  | TopicShareEventCard
+  | PropsAppliedEventCard
+  | PurchaseVipEventCard
+  | ReceiveVipGiftsEventCard
+  | FgUpgradeAwardEventCard
+  | GiftWishEventCard;
 
 export type CommentOrEvent = Comment | EventCard;
 

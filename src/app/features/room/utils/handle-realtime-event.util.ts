@@ -27,7 +27,7 @@ export async function handleRealtimeEvent(
           variant: 'primary',
           run: () => {
             void firstValueFrom(api.raiseHandApproval(cname, busiType, raiserId, 1)).then(() =>
-              toast.success(`${nickname} approved`),
+              toast.success(`${nickname} is now on stage`),
             );
           },
         },
@@ -48,6 +48,43 @@ export async function handleRealtimeEvent(
     case 'lucky_bag':
       toast.info('A lucky bag appeared in the room!');
       break;
+    // Type 47 — a topic/category card was shared into the room. No topic route exists yet,
+    // so this is informational only — no "Open" action until there's somewhere real to send
+    // the user (a button that does nothing is worse than no button).
+    case 'room_topic_share':
+      toast.info(`New topic: ${event.name || 'Untitled'}`);
+      break;
+    // Type 7 — a user applied a cosmetic bubble skin.
+    case 'room_props_applied': {
+      if (Number(event.userId) === userId) break; // skip self — the local skin already updated
+      const nickname = getNickname(Number(event.userId));
+      toast.info(`${nickname} changed their chat bubble`);
+      break;
+    }
+    // Gift-wish progress ticks continuously — EventFeedStore already turns milestone
+    // crossings (25/50/75/100%) into an event card; no toast needed on top of that.
+    case 'gift_wish':
+      break;
+    // VIP-purchase banner — the room just saw someone buy VIP; show a celebratory toast.
+    case 'purchase_vip':
+      if (event.title) toast.success(event.title);
+      break;
+    // VIP-gift received — sender gifted VIP to the recipient; show a thank-you toast.
+    case 'receive_vip_gifts':
+      if (event.sendNickName) toast.info(`${event.sendNickName} sent you a VIP gift!`);
+      break;
+    // FG (family group) tier-upgrade — the user just leveled up their FG tier. Toast the content.
+    case 'fg_upgrade_award':
+      if (event.content) toast.success(event.content);
+      break;
+    // Treasure / camp reward popup — the big colored show popup. Surfacing the title is
+    // enough for now; a future UI component will render the full popup.
+    case 'treasure_reward':
+      if (event.title) toast.info(event.title);
+      break;
+    // reward_info (per-user reward envelope) has no UI surface yet — it needs a dedicated
+    // reward-strip component (avatar + horizontal Reward thumbnails), not a single-line
+    // toast or event card. Deferred until that component exists.
     default:
       break;
   }

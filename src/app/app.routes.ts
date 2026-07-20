@@ -60,5 +60,5 @@ export const routes: Routes = [
   { path: 'error/403', title: 'Forbidden', component: ErrorPageComponent, data: { code: 403 } },
   { path: 'error/404', title: 'Not Found', component: ErrorPageComponent, data: { code: 404 } },
   { path: 'error/500', title: 'Server Error', component: ErrorPageComponent, data: { code: 500 } },
-  { path: '**', title: 'Not found', component: ErrorPageComponent, data: { code: 404 } },
+  { path: '**', title: 'Not Found', component: ErrorPageComponent, data: { code: 404 } },
 ];

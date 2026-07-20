@@ -16,6 +16,7 @@ import {
 import {
   LucideFlower2, LucideArrowRight, LucideGem, LucideHeart,
   LucideLogIn, LucideLogOut, LucideHand, LucidePresentation, LucideShieldCheck, LucideShieldOff, LucideUserX,
+  LucideHash, LucideSparkles, LucideCrown, LucideGift,
 } from '@lucide/angular';
 
 @Component({
@@ -24,6 +25,7 @@ import {
     AvatarComponent, CountryFlagComponent,
     LucideFlower2, LucideArrowRight, LucideGem, LucideHeart,
     LucideLogIn, LucideLogOut, LucideHand, LucidePresentation, LucideShieldCheck, LucideShieldOff, LucideUserX,
+    LucideHash, LucideSparkles, LucideCrown, LucideGift,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -92,6 +94,89 @@ import {
           }
           <span class="action-tag kick-tag">{{ tag(event) }}</span>
           <span class="kick-by">by {{ event.managerName }}</span>
+        </div>
+        <span class="event-time">{{ formatTime(event.ts) }}</span>
+      </div>
+    }
+    @else if (event.kind === 'room_topic_share') {
+      <div class="event-card topic">
+        <span class="topic-icon" aria-hidden="true"><svg lucideHash [size]="13" /></span>
+        <div class="event-body">
+          <span class="action-tag topic-tag">Topic</span>
+          <span class="topic-name">{{ event.name || 'Untitled' }}</span>
+        </div>
+        <span class="event-time">{{ formatTime(event.ts) }}</span>
+      </div>
+    }
+    @else if (event.kind === 'room_props_applied') {
+      <div class="event-card props">
+        <div class="avatar-wrap">
+          <app-avatar class="event-avatar" [src]="avatarUrl(event)" [initials]="initials(event)" size="sm" />
+          <span class="icon-badge icon-badge-props" aria-hidden="true"><svg lucideSparkles [size]="7" /></span>
+        </div>
+        <div class="event-body">
+          <span class="event-nickname">{{ name(event) }}</span>
+          @if (nationality(event); as nat) {
+            <app-country-flag [code]="nat" [compact]="true" />
+          }
+          <span class="action-tag">{{ tag(event) }}</span>
+        </div>
+        @if (event.animalUrlV2) {
+          <img class="props-thumb" [src]="event.animalUrlV2" alt="" />
+        }
+        <span class="event-time">{{ formatTime(event.ts) }}</span>
+      </div>
+    }
+    @else if (event.kind === 'purchase_vip') {
+      <div class="event-card vip">
+        <span class="vip-icon" aria-hidden="true"><svg lucideCrown [size]="13" /></span>
+        <div class="event-body">
+          <span class="action-tag vip-tag">VIP</span>
+          <span class="vip-title">{{ event.title || 'Someone just went VIP!' }}</span>
+        </div>
+        <span class="event-time">{{ formatTime(event.ts) }}</span>
+      </div>
+    }
+    @else if (event.kind === 'receive_vip_gifts') {
+      <div class="event-card vip">
+        <span class="vip-icon" aria-hidden="true"><svg lucideGift [size]="13" /></span>
+        <div class="event-body">
+          <span class="event-nickname">{{ event.sendNickName || 'Someone' }}</span>
+          <span class="action-tag vip-tag">{{ tag(event) }}</span>
+        </div>
+        <span class="event-time">{{ formatTime(event.ts) }}</span>
+      </div>
+    }
+    @else if (event.kind === 'fg_upgrade_award') {
+      <div class="event-card fg">
+        <span class="fg-icon" aria-hidden="true">
+          @if (event.icon) {
+            <img class="fg-icon-img" [src]="event.icon" alt="" />
+          } @else {
+            <svg lucideSparkles [size]="13" />
+          }
+        </span>
+        <div class="event-body">
+          <span class="action-tag fg-tag">Level up</span>
+          <span class="fg-content">{{ event.content || 'Family group leveled up!' }}</span>
+        </div>
+        <span class="event-time">{{ formatTime(event.ts) }}</span>
+      </div>
+    }
+    @else if (event.kind === 'gift_wish') {
+      <div class="event-card wish" [class.wish-complete]="event.milestone === 100">
+        <div class="wish-icon-wrap">
+          @if (event.smallPic) {
+            <img class="wish-icon" [src]="event.smallPic" alt="" />
+          } @else {
+            <span class="wish-icon wish-icon-fallback"><svg lucideGift [size]="14" /></span>
+          }
+        </div>
+        <div class="event-body">
+          <span class="action-tag wish-tag">
+            {{ event.milestone === 100 ? 'Gift goal reached' : event.milestone + '% to gift goal' }}
+          </span>
+          <span class="wish-progress">{{ event.receivedGiftCount }} / {{ event.configGiftCount }}</span>
         </div>
         <span class="event-time">{{ formatTime(event.ts) }}</span>
       </div>
@@ -340,6 +425,146 @@ import {
       border: 1.5px solid var(--color-card);
     }
     :host-context(.dark) .live-dot { border-color: var(--color-neutral-900); }
+
+    /* ─── Topic share (type 47) ─── */
+    .topic { --ec-left: var(--color-primary-500); }
+    .topic-icon {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: color-mix(in srgb, var(--color-primary-500) 14%, transparent);
+      color: var(--color-primary-600);
+    }
+    :host-context(.dark) .topic-icon {
+      background: color-mix(in srgb, var(--color-primary-500) 26%, transparent);
+      color: var(--color-primary-300);
+    }
+    .topic-tag {
+      background: color-mix(in srgb, var(--color-primary-500) 14%, transparent);
+      color: var(--color-primary-700);
+    }
+    :host-context(.dark) .topic-tag {
+      background: color-mix(in srgb, var(--color-primary-500) 26%, transparent);
+      color: var(--color-primary-300);
+    }
+    .topic-name { font-weight: var(--font-medium); color: var(--ec-text); }
+
+    /* ─── Props applied (type 7) ─── */
+    .props { --ec-left: var(--color-berry-400); }
+    :host-context(.dark) .props { --ec-left: var(--color-berry-600); }
+    .icon-badge-props { background: var(--color-berry-500); }
+    .props-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    /* ─── VIP (purchase / receive) ─── */
+    .vip { --ec-left: var(--color-gold-500); }
+    .vip-icon {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: color-mix(in srgb, var(--color-gold-500) 16%, transparent);
+      color: var(--color-gold-600);
+    }
+    :host-context(.dark) .vip-icon {
+      background: color-mix(in srgb, var(--color-gold-500) 28%, transparent);
+      color: var(--color-gold-300);
+    }
+    .vip-tag {
+      background: color-mix(in srgb, var(--color-gold-500) 16%, transparent);
+      color: var(--color-gold-700);
+    }
+    :host-context(.dark) .vip-tag {
+      background: color-mix(in srgb, var(--color-gold-500) 28%, transparent);
+      color: var(--color-gold-300);
+    }
+    .vip-title { font-weight: var(--font-medium); color: var(--ec-text); }
+
+    /* ─── Family-group tier-up ─── */
+    .fg { --ec-left: var(--color-berry-500); }
+    .fg-icon {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: color-mix(in srgb, var(--color-berry-500) 16%, transparent);
+      color: var(--color-berry-600);
+      overflow: hidden;
+    }
+    :host-context(.dark) .fg-icon {
+      background: color-mix(in srgb, var(--color-berry-500) 28%, transparent);
+      color: var(--color-berry-300);
+    }
+    .fg-icon-img { width: 100%; height: 100%; object-fit: cover; }
+    .fg-tag {
+      background: color-mix(in srgb, var(--color-berry-500) 16%, transparent);
+      color: var(--color-berry-700);
+    }
+    :host-context(.dark) .fg-tag {
+      background: color-mix(in srgb, var(--color-berry-500) 28%, transparent);
+      color: var(--color-berry-300);
+    }
+    .fg-content { font-weight: var(--font-medium); color: var(--ec-text); }
+
+    /* ─── Gift wish (milestone) ─── */
+    .wish { --ec-left: var(--color-accent-400); }
+    .wish.wish-complete { --ec-left: var(--color-gold-500); }
+    :host-context(.dark) .wish { --ec-left: var(--color-accent-600); }
+    :host-context(.dark) .wish.wish-complete { --ec-left: var(--color-gold-600); }
+    .wish-icon-wrap { flex-shrink: 0; width: 26px; height: 26px; }
+    .wish-icon {
+      width: 100%;
+      height: 100%;
+      border-radius: var(--radius-lg);
+      object-fit: cover;
+    }
+    .wish-icon-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: color-mix(in srgb, var(--color-accent-500) 14%, transparent);
+      color: var(--color-accent-600);
+    }
+    :host-context(.dark) .wish-icon-fallback {
+      background: color-mix(in srgb, var(--color-accent-500) 26%, transparent);
+      color: var(--color-accent-300);
+    }
+    .wish-tag {
+      background: color-mix(in srgb, var(--color-accent-500) 14%, transparent);
+      color: var(--color-accent-700);
+    }
+    .wish.wish-complete .wish-tag {
+      background: color-mix(in srgb, var(--color-gold-500) 16%, transparent);
+      color: var(--color-gold-700);
+    }
+    :host-context(.dark) .wish-tag {
+      background: color-mix(in srgb, var(--color-accent-500) 26%, transparent);
+      color: var(--color-accent-300);
+    }
+    :host-context(.dark) .wish.wish-complete .wish-tag {
+      background: color-mix(in srgb, var(--color-gold-500) 28%, transparent);
+      color: var(--color-gold-300);
+    }
+    .wish-progress {
+      font-size: var(--text-2xs);
+      font-variant-numeric: tabular-nums;
+      color: var(--ec-muted);
+    }
 
     /* ─── Kick ─── */
     .kick {

@@ -34,7 +34,7 @@ export interface ManagersModalData {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal [title]="'Room Managers'" [count]="reader.managers().length > 0 ? reader.managers().length : null">
+    <app-modal [title]="'Room managers'" [count]="reader.managers().length > 0 ? reader.managers().length : null">
       @if (reader.loading()) {
         <div class="loading-list">
           @for (i of [1,2,3]; track i) {

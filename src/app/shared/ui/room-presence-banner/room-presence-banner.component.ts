@@ -77,10 +77,10 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
             } @else {
               <div class="actions">
                 <app-button variant="primary" size="sm" (click)="onJoin(true)"
-                  >Join Visible</app-button
+                  >Join visible</app-button
                 >
                 <app-button variant="soft-invisible" size="sm" (click)="onJoin(false)"
-                  >Join Invisible</app-button
+                  >Join invisible</app-button
                 >
               </div>
             }

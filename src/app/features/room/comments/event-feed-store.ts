@@ -11,6 +11,10 @@ const ACTIVE_USERS_TTL_MS = 5 * 60 * 1000; // 5 min — prune stale active user 
 
 const GIFT_COMBO_WINDOW_MS = 5_000;
 
+/** Milestones a gift-wish card fires on, in ascending order — a milestone is only ever
+ *  shown once per giftId even if the count later regresses (e.g. the wish resets). */
+const GIFT_WISH_MILESTONES = [25, 50, 75, 100] as const;
+
 const QUIT_GRACE_MS = 4_000;
 
 /**
@@ -40,6 +44,9 @@ export class EventFeedStore {
   private readonly enrichQueue = new EnrichBatchQueue((uids) =>
     this.userInfoService.enrichBatchAndCache(uids).then(() => undefined),
   );
+  /** Highest gift-wish milestone already shown, per giftId — a wish's progress ticks
+   *  continuously, so this prevents re-showing 25% every time another gift lands. */
+  private readonly giftWishMilestonesShown = new Map<number, number>();
 
   private pruneActiveUsers(): void {
     const cutoff = Date.now() - ACTIVE_USERS_TTL_MS;
@@ -291,6 +298,110 @@ export class EventFeedStore {
         this.pushUserEventCard('room_kick', userId, 'roomkick', { managerName: event.managerName });
       }
     });
+
+    // Room-wide, no single user attached — always shown to everyone.
+    this.bffWs.event$('room_topic_share').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this._eventCards.update((cards) => [
+        ...cards,
+        {
+          kind: 'room_topic_share',
+          id: `topic-${event.topicId}-${Date.now()}`,
+          ts: Date.now(),
+          categoryId: event.categoryId,
+          topicId: event.topicId,
+          name: event.name,
+        } satisfies EventCard,
+      ]);
+    });
+
+    // Skip self — a user doesn't need a card telling them they changed their own bubble.
+    this.bffWs.event$('room_props_applied').pipe(takeUntilDestroyed()).subscribe((event) => {
+      const userId = Number(event.userId);
+      if (userId === this._currentUserId) return;
+      const known = this.knownIdentities.get(userId);
+      this._eventCards.update((cards) => [
+        ...cards,
+        {
+          kind: 'room_props_applied',
+          id: `props-${userId}-${Date.now()}`,
+          ts: Date.now(),
+          userId,
+          nickname: known?.nickname ?? '',
+          headUrl: known?.headUrl ?? null,
+          nationality: known?.nationality ?? null,
+          animalUrlV2: event.animalUrlV2,
+          backgroundPaid: event.backgroundPaid,
+        } satisfies EventCard,
+      ]);
+      this.enrichQueue.queue(userId);
+    });
+
+    this.bffWs.event$('purchase_vip').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this._eventCards.update((cards) => [
+        ...cards,
+        {
+          kind: 'purchase_vip',
+          id: `vip-${event.sendUid}-${Date.now()}`,
+          ts: Date.now(),
+          sendUid: event.sendUid,
+          title: event.title,
+          smallPic: event.smallPic,
+        } satisfies EventCard,
+      ]);
+    });
+
+    this.bffWs.event$('receive_vip_gifts').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this._eventCards.update((cards) => [
+        ...cards,
+        {
+          kind: 'receive_vip_gifts',
+          id: `vipgift-${event.sendUserId}-${Date.now()}`,
+          ts: Date.now(),
+          sendUserId: event.sendUserId,
+          sendNickName: event.sendNickName,
+        } satisfies EventCard,
+      ]);
+    });
+
+    // Self-only celebration — the FG tier-up toast already covers other users' rooms via
+    // the notification panel; the event card is just the in-room sparkle moment for the
+    // person who leveled up.
+    this.bffWs.event$('fg_upgrade_award').pipe(takeUntilDestroyed()).subscribe((event) => {
+      this._eventCards.update((cards) => [
+        ...cards,
+        {
+          kind: 'fg_upgrade_award',
+          id: `fg-${event.id}-${Date.now()}`,
+          ts: Date.now(),
+          content: event.content,
+          icon: event.icon,
+        } satisfies EventCard,
+      ]);
+    });
+
+    // Progress ticks continuously as gifts land, so we only surface a card the first time
+    // the wish crosses a new milestone (25/50/75/100%) — not on every underlying tick.
+    this.bffWs.event$('gift_wish').pipe(takeUntilDestroyed()).subscribe((event) => {
+      if (event.configGiftCount <= 0) return;
+      const pct = (event.receivedGiftCount / event.configGiftCount) * 100;
+      const alreadyShown = this.giftWishMilestonesShown.get(event.giftId) ?? 0;
+      const crossed = GIFT_WISH_MILESTONES.filter((m) => m > alreadyShown && pct >= m);
+      const milestone = crossed[crossed.length - 1];
+      if (milestone === undefined) return;
+      this.giftWishMilestonesShown.set(event.giftId, milestone);
+      this._eventCards.update((cards) => [
+        ...cards,
+        {
+          kind: 'gift_wish',
+          id: `wish-${event.giftId}-${milestone}`,
+          ts: Date.now(),
+          smallPic: event.smallPic,
+          receivedGiftCount: event.receivedGiftCount,
+          configGiftCount: event.configGiftCount,
+          milestone,
+        } satisfies EventCard,
+      ]);
+    });
   }
 
   reset(): void {
@@ -299,6 +410,7 @@ export class EventFeedStore {
     for (const timer of this.pendingQuitTimers.values()) clearTimeout(timer);
     this.pendingQuitTimers.clear();
     this.knownIdentities.clear();
+    this.giftWishMilestonesShown.clear();
     this._currentUserId = 0;
     this.enrichQueue.dispose();
   }

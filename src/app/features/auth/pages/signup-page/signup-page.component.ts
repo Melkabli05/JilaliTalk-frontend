@@ -30,7 +30,6 @@ type SignupStep = 'account' | 'code';
  * live code received during testing (not the 6-digit placeholder the old mocked flow used).
  */
 const CODE_LENGTH = 4;
-const CODE_INVALID = `Enter the ${CODE_LENGTH}-digit code`;
 const STEPS = ['account', 'code'] as const;
 
 @Component({
@@ -336,7 +335,7 @@ export class SignupPageComponent {
     this.errorText.set(null);
     try {
       await this.sendCode();
-      this.toast.success('Code sent again.');
+      this.toast.success('Verification code resent.');
     } catch (err) {
       this.errorText.set(httpErrorMessage(err, 'Could not resend the code. Try again shortly.'));
     } finally {
@@ -359,7 +358,7 @@ export class SignupPageComponent {
       this.toast.success('Account created.');
       await this.router.navigateByUrl(this.returnUrl());
     } catch (err) {
-      this.errorText.set(httpErrorMessage(err, CODE_INVALID + ' or the account could not be created.'));
+      this.errorText.set(httpErrorMessage(err, 'That code is incorrect, or the account could not be created. Please try again.'));
     } finally {
       this.submitting.set(false);
     }

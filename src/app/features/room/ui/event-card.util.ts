@@ -14,6 +14,7 @@ export function eventCardGiftIconUrl(card: EventCard): string {
 }
 
 export function eventCardName(card: EventCard): string {
+  if (card.kind === 'receive_vip_gifts') return card.sendNickName || 'Someone';
   return 'nickname' in card && card.nickname ? card.nickname : 'Someone';
 }
 
@@ -53,6 +54,10 @@ export function eventCardTag(card: EventCard): string {
       return 'stage kick';
     case 'room_kick':
       return 'room kick';
+    case 'room_props_applied':
+      return 'new bubble';
+    case 'receive_vip_gifts':
+      return 'sent you a VIP gift';
     default:
       return '';
   }

@@ -3,7 +3,7 @@ import { requiredError, emailError, minLengthError, type FieldState } from '@ang
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const EMAIL_REQUIRED = 'Email is required';
-export const INVALID_EMAIL = "That doesn't look like an email";
+export const INVALID_EMAIL = 'Enter a valid email';
 export const PASSWORD_REQUIRED = 'Password is required';
 export const PASSWORD_MIN = 8;
 

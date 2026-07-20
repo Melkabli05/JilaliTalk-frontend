@@ -239,7 +239,7 @@ export interface UserActionModalData {
                   </div>
                   <div class="action-text">
                     <span class="action-title">{{ isTargetSelf() ? 'Lower hand' : 'Reject hand' }}</span>
-                    <span class="action-desc">{{ isTargetSelf() ? 'Put your hand down' : 'Deny the hand raise' }}</span>
+                    <span class="action-desc">{{ isTargetSelf() ? 'Put your hand down' : 'Deny their hand raise' }}</span>
                   </div>
                 </button>
               }
