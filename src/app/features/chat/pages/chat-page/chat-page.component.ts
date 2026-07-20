@@ -11,7 +11,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { from, of } from 'rxjs';
@@ -24,6 +24,7 @@ import {
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal';
 import { UserPickerSheetComponent } from '@shared/ui/user-picker-sheet/user-picker-sheet';
+import { ImagePickerModalComponent, type ImagePickerResult } from '@shared/ui/image-picker-modal/image-picker-modal.component';
 import { KeyboardInsetService } from '@core/services/keyboard-inset.service';
 import { injectIsMobileViewport, relativeTime } from '@shared/utils';
 import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
@@ -698,9 +699,17 @@ export class ChatPageComponent {
       case 'image': {
         const peerId = this.selectedNumericPeerId();
         if (peerId == null) return;
-        const url = window.prompt('Image URL to send');
-        if (!url) return;
-        this.store.sendImage(peerId, { url });
+        this.dialog
+          .open<ImagePickerResult | null>(ImagePickerModalComponent, { backdropClass: 'app-modal-backdrop' })
+          .closed.pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe((result) => {
+            if (!result) return;
+            this.store.sendImage(peerId, {
+              url: result.url,
+              ...(result.width != null ? { width: result.width } : {}),
+              ...(result.height != null ? { height: result.height } : {}),
+            });
+          });
         return;
       }
       case 'gift': {

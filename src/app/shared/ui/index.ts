@@ -18,3 +18,4 @@ export { SearchBarComponent } from './search-bar/search-bar';
 export { CardSkeletonComponent } from './card-skeleton/card-skeleton';
 export { UserPickerSheetComponent } from './user-picker-sheet/user-picker-sheet';
 export type { UserPickerTab, UserSummary } from './user-picker-sheet/user-picker-sheet.model';
+export { ImagePickerModalComponent, type ImagePickerResult } from './image-picker-modal/image-picker-modal.component';

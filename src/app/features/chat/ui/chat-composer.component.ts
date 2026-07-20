@@ -1,15 +1,21 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
-import { LucideSend, LucidePlus, LucideX, LucideImage, LucideGift, LucideRadio, LucideVideo, LucideUserPlus } from '@lucide/angular';
+import { LucideSend, LucidePlus, LucideX, LucideImage, LucideUserPlus } from '@lucide/angular';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
 import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
 
+/**
+ * 'gift' | 'voice_room' | 'live_link' stay in the union — the store/transport/backend
+ * support all six DM kinds end to end — but are hidden from the attach menu below for now
+ * (product decision: ship image + profile-share first). Re-adding them to the UI later is
+ * just uncommenting the two composer-attach-item buttons; no other wiring changes needed.
+ */
 export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 'live_link';
 
 @Component({
   selector: 'app-chat-composer',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarComponent, TooltipDirective, LucideSend, LucidePlus, LucideX, LucideImage, LucideGift, LucideRadio, LucideVideo, LucideUserPlus],
+  imports: [AvatarComponent, TooltipDirective, LucideSend, LucidePlus, LucideX, LucideImage, LucideUserPlus],
   template: `
     @if (stagedIntroduction(); as intro) {
       <div class="composer-staged">
@@ -37,7 +43,7 @@ export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 
           type="button"
           class="composer-attach"
           (click)="toggleAttachMenu()"
-          [attr.aria-label]="attachMenuOpen() ? 'Close attach menu' : 'Attach photo, gift, voice room, live room, or share a profile'"
+          [attr.aria-label]="attachMenuOpen() ? 'Close attach menu' : 'Attach a photo or share a profile'"
           [attr.aria-expanded]="attachMenuOpen()"
           [appTooltip]="attachMenuOpen() ? 'Close' : 'Attach'"
           tooltipPosition="top"
@@ -54,18 +60,8 @@ export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 
               <svg aria-hidden="true" lucideImage [size]="16"></svg>
               <span>Photo</span>
             </button>
-            <button type="button" class="composer-attach-item" role="menuitem" (click)="onAction('gift')">
-              <svg aria-hidden="true" lucideGift [size]="16"></svg>
-              <span>Gift</span>
-            </button>
-            <button type="button" class="composer-attach-item" role="menuitem" (click)="onAction('voice_room')">
-              <svg aria-hidden="true" lucideRadio [size]="16"></svg>
-              <span>Voice room</span>
-            </button>
-            <button type="button" class="composer-attach-item" role="menuitem" (click)="onAction('live_link')">
-              <svg aria-hidden="true" lucideVideo [size]="16"></svg>
-              <span>Live link</span>
-            </button>
+            <!-- Gift / Voice room / Live link hidden for now — see the ComposerAction doc
+                 comment above for how to bring them back. -->
           </div>
         }
       </div>
