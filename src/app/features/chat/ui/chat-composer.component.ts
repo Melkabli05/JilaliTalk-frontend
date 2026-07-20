@@ -29,6 +29,9 @@ export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 
       </div>
     }
     <form class="composer" (submit)="$event.preventDefault(); send.emit()">
+      @if (attachMenuOpen()) {
+        <div class="composer-attach-backdrop" (click)="closeAttachMenu()"></div>
+      }
       <div class="composer-attach-group">
         <button
           type="button"
@@ -138,6 +141,7 @@ export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 
     .composer-send:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
     .composer-attach:hover { background: var(--color-neutral-100); }
     .composer-attach-group { position: relative; }
+    .composer-attach-backdrop { position: fixed; inset: 0; z-index: 9; background: transparent; }
     .composer-attach-menu {
       position: absolute; bottom: calc(100% + 6px); left: 0;
       background: var(--color-card);
@@ -206,6 +210,10 @@ export class ChatComposerComponent {
     this._attachMenuOpen.update((v) => !v);
   }
 
+  protected closeAttachMenu(): void {
+    this._attachMenuOpen.set(false);
+  }
+
   protected onAction(action: ComposerAction): void {
     this._attachMenuOpen.set(false);
     this.action.emit(action);
@@ -217,6 +225,10 @@ export class ChatComposerComponent {
 
   protected onKeydown(event: Event): void {
     const ke = event as KeyboardEvent;
+    if (ke.key === 'Escape' && this.attachMenuOpen()) {
+      this.closeAttachMenu();
+      return;
+    }
     if (ke.key !== 'Enter' || ke.shiftKey) return;
     ke.preventDefault();
     this.send.emit();
