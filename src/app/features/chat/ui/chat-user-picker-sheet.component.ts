@@ -195,7 +195,7 @@ const PICKER_TABS: ReadonlyArray<{ readonly id: ChatUserPickerTab; readonly labe
       margin: var(--space-4); font-size: var(--text-sm);
       color: var(--color-text-muted); text-align: center;
     }
-    .status--error { color: var(--color-danger); }
+    .status--error { color: var(--color-error-500); }
     @media (prefers-reduced-motion: reduce) {
       .backdrop, .sheet { transition-duration: 0.001ms; }
     }

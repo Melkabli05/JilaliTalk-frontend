@@ -47,6 +47,10 @@ import { ChatUserPickerSheetComponent } from '../../ui/chat-user-picker-sheet.co
 import { ChatEmptyStateComponent } from '../../ui/chat-empty-state.component';
 
 const TYPING_STOP_DELAY_MS = 3000;
+/** How close to the bottom the user must be (in px) before an inbound message or conversation
+ *  switch will autoscroll them. Larger = stickier (always scroll), smaller = more forgiving
+ *  (let the user stay at their scrolled position while older messages load). */
+const AUTOSCROLL_THRESHOLD_PX = 80;
 const FOLLOWING_LIMIT = 50;
 const FOLLOWERS_LIMIT = 50;
 
@@ -177,25 +181,34 @@ const FOLLOWERS_LIMIT = 50;
                 @case ('text') {
                   <div class="msg-row" [class.is-outbound]="!!msg.delivery" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-text-bubble [text]="msg.text" [isOutbound]="!!msg.delivery" />
-                    @if (msg.delivery) {
-                      <app-chat-delivery-mark [delivery]="msg.delivery" />
-                    }
+                    <span class="msg-meta">
+                      <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
+                      @if (msg.delivery) {
+                        <app-chat-delivery-mark [delivery]="msg.delivery" />
+                      }
+                    </span>
                   </div>
                 }
                 @case ('image') {
                   <div class="msg-row" [class.is-outbound]="!!msg.delivery" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
-                    <app-chat-image-bubble [url]="msg.imageUrl" />
-                    @if (msg.delivery) {
-                      <app-chat-delivery-mark [delivery]="msg.delivery" />
-                    }
+                    <app-chat-image-bubble [url]="msg.imageUrl" [alt]="(msg.fromNickname || conv.nickname) + ' sent a photo'" />
+                    <span class="msg-meta">
+                      <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
+                      @if (msg.delivery) {
+                        <app-chat-delivery-mark [delivery]="msg.delivery" />
+                      }
+                    </span>
                   </div>
                 }
                 @case ('gift') {
                   <div class="msg-row" [class.is-outbound]="!!msg.delivery" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-gift-bubble [count]="msg.count" [isOutbound]="!!msg.delivery" />
-                    @if (msg.delivery) {
-                      <app-chat-delivery-mark [delivery]="msg.delivery" />
-                    }
+                    <span class="msg-meta">
+                      <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
+                      @if (msg.delivery) {
+                        <app-chat-delivery-mark [delivery]="msg.delivery" />
+                      }
+                    </span>
                   </div>
                 }
                 @case ('introduction') {
@@ -206,9 +219,12 @@ const FOLLOWERS_LIMIT = 50;
                       [isOutbound]="!!msg.delivery"
                       (viewProfile)="onViewProfile(msg.target.userId, msg.target.nickname, msg.target.headUrl ?? null)"
                     />
-                    @if (msg.delivery) {
-                      <app-chat-delivery-mark [delivery]="msg.delivery" />
-                    }
+                    <span class="msg-meta">
+                      <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
+                      @if (msg.delivery) {
+                        <app-chat-delivery-mark [delivery]="msg.delivery" />
+                      }
+                    </span>
                   </div>
                 }
                 @case ('voice_room_shared') {
@@ -233,7 +249,12 @@ const FOLLOWERS_LIMIT = 50;
 
             @if (conv.isTyping) {
               <div class="msg-row typing-row" aria-label="typing">
-                <app-avatar [alt]="conv.nickname" size="xs" />
+                <app-avatar
+                  [alt]="conv.nickname"
+                  [src]="conv.headUrl ?? ''"
+                  [initials]="conv.nickname.slice(0, 2)"
+                  size="xs"
+                />
                 <span class="typing-dots">
                   <span class="dot"></span><span class="dot"></span><span class="dot"></span>
                 </span>
@@ -386,6 +407,17 @@ const FOLLOWERS_LIMIT = 50;
     .msg-row:not(.is-outbound) { align-self: flex-start; }
     :host-context([dir='rtl']) .msg-row.is-outbound { align-self: flex-start; }
     :host-context([dir='rtl']) .msg-row:not(.is-outbound) { align-self: flex-end; }
+    .msg-meta {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 0 6px 2px;
+      align-self: center;
+      color: var(--color-text-muted);
+      font-size: var(--text-2xs);
+      line-height: 1;
+    }
+    .msg-row.is-outbound .msg-meta { padding-right: 2px; padding-left: 6px; }
+    .msg-row:not(.is-outbound) .msg-meta { padding-left: 2px; padding-right: 6px; }
+    .msg-time { font-variant-numeric: tabular-nums; }
     @keyframes msgIn {
       from { opacity: 0; transform: translateY(6px) scale(0.98); }
       to { opacity: 1; transform: translateY(0) scale(1); }
@@ -529,10 +561,19 @@ export class ChatPageComponent {
       this.store.select(id);
     });
 
+    // Autoscroll on conversation change OR new inbound message — but only if the user is
+    // currently near the bottom (within AUTOSCROLL_THRESHOLD_PX). Otherwise we leave the
+    // scroll position alone so the user can read older messages without the feed yanking
+    // back to the bottom every time a typing indicator or delivery update re-renders.
     effect(() => {
-      if (!this.store.selectedConversation()) return;
+      const conv = this.store.selectedConversation();
+      if (!conv) return;
       const el = this.feedEl()?.nativeElement;
-      if (el) Promise.resolve().then(() => { el.scrollTop = el.scrollHeight; });
+      if (!el) return;
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const shouldStick = distanceFromBottom < AUTOSCROLL_THRESHOLD_PX;
+      if (!shouldStick) return;
+      Promise.resolve().then(() => { el.scrollTop = el.scrollHeight; });
     });
 
     this.destroyRef.onDestroy(() => this.typingBroadcaster.stopAll());
