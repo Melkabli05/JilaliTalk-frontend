@@ -2,18 +2,26 @@ import { ChangeDetectionStrategy, Component, effect, input, output } from '@angu
 import { A11yModule } from '@angular/cdk/a11y';
 import { LucideSearch, LucideX } from '@lucide/angular';
 import { UserListItemComponent } from '@shared/ui/user-list/user-list-item';
-import type { ChatUserPickerTab, ChatUserSummary } from '../models/chat-message.model';
-import { asNumericPeerId } from '../utils/chat-ids';
+import { asNumericPeerId } from '@shared/utils';
+import type { UserPickerTab, UserSummary } from './user-picker-sheet.model';
 
-const PICKER_TABS: ReadonlyArray<{ readonly id: ChatUserPickerTab; readonly label: string }> = [
+const PICKER_TABS: ReadonlyArray<{ readonly id: UserPickerTab; readonly label: string }> = [
   { id: 'following', label: 'Following' },
   { id: 'followers', label: 'Followers' },
   { id: 'visitors', label: 'Visitors' },
   { id: 'byId', label: 'By ID' },
 ];
 
+/**
+ * A generic "pick a user" bottom sheet — following/followers/visitors tabs plus a
+ * by-ID lookup. Pure presentational (dumb) component per CLAUDE.md §6: it depends on
+ * nothing feature-specific, so it lives in shared/ui rather than any one feature.
+ * Originally chat-only (share-profile flow); rooms now reuses it for "share this room
+ * with a user" — the caller owns fetching the directory data and sending whatever
+ * message the pick represents.
+ */
 @Component({
-  selector: 'app-chat-user-picker-sheet',
+  selector: 'app-user-picker-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [A11yModule, UserListItemComponent, LucideSearch, LucideX],
   host: {
@@ -201,12 +209,12 @@ const PICKER_TABS: ReadonlyArray<{ readonly id: ChatUserPickerTab; readonly labe
     }
   `],
 })
-export class ChatUserPickerSheetComponent {
+export class UserPickerSheetComponent {
   readonly open = input<boolean>(false);
   readonly title = input<string>('Select a user');
-  readonly tab = input<ChatUserPickerTab>('following');
-  readonly users = input<readonly ChatUserSummary[]>([]);
-  readonly byIdView = input<ChatUserSummary | null>(null);
+  readonly tab = input<UserPickerTab>('following');
+  readonly users = input<readonly UserSummary[]>([]);
+  readonly byIdView = input<UserSummary | null>(null);
   readonly loading = input<boolean>(false);
   readonly error = input<string | null>(null);
   readonly emptyCopy = input<string>('No users.');
@@ -214,8 +222,8 @@ export class ChatUserPickerSheetComponent {
   readonly byIdValid = input<boolean>(false);
 
   readonly close = output<void>();
-  readonly tabChange = output<ChatUserPickerTab>();
-  readonly pick = output<ChatUserSummary>();
+  readonly tabChange = output<UserPickerTab>();
+  readonly pick = output<UserSummary>();
   readonly submitById = output<void>();
   readonly byIdQueryChange = output<string>();
 
@@ -242,7 +250,7 @@ export class ChatUserPickerSheetComponent {
     if (event.target === event.currentTarget) this.close.emit();
   }
 
-  protected onByIdPicked(u: ChatUserSummary): void {
+  protected onByIdPicked(u: UserSummary): void {
     this.pick.emit(u);
   }
 

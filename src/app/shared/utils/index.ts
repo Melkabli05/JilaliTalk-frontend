@@ -7,3 +7,4 @@ export { relativeTime } from './relative-time.util';
 export { injectIsMobileViewport, MOBILE_BREAKPOINT_QUERY } from './viewport.util';
 export { cnameToBusiType, type RoomBusiType } from './room-busi-type';
 export { SrAnnouncer } from './sr-announcer';
+export { asNumericPeerId } from './numeric-id.util';

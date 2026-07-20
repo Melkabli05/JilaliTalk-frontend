@@ -1,4 +1,5 @@
 import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
+import type { UserPickerTab, UserSummary } from '@shared/ui/user-picker-sheet/user-picker-sheet.model';
 
 export type ChatDelivery = 'sent' | 'delivered' | 'read';
 
@@ -61,16 +62,10 @@ export interface ChatConversation {
   readonly isTyping: boolean;
 }
 
-export interface ChatUserSummary {
-  readonly userId: string;
-  readonly nickname: string;
-  readonly headUrl: string | null;
-  readonly nationality?: string | null;
-  readonly isMutual?: boolean;
-}
+export type ChatUserSummary = UserSummary;
 
 export type ChatConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
 
-export type ChatUserPickerTab = 'following' | 'followers' | 'visitors' | 'byId';
+export type ChatUserPickerTab = UserPickerTab;
 
 export type ChatMessageType = ChatMessage['type'];

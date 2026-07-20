@@ -23,6 +23,7 @@ import {
 } from '@lucide/angular';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { UserInfoModalComponent, UserInfoModalData } from '@shared/ui/user-info-modal';
+import { UserPickerSheetComponent } from '@shared/ui/user-picker-sheet/user-picker-sheet';
 import { KeyboardInsetService } from '@core/services/keyboard-inset.service';
 import { injectIsMobileViewport, relativeTime } from '@shared/utils';
 import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
@@ -44,7 +45,6 @@ import { ChatDeliveryMarkComponent } from '../../ui/chat-delivery-mark.component
 import { ChatComposerComponent, type ComposerAction } from '../../ui/chat-composer.component';
 import { ChatConversationRowComponent } from '../../ui/chat-conversation-row.component';
 import { ChatConnectionPillComponent } from '../../ui/chat-connection-pill.component';
-import { ChatUserPickerSheetComponent } from '../../ui/chat-user-picker-sheet.component';
 import { ChatEmptyStateComponent } from '../../ui/chat-empty-state.component';
 
 const TYPING_STOP_DELAY_MS = 3000;
@@ -73,7 +73,7 @@ const FOLLOWERS_LIMIT = 50;
     ChatComposerComponent,
     ChatConversationRowComponent,
     ChatConnectionPillComponent,
-    ChatUserPickerSheetComponent,
+    UserPickerSheetComponent,
     ChatEmptyStateComponent,
     LucideChevronLeft,
     LucidePlus,
@@ -285,7 +285,7 @@ const FOLLOWERS_LIMIT = 50;
       </main>
     </div>
 
-    <app-chat-user-picker-sheet
+    <app-user-picker-sheet
       id="chat-user-picker"
       [open]="pickerOpen() !== null"
       [title]="pickerTitle()"

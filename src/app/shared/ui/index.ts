@@ -16,3 +16,5 @@ export { PwaUpdateBannerComponent } from './pwa-update-banner/pwa-update-banner.
 export { UserListItemComponent, type UserListItemVariant } from './user-list/user-list-item';
 export { SearchBarComponent } from './search-bar/search-bar';
 export { CardSkeletonComponent } from './card-skeleton/card-skeleton';
+export { UserPickerSheetComponent } from './user-picker-sheet/user-picker-sheet';
+export type { UserPickerTab, UserSummary } from './user-picker-sheet/user-picker-sheet.model';
