@@ -41,7 +41,13 @@ export class ChatStore {
     this.persistence.load(),
   );
   private readonly _selectedPeerId = signal<string | null>(null);
-  private readonly msgIndex = new Map<string, string>();
+  /** Backfilled from the just-loaded persisted conversations below — without this, msgIndex
+   *  starts empty on every fresh app load, so push()'s global-dedup check (see push()) would
+   *  never catch a redelivered offline message unless it happened to still be literally the
+   *  last message in that conversation. */
+  private readonly msgIndex = new Map<string, string>(
+    [...this._conversations().values()].flatMap((c) => c.messages.map((m) => [m.id, c.peerUserId] as const)),
+  );
   private processedEventCount = 0;
 
   readonly conversations = computed(() =>
@@ -347,6 +353,16 @@ export class ChatStore {
   }
 
   private push(peerId: string | number, message: ChatMessage): void {
+    // Global dedup: HelloTalk's offline-sync has no incremental cursor, so the backend
+    // redelivers the exact same packet(s) on every reconnect — every app open, not just once.
+    // upsertConversation's own dedup only compares against the conversation's LAST message,
+    // which misses reinsertion whenever anything else has been received since (or the
+    // conversation was otherwise reset), so a stale share can silently reappear as a "new"
+    // duplicate on every single load. msgIndex tracks every msgId we've ever seen across the
+    // whole store (backfilled from persisted history at construction — see the field above),
+    // so this check catches it regardless of position in the conversation's history.
+    if (message.id && this.msgIndex.has(message.id)) return;
+
     const peerUserId = asPeerId(peerId);
     const isSelected = this._selectedPeerId() === peerUserId;
     const { map, evictedMessageIds } = upsertConversation(this._conversations(), peerUserId, message, isSelected);
@@ -421,7 +437,11 @@ export class ChatStore {
           id: ev.msgId ?? crypto.randomUUID(),
           type: 'voice_room_shared',
           cname: ev.cname,
-          ts: Date.now(),
+          // Real send time from upstream, not "when we happened to decode this" — the
+          // backend's offline-sync has no incremental cursor and redelivers the same packet
+          // on every reconnect (matches HelloTalk's own client), so falling back to Date.now()
+          // made a months-old share look like it just arrived, every single app open.
+          ts: ev.ts,
           fromUserId: ev.peerUserId,
           fromNickname: ev.fromNickname,
           fromHeadUrl: ev.fromHeadUrl,
@@ -438,7 +458,7 @@ export class ChatStore {
           id: ev.msgId ?? crypto.randomUUID(),
           type: 'live_room_shared',
           cname: ev.cname,
-          ts: Date.now(),
+          ts: ev.ts,
           fromUserId: ev.peerUserId,
           fromNickname: ev.fromNickname,
           fromHeadUrl: ev.fromHeadUrl,
