@@ -196,9 +196,6 @@ export class ImBootstrapService {
         });
         break;
       }
-      case 'group_message':
-        this.notifications.notify('info', `${event.roomName}`, `${event.senderName}: ${event.text}`);
-        break;
       case 'typing_indicator':
       case 'read_receipt':
         break;
