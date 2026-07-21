@@ -11,12 +11,12 @@ export type ShareCardJoinKind = 'visible' | 'invisible';
  * and a small ghost icon-button for invisible listen — same affordance as the standard
  * room-card, so the user gets a familiar interaction in any room-list context.
  *
- * Title/topic/thumbnail mirror what the real Android client's share bubble shows
- * (ChatVoiceRoomDelegate → LiveCommunicationItemView.setRoomName/background, per
- * IMVoiceRoomBean's name/topic_name/background_url — smali_classes8/.../voiceRoom/
- * IMVoiceRoomBean.smali). Kept as a plain token-colored card with a small square
- * thumbnail (not a full-bleed cover photo) to match the flat-card style the rest of
- * the design system uses (room-card.ts has no photo-background cards either).
+ * Title/topic text mirror what the real Android client's share bubble shows
+ * (ChatVoiceRoomDelegate → LiveCommunicationItemView.setRoomName, per IMVoiceRoomBean's
+ * name/topic_name — smali_classes8/.../voiceRoom/IMVoiceRoomBean.smali). The upstream
+ * payload's background_url is intentionally NOT rendered — kept as a plain token-colored
+ * icon badge to match the flat-card style the rest of the design system uses (room-card.ts
+ * has no photo thumbnails either).
  *
  * This stays a dumb presentational card (CLAUDE.md §6): the chat page owns navigation
  * to the room route via {@link join} output, never injects Router.
@@ -31,17 +31,13 @@ export type ShareCardJoinKind = 'visible' | 'invisible';
       [class.is-outbound]="isOutbound()"
       [attr.aria-label]="fromName() + ' shared a ' + (kind() === 'voice' ? 'voice' : 'live') + ' room' + (roomTitle() ? ': ' + roomTitle() : '')"
     >
-      @if (backgroundUrl(); as bg) {
-        <img class="share-thumb" [src]="bg" alt="" />
-      } @else {
-        <span class="share-icon" [class.is-live]="kind() === 'live'">
-          @if (kind() === 'voice') {
-            <svg aria-hidden="true" lucideRadio [size]="18"></svg>
-          } @else {
-            <svg aria-hidden="true" lucideVideo [size]="18"></svg>
-          }
-        </span>
-      }
+      <span class="share-icon" [class.is-live]="kind() === 'live'">
+        @if (kind() === 'voice') {
+          <svg aria-hidden="true" lucideRadio [size]="18"></svg>
+        } @else {
+          <svg aria-hidden="true" lucideVideo [size]="18"></svg>
+        }
+      </span>
       <span class="share-body">
         <span class="share-label">
           {{ fromName() + ' shared a ' + (kind() === 'voice' ? 'voice' : 'live') + ' room' }}
@@ -105,11 +101,6 @@ export type ShareCardJoinKind = 'visible' | 'invisible';
     .share-icon.is-live { background: var(--color-error-100); color: var(--color-error-600); }
     :host-context(.dark) .share-icon { background: var(--color-primary-800); color: var(--color-primary-200); }
     :host-context(.dark) .share-icon.is-live { background: var(--color-error-800); color: var(--color-error-200); }
-    .share-thumb {
-      width: 36px; height: 36px; flex-shrink: 0; border-radius: 8px;
-      object-fit: cover; background: var(--color-neutral-200);
-    }
-    :host-context(.dark) .share-thumb { background: var(--color-neutral-700); }
     .share-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
     .share-label { font-size: var(--text-2xs); font-weight: var(--font-medium); color: var(--color-text-muted); }
     .share-title {
@@ -161,7 +152,6 @@ export class ChatRoomShareCardComponent {
   readonly roomName = input<string | null>(null);
   readonly activityName = input<string | null>(null);
   readonly topicName = input<string | null>(null);
-  readonly backgroundUrl = input<string | null>(null);
 
   /** voice rooms carry `roomName`, live rooms carry `activityName` — same title concept
    *  under different upstream field names (IMVoiceRoomBean.name vs IMLiveLinkBean.activity_name). */

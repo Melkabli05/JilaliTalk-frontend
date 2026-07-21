@@ -428,7 +428,6 @@ export class ChatStore {
           ...(ev.listenerCount != null ? { listenerCount: ev.listenerCount } : {}),
           ...(ev.roomName != null ? { roomName: ev.roomName } : {}),
           ...(ev.topicName != null ? { topicName: ev.topicName } : {}),
-          ...(ev.backgroundUrl != null ? { backgroundUrl: ev.backgroundUrl } : {}),
         };
         this.push(ev.peerUserId, msg);
         this.maybeAutoReadReceipt(ev.peerUserId);
@@ -445,7 +444,6 @@ export class ChatStore {
           fromHeadUrl: ev.fromHeadUrl,
           ...(ev.activityName != null ? { activityName: ev.activityName } : {}),
           ...(ev.topicName != null ? { topicName: ev.topicName } : {}),
-          ...(ev.backgroundUrl != null ? { backgroundUrl: ev.backgroundUrl } : {}),
         });
         this.maybeAutoReadReceipt(ev.peerUserId);
         return;

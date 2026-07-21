@@ -47,7 +47,6 @@ export interface ChatVoiceRoomSharedMessage extends ChatMessageBase {
   readonly listenerCount?: number;
   readonly roomName?: string | null;
   readonly topicName?: string | null;
-  readonly backgroundUrl?: string | null;
 }
 
 export interface ChatLiveRoomSharedMessage extends ChatMessageBase {
@@ -55,7 +54,6 @@ export interface ChatLiveRoomSharedMessage extends ChatMessageBase {
   readonly cname: string;
   readonly activityName?: string | null;
   readonly topicName?: string | null;
-  readonly backgroundUrl?: string | null;
 }
 
 export interface ChatConversation {

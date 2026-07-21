@@ -34,7 +34,6 @@ export type ImEvent =
       readonly msgId?: string;
       readonly roomName?: string | null;
       readonly topicName?: string | null;
-      readonly backgroundUrl?: string | null;
     }
   | {
       readonly type: 'live_room_shared';
@@ -45,7 +44,6 @@ export type ImEvent =
       readonly msgId?: string;
       readonly activityName?: string | null;
       readonly topicName?: string | null;
-      readonly backgroundUrl?: string | null;
     }
   | { readonly type: 'group_message'; readonly senderId: string; readonly senderName: string; readonly roomName: string; readonly text: string }
   | { readonly type: 'typing_indicator'; readonly fromUserId: string; readonly isTyping: boolean }

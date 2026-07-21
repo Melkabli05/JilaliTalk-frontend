@@ -81,7 +81,6 @@ export type ChatTransportEvent =
       readonly msgId?: string;
       readonly roomName?: string | null;
       readonly topicName?: string | null;
-      readonly backgroundUrl?: string | null;
     }
   | {
       readonly type: 'live_room_shared';
@@ -93,7 +92,6 @@ export type ChatTransportEvent =
       readonly msgId?: string;
       readonly activityName?: string | null;
       readonly topicName?: string | null;
-      readonly backgroundUrl?: string | null;
     }
   | { readonly type: 'typing_indicator'; readonly peerUserId: string; readonly isTyping: boolean }
   | { readonly type: 'read_receipt'; readonly msgId: string }

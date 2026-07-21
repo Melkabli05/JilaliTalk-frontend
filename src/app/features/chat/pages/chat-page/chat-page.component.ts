@@ -274,7 +274,6 @@ const FOLLOWERS_LIMIT = 50;
                     [isOutbound]="!!msg.delivery"
                     [roomName]="msg.roomName ?? null"
                     [topicName]="msg.topicName ?? null"
-                    [backgroundUrl]="msg.backgroundUrl ?? null"
                     (join)="onJoinRoom(msg.cname, 'voice', $event)"
                   />
                 }
@@ -286,7 +285,6 @@ const FOLLOWERS_LIMIT = 50;
                     [isOutbound]="!!msg.delivery"
                     [activityName]="msg.activityName ?? null"
                     [topicName]="msg.topicName ?? null"
-                    [backgroundUrl]="msg.backgroundUrl ?? null"
                     (join)="onJoinRoom(msg.cname, 'live', $event)"
                   />
                 }
