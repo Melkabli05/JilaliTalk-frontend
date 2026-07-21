@@ -30,6 +30,13 @@ export class ChatTransportAdapter implements ChatTransport {
     this.im.clearSendFailures();
   }
 
+  /** Passthrough — see {@link OutboundRoomShareEcho}. */
+  readonly outboundRoomShareEchoes = this.im.outboundRoomShareEchoes;
+
+  clearOutboundRoomShareEchoes(): void {
+    this.im.clearOutboundRoomShareEchoes();
+  }
+
   connect(): void {
     this.im.connect();
   }

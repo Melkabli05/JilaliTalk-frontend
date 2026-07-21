@@ -18,7 +18,9 @@ const FOLLOWERS_LIMIT = 50;
  * and drives it with two inputs (open, room) — everything else (directory fetching, tab
  * state, by-ID lookup, sending the DM) is owned here. Sends via HtImConnectionService
  * directly (core/realtime, reachable by any feature) rather than through ChatStore, since
- * features/rooms can't import features/chat.
+ * features/rooms can't import features/chat — and separately records an outbound-echo
+ * (HtImConnectionService.recordOutboundRoomShareEcho) so the chat feature's conversation
+ * list still reflects the share, without this component needing any knowledge of ChatStore.
  */
 @Component({
   selector: 'app-room-share-picker',
@@ -146,6 +148,17 @@ export class RoomSharePickerComponent {
       ts,
       msgId,
     );
+    // sendDm alone doesn't touch the chat feature's conversation list (see this component's
+    // doc comment) — record the echo so ChatStore reflects it the same way its own
+    // sendVoiceRoom/sendLiveLink methods would if this had been sent from the chat composer.
+    this.im.recordOutboundRoomShareEcho({
+      peerId,
+      msgId,
+      kind: isVoice ? 'voice_room' : 'live_link',
+      cname,
+      fromNickname: me.nickname,
+      ts,
+    });
     this.toast.success(`Shared with ${user.nickname}`);
     this.closed.emit();
   }

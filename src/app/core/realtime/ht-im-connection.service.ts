@@ -10,6 +10,20 @@ import type { ImEvent } from './im-events';
 import type { DmSendPayload } from './dm-send-payload.model';
 
 /**
+ * A locally-originated room share that a non-chat-feature caller (e.g. the Rooms feature's
+ * share-picker) fired directly through {@link HtImConnectionService.sendDm} — see
+ * {@link HtImConnectionService.recordOutboundRoomShareEcho} for why this exists.
+ */
+export interface OutboundRoomShareEcho {
+  readonly peerId: number;
+  readonly msgId: string;
+  readonly kind: 'voice_room' | 'live_link';
+  readonly cname: string;
+  readonly fromNickname: string;
+  readonly ts: number;
+}
+
+/**
  * Relay connection to jilalibff's `/ws/im` — the BFF owns the binary HelloTalk `ht_im/sock`
  * protocol (framing, QQ-TEA, login/heartbeat/offline-sync) entirely server-side and forwards
  * decoded events here as plain JSON text frames, one `ImEvent` per message. Outbound sends
@@ -56,6 +70,33 @@ export class HtImConnectionService {
   clearSendFailures(): void {
     if (this._sendFailures().length === 0) return;
     this._sendFailures.set([]);
+  }
+
+  /**
+   * Append-only log of room shares sent directly via {@link sendDm} by a caller outside the
+   * chat feature (features/rooms' share-picker, per CLAUDE.md §3, cannot import chat's
+   * page-scoped ChatStore to get its usual local-echo treatment — every other send path
+   * (composer-driven text/image/gift/etc) goes through ChatStore's own send* methods, which
+   * build and push their own optimistic ChatMessage directly). Without this, sharing a room
+   * from a room card fired the WS packet successfully but the sender's own conversation list
+   * never learned about it — nothing reflected the share locally until/unless the recipient's
+   * side round-tripped something back.
+   *
+   * <p>ChatStore drains this in a constructor effect and builds the same optimistic ChatMessage
+   * its own sendVoiceRoom/sendLiveLink methods build. The global msgId dedup already added to
+   * ChatStore.push() makes this safe to call unconditionally even if a future caller also
+   * pushes its own explicit echo for the same msgId — the second one is a no-op.
+   */
+  private readonly _outboundRoomShareEchoes = signal<readonly OutboundRoomShareEcho[]>([]);
+  readonly outboundRoomShareEchoes = this._outboundRoomShareEchoes.asReadonly();
+
+  recordOutboundRoomShareEcho(echo: OutboundRoomShareEcho): void {
+    this._outboundRoomShareEchoes.update((arr) => [...arr, echo]);
+  }
+
+  clearOutboundRoomShareEchoes(): void {
+    if (this._outboundRoomShareEchoes().length === 0) return;
+    this._outboundRoomShareEchoes.set([]);
   }
 
   connect(): void {

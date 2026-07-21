@@ -107,6 +107,31 @@ export class ChatStore {
       this.transport.clearSendFailures();
     });
 
+    // Reflect room shares sent outside the chat feature (Rooms' share-picker calls
+    // HtImConnectionService.sendDm directly — it can't import this page-scoped store across
+    // the feature boundary, so it never gets the usual optimistic local echo every other send
+    // path builds for itself). push()'s global msgId dedup makes this a safe no-op on the rare
+    // case a future caller also builds its own explicit echo for the same msgId.
+    effect(() => {
+      const echoes = this.transport.outboundRoomShareEchoes();
+      if (echoes.length === 0) return;
+      const me = this.authStore.user();
+      for (const echo of echoes) {
+        const message: ChatMessage = {
+          id: echo.msgId,
+          type: echo.kind === 'voice_room' ? 'voice_room_shared' : 'live_room_shared',
+          cname: echo.cname,
+          ts: echo.ts,
+          fromUserId: me ? String(me.userId) : '',
+          fromNickname: echo.fromNickname,
+          fromHeadUrl: me?.headUrl ?? null,
+          delivery: 'sent',
+        };
+        this.push(echo.peerId, message);
+      }
+      this.transport.clearOutboundRoomShareEchoes();
+    });
+
     this.destroyRef.onDestroy(() => this.persistence.flush());
   }
 

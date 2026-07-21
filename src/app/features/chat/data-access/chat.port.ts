@@ -3,6 +3,7 @@ import type {
   DmSendGift,
   IntroductionPayload,
 } from '@core/realtime/dm-send-payload.model';
+import type { OutboundRoomShareEcho } from '@core/realtime/ht-im-connection.service';
 import type { ChatConnectionStatus, ChatUserSummary } from '../models/chat-message.model';
 
 export interface ChatProfilePage {
@@ -107,6 +108,11 @@ export interface ChatTransport {
    *  {@code delivery: 'sent'} → {@code delivery: 'failed'}, which then surfaces a
    *  "Tap to retry" affordance in the chat-page bubble template. */
   readonly sendFailures: Signal<readonly string[]>;
+  /** Room shares sent outside the chat feature (Rooms' share-picker) that need to be
+   *  reflected into the sender's own conversation list — see
+   *  {@link OutboundRoomShareEcho} / {@code HtImConnectionService.recordOutboundRoomShareEcho}. */
+  readonly outboundRoomShareEchoes: Signal<readonly OutboundRoomShareEcho[]>;
+  clearOutboundRoomShareEchoes(): void;
   connect(): void;
   sendText(peerId: number, body: ChatOutboundText): string | null;
   sendImage(peerId: number, body: ChatOutboundImage): string | null;
