@@ -1,7 +1,7 @@
 import type { IntroductionPayload } from '@core/realtime/dm-send-payload.model';
 import type { UserPickerTab, UserSummary } from '@shared/ui/user-picker-sheet/user-picker-sheet.model';
 
-export type ChatDelivery = 'sent' | 'delivered' | 'read';
+export type ChatDelivery = 'sent' | 'delivered' | 'read' | 'failed';
 
 export type ChatMessage =
   | ChatTextMessage

@@ -79,6 +79,11 @@ export type ChatTransportEvent =
 export interface ChatTransport {
   readonly events: Signal<readonly ChatTransportEvent[]>;
   readonly status: Signal<ChatConnectionStatus>;
+  /** Append-only log of msgIds that failed to POST upstream. The chat store watches this
+   *  signal in its constructor and flips matching optimistic outbound messages from
+   *  {@code delivery: 'sent'} → {@code delivery: 'failed'}, which then surfaces a
+   *  "Tap to retry" affordance in the chat-page bubble template. */
+  readonly sendFailures: Signal<readonly string[]>;
   connect(): void;
   sendText(peerId: number, body: ChatOutboundText): string | null;
   sendImage(peerId: number, body: ChatOutboundImage): string | null;
@@ -88,4 +93,6 @@ export interface ChatTransport {
   sendIntroduction(peerId: number, body: ChatOutboundIntroduction): string | null;
   sendTyping(peerId: number, isTyping: boolean): void;
   sendReadReceipt(peerId: number, msgId: string): void;
+  /** Drain the failure log — called by the chat store once it has consumed each msgId. */
+  clearSendFailures(): void;
 }

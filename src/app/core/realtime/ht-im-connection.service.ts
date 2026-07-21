@@ -37,6 +37,27 @@ export class HtImConnectionService {
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /**
+   * Append-only log of msgIds that failed to POST upstream. The chat store watches this
+   * signal in its constructor and flips matching optimistic outbound messages from
+   * {@code delivery: 'sent'} → {@code delivery: 'failed'}, which then surfaces a
+   * "Tap to retry" affordance in the chat-page bubble template. Cheap append-only log
+   * (rather than per-msgId Subject) so a send failure doesn't have to race with the
+   * optimistic-echo path that already added the bubble with delivery='sent'.
+   */
+  private readonly _sendFailures = signal<readonly string[]>([]);
+  readonly sendFailures = this._sendFailures.asReadonly();
+
+  /**
+   * Drain the failure log — called by the chat store once it has consumed each msgId
+   * and propagated the failure to the corresponding optimistic bubble. Without this the
+   * effect above would re-fire forever on every signal read.
+   */
+  clearSendFailures(): void {
+    if (this._sendFailures().length === 0) return;
+    this._sendFailures.set([]);
+  }
+
   connect(): void {
     if (this.sock || this.wantsConnection) return;
     logRealtime('connect() requested');
@@ -86,7 +107,10 @@ export class HtImConnectionService {
         fromNickname,
         fromProfileTs,
       }),
-    ).catch((err: unknown) => logRealtime('send dm failed', err));
+    ).catch((err: unknown) => {
+      logRealtime('send dm failed', err);
+      this._sendFailures.update((arr) => [...arr, sentMsgId]);
+    });
     return sentMsgId;
   }
 

@@ -22,6 +22,14 @@ export class ChatTransportAdapter implements ChatTransport {
 
   readonly status: Signal<ChatConnectionStatus> = computed(() => this.im.status());
 
+  /** Passthrough so the chat store can flip optimistic outbound messages to
+   *  delivery='failed' when the upstream POST fails and surface a retry affordance. */
+  readonly sendFailures: Signal<readonly string[]> = this.im.sendFailures;
+
+  clearSendFailures(): void {
+    this.im.clearSendFailures();
+  }
+
   connect(): void {
     this.im.connect();
   }

@@ -185,7 +185,16 @@ const FOLLOWERS_LIMIT = 50;
                     <app-chat-text-bubble [text]="msg.text" [isOutbound]="!!msg.delivery" />
                     <span class="msg-meta">
                       <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
-                      @if (msg.delivery) {
+                      @if (msg.delivery === 'failed') {
+                        <button
+                          type="button"
+                          class="msg-retry"
+                          (click)="store.retrySend(msg.id)"
+                          [attr.aria-label]="'Failed to send — tap to retry'"
+                        >
+                          Failed · Retry
+                        </button>
+                      } @else if (msg.delivery) {
                         <app-chat-delivery-mark [delivery]="msg.delivery" />
                       }
                     </span>
@@ -196,7 +205,16 @@ const FOLLOWERS_LIMIT = 50;
                     <app-chat-image-bubble [url]="msg.imageUrl" [alt]="(msg.fromNickname || conv.nickname) + ' sent a photo'" />
                     <span class="msg-meta">
                       <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
-                      @if (msg.delivery) {
+                      @if (msg.delivery === 'failed') {
+                        <button
+                          type="button"
+                          class="msg-retry"
+                          (click)="store.retrySend(msg.id)"
+                          [attr.aria-label]="'Failed to send — tap to retry'"
+                        >
+                          Failed · Retry
+                        </button>
+                      } @else if (msg.delivery) {
                         <app-chat-delivery-mark [delivery]="msg.delivery" />
                       }
                     </span>
@@ -207,7 +225,16 @@ const FOLLOWERS_LIMIT = 50;
                     <app-chat-gift-bubble [count]="msg.count" [isOutbound]="!!msg.delivery" />
                     <span class="msg-meta">
                       <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
-                      @if (msg.delivery) {
+                      @if (msg.delivery === 'failed') {
+                        <button
+                          type="button"
+                          class="msg-retry"
+                          (click)="store.retrySend(msg.id)"
+                          [attr.aria-label]="'Failed to send — tap to retry'"
+                        >
+                          Failed · Retry
+                        </button>
+                      } @else if (msg.delivery) {
                         <app-chat-delivery-mark [delivery]="msg.delivery" />
                       }
                     </span>
@@ -223,7 +250,16 @@ const FOLLOWERS_LIMIT = 50;
                     />
                     <span class="msg-meta">
                       <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
-                      @if (msg.delivery) {
+                      @if (msg.delivery === 'failed') {
+                        <button
+                          type="button"
+                          class="msg-retry"
+                          (click)="store.retrySend(msg.id)"
+                          [attr.aria-label]="'Failed to send — tap to retry'"
+                        >
+                          Failed · Retry
+                        </button>
+                      } @else if (msg.delivery) {
                         <app-chat-delivery-mark [delivery]="msg.delivery" />
                       }
                     </span>
@@ -421,6 +457,19 @@ const FOLLOWERS_LIMIT = 50;
     .msg-row.is-outbound .msg-meta { padding-right: 2px; padding-left: 6px; }
     .msg-row:not(.is-outbound) .msg-meta { padding-left: 2px; padding-right: 6px; }
     .msg-time { font-variant-numeric: tabular-nums; }
+    .msg-retry {
+      border: 0; padding: 2px 8px; border-radius: var(--radius-full);
+      background: var(--color-error-100); color: var(--color-error-700);
+      font-family: inherit; font-size: var(--text-2xs); font-weight: var(--font-semibold);
+      cursor: pointer; touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 150ms ease, transform 100ms ease;
+    }
+    .msg-retry:hover { background: var(--color-error-200); }
+    .msg-retry:active { transform: scale(0.97); }
+    .msg-retry:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+    :host-context(.dark) .msg-retry { background: var(--color-error-900); color: var(--color-error-200); }
+    :host-context(.dark) .msg-retry:hover { background: var(--color-error-800); }
     @keyframes msgIn {
       from { opacity: 0; transform: translateY(6px) scale(0.98); }
       to { opacity: 1; transform: translateY(0) scale(1); }

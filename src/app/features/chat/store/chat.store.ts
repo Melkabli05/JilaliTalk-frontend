@@ -81,6 +81,26 @@ export class ChatStore {
       }
     });
 
+    // Flip optimistic outbound messages to delivery='failed' when the upstream POST fails,
+    // so the bubble surfaces a "Tap to retry" affordance instead of staying silently "sent"
+    // forever. msgIndex maps msgId → peerUserId so we can route each failure to the right
+    // conversation without scanning them all. Drains the failure list as we mark each.
+    effect(() => {
+      const failures = this.transport.sendFailures();
+      if (failures.length === 0) return;
+      this._conversations.update((m) => {
+        let next = m;
+        for (const failedId of failures) {
+          const peerUserId = this.msgIndex.get(failedId);
+          if (peerUserId !== undefined) {
+            next = updateMessageDelivery(next, peerUserId, failedId, 'failed', ['sent']);
+          }
+        }
+        return next;
+      });
+      this.transport.clearSendFailures();
+    });
+
     this.destroyRef.onDestroy(() => this.persistence.flush());
   }
 
@@ -269,6 +289,61 @@ export class ChatStore {
 
   retryConnection(): void {
     this.transport.connect();
+  }
+
+  /**
+   * Re-attempts an outbound send that previously failed upstream. Looks up the bubble by
+   * msgId, restores its delivery to 'sent' (the optimistic state), and re-issues the same
+   * payload with the same msgId — so any subsequent message_ack from upstream will re-key
+   * to the same bubble via msgIndex. If the send fails again, the failure-signal effect
+   * above will flip it back to 'failed' automatically.
+   */
+  retrySend(msgId: string): boolean {
+    const peerUserId = this.msgIndex.get(msgId);
+    if (!peerUserId) return false;
+    const numeric = asNumericPeerId(peerUserId);
+    if (!Number.isFinite(numeric)) return false;
+    const conv = this._conversations().get(peerUserId);
+    if (!conv) return false;
+    const original = conv.messages.find((m) => m.id === msgId);
+    if (!original || original.delivery !== 'failed') return false;
+    const me = this.authStore.user();
+    if (!me) return false;
+
+    // Restore delivery → 'sent' before re-issuing the POST, otherwise a fast upstream
+    // success would still leave a 'failed' bubble until the next effect ran.
+    this._conversations.update((m) =>
+      updateMessageDelivery(m, peerUserId, msgId, 'sent', ['failed'])
+    );
+
+    const ts = Date.now();
+    switch (original.type) {
+      case 'text':
+        this.transport.sendText(numeric, { msgId, text: original.text, fromNickname: me.nickname, fromProfileTs: ts });
+        return true;
+      case 'image':
+        this.transport.sendImage(numeric, { msgId, url: original.imageUrl, fromNickname: me.nickname, fromProfileTs: ts });
+        return true;
+      case 'gift':
+        // Bubble only persists giftId/count (not the full DmSendGift), so a retry
+        // requires re-picking the gift — which the UI doesn't currently support.
+        // Reset to 'sent' so it doesn't keep showing 'Failed' visually, then return
+        // false to signal to the caller that the retry couldn't complete. The user
+        // can refresh the page; the failed bubble is cleared on persistence reload.
+        this._conversations.update((m) =>
+          updateMessageDelivery(m, peerUserId, msgId, 'sent', ['failed'])
+        );
+        return false;
+      case 'introduction':
+        this.transport.sendIntroduction(numeric, { msgId, fromNickname: me.nickname, fromProfileTs: ts, target: original.target });
+        return true;
+      case 'voice_room_shared':
+        this.transport.sendVoiceRoom(numeric, { msgId, cname: original.cname, fromNickname: me.nickname, fromProfileTs: ts });
+        return true;
+      case 'live_room_shared':
+        this.transport.sendLiveLink(numeric, { msgId, cname: original.cname, fromNickname: me.nickname, fromProfileTs: ts });
+        return true;
+    }
   }
 
   private push(peerId: string | number, message: ChatMessage): void {
