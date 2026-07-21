@@ -47,6 +47,10 @@ export type ImEvent =
       readonly topicName?: string | null;
       readonly ts: number;
     }
+  // Reserved for a future group-chat implementation — see ImRealtimeEvent.GroupMessage
+  // (jilalibff) for the wire-protocol notes (distinct send cmdId 0x7049, room_id/sender_id
+  // envelope fields, confirmed via re_output). Not emitted by the backend yet.
+  | { readonly type: 'group_message'; readonly senderId: string; readonly senderName: string; readonly roomName: string; readonly text: string }
   | { readonly type: 'typing_indicator'; readonly fromUserId: string; readonly isTyping: boolean }
   | { readonly type: 'read_receipt'; readonly msgId: string }
   | { readonly type: 'message_ack'; readonly msgId: string; readonly sequence: number; readonly prefix: number }

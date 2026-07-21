@@ -196,6 +196,12 @@ export class ImBootstrapService {
         });
         break;
       }
+      case 'group_message':
+        // Not emitted by the backend yet (see im-events.ts's comment on this variant) — kept
+        // handled here so the notification surfaces immediately once a future backend change
+        // wires up the real 0x7049 group-chat protocol, with no frontend change needed.
+        this.notifications.notify('info', `${event.roomName}`, `${event.senderName}: ${event.text}`);
+        break;
       case 'typing_indicator':
       case 'read_receipt':
         break;
