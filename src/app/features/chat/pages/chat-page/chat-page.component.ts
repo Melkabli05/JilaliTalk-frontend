@@ -236,7 +236,7 @@ const FOLLOWERS_LIMIT = 50;
                     kind="voice"
                     [listenerCount]="msg.listenerCount ?? null"
                     [isOutbound]="!!msg.delivery"
-                    (join)="onJoinRoom(msg.cname, 'voice')"
+                    (join)="onJoinRoom(msg.cname, 'voice', $event)"
                   />
                 }
                 @case ('live_room_shared') {
@@ -245,7 +245,7 @@ const FOLLOWERS_LIMIT = 50;
                     [fromName]="msg.fromNickname || conv.nickname"
                     kind="live"
                     [isOutbound]="!!msg.delivery"
-                    (join)="onJoinRoom(msg.cname, 'live')"
+                    (join)="onJoinRoom(msg.cname, 'live', $event)"
                   />
                 }
               }
@@ -751,11 +751,12 @@ export class ChatPageComponent {
    * features — CLAUDE.md §3), so this navigates by URL instead, the same decoupling the
    * router itself is built for.
    */
-  protected onJoinRoom(cname: string, kind: 'voice' | 'live'): void {
+  protected onJoinRoom(cname: string, kind: 'voice' | 'live', mode: 'visible' | 'invisible' = 'visible'): void {
+    const visible = mode === 'visible';
     if (kind === 'voice') {
-      void this.router.navigate(['/room', cname, 2]);
+      void this.router.navigate(['/room', cname, 2], visible ? undefined : { queryParams: { invisible: '1' } });
     } else {
-      void this.router.navigate(['/room', 'video', cname, 1]);
+      void this.router.navigate(['/room', 'video', cname, 1], visible ? undefined : { queryParams: { invisible: '1' } });
     }
   }
 
