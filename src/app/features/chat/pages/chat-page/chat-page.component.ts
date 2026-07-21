@@ -272,6 +272,9 @@ const FOLLOWERS_LIMIT = 50;
                     kind="voice"
                     [listenerCount]="msg.listenerCount ?? null"
                     [isOutbound]="!!msg.delivery"
+                    [roomName]="msg.roomName ?? null"
+                    [topicName]="msg.topicName ?? null"
+                    [backgroundUrl]="msg.backgroundUrl ?? null"
                     (join)="onJoinRoom(msg.cname, 'voice', $event)"
                   />
                 }
@@ -281,6 +284,9 @@ const FOLLOWERS_LIMIT = 50;
                     [fromName]="msg.fromNickname || conv.nickname"
                     kind="live"
                     [isOutbound]="!!msg.delivery"
+                    [activityName]="msg.activityName ?? null"
+                    [topicName]="msg.topicName ?? null"
+                    [backgroundUrl]="msg.backgroundUrl ?? null"
                     (join)="onJoinRoom(msg.cname, 'live', $event)"
                   />
                 }

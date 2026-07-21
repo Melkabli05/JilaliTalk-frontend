@@ -137,9 +137,32 @@ function toChatTransportEvent(ev: ImEvent): ChatTransportEvent | null {
         ...(ev.msgId != null ? { msgId: ev.msgId } : {}),
       };
     case 'voice_room_shared':
-      return { type: 'voice_room_shared', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.headUrl, cname: ev.cname, headUrl: ev.headUrl, ...(ev.count != null ? { listenerCount: ev.count } : {}), ...(ev.msgId != null ? { msgId: ev.msgId } : {}) };
+      return {
+        type: 'voice_room_shared',
+        peerUserId: ev.fromUserId,
+        fromNickname: ev.fromNickname,
+        fromHeadUrl: ev.headUrl,
+        cname: ev.cname,
+        headUrl: ev.headUrl,
+        ...(ev.count != null ? { listenerCount: ev.count } : {}),
+        ...(ev.msgId != null ? { msgId: ev.msgId } : {}),
+        ...(ev.roomName != null ? { roomName: ev.roomName } : {}),
+        ...(ev.topicName != null ? { topicName: ev.topicName } : {}),
+        ...(ev.backgroundUrl != null ? { backgroundUrl: ev.backgroundUrl } : {}),
+      };
     case 'live_room_shared':
-      return { type: 'live_room_shared', peerUserId: ev.fromUserId, fromNickname: ev.fromNickname, fromHeadUrl: ev.headUrl, cname: ev.cname, headUrl: ev.headUrl, ...(ev.msgId != null ? { msgId: ev.msgId } : {}) };
+      return {
+        type: 'live_room_shared',
+        peerUserId: ev.fromUserId,
+        fromNickname: ev.fromNickname,
+        fromHeadUrl: ev.headUrl,
+        cname: ev.cname,
+        headUrl: ev.headUrl,
+        ...(ev.msgId != null ? { msgId: ev.msgId } : {}),
+        ...(ev.activityName != null ? { activityName: ev.activityName } : {}),
+        ...(ev.topicName != null ? { topicName: ev.topicName } : {}),
+        ...(ev.backgroundUrl != null ? { backgroundUrl: ev.backgroundUrl } : {}),
+      };
     case 'typing_indicator':
       return { type: 'typing_indicator', peerUserId: ev.fromUserId, isTyping: ev.isTyping };
     case 'read_receipt':

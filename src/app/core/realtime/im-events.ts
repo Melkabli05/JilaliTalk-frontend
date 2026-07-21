@@ -24,8 +24,29 @@ export type ImEvent =
       readonly targetBio?: string | null;
       readonly msgId?: string;
     }
-  | { readonly type: 'voice_room_shared'; readonly fromUserId: string; readonly fromNickname: string; readonly cname: string; readonly headUrl: string | null; readonly count?: number; readonly msgId?: string }
-  | { readonly type: 'live_room_shared'; readonly fromUserId: string; readonly fromNickname: string; readonly cname: string; readonly headUrl: string | null; readonly msgId?: string }
+  | {
+      readonly type: 'voice_room_shared';
+      readonly fromUserId: string;
+      readonly fromNickname: string;
+      readonly cname: string;
+      readonly headUrl: string | null;
+      readonly count?: number;
+      readonly msgId?: string;
+      readonly roomName?: string | null;
+      readonly topicName?: string | null;
+      readonly backgroundUrl?: string | null;
+    }
+  | {
+      readonly type: 'live_room_shared';
+      readonly fromUserId: string;
+      readonly fromNickname: string;
+      readonly cname: string;
+      readonly headUrl: string | null;
+      readonly msgId?: string;
+      readonly activityName?: string | null;
+      readonly topicName?: string | null;
+      readonly backgroundUrl?: string | null;
+    }
   | { readonly type: 'group_message'; readonly senderId: string; readonly senderName: string; readonly roomName: string; readonly text: string }
   | { readonly type: 'typing_indicator'; readonly fromUserId: string; readonly isTyping: boolean }
   | { readonly type: 'read_receipt'; readonly msgId: string }

@@ -70,8 +70,31 @@ export type ChatTransportEvent =
       readonly target: IntroductionPayload;
       readonly msgId?: string;
     }
-  | { readonly type: 'voice_room_shared'; readonly peerUserId: string; readonly fromNickname: string; readonly fromHeadUrl: string | null; readonly cname: string; readonly headUrl: string | null; readonly listenerCount?: number; readonly msgId?: string }
-  | { readonly type: 'live_room_shared'; readonly peerUserId: string; readonly fromNickname: string; readonly fromHeadUrl: string | null; readonly cname: string; readonly headUrl: string | null; readonly msgId?: string }
+  | {
+      readonly type: 'voice_room_shared';
+      readonly peerUserId: string;
+      readonly fromNickname: string;
+      readonly fromHeadUrl: string | null;
+      readonly cname: string;
+      readonly headUrl: string | null;
+      readonly listenerCount?: number;
+      readonly msgId?: string;
+      readonly roomName?: string | null;
+      readonly topicName?: string | null;
+      readonly backgroundUrl?: string | null;
+    }
+  | {
+      readonly type: 'live_room_shared';
+      readonly peerUserId: string;
+      readonly fromNickname: string;
+      readonly fromHeadUrl: string | null;
+      readonly cname: string;
+      readonly headUrl: string | null;
+      readonly msgId?: string;
+      readonly activityName?: string | null;
+      readonly topicName?: string | null;
+      readonly backgroundUrl?: string | null;
+    }
   | { readonly type: 'typing_indicator'; readonly peerUserId: string; readonly isTyping: boolean }
   | { readonly type: 'read_receipt'; readonly msgId: string }
   | { readonly type: 'message_ack'; readonly msgId: string; readonly prefix: number };
