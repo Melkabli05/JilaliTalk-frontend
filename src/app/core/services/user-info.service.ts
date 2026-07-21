@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { API_V2_BASE_URL } from '@core/tokens/api-v2-base-url.token';
 
 /** One entry of `base.teachLangs` / `base.learnLangs`. */
 export interface UserLangInfo {
@@ -264,7 +264,7 @@ const PRESENCE_STALE_AFTER_MS = 60 * 1000; // 1 minute — presence flips every 
 @Injectable({ providedIn: 'root' })
 export class UserInfoService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${inject(API_BASE_URL)}/users`;
+  private readonly baseUrl = `${inject(API_V2_BASE_URL)}/users`;
 
   private readonly _cache = signal<ReadonlyMap<number, { readonly info: UserInfo; readonly fetchedAt: number }>>(new Map());
   private readonly _loading = signal(false);

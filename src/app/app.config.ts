@@ -21,6 +21,7 @@ import { RoomApi } from '@features/room';
 import { environment } from '@env/environment';
 import { routes } from './app.routes';
 import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { API_V2_BASE_URL } from '@core/tokens/api-v2-base-url.token';
 import { WS_BASE_URL } from '@core/tokens/ws-base-url.token';
 import { AGORA_APP_ID_VOICE, AGORA_APP_ID_VIDEO } from '@core/tokens/agora-app-id.token';
 
@@ -48,6 +49,7 @@ export const appConfig: ApplicationConfig = {
     { provide: IMAGE_CONFIG, useValue: { disableImageSizeWarning: true } },
     { provide: APP_INITIALIZER, useFactory: restoreSession, multi: true },
     { provide: API_BASE_URL, useValue: environment.apiUrl },
+    { provide: API_V2_BASE_URL, useValue: `${environment.apiUrl}/v2` },
     { provide: WS_BASE_URL, useValue: environment.wsUrl },
     { provide: AGORA_APP_ID_VOICE, useValue: environment.agoraAppIdVoice },
     { provide: AGORA_APP_ID_VIDEO, useValue: environment.agoraAppIdVideo },

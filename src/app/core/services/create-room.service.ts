@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { API_V2_BASE_URL } from '@core/tokens/api-v2-base-url.token';
 import { RoomVisibility } from '@shared/ui/create-room-modal/create-room-modal.component';
 import { Category } from '@shared/data/categories';
 import { CategoriesService } from '@shared/data/categories.service';
@@ -34,7 +34,7 @@ const VISIBLE_STATUS: Record<RoomVisibility, number> = {
 export class CreateRoomService {
   private readonly http = inject(HttpClient);
   private readonly categoriesService = inject(CategoriesService);
-  private readonly baseUrl = `${inject(API_BASE_URL)}/rooms`;
+  private readonly baseUrl = `${inject(API_V2_BASE_URL)}/rooms`;
 
   createVoiceRoom(request: CreateVoiceRoomRequest): Observable<CreateVoiceChannelResponse> {
     return this.http.post<CreateVoiceChannelResponse>(`${this.baseUrl}/voice`, {

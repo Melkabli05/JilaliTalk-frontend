@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, shareReplay, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { API_V2_BASE_URL } from '@core/tokens/api-v2-base-url.token';
 import { Category } from './categories';
 
 interface CategoryTopicListResponse {
@@ -21,7 +21,7 @@ const DEFAULT_BUSI_TYPE = 2;
 @Injectable({ providedIn: 'root' })
 export class CategoriesService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${inject(API_BASE_URL)}/rooms`;
+  private readonly baseUrl = `${inject(API_V2_BASE_URL)}/rooms`;
   private readonly cache = new Map<number, Observable<readonly Category[]>>();
 
   fetchCategories(busiType: number = DEFAULT_BUSI_TYPE): Observable<readonly Category[]> {

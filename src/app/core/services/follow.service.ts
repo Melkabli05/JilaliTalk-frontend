@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { API_V2_BASE_URL } from '@core/tokens/api-v2-base-url.token';
 
 /**
  * `data.status` is the actual toggle result: 1 = now following, 0 = now not
@@ -39,7 +39,7 @@ export interface FollowResult {
 @Injectable({ providedIn: 'root' })
 export class FollowService {
   private readonly http = inject(HttpClient);
-  private readonly base = inject(API_BASE_URL);
+  private readonly base = inject(API_V2_BASE_URL);
 
   private readonly profileBase = `${this.base}/profile`;
 

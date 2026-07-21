@@ -7,7 +7,7 @@ import {
   LanguageGroup,
   RoomType,
 } from './rooms-model';
-import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { API_V2_BASE_URL } from '@core/tokens/api-v2-base-url.token';
 import { CategoriesService } from '@shared/data/categories.service';
 
 // Stateless HTTP wrapper (no per-page state, unlike RoomsStore/LiveRoomsStore) — root-scoped
@@ -16,7 +16,7 @@ import { CategoriesService } from '@shared/data/categories.service';
 export class RoomsApi {
   private readonly http = inject(HttpClient);
   private readonly categoriesService = inject(CategoriesService);
-  private readonly baseUrl = `${inject(API_BASE_URL)}/rooms`;
+  private readonly baseUrl = `${inject(API_V2_BASE_URL)}/rooms`;
 
   listRooms(
     type: RoomType,

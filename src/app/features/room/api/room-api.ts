@@ -3,12 +3,12 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { StageUsersResponse, AudienceUsersResponse, AudienceUser, CommentsResponse, SendCommentPayload, SendCommentResponse, VoiceSignPanelResponse, RoomLevelRewardResponse, RoomLevelConfigResponse, VoiceRoomInfo, LiveRoomInfo, ManagerListResponse, CaptionHistoryResponse, VoiceTasksResponse } from '../models/room-model';
-import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { API_V2_BASE_URL } from '@core/tokens/api-v2-base-url.token';
 
 @Service()
 export class RoomApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = inject(API_BASE_URL);
+  private readonly baseUrl = inject(API_V2_BASE_URL);
 
   fetchVoiceRoomInfo(cname: string): Observable<VoiceRoomInfo> {
     return this.http.get<VoiceRoomInfo>(`${this.baseUrl}/rooms/voice/${cname}`);

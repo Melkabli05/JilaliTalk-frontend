@@ -1,7 +1,7 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { API_BASE_URL } from '@core/tokens/api-base-url.token';
+import { API_V2_BASE_URL } from '@core/tokens/api-v2-base-url.token';
 import type { UserInfo } from '@core/services/user-info.service';
 import {
   ProfileBundleResponse,
@@ -17,7 +17,8 @@ const EMPTY_VISITORS_PAGE: VisitorsPage = { index: null, more: false, list: [] }
 @Service()
 export class ProfileApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${inject(API_BASE_URL)}/profile`;
+  private readonly apiBase = inject(API_V2_BASE_URL);
+  private readonly baseUrl = `${this.apiBase}/profile`;
 
   bundle(userId: number): Observable<ProfileBundleResponse> {
     return this.http.get<ProfileBundleResponse>(`${this.baseUrl}/${userId}/bundle`);
@@ -67,11 +68,12 @@ export class ProfileApi {
   }
 
   /**
-   * Single-user profile lookup. Mirrors the BFF's {@code GET /api/users/info?userId=N}.
-   * Used by the messages new-contact panel's "By ID" tab.
+   * Single-user profile lookup, served by the roomcontext BFF's
+   * {@code GET /api/v2/users/info?userId=N} (the user bounded context, not `/profile`).
+   * Used by the messages new-contact panel's "By ID" tab and the chat/room share directories.
    */
   userInfo(userId: number): Observable<UserInfo> {
     const params = new HttpParams().set('userId', userId);
-    return this.http.get<UserInfo>(`${this.baseUrl}/info`, { params });
+    return this.http.get<UserInfo>(`${this.apiBase}/users/info`, { params });
   }
 }
