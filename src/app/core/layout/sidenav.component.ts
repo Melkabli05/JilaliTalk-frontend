@@ -26,14 +26,21 @@ interface NavGroup {
   template: `
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <nav class="sidebar-desktop hidden lg:flex rtl:lg:left-auto rtl:lg:right-0 rtl:lg:border-r-0 rtl:lg:border-l" aria-label="Main navigation">
-      <div class="sidebar-logo">
+    <nav
+      class="sidebar-desktop hidden lg:flex flex-col
+             bg-white dark:bg-neutral-900
+             border-r border-neutral-200 dark:border-neutral-700
+             p-4
+             rtl:lg:left-auto rtl:lg:right-0 rtl:lg:border-r-0 rtl:lg:border-l"
+      aria-label="Main navigation"
+    >
+      <div class="h-16 flex items-center justify-center shrink-0 mb-4">
         <span class="visually-hidden">JilaliTalk Home</span>
         <svg aria-hidden="true" width="32" height="32" viewBox="0 0 32 32" fill="none">
           <defs>
             <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="var(--color-primary-500)"/>
-              <stop offset="100%" stop-color="var(--color-accent-500)"/>
+              <stop offset="0%" stop-color="#2563eb"/>
+              <stop offset="100%" stop-color="#4f46e5"/>
             </linearGradient>
           </defs>
           <path d="M16 4L4 10v12l12 6 12-6V10L16 4z" fill="url(#logoGrad)"/>
@@ -42,13 +49,20 @@ interface NavGroup {
         </svg>
       </div>
 
-      <div class="sidebar-nav">
+      <div class="flex-1 flex flex-col gap-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         @for (group of navGroups; track $index) {
           @for (item of group.items; track item.id) {
             <a
               [routerLink]="item.route"
               routerLinkActive="active"
-              class="nav-item"
+              class="nav-item relative flex items-center justify-center size-12 rounded-lg
+                     text-neutral-500 dark:text-neutral-500
+                     no-underline transition-colors duration-150
+                     hover:bg-blue-500/8 hover:text-blue-600
+                     dark:hover:bg-blue-400/10 dark:hover:text-blue-300
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500
+                     [&.active]:bg-blue-500/12 [&.active]:text-blue-600
+                     dark:[&.active]:bg-blue-400/18 dark:[&.active]:text-blue-300"
               [attr.aria-label]="item.label"
               [appTooltip]="item.label"
             >
@@ -60,21 +74,33 @@ interface NavGroup {
                 @case ('user') { <svg aria-hidden="true" lucideUser [size]="22"></svg> }
               }
               @if (item.id === 'messages' && messagesBadge() > 0) {
-                <span class="nav-badge" [attr.aria-label]="messagesBadge() + ' unread'">{{ messagesBadge() > 9 ? '9+' : messagesBadge() }}</span>
+                <span
+                  class="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full
+                         bg-red-500 dark:bg-red-400 text-white text-xs font-bold
+                         flex items-center justify-center"
+                  [attr.aria-label]="messagesBadge() + ' unread'"
+                >{{ messagesBadge() > 9 ? '9+' : messagesBadge() }}</span>
               }
             </a>
           }
           @if ($index < navGroups.length - 1) {
-            <div class="nav-separator" role="separator" aria-hidden="true"></div>
+            <div class="h-px w-6 my-1 mx-auto bg-neutral-200 dark:bg-neutral-700 rounded-full" role="separator" aria-hidden="true"></div>
           }
         }
       </div>
 
-      <div class="sidebar-footer">
+      <div class="shrink-0 flex items-center justify-center pt-2 mt-2 border-t border-neutral-200 dark:border-neutral-700">
         <a
           [routerLink]="'/profile'"
           routerLinkActive="active"
-          class="sidebar-profile-link"
+          class="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg
+                 text-neutral-500 dark:text-neutral-500
+                 transition-colors duration-150
+                 [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]
+                 hover:bg-neutral-100 hover:text-neutral-900
+                 dark:hover:bg-neutral-700 dark:hover:text-neutral-100
+                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500
+                 [&.active]:text-blue-600 dark:[&.active]:text-blue-300"
           [attr.aria-label]="'Open profile'"
         >
           <svg aria-hidden="true" lucideLogIn [size]="16"></svg>
@@ -82,117 +108,25 @@ interface NavGroup {
       </div>
     </nav>
   `,
+  /**
+   * Only structural/functional CSS remains — colors/spacing/radii/typography moved to
+   * Tailwind v4 utilities + the default palette in the template above.
+   *   - app-sidenav { display: contents } — required so this host doesn't consume a track
+   *     in the app-shell grid (see the long-form comment this replaced: its only child is
+   *     fixed-position/display:none, so it must never be a grid item itself).
+   *   - .sidebar-desktop position/width/z-index — position:fixed + width from
+   *     --sidebar-width + z-index from --z-shell-sidenav are cross-component layout
+   *     coordination (app.ts reads --sidebar-width for the main-wrapper margin), not
+   *     branding/color choices.
+   */
   styles: [`
-/* This element has no box of its own: its only child (.sidebar-desktop) is
-   fixed-position or display:none, so this host must not consume a track in
-   the app-shell grid it sits in as a direct sibling of .main-wrapper —
-   without this, on the mobile single-column layout this element would be
-   auto-placed into its own implicit grid row, claiming visible space
-   despite rendering nothing in normal flow.
-   Plain tag selector, not :host: this component uses ViewEncapsulation.None,
-   so its styles are already unscoped global CSS — :host (like
-   :host-context(), see below) is only rewritten into a working selector
-   under the default Emulated encapsulation, and ships as inert,
-   non-matching syntax under None. */
-    app-sidenav {
-      display: contents;
-    }
-
-    /* ─── Desktop Sidebar ───────────────────────────────
-       Visibility is mobile-first controlled on the template
-       (class="hidden lg:flex rtl:lg:left-auto ..."), only positioning/look-and-feel
-       stays here in CSS. */
+    app-sidenav { display: contents; }
     .sidebar-desktop {
       position: fixed;
       left: 0; top: 0; bottom: 0;
       width: var(--sidebar-width);
-      background-color: var(--color-card);
-      border-right: 1px solid var(--color-border);
-      flex-direction: column;
       z-index: var(--z-shell-sidenav);
-      padding: var(--space-4);
     }
-
-    .sidebar-logo {
-      height: var(--space-16);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; margin-bottom: var(--space-4);
-    }
-
-    .sidebar-nav {
-      flex: 1; display: flex; flex-direction: column; gap: var(--space-1);
-      scrollbar-width: none; -ms-overflow-style: none;
-    }
-    .sidebar-nav::-webkit-scrollbar { display: none; }
-
-    .nav-separator {
-      height: 1px; width: var(--space-6);
-      margin: var(--space-1) auto;
-      background-color: var(--color-border);
-      border-radius: var(--radius-full);
-    }
-
-    .nav-item {
-      position: relative;
-      display: flex; align-items: center; justify-content: center;
-      width: var(--space-12); height: var(--space-12);
-      border-radius: var(--radius-lg);
-      color: var(--color-text-muted);
-      text-decoration: none;
-      transition: background 0.15s ease, color 0.15s ease;
-    }
-    .nav-item:hover {
-      background-color: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
-      color: var(--color-primary-text);
-    }
-    .nav-item:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-    .nav-item.active {
-      background-color: color-mix(in srgb, var(--color-primary-500) 12%, transparent);
-      color: var(--color-primary-text);
-    }
-
-    .nav-badge {
-      position: absolute; top: var(--space-1); right: var(--space-1);
-      min-width: 16px; height: 16px; padding: 0 var(--space-1);
-      border-radius: var(--radius-full);
-      background-color: var(--color-warm-500);
-      color: var(--color-on-color);
-      font-size: var(--text-xs); font-weight: var(--font-bold);
-      display: flex; align-items: center; justify-content: center;
-    }
-
-    .sidebar-footer {
-      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-      padding-top: var(--space-2);
-      border-top: 1px solid var(--color-border);
-      margin-top: var(--space-2);
-    }
-    .sidebar-profile-link {
-      display: inline-flex; align-items: center; justify-content: center;
-      min-width: 44px; min-height: 44px; border-radius: var(--radius-lg);
-      color: var(--color-text-muted); transition: background-color 0.15s ease, color 0.15s ease;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .sidebar-profile-link:hover { background: var(--color-neutral-100); color: var(--color-text); }
-    .sidebar-profile-link:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    .sidebar-profile-link.active { color: var(--color-primary-text); }
-    :host-context(.dark) .sidebar-profile-link:hover { background: var(--color-neutral-700); }
-
-    /* ─── Dark mode ───────────────────────────────── */
-    .dark .sidebar-desktop { background-color: var(--color-neutral-900); border-color: var(--color-neutral-700); }
-    .dark .nav-separator { background-color: var(--color-neutral-700); }
-    .dark .nav-item { color: var(--color-neutral-500); }
-    .dark .nav-item:hover {
-      background-color: color-mix(in srgb, var(--color-primary-400) 10%, transparent);
-      color: var(--color-primary-300);
-    }
-    .dark .nav-item.active {
-      background-color: color-mix(in srgb, var(--color-primary-400) 18%, transparent);
-      color: var(--color-primary-300);
-    }
-    .dark .nav-badge { background-color: var(--color-warm-400); }
-    .dark .sidebar-footer { border-color: var(--color-neutral-700); }
   `]
 })
 export class SidenavComponent {
