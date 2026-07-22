@@ -1,6 +1,12 @@
 /* ─── Tailwind v4 ────────────────────────────────────────────── */
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+/* RTL: project sets dir="rtl" on the document root for RTL languages. Tailwind v4's
+   built-in ltr/rtl variants match [dir="ltr"] / [dir="rtl"] ancestors; declaring them
+   explicitly here means rtl:lg:left-auto etc. resolve correctly. Matches what the legacy
+   app-shell's :host-context([dir='rtl']) .main-wrapper rules have always assumed. */
+@custom-variant rtl (&:where([dir="rtl"], [dir="rtl"] *));
+@custom-variant ltr (&:where([dir="ltr"], [dir="ltr"] *));
 
 /* ─── Design Tokens ──────────────────────────────────────────
    Defined as CSS custom properties so they cascade correctly

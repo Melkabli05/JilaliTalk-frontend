@@ -31,7 +31,7 @@ import { AuthService } from '@core/auth/auth.service';
     NotificationPanelComponent,
   ],
   template: `
-    <header role="banner" class="app-header" id="main-content" tabindex="-1" [class.immersive]="immersive">
+    <header role="banner" class="app-header lg:px-6 lg:left-[var(--sidebar-width)] rtl:lg:left-auto rtl:lg:right-[var(--sidebar-width)]" id="main-content" tabindex="-1" [class.immersive]="immersive">
       <div class="brand">
         <svg aria-hidden="true" class="brand-icon" width="26" height="26" viewBox="0 0 32 32" fill="none">
           <defs>
@@ -117,13 +117,9 @@ import { AuthService } from '@core/auth/auth.service';
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
     }
-    @media (min-width: 1024px) {
-      .app-header { padding: 0 var(--space-6); left: var(--sidebar-width); }
-      :host-context([dir='rtl']) .app-header { left: auto; right: var(--sidebar-width); }
-    }
-    /* Immersive routes (mobile room pages) — shell toggles via [immersive] input,
-       rule fires regardless of viewport so the desktop sidebar case (immersive
-       desktop) also respects the toggle cleanly. */
+    /* Wide-screen padding (px-6) and sidebar offset now live on the template as
+       lg:px-6 + lg:left-[var(--sidebar-width)] (with rtl:right-[var(--sidebar-width)]
+       for RTL layouts). Immersive-state hide is class-driven via [immersive] input. */
     .app-header.immersive { display: none; }
     /* Brand */
     .brand {
