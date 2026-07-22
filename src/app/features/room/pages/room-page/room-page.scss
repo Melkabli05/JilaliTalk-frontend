@@ -57,38 +57,17 @@
   overflow: hidden;
 }
 
-/* ── Desktop: two-column sidebar layout ─────────────────────────────────
-   IRREDUCIBLE CASE: Tailwind v4 has utilities for grid-cols/rows but NOT for
-   grid-template-areas, which carries named-line reorderings that utilities
-   can't express without arbitrary-value ugliness. Both LTR and RTL grid
-   definitions live in this SCSS block — leaving it as the only remaining
-   :host-context([dir='rtl']) rule in the codebase.
-   Gate on both width AND height — landscape phones have enough width
-   but not enough height for the sidebar to be useful (comments would
-   be squished to ~82px). */
-@container room-page (min-width: 1024px) and (min-height: 500px) {
-  .room-layout {
-    display: grid;
-    grid-template-areas:
-      "header   comments"
-      "stage    comments"
-      "audience comments";
-    grid-template-columns: minmax(0, 1fr) var(--comments-panel-width);
-    grid-template-rows: auto auto minmax(22cqh, 1fr);
-  }
-  :host-context([dir='rtl']) .room-layout {
-    grid-template-areas:
-      "comments header"
-      "comments stage"
-      "comments audience";
-    grid-template-columns: var(--comments-panel-width) minmax(0, 1fr);
-  }
+/* LTR + RTL desktop grid declarations moved to template utilities (Tailwind v4 arbitrary
+   value syntax for grid-template-areas, grid-cols, grid-rows). Child grid-area assignments
+   stay as SCSS rules below to keep area names readable. */
 
-  .room-header    { grid-area: header; max-height: none; }
-  .stage-section  { grid-area: stage;  max-height: none; }
-  .audience-section { grid-area: audience; max-height: none; }
-  .comments-section { grid-area: comments; min-height: 0; }
-}
+/* Child area placement. The desktop rules on .room-header etc. previously set max-height: none
+   on top of grid-area; the max-height default in this layout (no explicit height on the parent)
+   already allows children to grow, so those were redundant and removed. */
+.room-header    { grid-area: header; }
+.stage-section  { grid-area: stage; }
+.audience-section { grid-area: audience; }
+.comments-section { grid-area: comments; }
 
 .invisible-banner {
   display: flex; align-items: center; gap: var(--space-2);

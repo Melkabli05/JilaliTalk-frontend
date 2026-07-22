@@ -1,4 +1,6 @@
-<div class="room-layout @container room-page">
+<div
+  class="@container/room-page @min-[1024px]/room-page:@min-[500px]/room-page:grid @min-[1024px]/room-page:@min-[500px]/room-page:[grid-template-areas:'header_comments'_'stage_comments'_'audience_comments'] @min-[1024px]/room-page:@min-[500px]/room-page:grid-cols-[1fr_var(--comments-panel-width)] @min-[1024px]/room-page:@min-[500px]/room-page:grid-rows-[auto_auto_minmax(22cqh,1fr)] rtl:@min-[1024px]/room-page:@min-[500px]/room-page:[grid-template-areas:'comments_header'_'comments_stage'_'comments_audience'] rtl:@min-[1024px]/room-page:@min-[500px]/room-page:grid-cols-[var(--comments-panel-width)_1fr]"
+>
   <div class="room-header">
     <app-room-header
       [name]="roomStore.name()"
