@@ -12,7 +12,9 @@ export type UserListItemVariant = 'followers' | 'following' | 'visitors';
   imports: [AvatarComponent, CountryFlagComponent, LucideCrown, LucideUsers],
   template: `
     <div
-      class="row"
+      class="flex items-center gap-3 py-2 px-3 rounded-lg cursor-pointer transition-colors duration-150
+             hover:bg-neutral-100 dark:hover:bg-neutral-800
+             focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
       role="button"
       tabindex="0"
       [attr.aria-label]="'View ' + name() + '\\'s profile'"
@@ -21,31 +23,31 @@ export type UserListItemVariant = 'followers' | 'following' | 'visitors';
       (keydown.space)="$event.preventDefault(); userClick.emit(userId())"
     >
       <app-avatar [src]="headUrl() ?? ''" [initials]="initials()" size="md" [alt]="name()" />
-      <div class="row-main">
-        <div class="row-name-line">
-          <span class="row-name">{{ name() }}</span>
+      <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+        <div class="flex items-center gap-1 min-w-0">
+          <span class="text-sm font-medium text-neutral-900 dark:text-neutral-100 overflow-hidden text-ellipsis whitespace-nowrap">{{ name() }}</span>
           @if ((vipType() ?? 0) > 0) {
-            <svg aria-hidden="true" lucideCrown [size]="11" class="vip-icon" />
+            <svg aria-hidden="true" lucideCrown [size]="11" class="shrink-0 text-amber-500" />
           }
         </div>
         @if (nationality()) {
           <app-country-flag [code]="nationality()" [compact]="true" />
         }
       </div>
-      <div class="row-trailing">
+      <div class="shrink-0 flex items-center">
         @switch (variant()) {
           @case ('following') {
             @if (isMutual()) {
-              <span class="badge badge-mutual">Mutual</span>
+              <span class="text-[11px] font-semibold py-0.5 px-2 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300">Mutual</span>
             }
           }
           @case ('visitors') {
             @if (visitTs(); as ts) {
-              <span class="visit-meta">
+              <span class="inline-flex items-center gap-1 text-[11px] text-neutral-500 dark:text-neutral-400">
                 <svg aria-hidden="true" lucideUsers [size]="11" />
                 {{ formatRelativeTime(ts) }}
                 @if ((visitCnt() ?? 0) > 1) {
-                  <span class="visit-count">&times;{{ visitCnt() }}</span>
+                  <span class="font-semibold">&times;{{ visitCnt() }}</span>
                 }
               </span>
             }
@@ -53,95 +55,6 @@ export type UserListItemVariant = 'followers' | 'following' | 'visitors';
         }
       </div>
     </div>
-  `,
-  styles: `
-    .row {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-lg);
-      transition: background-color 0.15s ease;
-      cursor: pointer;
-    }
-    .row:hover {
-      background-color: var(--color-neutral-100);
-    }
-    .row:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: 2px;
-    }
-    :host-context(.dark) .row:hover {
-      background-color: var(--color-neutral-800);
-    }
-
-    .row-main {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .row-name-line {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      min-width: 0;
-    }
-
-    .row-name {
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      color: var(--color-text);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    :host-context(.dark) .row-name {
-      color: var(--color-neutral-100);
-    }
-
-    .vip-icon {
-      flex-shrink: 0;
-      color: var(--color-gold-500);
-    }
-
-    .row-trailing {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-    }
-
-    .badge {
-      font-size: var(--text-2xs);
-      font-weight: var(--font-semibold);
-      padding: 2px 8px;
-      border-radius: var(--radius-full);
-    }
-    .badge-mutual {
-      background: var(--color-primary-50);
-      color: var(--color-primary-text);
-    }
-    :host-context(.dark) .badge-mutual {
-      background: var(--color-primary-900);
-      color: var(--color-primary-300);
-    }
-
-    .visit-meta {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: var(--text-2xs);
-      color: var(--color-text-muted);
-    }
-    :host-context(.dark) .visit-meta {
-      color: var(--color-neutral-400);
-    }
-
-    .visit-count {
-      font-weight: var(--font-semibold);
-    }
   `,
 })
 export class UserListItemComponent {
