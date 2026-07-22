@@ -28,13 +28,29 @@ function mobileLabel(full: string): string {
   encapsulation: ViewEncapsulation.None,
   imports: [RouterLink, RouterLinkActive, LucideGlobe, LucideTv, LucideMessageCircle, LucideUser],
   template: `
-    <nav class="mobile-nav" aria-label="Main navigation" [class.immersive]="immersive()">
-      <div class="mobile-nav-inner">
+    <nav
+      class="mobile-nav flex flex-col fixed bottom-0 left-0 right-0
+             bg-white/92 dark:bg-neutral-900/92
+             backdrop-blur-lg backdrop-saturate-150
+             border-t border-neutral-200 dark:border-neutral-700"
+      aria-label="Main navigation"
+      [class.immersive]="immersive()"
+    >
+      <div class="mobile-nav-inner w-full flex items-center justify-around px-2">
         @for (item of navItems; track item.id) {
           <a
             [routerLink]="item.route"
             routerLinkActive="active"
-            class="mobile-nav-item"
+            class="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-3
+                   rounded-xl text-neutral-500 dark:text-neutral-500
+                   no-underline text-xs font-medium
+                   transition-colors duration-150
+                   select-none [-webkit-touch-callout:none]
+                   hover:bg-blue-500/8 hover:text-blue-600
+                   dark:hover:bg-blue-400/10 dark:hover:text-blue-300
+                   focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500
+                   [&.active]:text-blue-600 [&.active]:font-bold
+                   dark:[&.active]:text-blue-300"
             [attr.aria-label]="item.label"
           >
             @switch (item.iconName) {
@@ -44,97 +60,30 @@ function mobileLabel(full: string): string {
               @case ('user') { <svg aria-hidden="true" lucideUser [size]="22"></svg> }
             }
             @if (item.badge && item.badge > 0) {
-              <span class="nav-badge mobile-nav-badge" aria-label="{{ item.badge }} notifications">{{ item.badge > 9 ? '9+' : item.badge }}</span>
+              <span
+                class="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full
+                       bg-red-500 dark:bg-red-400 text-white text-xs font-bold
+                       flex items-center justify-center"
+                aria-label="{{ item.badge }} notifications"
+              >{{ item.badge > 9 ? '9+' : item.badge }}</span>
             }
-            <span class="mobile-nav-label">{{ mobileLabel(item.label) }}</span>
+            <span class="mt-1">{{ mobileLabel(item.label) }}</span>
           </a>
         }
       </div>
-      <div class="safe-area-spacer"></div>
+      <div class="w-full [height:env(safe-area-inset-bottom)]"></div>
     </nav>
   `,
+  /**
+   * Only structural/functional CSS remains — colors/spacing/radii/typography moved to
+   * Tailwind v4 utilities + the default palette in the template above.
+   */
   styles: [`
-/* Plain tag selector, not :host: this component uses ViewEncapsulation.None, so
-   its styles are already unscoped global CSS — :host is only rewritten into a
-   working selector under the default Emulated encapsulation, and ships as
-   inert, non-matching syntax under None. Without this, this host would be a
-   real block-level grid item as a direct sibling of .main-wrapper in
-   app-shell's grid, claiming an extra implicit row despite its only child
-   being fixed-position. */
-    app-mobile-nav {
-      display: contents;
-    }
-
-    /* ─── Mobile Bottom Nav ─────────────────────────── */
-    .mobile-nav {
-      display: flex; flex-direction: column; position: fixed; bottom: 0; left: 0; right: 0;
-      z-index: var(--z-shell-sidenav);
-      background-color: color-mix(in srgb, var(--color-card) 92%, transparent);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      border-top: 1px solid var(--color-border);
-    }
-    .dark .mobile-nav {
-      background-color: color-mix(in srgb, var(--color-neutral-900) 92%, transparent);
-      border-color: var(--color-neutral-700);
-    }
-    /* Immersive routes (mobile room pages) — no media query needed: shell toggles
-       <app-mobile-nav class="..." [immersive]="...">, the rule below fires whenever
-       the shell is in immersive mode on a mobile viewport, instead of every media
-       ≤1023.98px regardless. */
+    app-mobile-nav { display: contents; }
+    .mobile-nav { z-index: var(--z-shell-sidenav); }
     .mobile-nav.immersive { display: none; }
-
-    .mobile-nav-inner {
-      width: 100%; height: var(--bottom-nav-height);
-      display: flex; align-items: center; justify-content: space-around;
-      padding: 0 var(--space-2);
-    }
-
-    .mobile-nav-item {
-      position: relative;
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 2px; padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-xl);
-      color: var(--color-text-muted);
-      text-decoration: none; font-size: var(--text-xs); font-weight: var(--font-medium);
-      transition: background 0.15s ease, color 0.15s ease;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
-    .mobile-nav-item:hover {
-      background-color: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
-      color: var(--color-primary-text);
-    }
-    .mobile-nav-item:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-    .mobile-nav-item.active {
-      color: var(--color-primary-text);
-      font-weight: var(--font-bold);
-    }
-
-    .nav-badge {
-      position: absolute; top: var(--space-1); right: var(--space-1);
-      min-width: 16px; height: 16px; padding: 0 var(--space-1);
-      border-radius: var(--radius-full);
-      background-color: var(--color-warm-500);
-      color: var(--color-on-color);
-      font-size: var(--text-xs); font-weight: var(--font-bold);
-      display: flex; align-items: center; justify-content: center;
-    }
-
-    .mobile-nav-label { margin-top: var(--space-1); }
-    .safe-area-spacer { width: 100%; height: env(safe-area-inset-bottom); }
-
-    /* ─── Dark mode ───────────────────────────────── */
-    .dark .mobile-nav-item { color: var(--color-neutral-500); }
-    .dark .mobile-nav-item:hover {
-      background-color: color-mix(in srgb, var(--color-primary-400) 10%, transparent);
-      color: var(--color-primary-300);
-    }
-    .dark .mobile-nav-item.active { color: var(--color-primary-300); }
-    .dark .nav-badge { background-color: var(--color-warm-400); }
-      `]
+    .mobile-nav-inner { height: var(--bottom-nav-height); }
+  `]
 })
 export class MobileNavComponent {
   /** Bound by the shell: true when the route is immersive AND the viewport is mobile.
