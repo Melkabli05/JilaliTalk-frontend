@@ -15,9 +15,10 @@ import type { ChatDelivery } from '../models/chat-message.model';
   selector: 'app-chat-delivery-mark',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideCheck, LucideCheckCheck],
+  host: { class: 'inline-flex self-end' },
   template: `
     @if (iconKind(); as kind) {
-      <span class="delivery-mark" [class.is-read]="delivery() === 'read'" [attr.aria-label]="ariaLabel()" aria-hidden="true">
+      <span [class]="markClass()" [attr.aria-label]="ariaLabel()" aria-hidden="true">
         @if (kind === 'single') {
           <svg aria-hidden="true" lucideCheck [size]="12"></svg>
         } @else {
@@ -26,35 +27,18 @@ import type { ChatDelivery } from '../models/chat-message.model';
       </span>
     }
   `,
+  /** Two bespoke keyframes: `deliveryRead`'s pop-in confirmation (WhatsApp/Telegram-style
+   *  blue-tick moment) and `deliveryShift`'s muted fade for non-read state changes — neither
+   *  has a Tailwind built-in shape. */
   styles: [`
-    :host { display: inline-flex; align-self: end; }
-    .delivery-mark {
-      display: inline-flex; align-items: center;
-      color: var(--color-text-muted);
-      line-height: 1; padding: 0 2px; flex-shrink: 0;
-      transition: color 220ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-    /* Subtle pop when transitioning into the 'read' state — gives a small
-       confirmation that the peer opened the chat, the way WhatsApp/Telegram
-       show a brief blue-tick tick animation. */
-    .delivery-mark.is-read {
-      color: var(--color-primary-500);
-      animation: deliveryRead 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
     @keyframes deliveryRead {
       0%   { transform: scale(0.85); opacity: 0.4; }
       60%  { transform: scale(1.15); opacity: 1; }
       100% { transform: scale(1); opacity: 1; }
     }
-    /* Same animation but muted color (gray) for 'sent' state changes — keeps the
-       transition visible without screaming for attention. */
-    .delivery-mark { animation: deliveryShift 220ms ease; }
     @keyframes deliveryShift {
       0%   { opacity: 0.55; }
       100% { opacity: 1; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .delivery-mark, .delivery-mark.is-read { animation: none; }
     }
   `],
 })
@@ -77,5 +61,12 @@ export class ChatDeliveryMarkComponent {
       case 'read': return 'Read';
       default: return '';
     }
+  });
+
+  protected readonly markClass = computed(() => {
+    const base = "inline-flex items-center leading-none px-0.5 shrink-0 motion-reduce:[transition:none] motion-reduce:animate-none";
+    return this.delivery() === 'read'
+      ? `${base} text-blue-500 [transition:color_220ms_ease,transform_220ms_cubic-bezier(0.2,0.8,0.2,1)] animate-[deliveryRead_380ms_cubic-bezier(0.2,0.8,0.2,1)]`
+      : `${base} text-neutral-500 dark:text-neutral-400 [transition:color_220ms_ease,transform_220ms_cubic-bezier(0.2,0.8,0.2,1)] animate-[deliveryShift_220ms_ease]`;
   });
 }

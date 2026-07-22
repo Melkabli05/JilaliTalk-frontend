@@ -1,24 +1,19 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 @Component({
   selector: 'app-chat-gift-bubble',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<p [class]="isOutbound() ? 'bubble self-end rtl:self-start' : 'bubble self-start rtl:self-end'">Gift ×{{ count() }}</p>`,
-  styles: [`
-    :host { display: contents; }
-    .bubble {
-      margin: 0; padding: 8px 12px; border-radius: 16px;
-      background: var(--color-neutral-100); color: var(--color-text);
-      font-style: italic; opacity: 0.95;
-      max-width: min(75%, 420px);
-      box-shadow: var(--shadow-xs);
-    }
-    .bubble.self-end { background: var(--color-primary-500); color: var(--color-on-color); }
-    :host-context(.dark) .bubble { background: var(--color-neutral-800); }
-    :host-context(.dark) .bubble.self-end { background: var(--color-primary-600); }
-  `],
+  host: { class: 'contents' },
+  template: `<p [class]="bubbleClass()">Gift ×{{ count() }}</p>`,
 })
 export class ChatGiftBubbleComponent {
   readonly count = input.required<number>();
   readonly isOutbound = input<boolean>(false);
+
+  protected readonly bubbleClass = computed(() => {
+    const base = 'm-0 py-2 px-3 rounded-2xl italic opacity-95 max-w-[min(75%,420px)] shadow-xs';
+    return this.isOutbound()
+      ? `${base} self-end rtl:self-start bg-blue-500 dark:bg-blue-600 text-white`
+      : `${base} self-start rtl:self-end bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100`;
+  });
 }
