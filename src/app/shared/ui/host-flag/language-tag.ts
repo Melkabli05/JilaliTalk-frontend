@@ -4,52 +4,21 @@ import { getLanguageById } from '@shared/data/languages';
 @Component({
   selector: 'app-language-tag',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'inline-flex items-center min-w-0 max-w-full' },
   template: `
     @let entry = language();
     @if (entry) {
-      <span class="language-tag">
+      <span class="inline-flex items-center gap-1 min-w-0 max-w-full">
         <img
-          class="flag-img"
+          class="w-4 h-[11px] rounded-sm object-cover shrink-0"
           [src]="'https://flagcdn.com/w20/' + entry.countryCode + '.png'"
           [alt]="entry.name"
           loading="lazy"
         />
-        <span class="language-name">{{ entry.name }}</span>
+        <span class="text-xs text-neutral-500 whitespace-nowrap overflow-hidden text-ellipsis min-w-0">{{ entry.name }}</span>
       </span>
     }
   `,
-  styles: [
-    `
-      :host {
-        display: inline-flex;
-        align-items: center;
-        min-width: 0;
-        max-width: 100%;
-      }
-      .language-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        min-width: 0;
-        max-width: 100%;
-      }
-      .flag-img {
-        width: 16px;
-        height: 11px;
-        border-radius: 2px;
-        object-fit: cover;
-        flex-shrink: 0;
-      }
-      .language-name {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-width: 0;
-      }
-    `,
-  ],
 })
 export class LanguageTagComponent {
   readonly langId = input<number | null>(null);

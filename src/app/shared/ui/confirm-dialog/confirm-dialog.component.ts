@@ -16,10 +16,11 @@ export interface ConfirmOptions {
   selector: 'app-confirm-dialog',
   imports: [ModalComponent, ButtonComponent, A11yModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block w-80 max-w-[calc(100vw-1.5rem)]' },
   template: `
     <app-modal [title]="data.title ?? 'Confirm'">
-      <p class="confirm-message">{{ data.message }}</p>
-      <div class="confirm-footer">
+      <p class="m-0 mb-4 text-sm text-neutral-600 dark:text-neutral-300 leading-normal">{{ data.message }}</p>
+      <div class="flex justify-end items-center gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
         <app-button type="button" variant="ghost" size="md" cdkFocusInitial (click)="onCancel()">
           {{ data.cancelLabel ?? 'Cancel' }}
         </app-button>
@@ -34,29 +35,6 @@ export interface ConfirmOptions {
       </div>
     </app-modal>
   `,
-  styles: [`
-    :host {
-      display: block;
-      width: 320px;
-      max-width: calc(100vw - var(--space-6));
-    }
-
-    .confirm-message {
-      margin: 0 0 var(--space-4);
-      font-size: var(--text-sm);
-      color: var(--color-text-secondary);
-      line-height: 1.5;
-    }
-
-    .confirm-footer {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: var(--space-2);
-      padding-top: var(--space-4);
-      border-top: 1px solid var(--color-border);
-    }
-  `],
 })
 export class ConfirmDialogComponent {
   private readonly ref = inject(DialogRef<boolean>);

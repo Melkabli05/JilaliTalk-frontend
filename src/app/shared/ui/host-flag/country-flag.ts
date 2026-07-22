@@ -6,12 +6,13 @@ import { getCountryByCode } from '@shared/data/countries';
   selector: 'app-country-flag',
   imports: [NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'inline-flex items-center min-w-0 max-w-full' },
   template: `
     @let entry = country();
     @if (code() && entry) {
-      <span class="country-flag">
+      <span class="inline-flex items-center gap-1 min-w-0 max-w-full">
         <img
-          class="flag-img"
+          class="w-4 h-[11px] rounded-sm object-cover shrink-0"
           [ngSrc]="'https://flagcdn.com/w20/' + code()!.toLowerCase() + '.png'"
           [alt]="entry.name"
           width="16"
@@ -19,13 +20,13 @@ import { getCountryByCode } from '@shared/data/countries';
           loading="lazy"
         />
         @if (!compact()) {
-          <span class="country-name">{{ entry.name }}</span>
+          <span class="text-xs text-neutral-500 whitespace-nowrap overflow-hidden text-ellipsis min-w-0">{{ entry.name }}</span>
         }
       </span>
     } @else if (code() && !entry) {
-      <span class="country-flag">
+      <span class="inline-flex items-center gap-1 min-w-0 max-w-full">
         <img
-          class="flag-img"
+          class="w-4 h-[11px] rounded-sm object-cover shrink-0"
           [ngSrc]="'https://flagcdn.com/w20/' + code()!.toLowerCase() + '.png'"
           [alt]="code()!"
           width="16"
@@ -33,43 +34,11 @@ import { getCountryByCode } from '@shared/data/countries';
           loading="lazy"
         />
         @if (!compact()) {
-          <span class="country-name">{{ code() }}</span>
+          <span class="text-xs text-neutral-500 whitespace-nowrap overflow-hidden text-ellipsis min-w-0">{{ code() }}</span>
         }
       </span>
     }
   `,
-  styles: [
-    `
-      :host {
-        display: inline-flex;
-        align-items: center;
-        min-width: 0;
-        max-width: 100%;
-      }
-      .country-flag {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        min-width: 0;
-        max-width: 100%;
-      }
-      .flag-img {
-        width: 16px;
-        height: 11px;
-        border-radius: 2px;
-        object-fit: cover;
-        flex-shrink: 0;
-      }
-      .country-name {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-width: 0;
-      }
-    `,
-  ],
 })
 export class CountryFlagComponent {
   readonly code = input<string | null>(null);
