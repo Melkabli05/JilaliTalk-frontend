@@ -9,24 +9,44 @@ export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 export type AvatarShape = 'circle' | 'rounded' | 'square';
 export type AvatarStatus = 'online' | 'offline' | 'speaking';
 
+/** width/height/font-size per size step — Tailwind's own spacing/text scale. */
+const SIZE_CLASSES: Record<AvatarSize, string> = {
+  xs: 'w-5 h-5 text-[10px]',
+  sm: 'w-7 h-7 text-xs',
+  md: 'w-9 h-9 text-sm',
+  lg: 'w-12 h-12 text-base',
+  xl: 'w-16 h-16 text-lg',
+  xxl: 'w-20 h-20 text-xl',
+};
+const SHAPE_CLASSES: Record<AvatarShape, string> = {
+  circle: 'rounded-full',
+  rounded: 'rounded-xl',
+  square: 'rounded-none',
+};
+const FLAG_SIZE_CLASSES: Record<AvatarSize, string> = {
+  xs: 'w-2.5 h-[7px]',
+  sm: 'w-3 h-2',
+  md: 'w-3.5 h-2.5',
+  lg: 'w-4 h-[11px]',
+  xl: 'w-4 h-[11px]',
+  xxl: 'w-4 h-[11px]',
+};
+const CROWN_SIZE_CLASSES: Record<AvatarSize, string> = {
+  xs: 'w-3 h-3 -top-1 [&_svg]:w-1.5 [&_svg]:h-1.5',
+  sm: 'w-3.5 h-3.5 -top-[5px] [&_svg]:w-[7px] [&_svg]:h-[7px]',
+  md: 'w-4 h-4 [&_svg]:w-2 [&_svg]:h-2',
+  lg: 'w-5 h-5 [&_svg]:w-2.5 [&_svg]:h-2.5',
+  xl: 'w-5 h-5 [&_svg]:w-4 [&_svg]:h-4',
+  xxl: 'w-5 h-5 [&_svg]:w-4 [&_svg]:h-4',
+};
+
 @Component({
   selector: 'app-avatar',
 
   imports: [NgOptimizedImage, LucideCrown],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'avatar',
-    '[class.avatar-xs]': 'size() === "xs"',
-    '[class.avatar-sm]': 'size() === "sm"',
-    '[class.avatar-md]': 'size() === "md"',
-    '[class.avatar-lg]': 'size() === "lg"',
-    '[class.avatar-xl]': 'size() === "xl"',
-    '[class.avatar-xxl]': 'size() === "xxl"',
-    '[class.avatar-circle]': 'shape() === "circle"',
-    '[class.avatar-rounded]': 'shape() === "rounded"',
-    '[class.avatar-square]': 'shape() === "square"',
-    '[class.avatar-loading]': 'loading()',
-    '[class.avatar-speaking]': 'speaking()',
+    '[class]': 'hostClasses()',
     '[style.--avatar-ring-color]': 'ringColor() || null',
     '[style.--avatar-size]': 'customSize() || null',
     '[attr.role]': 'showImage() ? null : "img"',
@@ -38,11 +58,11 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
   },
   template: `
     @if (loading()) {
-      <span class="avatar-skeleton"></span>
+      <span class="w-3/5 h-3/5 rounded-full bg-neutral-400/30 animate-pulse motion-reduce:animate-none motion-reduce:opacity-60"></span>
     } @else if (showImage()) {
       @if (priority()) {
         <img
-          class="avatar-img"
+          class="object-cover rounded-[inherit] block"
           fill
           [ngSrc]="src()"
           [alt]="alt()"
@@ -51,7 +71,7 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
         />
       } @else {
         <img
-          class="avatar-img"
+          class="object-cover rounded-[inherit] block"
           fill
           [ngSrc]="src()"
           [alt]="alt()"
@@ -60,18 +80,22 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
         />
       }
     } @else {
-      <span class="avatar-fallback" aria-hidden="true">{{ computedInitials() }}</span>
+      <span class="uppercase tracking-wide select-none" aria-hidden="true">{{ computedInitials() }}</span>
     }
 
     @if (crownType()) {
-      <span class="avatar-crown" [class]="'crown-' + crownType()">
+      <span
+        class="absolute left-1/2 -translate-x-1/2 rounded-full border flex items-center justify-center z-2"
+        [class]="crownClasses()"
+      >
         <svg aria-hidden="true" lucideCrown [size]="crownSize()" />
       </span>
     }
 
     @if (flagCode()) {
       <img
-        class="avatar-flag"
+        class="absolute -bottom-0.5 -left-0.5 rounded-sm border border-neutral-200 dark:border-neutral-600 z-2 pointer-events-none object-cover"
+        [class]="flagSizeClass()"
         [ngSrc]="'https://flagcdn.com/w20/' + flagCode()!.toLowerCase() + '.png'"
         [alt]="flagCountryName()"
         width="14"
@@ -80,224 +104,31 @@ export type AvatarStatus = 'online' | 'offline' | 'speaking';
       />
     }
   `,
-  styles: [
-    `
-      :host {
-        --avatar-ring-color: transparent;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--radius-full);
-        background-color: var(--color-primary-500);
-        color: var(--color-on-color);
-        font-weight: var(--font-medium);
-        overflow: visible;
-        flex-shrink: 0;
-        border: 2px solid var(--avatar-ring-color, transparent);
-        position: relative;
-        cursor: default;
-        box-sizing: content-box;
-      }
-      :host([style.--avatar-size]) {
-        width: var(--avatar-size);
-        height: var(--avatar-size);
-      }
-      :host(.avatar-circle) {
-        border-radius: var(--radius-full);
-      }
-      :host(.avatar-rounded) {
-        border-radius: var(--radius-xl);
-      }
-      :host(.avatar-square) {
-        border-radius: 0;
-      }
-      :host(.avatar-loading) {
-        cursor: wait;
-      }
-
-      :host([tabindex='0']) {
-        cursor: pointer;
-      }
-      :host([tabindex='0']:hover) {
-        opacity: 0.9;
-      }
-      :host(:focus-visible) {
-        outline: var(--focus-ring);
-        outline-offset: var(--focus-ring-offset);
-      }
-
-      :host(.avatar-xs) {
-        width: var(--space-5);
-        height: var(--space-5);
-        font-size: 10px;
-      }
-      :host(.avatar-sm) {
-        width: var(--space-7);
-        height: var(--space-7);
-        font-size: var(--text-xs);
-      }
-      :host(.avatar-md) {
-        width: var(--space-9);
-        height: var(--space-9);
-        font-size: var(--text-sm);
-      }
-      :host(.avatar-lg) {
-        width: var(--space-12);
-        height: var(--space-12);
-        font-size: var(--text-base);
-      }
-      :host(.avatar-xl) {
-        width: var(--space-16);
-        height: var(--space-16);
-        font-size: var(--text-lg);
-      }
-      :host(.avatar-xxl) {
-        width: 80px;
-        height: 80px;
-        font-size: var(--text-xl);
-      }
-
-      .avatar-img {
-        object-fit: cover;
-        border-radius: inherit;
-        display: block;
-      }
-
-      .avatar-fallback {
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        user-select: none;
-      }
-
-      .avatar-skeleton {
-        width: 60%;
-        height: 60%;
-        border-radius: var(--radius-full);
-        background-color: color-mix(in srgb, var(--color-neutral-400) 30%, transparent);
-        animation: skeleton-pulse 1.2s ease-in-out infinite;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .avatar-skeleton {
-          animation: none;
-          opacity: 0.6;
-        }
-      }
-
+  /**
+   * Remaining non-utility CSS: the two custom keyframe animations (avatar-speak-ring's ring
+   * pulse, unique motion design not replicable by Tailwind's built-in spin/ping/pulse/bounce),
+   * and the --avatar-ring-color/--avatar-size CSS custom properties, which are genuine
+   * per-instance runtime values (a consumer-supplied ring color or arbitrary size), not
+   * design-system tokens — those two host bindings stay as-is above.
+   */
+  styles: [`
+    :host { --avatar-ring-color: transparent; }
+    :host([style*='--avatar-size']) { width: var(--avatar-size); height: var(--avatar-size); }
+    :host(.avatar-speaking) {
+      animation: avatar-speak-ring 0.7s ease-in-out infinite;
+      border-color: var(--avatar-ring-color, #34d399) !important;
+    }
+    @keyframes avatar-speak-ring {
+      0%, 100% { box-shadow: 0 0 0 0 rgb(52 211 153 / 60%); }
+      50% { box-shadow: 0 0 0 4px rgb(52 211 153 / 40%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
       :host(.avatar-speaking) {
-        animation: avatar-speak-ring 0.7s ease-in-out infinite;
-        border-color: var(--color-accent-400) !important;
+        animation: none;
+        box-shadow: 0 0 0 2px rgb(52 211 153 / 100%);
       }
-      @keyframes avatar-speak-ring {
-        0%, 100% {
-          box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent-400) 60%, transparent);
-        }
-        50% {
-          box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent-400) 40%, transparent);
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        :host(.avatar-speaking) {
-          animation: none;
-          box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-400) 100%, transparent);
-        }
-      }
-      .avatar-flag {
-        position: absolute;
-        bottom: -2px;
-        left: -2px;
-        border-radius: 2px;
-        border: 1px solid var(--color-border);
-        z-index: 2;
-        pointer-events: none;
-        object-fit: cover;
-      }
-
-      :host-context(.dark) {
-        background-color: var(--color-primary-400);
-        /* On dark mode, the avatar's primary-500 fill can read flat against a dark backdrop.
-           A subtle inset gives the placeholder initials real presence without changing shape. */
-        box-shadow: inset 0 0 0 1px hsl(0deg 0% 100% / 8%);
-        .avatar-flag { border-color: var(--color-neutral-600); }
-      }
-
-      :host(.avatar-xs) .avatar-flag { width: 10px; height: 7px; }
-      :host(.avatar-sm) .avatar-flag { width: 12px; height: 8px; }
-      :host(.avatar-md) .avatar-flag { width: 14px; height: 10px; }
-      :host(.avatar-lg) .avatar-flag,
-      :host(.avatar-xl) .avatar-flag,
-      :host(.avatar-xxl) .avatar-flag { width: 16px; height: 11px; }
-      .avatar-crown {
-        position: absolute;
-        top: -13px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        border: 1px solid;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2;
-      }
-      .avatar-crown.crown-1 {
-        background: var(--color-gold-100);
-        border-color: var(--color-gold-200);
-        color: var(--color-gold-500);
-      }
-      .avatar-crown.crown-2 {
-        background: var(--color-primary-50);
-        border-color: var(--color-primary-200);
-        color: var(--color-primary-500);
-      }
-
-      :host(.avatar-xs) .avatar-crown {
-        width: 12px;
-        height: 12px;
-        top: -4px;
-      }
-      :host(.avatar-xs) .avatar-crown svg {
-        width: 6px;
-        height: 6px;
-      }
-      :host(.avatar-sm) .avatar-crown {
-        width: 14px;
-        height: 14px;
-        top: -5px;
-      }
-      :host(.avatar-sm) .avatar-crown svg {
-        width: 7px;
-        height: 7px;
-      }
-      :host(.avatar-md) .avatar-crown {
-        width: 16px;
-        height: 16px;
-      }
-      :host(.avatar-md) .avatar-crown svg {
-        width: 8px;
-        height: 8px;
-      }
-      :host(.avatar-lg) .avatar-crown {
-        width: 20px;
-        height: 20px;
-      }
-      :host(.avatar-lg) .avatar-crown svg {
-        width: 10px;
-        height: 10px;
-      }
-      :host(.avatar-xl) .avatar-crown,
-      :host(.avatar-xxl) .avatar-crown {
-        width: 20px;
-        height: 20px;
-      }
-      :host(.avatar-xl) .avatar-crown svg,
-      :host(.avatar-xxl) .avatar-crown svg {
-        width: 16px;
-        height: 16px;
-      }
-    `,
-  ],
+    }
+  `],
 })
 export class AvatarComponent {
   readonly src = input<string>('');
@@ -319,6 +150,33 @@ export class AvatarComponent {
   protected readonly failed = signal(false);
 
   readonly showImage = computed(() => !!this.src() && !this.failed());
+
+  readonly hostClasses = computed(() => {
+    const classes = [
+      'inline-flex items-center justify-center font-medium relative shrink-0 cursor-default',
+      '[border:2px_solid_var(--avatar-ring-color,transparent)] [box-sizing:content-box]',
+      'bg-blue-500 text-white dark:bg-blue-400',
+      // Dark mode: on a dark backdrop the flat bg-blue-400 fill can read flat; a subtle inset
+      // highlight gives the placeholder initials real presence without changing shape.
+      'dark:shadow-[inset_0_0_0_1px_rgb(255_255_255/8%)]',
+      SHAPE_CLASSES[this.shape()],
+      this.customSize() ? '' : SIZE_CLASSES[this.size()],
+    ];
+    if (this.loading()) classes.push('cursor-wait');
+    if (this.clickable()) classes.push('cursor-pointer hover:opacity-90');
+    classes.push('focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500');
+    if (this.speaking()) classes.push('avatar-speaking');
+    return classes.join(' ');
+  });
+
+  readonly flagSizeClass = computed(() => FLAG_SIZE_CLASSES[this.size()]);
+  readonly crownClasses = computed(() => {
+    const type = this.crownType();
+    const palette = type === 1
+      ? 'bg-amber-100 border-amber-200 text-amber-500'
+      : 'bg-blue-50 border-blue-200 text-blue-500';
+    return `${CROWN_SIZE_CLASSES[this.size()]} ${palette} top-[-13px]`;
+  });
 
   readonly computedInitials = computed(() => {
     if (this.initials()) return this.initials()!.slice(0, 2);
