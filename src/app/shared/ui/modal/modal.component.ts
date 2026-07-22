@@ -12,110 +12,46 @@ import { LucideX } from '@lucide/angular';
     'aria-modal': 'true',
     '[attr.aria-labelledby]': 'titleId',
     '(keydown.escape)': 'close()',
+    class: 'block',
   },
   template: `
-    <div class="modal-shell" cdkTrapFocusAutoCapture>
+    <div
+      class="modal-shell relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700
+             rounded-[var(--_modal-radius,0.75rem)] overflow-hidden"
+      cdkTrapFocusAutoCapture
+    >
       @if (title()) {
-        <header class="modal-header">
-          <div class="header-left">
-            <h2 class="modal-title" [id]="titleId">{{ title() }}</h2>
+        <header class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-neutral-700">
+          <div class="flex items-center gap-2 min-w-0">
+            <h2 class="text-base font-semibold text-neutral-900 dark:text-neutral-100 m-0 whitespace-nowrap overflow-hidden text-ellipsis" [id]="titleId">{{ title() }}</h2>
             @if (count()) {
-              <span class="count-badge">{{ count() }}</span>
+              <span class="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full
+                           bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-200
+                           text-xs font-semibold shrink-0">{{ count() }}</span>
             }
           </div>
-          <button type="button" class="close-btn" (click)="close()" aria-label="Close">
+          <button
+            type="button"
+            class="w-11 h-11 rounded-full border-0 bg-neutral-100 dark:bg-neutral-700
+                   text-neutral-500 dark:text-neutral-300 cursor-pointer
+                   [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]
+                   flex items-center justify-center shrink-0
+                   transition-[background,color,transform] duration-150
+                   hover:bg-neutral-200 hover:text-neutral-900 hover:rotate-90
+                   dark:hover:bg-neutral-600 dark:hover:text-neutral-100
+                   focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+            (click)="close()"
+            aria-label="Close"
+          >
             <svg aria-hidden="true" lucideX [size]="14" />
           </button>
         </header>
       }
-      <div class="modal-body" [class.no-padding]="noPadding()">
+      <div class="px-5 py-4" [class.p-0]="noPadding()">
         <ng-content />
       </div>
     </div>
   `,
-  styles: [`
-    :host { display: block; }
-
-    .modal-shell {
-      position: relative;
-      background: var(--color-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--_modal-radius, var(--radius-xl));
-      overflow: hidden;
-    }
-
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: var(--space-4) var(--space-5);
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      min-width: 0;
-    }
-
-    .modal-title {
-      font-size: var(--text-base);
-      font-weight: var(--font-semibold);
-      color: var(--color-text);
-      margin: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .count-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 20px;
-      height: 20px;
-      padding: 0 var(--space-1);
-      border-radius: var(--radius-full);
-      background: var(--color-neutral-100);
-      color: var(--color-text-secondary);
-      font-size: var(--text-xs);
-      font-weight: var(--font-semibold);
-      flex-shrink: 0;
-    }
-    :host-context(.dark) .count-badge {
-      background: var(--color-neutral-700);
-      color: var(--color-neutral-200);
-    }
-
-    .close-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: var(--radius-full);
-      border: none;
-      background: var(--color-neutral-100);
-      color: var(--color-text-muted);
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: background 0.15s, color 0.15s, transform 0.15s;
-    }
-    .close-btn:hover {
-      background: var(--color-neutral-200);
-      color: var(--color-text);
-      transform: rotate(90deg);
-    }
-    .close-btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    :host-context(.dark) .close-btn { background: var(--color-neutral-700); color: var(--color-neutral-300); }
-    :host-context(.dark) .close-btn:hover { background: var(--color-neutral-600); color: var(--color-neutral-100); }
-
-    .modal-body { padding: var(--space-4) var(--space-5); }
-    .modal-body.no-padding { padding: 0; }
-  `],
 })
 export class ModalComponent {
   readonly ref = inject(DialogRef);
