@@ -31,54 +31,83 @@ import { AuthService } from '@core/auth/auth.service';
     NotificationPanelComponent,
   ],
   template: `
-    <header role="banner" class="app-header lg:px-6 lg:left-[var(--sidebar-width)] rtl:lg:left-auto rtl:lg:right-[var(--sidebar-width)]" id="main-content" tabindex="-1" [class.immersive]="immersive()">
-      <div class="brand">
-        <svg aria-hidden="true" class="brand-icon" width="26" height="26" viewBox="0 0 32 32" fill="none">
+    <header
+      role="banner"
+      id="main-content"
+      tabindex="-1"
+      [class.immersive]="immersive()"
+      class="app-header fixed inset-x-0 top-0 flex items-center justify-between
+             px-4 pb-0 lg:px-6
+             bg-white/80 dark:bg-neutral-900/80
+             backdrop-blur-xl backdrop-saturate-150
+             border-b border-neutral-200/60 dark:border-neutral-800/60
+             lg:left-[var(--sidebar-width)] rtl:lg:left-auto rtl:lg:right-[var(--sidebar-width)]"
+    >
+      <div class="flex items-center gap-2">
+        <svg aria-hidden="true" class="shrink-0 drop-shadow-sm" width="26" height="26" viewBox="0 0 32 32" fill="none">
           <defs>
             <linearGradient id="headerLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="var(--color-primary-500)"/>
-              <stop offset="100%" stop-color="var(--color-accent-500)"/>
+              <stop offset="0%" stop-color="#2563eb"/>
+              <stop offset="100%" stop-color="#4f46e5"/>
             </linearGradient>
           </defs>
           <path d="M16 4L4 10v12l12 6 12-6V10L16 4z" fill="url(#headerLogoGrad)"/>
           <path d="M16 8l-8 4v8l8 4 8-4v-8l-8-4z" fill="white" fill-opacity="0.25"/>
           <path d="M12 16l4-4 4 4-4 4-4-4z" fill="white"/>
         </svg>
-        <span class="brand-name">JilaliTalk</span>
+        <span class="hidden min-[381px]:inline text-base font-bold tracking-tight bg-linear-to-br from-blue-600 to-indigo-600 bg-clip-text text-transparent">JilaliTalk</span>
       </div>
 
-      <div class="actions">
-
-        <div class="status-pill" role="status" [attr.aria-label]="'Connection status: ' + (isConnected() ? 'Online' : 'Offline')">
-          <span class="status-dot" [class.online]="isConnected()"></span>
-          <span class="status-text">{{ isConnected() ? 'Online' : 'Offline' }}</span>
+      <div class="flex items-center gap-2">
+        <div
+          role="status"
+          [attr.aria-label]="'Connection status: ' + (isConnected() ? 'Online' : 'Offline')"
+          class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                 bg-neutral-100 dark:bg-neutral-800
+                 border border-neutral-200 dark:border-neutral-700"
+        >
+          <span
+            class="size-2 rounded-full transition-colors"
+            [class]="isConnected()
+              ? 'bg-emerald-500 dark:bg-emerald-400 ring-2 ring-emerald-500/25 dark:ring-emerald-400/25'
+              : 'bg-neutral-400 dark:bg-neutral-600'"
+          ></span>
+          <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">{{ isConnected() ? 'Online' : 'Offline' }}</span>
         </div>
 
         <button
           type="button"
-          class="notification-btn"
+          class="notification-btn relative inline-flex items-center justify-center min-h-11 min-w-11
+                 rounded-lg bg-transparent border-0 cursor-pointer
+                 text-neutral-600 dark:text-neutral-500
+                 [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]
+                 transition-colors duration-150
+                 hover:bg-blue-500/8 hover:text-blue-600
+                 dark:hover:bg-blue-400/10 dark:hover:text-blue-300
+                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           [class.has-unread]="notificationStore.unreadCount() > 0"
           [attr.aria-label]="'Notifications' + (notificationStore.unreadCount() > 0 ? ', ' + notificationStore.unreadCount() + ' unread' : '')"
           (click)="notificationStore.toggle()"
         >
           <svg aria-hidden="true" lucideBell [size]="18"></svg>
           @if (notificationStore.unreadCount() > 0) {
-            <span class="notification-badge">{{ notificationStore.unreadCount() > 9 ? '9+' : notificationStore.unreadCount() }}</span>
+            <span class="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-[5px] rounded-full
+                         bg-red-500 dark:bg-red-400 text-white text-[10px] font-bold
+                         flex items-center justify-center leading-none shadow-sm">{{ notificationStore.unreadCount() > 9 ? '9+' : notificationStore.unreadCount() }}</span>
           }
         </button>
 
         @if (authStore.user(); as user) {
           <app-user-menu [user]="user" (logout)="logout()" />
         } @else {
-          <app-button 
-            variant="soft-primary" 
-            size="sm" 
-            class="auth-btn" 
-            aria-label="Login to JilaliTalk" 
+          <app-button
+            variant="soft-primary"
+            size="sm"
+            aria-label="Login to JilaliTalk"
             (click)="login()"
           >
             <svg aria-hidden="true" lucideLogIn [size]="14"></svg>
-            <span class="btn-text">Login</span>
+            <span class="hidden sm:inline">Login</span>
           </app-button>
         }
 
@@ -97,177 +126,25 @@ import { AuthService } from '@core/auth/auth.service';
     </header>
     <app-notification-panel />
   `,
+  /**
+   * Only structural/functional properties remain here — nothing that Tailwind v4 utilities +
+   * the default color palette can express (color, spacing, radius, shadow, typography are all
+   * in the template above). What's left and why:
+   *   - height/padding-top from --app-header-height + safe-area-inset-top: a coordinated
+   *     contract with the shell's --shell-inset-top (see app.ts), not a branding value.
+   *   - z-index from --z-shell-header: shared stacking-order coordination with sidenav/
+   *     mobile-nav/modals, not a color/style choice.
+   *   - .immersive display:none: state-driven, class-bound from the [immersive] input.
+   */
   styles: [`
     .app-header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
       z-index: var(--z-shell-header);
       height: calc(var(--app-header-height) + env(safe-area-inset-top, 0px));
       padding-top: env(safe-area-inset-top, 0px);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-left: max(var(--space-4), env(safe-area-inset-left, 0px));
-      padding-right: max(var(--space-4), env(safe-area-inset-right, 0px));
-      padding-bottom: 0;
-      background: color-mix(in srgb, var(--color-card) 80%, transparent);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+      padding-left: max(1rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1rem, env(safe-area-inset-right, 0px));
     }
-    /* Wide-screen padding (px-6) and sidebar offset now live on the template as
-       lg:px-6 + lg:left-[var(--sidebar-width)] (with rtl:right-[var(--sidebar-width)]
-       for RTL layouts). Immersive-state hide is class-driven via [immersive] input. */
     .app-header.immersive { display: none; }
-    /* Brand */
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-    }
-    .brand-icon {
-      flex-shrink: 0;
-      filter: drop-shadow(var(--shadow-sm));
-    }
-    .brand-name {
-      font-size: var(--text-base);
-      font-weight: var(--font-bold);
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, var(--color-primary-600), var(--color-accent-600));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    @media (max-width: 380px) {
-      .brand-name { display: none; }
-    }
-    /* Actions */
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-    }
-    /* Status pill */
-    .status-pill {
-      display: none;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: var(--radius-full);
-      background: var(--color-neutral-100);
-      border: 1px solid var(--color-border);
-    }
-    @media (min-width: 640px) {
-      .status-pill { display: flex; }
-    }
-    .dark .status-pill {
-      background: var(--color-neutral-800);
-      border-color: var(--color-neutral-700);
-    }
-    .status-dot {
-      width: var(--space-2);
-      height: var(--space-2);
-      border-radius: 50%;
-      background: var(--color-neutral-400);
-      transition: background 0.2s ease;
-    }
-    .status-dot.online {
-      background: var(--color-accent-500);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-500) 25%, transparent);
-    }
-    .dark .status-dot {
-      background: var(--color-neutral-600);
-    }
-    .dark .status-dot.online {
-      background: var(--color-accent-400);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-400) 25%, transparent);
-    }
-    .status-text {
-      font-size: var(--text-xs);
-      font-weight: var(--font-medium);
-      color: var(--color-text-muted);
-    }
-    .dark .status-text { color: var(--color-neutral-400); }
-
-    /* Notification Bell Button */
-    .notification-btn {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 44px;
-      min-height: 44px;
-      border-radius: var(--radius-lg);
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: var(--color-text-secondary);
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: background-color 0.15s ease, color 0.15s ease;
-    }
-
-    .notification-btn:hover {
-      background: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
-      color: var(--color-primary-text);
-    }
-
-    .notification-btn:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: var(--focus-ring-offset);
-    }
-
-    .notification-btn.has-unread {
-      color: var(--color-primary-500);
-    }
-
-    .notification-badge {
-      position: absolute;
-      top: 2px;
-      right: 2px;
-      min-width: 18px;
-      height: 18px;
-      padding: 0 5px;
-      border-radius: var(--radius-full);
-      background: var(--color-warm-500);
-      color: var(--color-on-color);
-      font-size: 10px;
-      font-weight: var(--font-bold);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-    }
-
-    .dark .notification-btn {
-      color: var(--color-neutral-500);
-    }
-
-    .dark .notification-btn:hover {
-      background: color-mix(in srgb, var(--color-primary-400) 10%, transparent);
-      color: var(--color-primary-300);
-    }
-
-    .dark .notification-btn.has-unread {
-      color: var(--color-primary-400);
-    }
-
-    .dark .notification-badge {
-      background: var(--color-warm-400);
-    }
-
-    /* Responsive Auth Buttons */
-    .auth-btn .btn-text {
-      display: none;
-    }
-    @media (min-width: 640px) {
-      .auth-btn .btn-text {
-        display: inline;
-      }
-    }
   `]
 })
 export class HeaderComponent {
