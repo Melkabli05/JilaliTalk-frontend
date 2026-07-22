@@ -11,16 +11,54 @@ import { ACTIVE_CALL_READER } from '@core/tokens/active-call-reader.token';
   imports: [CdkDrag, LucideMic, LucideMicOff, LucidePhoneOff],
   template: `
     @if (snapshot(); as call) {
-      <div class="minimized-bar" cdkDrag cdkDragBoundary=".app-shell">
-        <button type="button" class="restore-area" (click)="restore(call.cname, call.busiType)">
-          <span class="live-dot" aria-hidden="true"></span>
-          <span class="room-name">{{ call.roomName }}</span>
+      <div
+        class="minimized-bar fixed flex items-center gap-2 p-2 rounded-full
+               bg-white dark:bg-neutral-900
+               border border-neutral-200 dark:border-neutral-700
+               shadow-lg [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-xl
+               [touch-action:none] cursor-grab active:cursor-grabbing
+               opacity-0 scale-90 animate-pop-in
+               motion-reduce:opacity-100 motion-reduce:scale-100 motion-reduce:![animation:none]
+               left-[max(1rem,env(safe-area-inset-left))]
+               bottom-[calc(var(--bottom-nav-height)+1rem+env(safe-area-inset-bottom))]
+               lg:bottom-4"
+        cdkDrag
+        cdkDragBoundary=".app-shell"
+      >
+        <button
+          type="button"
+          class="group restore-area flex items-center gap-2 min-h-9 bg-none border-0 rounded-full px-1
+                 cursor-inherit transition-colors duration-150
+                 active:bg-neutral-100 dark:active:bg-neutral-700
+                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500
+                 motion-reduce:transition-none"
+          (click)="restore(call.cname, call.busiType)"
+        >
+          <span class="size-1.5 shrink-0 rounded-full bg-red-500 animate-pulse-live motion-reduce:![animation:none]" aria-hidden="true"></span>
+          <span
+            class="room-name max-w-[140px] max-[380px]:max-w-[96px] whitespace-nowrap overflow-hidden text-ellipsis
+                   text-sm font-medium text-neutral-900 dark:text-neutral-100
+                   transition-colors duration-150 motion-reduce:transition-none
+                   group-active:text-blue-600
+                   [@media(hover:hover)_and_(pointer:fine)]:group-hover:text-blue-600
+                   [@media(hover:hover)_and_(pointer:fine)]:group-focus-visible:text-blue-600"
+          >{{ call.roomName }}</span>
         </button>
         @if (!call.isInvisible) {
           <button
             type="button"
-            class="mic-toggle"
+            class="mic-toggle flex items-center justify-center size-9 [@media(pointer:coarse)]:size-11
+                   rounded-full border-0 cursor-pointer
+                   bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100
+                   transition-[background,transform,box-shadow] duration-150
+                   active:scale-90
+                   [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-sm
+                   [@media(hover:hover)_and_(pointer:fine)]:hover:bg-neutral-200
+                   dark:[@media(hover:hover)_and_(pointer:fine)]:hover:bg-neutral-600
+                   focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500
+                   motion-reduce:transition-none"
             [class.is-muted]="!call.isMicOn"
+            [class]="!call.isMicOn ? 'text-red-600' : ''"
             [attr.aria-label]="call.isMicOn ? 'Mute microphone' : 'Unmute microphone'"
             (click)="toggleMic(call.isMicOn)"
           >
@@ -33,7 +71,15 @@ import { ACTIVE_CALL_READER } from '@core/tokens/active-call-reader.token';
         }
         <button
           type="button"
-          class="leave-btn"
+          class="leave-btn flex items-center justify-center size-9 [@media(pointer:coarse)]:size-11
+                 rounded-full border-0 cursor-pointer
+                 bg-red-600 text-white
+                 transition-[background,transform,box-shadow] duration-150
+                 active:scale-90
+                 [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-sm
+                 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-red-700
+                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500
+                 motion-reduce:transition-none"
           aria-label="Leave room"
           (click)="leave()"
         >
@@ -42,166 +88,15 @@ import { ACTIVE_CALL_READER } from '@core/tokens/active-call-reader.token';
       </div>
     }
   `,
+  /**
+   * Only structural/functional CSS remains: :host display:contents (required for a
+   * component whose only child is fixed-position, same reasoning as the sibling
+   * layout components), and z-index (--z-toast: shared stacking coordination with
+   * the toast/notification layer, not a color/style choice).
+   */
   styles: [`
-    :host {
-      display: contents;
-      --bar-chip-bg: var(--color-neutral-100);
-      --bar-chip-hover-bg: var(--color-neutral-200);
-    }
-    :host-context(.dark) {
-      --bar-chip-bg: var(--color-neutral-700);
-      --bar-chip-hover-bg: var(--color-neutral-600);
-    }
-    .minimized-bar {
-      position: fixed;
-      left: max(var(--space-4), env(safe-area-inset-left));
-      bottom: calc(var(--bottom-nav-height) + var(--space-4) + env(safe-area-inset-bottom));
-      z-index: var(--z-toast);
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-2) var(--space-2) var(--space-2) var(--space-2);
-      border-radius: var(--radius-full);
-      background: var(--color-card);
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--color-border);
-      touch-action: none;
-      cursor: grab;
-      opacity: 0;
-      transform: scale(0.9);
-      animation: var(--animate-pop-in);
-    }
-    .minimized-bar:active {
-      cursor: grabbing;
-    }
-    @media (hover: hover) and (pointer: fine) {
-      .minimized-bar:hover {
-        box-shadow: var(--shadow-xl);
-      }
-    }
-    @media (min-width: 1024px) {
-      .minimized-bar {
-        bottom: var(--space-4);
-      }
-    }
-    @media (max-width: 380px) {
-      .room-name {
-        max-width: 96px;
-      }
-    }
-    .restore-area {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      min-height: var(--space-9);
-      background: none;
-      border: none;
-      border-radius: var(--radius-full);
-      padding: 0 var(--space-1);
-      cursor: inherit;
-      transition: background 0.15s ease;
-    }
-    .restore-area:active {
-      background: var(--bar-chip-bg);
-    }
-    .restore-area:focus-visible,
-    .mic-toggle:focus-visible,
-    .leave-btn:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: var(--focus-ring-offset);
-    }
-    .live-dot {
-      width: 6px;
-      height: 6px;
-      flex-shrink: 0;
-      border-radius: 50%;
-      background: var(--color-live);
-      animation: var(--animate-pulse-live);
-    }
-    .room-name {
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      color: var(--color-text);
-      max-width: 140px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      transition: color 0.15s ease;
-    }
-    .restore-area:active .room-name {
-      color: var(--color-primary-500);
-    }
-    @media (hover: hover) and (pointer: fine) {
-      .restore-area:hover .room-name,
-      .restore-area:focus-visible .room-name {
-        color: var(--color-primary-500);
-      }
-    }
-    .mic-toggle,
-    .leave-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: var(--space-9);
-      height: var(--space-9);
-      border-radius: var(--radius-full);
-      border: none;
-      cursor: pointer;
-      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
-    }
-    /* Bumped to the WCAG comfortable touch-target size on touch devices;
-       kept compact for mouse/trackpad pointers so the bar stays small on desktop. */
-    @media (pointer: coarse) {
-      .mic-toggle,
-      .leave-btn {
-        width: var(--touch-target-min);
-        height: var(--touch-target-min);
-      }
-    }
-    @media (hover: hover) and (pointer: fine) {
-      .mic-toggle:hover,
-      .leave-btn:hover {
-        box-shadow: var(--shadow-sm);
-      }
-      .mic-toggle:hover {
-        background: var(--bar-chip-hover-bg);
-      }
-      .leave-btn:hover {
-        background: var(--color-error-700);
-      }
-    }
-    .mic-toggle:active,
-    .leave-btn:active {
-      transform: scale(0.9);
-    }
-    .mic-toggle {
-      background: var(--bar-chip-bg);
-      color: var(--color-text);
-    }
-    .mic-toggle.is-muted {
-      color: var(--color-error-600);
-    }
-    .leave-btn {
-      background: var(--color-error-600);
-      color: var(--color-on-color);
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .minimized-bar {
-        opacity: 1;
-        transform: none;
-        animation: none;
-      }
-      .live-dot {
-        animation: none;
-      }
-      .minimized-bar,
-      .restore-area,
-      .mic-toggle,
-      .leave-btn,
-      .room-name {
-        transition: none;
-      }
-    }
+    :host { display: contents; }
+    .minimized-bar { z-index: var(--z-toast); }
   `],
 })
 export class MinimizedRoomBarComponent {
