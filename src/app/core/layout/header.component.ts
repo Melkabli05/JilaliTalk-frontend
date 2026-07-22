@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, DestroyRef, inject, signal, ViewEncapsulation } from '@angular/core';
+import { Component, ChangeDetectionStrategy, DestroyRef, inject, input, signal, ViewEncapsulation } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
@@ -31,7 +31,7 @@ import { AuthService } from '@core/auth/auth.service';
     NotificationPanelComponent,
   ],
   template: `
-    <header role="banner" class="app-header" id="main-content" tabindex="-1">
+    <header role="banner" class="app-header" id="main-content" tabindex="-1" [class.immersive]="immersive">
       <div class="brand">
         <svg aria-hidden="true" class="brand-icon" width="26" height="26" viewBox="0 0 32 32" fill="none">
           <defs>
@@ -121,17 +121,10 @@ import { AuthService } from '@core/auth/auth.service';
       .app-header { padding: 0 var(--space-6); left: var(--sidebar-width); }
       :host-context([dir='rtl']) .app-header { left: auto; right: var(--sidebar-width); }
     }
-    /* Immersive routes (mobile room pages) hide the global header entirely — the
-       room's own header becomes the only top chrome. Desktop is unaffected.
-       Plain ancestor selector, not :host-context: this component uses
-       ViewEncapsulation.None, so its styles are already unscoped global CSS —
-       :host-context() is only rewritten into a working selector under the default
-       Emulated encapsulation, and ships as inert, non-matching syntax under None. */
-    @media (max-width: 1023.98px) {
-      .app-shell.immersive .app-header {
-        display: none;
-      }
-    }
+    /* Immersive routes (mobile room pages) — shell toggles via [immersive] input,
+       rule fires regardless of viewport so the desktop sidebar case (immersive
+       desktop) also respects the toggle cleanly. */
+    .app-header.immersive { display: none; }
     /* Brand */
     .brand {
       display: flex;
@@ -282,6 +275,10 @@ import { AuthService } from '@core/auth/auth.service';
   `]
 })
 export class HeaderComponent {
+  /** Bound by the shell: true when the route is immersive AND the viewport is mobile.
+   *  The global header is hidden in that mode so the room gets the full viewport top edge. */
+  readonly immersive = input(false);
+
   private readonly router = inject(Router);
   private readonly dialog = inject(Dialog);
   private readonly createRoomService = inject(CreateRoomService);

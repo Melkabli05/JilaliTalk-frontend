@@ -26,7 +26,7 @@ interface NavGroup {
   template: `
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <nav class="sidebar-desktop" aria-label="Main navigation">
+    <nav class="sidebar-desktop hidden lg:flex" aria-label="Main navigation">
       <div class="sidebar-logo">
         <span class="visually-hidden">JilaliTalk Home</span>
         <svg aria-hidden="true" width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -98,9 +98,11 @@ interface NavGroup {
       display: contents;
     }
 
-    /* ─── Desktop Sidebar ─────────────────────────────── */
+    /* ─── Desktop Sidebar ───────────────────────────────
+       Visibility is mobile-first controlled on the template: class="hidden lg:flex" —
+       hidden on mobile (the bottom-nav lives there instead), flex from lg upward.
+       Below keeps only positioning/look-and-feel + the RTL flip. */
     .sidebar-desktop {
-      display: none;
       position: fixed;
       left: 0; top: 0; bottom: 0;
       width: var(--sidebar-width);
@@ -115,7 +117,6 @@ interface NavGroup {
       border-right: none;
       border-left: 1px solid var(--color-border);
     }
-    @media (min-width: 1024px) { .sidebar-desktop { display: flex; } }
 
     .sidebar-logo {
       height: var(--space-16);

@@ -35,7 +35,7 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'fullsc
            chromeless) and immersive routes on mobile. -->
       <app-sidenav [hidden]="hideSidenav() || fullscreen()" />
       <div class="main-wrapper relative block min-h-0 overflow-hidden">
-        <app-header [hidden]="fullscreen()" />
+        <app-header [hidden]="fullscreen()" [immersive]="hideSidenav()" />
         <main
           id="main-content"
           class="app-main-shell h-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain"
