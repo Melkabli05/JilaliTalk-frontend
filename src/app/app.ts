@@ -39,7 +39,12 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'fullsc
         <app-header [hidden]="fullscreen()" [immersive]="hideSidenav()" />
         <main
           id="main-content"
-          class="app-main-shell h-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain"
+          class="h-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain
+                 pt-[var(--shell-inset-top)] pb-[var(--shell-inset-bottom)]
+                 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]
+                 [&::-webkit-scrollbar]:w-1.5
+                 [&::-webkit-scrollbar-thumb]:bg-neutral-300 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-600
+                 [&::-webkit-scrollbar-thumb]:rounded-[3px]"
           tabindex="-1"
         >
           <router-outlet />
@@ -64,32 +69,25 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'fullsc
       <app-pwa-update-banner />
     }
   `,
-  styles: [
-    `
-      /* IRREDUCIBLE CONSUMER-CONTRACT STYLES (4 lines):
-           :host { display: block } — required; structural layout (grid, sizing, overflow,
-             mobile-first visibility via .block/.lg:hidden, the desktop sidebar margin via
-             ms-/me-/rtl: variants) is in the template.
-           --shell-inset-top / --shell-inset-bottom — authored CSS variables that 6 other
-             files consume via var(...). Tailwind utilities cannot author CSS variables
-             consumed by other stylesheets (the only alternatives are per-consumer
-             refactors which violate the contract). The values themselves now come from
-             the dynamic shellInsetsStyle() inline binding on the root div, which
-             replaces both the desktop @media override and the .fullscreen/.immersive
-             SCSS rules. */
-      :host { display: block; }
-      .app-main-shell {
-        padding-top: var(--shell-inset-top);
-        padding-bottom: var(--shell-inset-bottom);
-        -webkit-overflow-scrolling: touch;
-      }
-      /* No Tailwind utility equivalents for vendor scrollbar styling or touch-momentum
-         scrolling — these are the only remaining "custom CSS" in this file. */
-      .app-main-shell { scrollbar-width: thin; }
-      .app-main-shell::-webkit-scrollbar { width: 6px; }
-      .app-main-shell::-webkit-scrollbar-thumb { background-color: var(--color-neutral-300); border-radius: 3px; }
-    `,
-  ],
+  /**
+   * The only remaining non-utility CSS in this file: :host { display: block }. Angular's
+   * default Emulated encapsulation has no way to put a class="" attribute on the host tag
+   * from within its own template, so :host is the only mechanism available — not a
+   * design-system/branding value, just how Angular host styling works.
+   *
+   * Everything else (structural layout, the scrollbar, touch-momentum scrolling, and the
+   * --shell-inset-top/bottom padding) now lives in the template as Tailwind utility classes,
+   * including arbitrary-value/arbitrary-variant forms:
+   *   pt-[var(--shell-inset-top)] / pb-[var(--shell-inset-bottom)] — reads the CSS variable
+   *     6 other files also consume; Tailwind can reference a var() as an arbitrary value even
+   *     though it can't author one for cross-file consumption.
+   *   [&::-webkit-scrollbar]:w-1.5, [&::-webkit-scrollbar-thumb]:bg-neutral-300 dark:[&::-
+   *     webkit-scrollbar-thumb]:bg-neutral-600 — arbitrary pseudo-element variants replace
+   *     the old plain-CSS ::-webkit-scrollbar-thumb rule (and add a dark-mode-aware color,
+   *     which the original var(--color-neutral-300) reference did NOT have — that token has
+   *     no dark override, so the old scrollbar thumb color didn't change between themes).
+   */
+  styles: [`:host { display: block; }`],
 })
 export class App {
   private readonly imBootstrap = inject(ImBootstrapService);
@@ -159,7 +157,11 @@ export class App {
     }
     if (imm) {
       return {
-        '--shell-inset-top': 'max(env(safe-area-inset-top), var(--space-3))',
+        // 0.75rem matches Tailwind's default spacing scale step 3 (p-3/gap-3/etc.) —
+        // used as a literal here instead of var(--space-3) since this project's
+        // --space-* tokens are being phased out of the shell in favor of Tailwind's
+        // own scale.
+        '--shell-inset-top': 'max(env(safe-area-inset-top), 0.75rem)',
         '--shell-inset-bottom': 'env(safe-area-inset-bottom)',
       };
     }
