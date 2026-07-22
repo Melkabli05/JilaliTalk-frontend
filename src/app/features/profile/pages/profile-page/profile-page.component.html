@@ -1,4 +1,26 @@
 <div class="profile-page">
+  @if (store.isModifyRestricted()) {
+    <!--
+      Surfaces the server-side `is_modify_restricted` flag from the bundle
+      (`profile/v2/limitations`). The BFF signs this for us, so the banner can't
+      be MITM'd off — that's the whole point of going through the proxy instead
+      of trusting the raw upstream response. The toast in ProfileStore.guardProfileEdit
+      is the action-time counterpart (used by mutating flows like a future
+      profile-edit dialog).
+    -->
+    <aside class="restricted-banner" role="alert" aria-live="polite">
+      <span class="restricted-banner-icon" aria-hidden="true">
+        <svg lucideShieldOff [size]="14"></svg>
+      </span>
+      <div class="restricted-banner-body">
+        <span class="restricted-banner-title">Profile editing is restricted</span>
+        <span class="restricted-banner-text">
+          This account is paused for a security review. Profile fields are
+          read-only until the restriction is lifted.
+        </span>
+      </div>
+    </aside>
+  }
   @if (store.bundleLoading() && !store.userInfo()) {
     <div class="header-skeleton">
       <div class="skeleton-avatar"></div>

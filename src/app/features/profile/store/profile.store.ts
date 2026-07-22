@@ -5,6 +5,7 @@ import { map, of } from 'rxjs';
 import { ProfileApi } from '../data-access/profile-api';
 import { PaginatedList } from '../data-access/paginated-list';
 import { AuthStore } from '@core/auth/auth.store';
+import { ToastService } from '@core/services/toast.service';
 import {
   ProfileBundleResponse,
   SocialListPage,
@@ -20,6 +21,7 @@ export class ProfileStore {
   private readonly authStore = inject(AuthStore);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toast = inject(ToastService);
   private readonly selfId = computed(() => this.authStore.user()?.userId ?? null);
 
   private readonly _bundle = signal<ProfileBundleResponse | null>(
@@ -38,6 +40,26 @@ export class ProfileStore {
     () => this._bundle() === null && this.bundleRef.isLoading(),
   );
   readonly bundleError = computed(() => (this.bundleRef.error() ? 'Failed to load your profile' : null));
+  /** Server-side ban on mutating profile fields. Same field as Android's
+   *  {@code LiveWSSRoomUser}/com.hellotalk.feature.common.model.f isModifyRestricted —
+   *  see {@code endpots/organized_captures_new/profile_v2_limitations.jsonl} for the wire shape
+   *  (snake_case on the wire, camelCase in Java/TS via Gson's default naming policy).
+   *  Reading this from a trusted BFF proxy (not from the raw upstream) is the whole point — the
+   *  upstream response is unsigned and could be MITM'd. */
+  readonly isModifyRestricted = computed(() => this.bundle()?.limitations?.isModifyRestricted ?? false);
+
+  /** One-shot toast + return so mutating action buttons can call this before issuing the
+   *  request and bail early when the flag is set. The action still issues the request so the
+   *  server-side guard (which we should also add — see jilalibff ProfileEditClient) gets the
+   *  call and can return its own error. */
+  guardProfileEdit(): boolean {
+    if (this.isModifyRestricted()) {
+      this.toast.warning('Profile editing is restricted on this account.');
+      return false;
+    }
+    return true;
+  }
+
   reloadBundle(): void {
     this._bundle.set(null);
     this.bundleRef.reload();

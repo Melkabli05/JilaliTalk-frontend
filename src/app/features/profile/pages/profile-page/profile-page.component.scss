@@ -11,6 +11,62 @@
   max-width: 720px;
   margin: 0 auto;
 }
+
+/* ─── Restricted-account banner ───
+   Reads `isModifyRestricted` from the profile bundle (server-trusted; not just
+   the upstream response). Same warm token as the kick/warning surface used in
+   the room card system — distinct from error red so this reads as "account
+   paused", not "something broke". Sticky (no auto-dismiss) because the
+   underlying state is persistent — a dismissed banner would be misleading. */
+.restricted-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-warm-500) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warm-500) 35%, transparent);
+  border-left: 3px solid var(--color-warm-500);
+  color: var(--color-text);
+}
+:host-context(.dark) .restricted-banner {
+  background: color-mix(in srgb, var(--color-warm-700) 30%, transparent);
+  border-color: color-mix(in srgb, var(--color-warm-600) 45%, transparent);
+  border-left-color: var(--color-warm-400);
+  color: var(--color-warm-50);
+}
+.restricted-banner-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-warm-500) 22%, transparent);
+  color: var(--color-warm-600);
+  margin-top: 1px;
+}
+:host-context(.dark) .restricted-banner-icon {
+  background: color-mix(in srgb, var(--color-warm-500) 28%, transparent);
+  color: var(--color-warm-200);
+}
+.restricted-banner-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+.restricted-banner-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: inherit;
+}
+.restricted-banner-text {
+  color: inherit;
+  opacity: 0.85;
+}
 .tabs-section {
   display: flex;
   flex-direction: column;
