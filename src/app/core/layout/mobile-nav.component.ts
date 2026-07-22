@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ViewEncapsulation, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LucideGlobe, LucideTv, LucideMessageCircle, LucideUser } from '@lucide/angular';
 
@@ -28,7 +28,7 @@ function mobileLabel(full: string): string {
   encapsulation: ViewEncapsulation.None,
   imports: [RouterLink, RouterLinkActive, LucideGlobe, LucideTv, LucideMessageCircle, LucideUser],
   template: `
-    <nav class="mobile-nav" aria-label="Main navigation">
+    <nav class="mobile-nav" aria-label="Main navigation" [class.immersive]="immersive">
       <div class="mobile-nav-inner">
         @for (item of navItems; track item.id) {
           <a
@@ -78,16 +78,11 @@ function mobileLabel(full: string): string {
       background-color: color-mix(in srgb, var(--color-neutral-900) 92%, transparent);
       border-color: var(--color-neutral-700);
     }
-    @media (min-width: 1024px) { .mobile-nav { display: none; } }
-    /* Immersive routes (mobile room pages) hide the bottom nav so the room gets the
-       full viewport height. Desktop sidebar is unaffected.
-       Plain ancestor selector, not :host-context: see the ViewEncapsulation.None
-       note above. */
-    @media (max-width: 1023.98px) {
-      .app-shell.immersive .mobile-nav {
-        display: none;
-      }
-    }
+    /* Immersive routes (mobile room pages) — no media query needed: shell toggles
+       <app-mobile-nav class="..." [immersive]="...">, the rule below fires whenever
+       the shell is in immersive mode on a mobile viewport, instead of every media
+       ≤1023.98px regardless. */
+    .mobile-nav.immersive { display: none; }
 
     .mobile-nav-inner {
       width: 100%; height: var(--bottom-nav-height);
@@ -142,6 +137,10 @@ function mobileLabel(full: string): string {
       `]
 })
 export class MobileNavComponent {
+  /** Bound by the shell: true when the route is immersive AND the viewport is mobile.
+   *  The bottom nav is suppressed in that mode so the room gets the full viewport height. */
+  readonly immersive = input(false);
+
   readonly navItems: NavItem[] = [
     { id: 'voice', iconName: 'globe', label: 'Voice Rooms', route: '/rooms/voice' },
     { id: 'live', iconName: 'tv', label: 'Live Streams', route: '/rooms/live' },

@@ -43,8 +43,15 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'fullsc
         >
           <router-outlet />
         </main>
-        <!-- Mobile-nav: hidden on lg+ (sidenav takes over) and on fullscreen routes. -->
-        <app-mobile-nav class="block lg:hidden" [hidden]="fullscreen()" />
+        <!-- Mobile-nav: hidden on lg+ (sidenav takes over), on fullscreen routes, and on
+             immersive routes when the viewport is mobile (so rooms get the full viewport height).
+             The third case used to be expressed as @media (max-width: 1023.98px) inside
+             mobile-nav.component.ts — replaced by the [immersive] input below so the rule
+             follows viewport state directly instead of a media-query dance. -->
+        <app-mobile-nav
+          class="block lg:hidden"
+          [hidden]="fullscreen()"
+          [immersive]="hideSidenav()" />
       </div>
     </div>
     <app-toast-container />
