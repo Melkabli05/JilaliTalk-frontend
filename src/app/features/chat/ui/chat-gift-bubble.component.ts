@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 @Component({
   selector: 'app-chat-gift-bubble',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<p class="bubble" [class.is-outbound]="isOutbound()">Gift ×{{ count() }}</p>`,
+  template: `<p [class]="isOutbound() ? 'bubble self-end rtl:self-start' : 'bubble self-start rtl:self-end'">Gift ×{{ count() }}</p>`,
   styles: [`
     :host { display: contents; }
     .bubble {
@@ -13,10 +13,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       max-width: min(75%, 420px);
       box-shadow: var(--shadow-xs);
     }
-    .bubble.is-outbound { background: var(--color-primary-500); color: var(--color-on-color); align-self: flex-end; }
+    .bubble.self-end { background: var(--color-primary-500); color: var(--color-on-color); }
     :host-context(.dark) .bubble { background: var(--color-neutral-800); }
-    :host-context(.dark) .bubble.is-outbound { background: var(--color-primary-600); }
-    :host-context([dir='rtl']) .bubble.is-outbound { align-self: flex-start; }
+    :host-context(.dark) .bubble.self-end { background: var(--color-primary-600); }
   `],
 })
 export class ChatGiftBubbleComponent {

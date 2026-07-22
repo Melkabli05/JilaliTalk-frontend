@@ -27,8 +27,7 @@ export type ShareCardJoinKind = 'visible' | 'invisible';
   imports: [TooltipDirective, LucideRadio, LucideVideo, LucideEye, LucideEyeOff],
   template: `
     <div
-      class="share-card"
-      [class.is-outbound]="isOutbound()"
+      [class]="isOutbound() ? 'share-card self-end rtl:self-start' : 'share-card self-start rtl:self-end'"
       [attr.aria-label]="fromName() + ' shared a ' + (kind() === 'voice' ? 'voice' : 'live') + ' room' + (roomTitle() ? ': ' + roomTitle() : '')"
     >
       <span class="share-icon" [class.is-live]="kind() === 'live'">
@@ -89,10 +88,9 @@ export type ShareCardJoinKind = 'visible' | 'invisible';
       max-width: min(75%, 460px);
       box-shadow: var(--shadow-xs);
     }
-    .share-card.is-outbound { align-self: flex-end; background: var(--color-neutral-200); }
-    :host-context([dir='rtl']) .share-card.is-outbound { align-self: flex-start; }
+    .share-card.self-end { background: var(--color-neutral-200); }
     :host-context(.dark) .share-card { background: var(--color-neutral-800); }
-    :host-context(.dark) .share-card.is-outbound { background: var(--color-neutral-700); }
+    :host-context(.dark) .share-card.self-end { background: var(--color-neutral-700); }
     .share-icon {
       display: inline-flex; align-items: center; justify-content: center;
       width: 36px; height: 36px; flex-shrink: 0; border-radius: 8px;

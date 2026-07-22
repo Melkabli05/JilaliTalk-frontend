@@ -5,7 +5,7 @@ import type { ChatDelivery } from '../models/chat-message.model';
   selector: 'app-chat-text-bubble',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <p class="bubble" [class.is-outbound]="isOutbound()">{{ text() }}</p>
+    <p [class]="isOutbound() ? 'bubble self-end rtl:self-start' : 'bubble self-start rtl:self-end'">{{ text() }}</p>
   `,
   styles: [`
     :host { display: contents; }
@@ -17,10 +17,9 @@ import type { ChatDelivery } from '../models/chat-message.model';
       white-space: pre-wrap;
       box-shadow: var(--shadow-xs);
     }
-    .bubble.is-outbound { background: var(--color-primary-500); color: var(--color-on-color); align-self: flex-end; }
+    .bubble.self-end { background: var(--color-primary-500); color: var(--color-on-color); }
     :host-context(.dark) .bubble { background: var(--color-neutral-800); }
-    :host-context(.dark) .bubble.is-outbound { background: var(--color-primary-600); }
-    :host-context([dir='rtl']) .bubble.is-outbound { align-self: flex-start; }
+    :host-context(.dark) .bubble.self-end { background: var(--color-primary-600); }
   `],
 })
 export class ChatTextBubbleComponent {

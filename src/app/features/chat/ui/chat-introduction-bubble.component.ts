@@ -8,7 +8,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CountryFlagComponent, AvatarComponent],
   template: `
-    <div class="intro-bubble" [class.is-outbound]="isOutbound()">
+    <div [class]="isOutbound() ? 'intro-bubble self-end rtl:self-start' : 'intro-bubble self-start rtl:self-end'">
       <span class="intro-context">{{ context() }}</span>
       <button
         type="button"
@@ -44,10 +44,9 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       max-width: min(75%, 420px);
       box-shadow: var(--shadow-xs);
     }
-    .intro-bubble.is-outbound { background: var(--color-primary-50); align-self: flex-end; }
-    :host-context([dir='rtl']) .intro-bubble.is-outbound { align-self: flex-start; }
+    .intro-bubble.self-end { background: var(--color-primary-50); }
     :host-context(.dark) .intro-bubble { background: var(--color-neutral-800); }
-    :host-context(.dark) .intro-bubble.is-outbound { background: var(--color-primary-900); }
+    :host-context(.dark) .intro-bubble.self-end { background: var(--color-primary-900); }
     .intro-context { font-size: var(--text-xs); color: var(--color-text-muted); }
     .intro-card {
       display: flex; gap: 10px; padding: 8px;
