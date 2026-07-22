@@ -69,10 +69,11 @@ function trimmedMaxLengthError(value: string, max: number) {
     LucideCheck,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block w-[440px] max-w-[calc(100vw-2rem)]' },
   template: `
     <app-modal [title]="'Create voice room'" [noPadding]="true">
-      <form class="form-body" (submit)="onSubmit($event)">
-        <div class="field">
+      <form class="flex flex-col gap-5 pt-5 px-5 pb-0" (submit)="onSubmit($event)">
+        <div class="flex flex-col gap-2 relative">
           <app-input
             label="Room name"
             placeholder="What's happening?"
@@ -80,25 +81,26 @@ function trimmedMaxLengthError(value: string, max: number) {
             autocomplete="off"
           />
           <span
-            class="char-count"
-            [class.over]="model().name.trim().length > MAX_NAME"
+            class="self-end text-[11px] text-neutral-500"
+            [class.text-red-500]="model().name.trim().length > MAX_NAME"
+            [class.font-medium]="model().name.trim().length > MAX_NAME"
             aria-hidden="true"
           >
             {{ model().name.trim().length }}/{{ MAX_NAME }}
           </span>
         </div>
 
-        <div class="field-row">
-          <div class="field">
-            <label class="field-label" for="create-room-lang">
-              <svg aria-hidden="true" lucideGlobe [size]="13" />
+        <div class="flex gap-4">
+          <div class="flex-1 min-w-0 flex flex-col gap-2 relative">
+            <label class="flex items-center gap-1.5 text-sm font-medium text-neutral-900 dark:text-neutral-200" for="create-room-lang">
+              <svg aria-hidden="true" lucideGlobe [size]="13" class="text-blue-500" />
               Language
             </label>
             <app-language-select id="create-room-lang" [(value)]="langId" />
           </div>
-          <div class="field">
-            <label class="field-label" for="create-room-category">
-              <svg aria-hidden="true" lucideTag [size]="13" />
+          <div class="flex-1 min-w-0 flex flex-col gap-2 relative">
+            <label class="flex items-center gap-1.5 text-sm font-medium text-neutral-900 dark:text-neutral-200" for="create-room-category">
+              <svg aria-hidden="true" lucideTag [size]="13" class="text-blue-500" />
               Category
             </label>
             <app-category-select
@@ -109,44 +111,80 @@ function trimmedMaxLengthError(value: string, max: number) {
           </div>
         </div>
 
-        <div class="field">
-          <span class="field-label" id="visibility-label">Visibility</span>
+        <div class="flex flex-col gap-2 relative">
+          <span class="flex items-center gap-1.5 text-sm font-medium text-neutral-900 dark:text-neutral-200" id="visibility-label">Visibility</span>
           <ul
             ngListbox
             [multi]="false"
             orientation="horizontal"
             aria-labelledby="visibility-label"
-            class="visibility-toggle"
+            class="flex gap-2 list-none m-0 p-0"
             [(value)]="visibilitySelection"
           >
-            <li ngOption value="public" label="Public" class="visibility-option">
-              <span class="option-icon-wrap">
-                <svg aria-hidden="true" lucideUnlock [size]="15" class="option-icon" />
+            <li
+              ngOption
+              value="public"
+              label="Public"
+              class="group flex-1 flex items-center gap-2 p-4 border-[1.5px] border-neutral-200 dark:border-neutral-700
+                     rounded-lg bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 cursor-pointer relative
+                     hover:bg-neutral-50 hover:border-neutral-300
+                     dark:hover:bg-neutral-700 dark:hover:text-neutral-100 dark:hover:border-neutral-600
+                     aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:text-blue-700
+                     aria-selected:shadow-[0_4px_12px_-4px_rgb(59_130_246/35%)]
+                     dark:aria-selected:bg-blue-900 dark:aria-selected:text-blue-300 dark:aria-selected:border-blue-600
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+            >
+              <span class="flex items-center justify-center w-9 h-9 rounded-md bg-neutral-100 dark:bg-neutral-700
+                           text-neutral-600 dark:text-neutral-300 shrink-0
+                           group-aria-selected:bg-blue-500 group-aria-selected:text-white dark:group-aria-selected:bg-blue-400">
+                <svg aria-hidden="true" lucideUnlock [size]="15" />
               </span>
-              <span class="option-text">
-                <span class="option-title">Public</span>
-                <span class="option-desc">Anyone can find and join</span>
+              <span class="flex flex-col gap-0.5 min-w-0">
+                <span class="text-sm font-semibold leading-tight group-aria-selected:text-blue-700 dark:group-aria-selected:text-blue-300">Public</span>
+                <span class="text-[11px] text-neutral-500 leading-[1.3]">Anyone can find and join</span>
               </span>
-              <span class="option-check" aria-hidden="true">
+              <span
+                class="absolute top-2 right-2 flex items-center justify-center w-[18px] h-[18px] rounded-full
+                       bg-blue-500 text-white opacity-0 scale-[0.6] group-aria-selected:opacity-100 group-aria-selected:scale-100"
+                aria-hidden="true"
+              >
                 <svg lucideCheck [size]="12" />
               </span>
             </li>
-            <li ngOption value="private" label="Private" class="visibility-option">
-              <span class="option-icon-wrap">
-                <svg aria-hidden="true" lucideLock [size]="15" class="option-icon" />
+            <li
+              ngOption
+              value="private"
+              label="Private"
+              class="group flex-1 flex items-center gap-2 p-4 border-[1.5px] border-neutral-200 dark:border-neutral-700
+                     rounded-lg bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 cursor-pointer relative
+                     hover:bg-neutral-50 hover:border-neutral-300
+                     dark:hover:bg-neutral-700 dark:hover:text-neutral-100 dark:hover:border-neutral-600
+                     aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:text-blue-700
+                     aria-selected:shadow-[0_4px_12px_-4px_rgb(59_130_246/35%)]
+                     dark:aria-selected:bg-blue-900 dark:aria-selected:text-blue-300 dark:aria-selected:border-blue-600
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+            >
+              <span class="flex items-center justify-center w-9 h-9 rounded-md bg-neutral-100 dark:bg-neutral-700
+                           text-neutral-600 dark:text-neutral-300 shrink-0
+                           group-aria-selected:bg-blue-500 group-aria-selected:text-white dark:group-aria-selected:bg-blue-400">
+                <svg aria-hidden="true" lucideLock [size]="15" />
               </span>
-              <span class="option-text">
-                <span class="option-title">Private</span>
-                <span class="option-desc">Invite-only access</span>
+              <span class="flex flex-col gap-0.5 min-w-0">
+                <span class="text-sm font-semibold leading-tight group-aria-selected:text-blue-700 dark:group-aria-selected:text-blue-300">Private</span>
+                <span class="text-[11px] text-neutral-500 leading-[1.3]">Invite-only access</span>
               </span>
-              <span class="option-check" aria-hidden="true">
+              <span
+                class="absolute top-2 right-2 flex items-center justify-center w-[18px] h-[18px] rounded-full
+                       bg-blue-500 text-white opacity-0 scale-[0.6] group-aria-selected:opacity-100 group-aria-selected:scale-100"
+                aria-hidden="true"
+              >
                 <svg lucideCheck [size]="12" />
               </span>
             </li>
           </ul>
         </div>
 
-        <div class="field">
+        <div class="flex flex-col gap-2 relative">
           <app-input
             label="Topic (optional)"
             placeholder="Add a topic or notice for your room"
@@ -154,15 +192,16 @@ function trimmedMaxLengthError(value: string, max: number) {
             autocomplete="off"
           />
           <span
-            class="char-count"
-            [class.over]="model().notice.trim().length > MAX_NOTICE"
+            class="self-end text-[11px] text-neutral-500"
+            [class.text-red-500]="model().notice.trim().length > MAX_NOTICE"
+            [class.font-medium]="model().notice.trim().length > MAX_NOTICE"
             aria-hidden="true"
           >
             {{ model().notice.trim().length }}/{{ MAX_NOTICE }}
           </span>
         </div>
 
-        <div class="form-footer">
+        <div class="flex justify-end items-center gap-2 py-5 border-t border-neutral-200 dark:border-neutral-700">
           <app-button type="button" variant="ghost" size="md" (click)="ref.close()"
             >Cancel</app-button
           >
@@ -172,7 +211,7 @@ function trimmedMaxLengthError(value: string, max: number) {
             size="md"
             [pill]="true"
             [disabled]="roomForm().invalid()"
-            class="submit-btn"
+            class="flex-1 max-w-[200px]"
           >
             <svg aria-hidden="true" lucideRadio [size]="14" />
             Start room
@@ -181,188 +220,6 @@ function trimmedMaxLengthError(value: string, max: number) {
       </form>
     </app-modal>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-        width: 440px;
-        max-width: calc(100vw - var(--space-8));
-      }
-
-      .form-body {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-5);
-        padding: var(--space-5) var(--space-5) 0;
-      }
-
-      .field {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-        position: relative;
-      }
-
-      .field-row {
-        display: flex;
-        gap: var(--space-4);
-      }
-      .field-row > .field {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .char-count {
-        align-self: flex-end;
-        font-size: 11px;
-        color: var(--color-text-muted);
-      }
-      .char-count.over {
-        color: var(--color-warm-500);
-        font-weight: var(--font-medium);
-      }
-
-      .field-label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: var(--text-sm);
-        font-weight: var(--font-medium);
-        color: var(--color-text);
-      }
-      .field-label svg {
-        color: var(--color-primary-500);
-      }
-      :host-context(.dark) .field-label {
-        color: var(--color-neutral-200);
-      }
-
-      .visibility-toggle {
-        display: flex;
-        gap: var(--space-2);
-        list-style: none;
-        margin: 0;
-        padding: 0;
-      }
-
-      .visibility-option {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-4);
-        border: 1.5px solid var(--color-border);
-        border-radius: var(--radius-lg);
-        background: var(--color-card);
-        color: var(--color-text-secondary);
-        cursor: pointer;
-        position: relative;
-      }
-      .visibility-option:hover {
-        background: var(--color-neutral-50);
-        border-color: var(--color-neutral-300);
-      }
-      .visibility-option[aria-selected='true'] {
-        border-color: var(--color-primary-500);
-        background: var(--color-primary-50);
-        color: var(--color-primary-text);
-        box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--color-primary-500) 35%, transparent);
-      }
-      .visibility-option:focus-visible {
-        outline: var(--focus-ring);
-        outline-offset: var(--focus-ring-offset);
-      }
-      :host-context(.dark) .visibility-option:hover {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-100);
-        border-color: var(--color-neutral-600);
-      }
-      :host-context(.dark) .visibility-option[aria-selected='true'] {
-        background: var(--color-primary-900);
-        color: var(--color-primary-300);
-        border-color: var(--color-primary-600);
-      }
-
-      .option-icon-wrap {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: var(--radius-md);
-        background: var(--color-neutral-100);
-        color: var(--color-text-secondary);
-        flex-shrink: 0;
-      }
-      .visibility-option[aria-selected='true'] .option-icon-wrap {
-        background: var(--color-primary-500);
-        color: var(--color-on-color);
-      }
-      :host-context(.dark) .option-icon-wrap {
-        background: var(--color-neutral-700);
-      }
-      :host-context(.dark) .visibility-option[aria-selected='true'] .option-icon-wrap {
-        background: var(--color-primary-400);
-      }
-
-      .option-text {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        min-width: 0;
-      }
-
-      .option-title {
-        font-size: var(--text-sm);
-        font-weight: var(--font-semibold);
-        line-height: 1.2;
-      }
-      .visibility-option[aria-selected='true'] .option-title {
-        color: var(--color-primary-text);
-      }
-      :host-context(.dark) .visibility-option[aria-selected='true'] .option-title {
-        color: var(--color-primary-300);
-      }
-      .option-desc {
-        font-size: 11px;
-        color: var(--color-text-muted);
-        line-height: 1.3;
-      }
-
-      .option-check {
-        position: absolute;
-        top: var(--space-2);
-        right: var(--space-2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 18px;
-        height: 18px;
-        border-radius: var(--radius-full);
-        background: var(--color-primary-500);
-        color: var(--color-on-color);
-        opacity: 0;
-        transform: scale(0.6);
-      }
-      .visibility-option[aria-selected='true'] .option-check {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      .form-footer {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-5) 0;
-        border-top: 1px solid var(--color-border);
-      }
-      .submit-btn {
-        flex: 1;
-        max-width: 200px;
-      }
-    `,
-  ],
 })
 export class CreateRoomModalComponent {
   protected readonly ref = inject(DialogRef);
