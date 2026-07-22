@@ -7,12 +7,11 @@ import { lastMessagePreview } from '../utils/chat-preview.util';
   selector: 'app-chat-conversation-row',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AvatarComponent],
+  host: { class: 'contents' },
   template: `
     <button
       type="button"
-      class="row rtl:[direction:rtl]"
-      [class.active]="active()"
-      [class.unread]="unread()"
+      [class]="rowClass()"
       (click)="select.emit()"
       [attr.aria-current]="active() ? 'true' : null"
     >
@@ -21,72 +20,36 @@ import { lastMessagePreview } from '../utils/chat-preview.util';
         [initials]="initials()"
         [alt]="conversation().nickname"
         [size]="avatarSize()"
-        [ringColor]="active() ? 'var(--color-primary-500)' : null"
+        [ringColor]="active() ? '#3b82f6' : null"
       />
-      <span class="row-body">
-        <span class="row-name">{{ conversation().nickname }}</span>
-        <time class="row-ts" [attr.datetime]="conversation().lastTs">
+      <span class="flex flex-col gap-0.5 min-w-0">
+        <span [class]="unread() > 0 ? nameClassBold : nameClassRegular">{{ conversation().nickname }}</span>
+        <time [class]="unread() > 0 ? tsClassUnread : tsClassDefault" [attr.datetime]="conversation().lastTs">
           {{ relativeTime(conversation().lastTs) }}
         </time>
         @if (conversation().isTyping) {
-          <span class="row-preview row-preview--typing">typing…</span>
+          <span class="text-xs text-blue-500 italic whitespace-nowrap overflow-hidden text-ellipsis">typing…</span>
         } @else {
-          <span class="row-preview">{{ preview() }}</span>
+          <span class="text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap overflow-hidden text-ellipsis">{{ preview() }}</span>
         }
       </span>
       @if (unread() > 0) {
-        <span class="unread-badge" [attr.aria-label]="unread() + ' unread'">
+        <span
+          class="min-w-[18px] h-[18px] px-1.5 inline-flex items-center justify-center rounded-full
+                 bg-emerald-500 text-white text-[10px] font-bold
+                 animate-[badgeIn_200ms_cubic-bezier(0.34,1.56,0.64,1)_both] motion-reduce:animate-none"
+          [attr.aria-label]="unread() + ' unread'"
+        >
           {{ unread() > 99 ? '99+' : unread() }}
         </span>
       }
     </button>
   `,
+  /** The unread-badge pop-in has no Tailwind built-in animation shape. */
   styles: [`
-    :host { display: contents; }
-    .row {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center; gap: 12px;
-      width: 100%; min-height: 44px; padding: 10px 12px;
-      background: transparent; border: 0; cursor: pointer;
-      border-radius: 12px; text-align: left; color: inherit;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: background-color 150ms ease;
-    }
-    .row:hover { background: var(--color-neutral-100); }
-    .row.active { background: color-mix(in srgb, var(--color-primary-500) 10%, transparent); }
-    .row:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
-    :host-context(.dark) .row:hover { background: var(--color-neutral-700); }
-    :host-context(.dark) .row.active { background: color-mix(in srgb, var(--color-primary-500) 16%, transparent); }
-    .row-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .row-name {
-      font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--color-text);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .unread .row-name { font-weight: var(--font-bold); }
-    .row-ts { font-size: var(--text-2xs); color: var(--color-text-muted); }
-    .unread .row-ts { color: var(--color-accent-600); font-weight: var(--font-medium); }
-    .row-preview {
-      font-size: var(--text-xs); color: var(--color-text-muted);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .row-preview--typing { color: var(--color-primary-500); font-style: italic; }
-    .unread-badge {
-      min-width: 18px; height: 18px; padding: 0 6px;
-      display: inline-flex; align-items: center; justify-content: center;
-      border-radius: var(--radius-full);
-      background: var(--color-accent-500); color: var(--color-on-color);
-      font-size: var(--text-2xs); font-weight: var(--font-bold);
-      animation: badgeIn 200ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    }
     @keyframes badgeIn {
       from { opacity: 0; transform: scale(0.5); }
       to { opacity: 1; transform: scale(1); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .row { transition: none; }
-      .unread-badge { animation: none; }
     }
   `],
 })
@@ -102,6 +65,22 @@ export class ChatConversationRowComponent {
   readonly preview = computed(() => lastMessagePreview(this.conversation()));
   readonly initials = computed(() => deriveInitials(this.conversation().nickname));
   readonly relativeTime = (ts: number): string => this.formatTime()(ts);
+
+  protected readonly rowClass = computed(() => {
+    const base =
+      'grid grid-cols-[auto_1fr_auto] items-center gap-3 w-full min-h-11 py-2.5 px-3 rtl:[direction:rtl] ' +
+      'bg-transparent border-0 cursor-pointer rounded-xl text-left text-inherit touch-manipulation ' +
+      '[-webkit-tap-highlight-color:transparent] transition-colors duration-150 motion-reduce:transition-none ' +
+      'focus-visible:outline focus-visible:outline-2 focus-visible:[outline-offset:-2px] focus-visible:outline-blue-500';
+    return this.active()
+      ? `${base} bg-blue-500/10 dark:bg-blue-500/16`
+      : `${base} hover:bg-neutral-100 dark:hover:bg-neutral-700`;
+  });
+
+  protected readonly nameClassBold = 'text-sm font-bold text-neutral-900 dark:text-neutral-100 whitespace-nowrap overflow-hidden text-ellipsis';
+  protected readonly nameClassRegular = 'text-sm font-medium text-neutral-900 dark:text-neutral-100 whitespace-nowrap overflow-hidden text-ellipsis';
+  protected readonly tsClassUnread = 'text-[10px] text-emerald-600 font-medium';
+  protected readonly tsClassDefault = 'text-[10px] text-neutral-500 dark:text-neutral-400';
 }
 
 function deriveInitials(nickname: string): string {
