@@ -2,6 +2,16 @@ import { Component, ChangeDetectionStrategy, inject, ViewEncapsulation } from '@
 import { ToastService, Toast, ToastAction } from '@core/services/toast.service';
 import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, LucideInfo } from '@lucide/angular';
 
+/** Tailwind's built-in palette per toast type — bound as the --toast-accent CSS variable
+ *  (still needed as a variable since several descendant rules share it: the accent stripe,
+ *  icon-badge tint, primary action button, and progress bar all read the same color). */
+const TOAST_ACCENT: Record<Toast['type'], string> = {
+  success: '#10b981', // emerald-500
+  error: '#ef4444', // red-500
+  warning: '#f59e0b', // amber-500
+  info: '#3b82f6', // blue-500
+};
+
 @Component({
   selector: 'app-toast-container',
 
@@ -9,17 +19,25 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, Luc
   encapsulation: ViewEncapsulation.None,
   imports: [LucideX, LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, LucideInfo],
   template: `
-    <div class="toast-container" role="region" aria-label="Notifications">
+    <div class="toast-container fixed z-[var(--z-toast)] flex flex-col gap-2.5 w-[calc(100%-2rem)] max-w-[360px] pointer-events-none left-1/2 -translate-x-1/2">
       @for (toast of toastService.toasts(); track toast.id) {
         <div
-          class="toast"
-          [class]="'toast-' + toast.type"
+          class="toast relative flex items-center gap-3 pt-3 pr-4 pb-3.5 pl-[18px] rounded-xl overflow-hidden
+                 bg-white dark:bg-neutral-900 shadow-xl border border-neutral-200 dark:border-neutral-700
+                 pointer-events-auto
+                 before:content-[''] before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:rounded-l-xl
+                 animate-[toast-enter_280ms_cubic-bezier(0.16,1,0.3,1)] motion-reduce:animate-none"
           [class.toast-leaving]="toast.leaving"
+          [style.--toast-accent]="accentOf(toast.type)"
           role="alert"
           [attr.aria-live]="toast.type === 'error' ? 'assertive' : 'polite'"
           [attr.aria-atomic]="true"
         >
-          <div class="toast-icon-badge" aria-hidden="true">
+          <div
+            class="toast-icon-badge shrink-0 flex items-center justify-center w-8 h-8 rounded-md"
+            [style.color]="accentOf(toast.type)"
+            aria-hidden="true"
+          >
             @switch (toast.type) {
               @case ('success') {
                 <svg lucideCheckCircle [size]="18"></svg>
@@ -35,15 +53,18 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, Luc
               }
             }
           </div>
-          <div class="toast-body">
-            <span class="toast-message">{{ toast.message }}</span>
+          <div class="flex-1 min-w-0 flex flex-col gap-1.5">
+            <span class="text-sm font-medium leading-normal text-neutral-900 dark:text-neutral-100">{{ toast.message }}</span>
             @if (toast.actions?.length) {
-              <div class="toast-actions">
+              <div class="flex gap-1.5">
                 @for (action of toast.actions; track action.label) {
                   <button
                     type="button"
-                    class="toast-action"
-                    [class.toast-action-primary]="action.variant === 'primary'"
+                    class="py-1 px-2.5 rounded-sm text-xs font-semibold cursor-pointer transition-colors duration-150"
+                    [class]="action.variant === 'primary'
+                      ? 'border-0 text-white'
+                      : 'border border-neutral-200 dark:border-neutral-700 bg-transparent text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 hover:text-neutral-900 hover:border-neutral-300'"
+                    [style.background-color]="action.variant === 'primary' ? accentOf(toast.type) : null"
                     (click)="onAction(toast, action)"
                   >
                     {{ action.label }}
@@ -53,223 +74,58 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, Luc
             }
           </div>
           <button
-            class="toast-close"
+            class="shrink-0 flex items-center justify-center w-11 h-11 rounded-sm border-0 bg-transparent
+                   text-neutral-500 cursor-pointer [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]
+                   transition-colors duration-150
+                   hover:bg-neutral-100 hover:text-neutral-900
+                   focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
             (click)="toastService.dismiss(toast.id)"
             aria-label="Dismiss notification"
           >
             <svg aria-hidden="true" lucideX [size]="14"></svg>
           </button>
           @if (toast.duration) {
-            <div class="toast-progress" [style.animation-duration.ms]="toast.duration"></div>
+            <div
+              class="absolute left-0 right-0 bottom-0 h-[2.5px] opacity-50 origin-left"
+              [style.background-color]="accentOf(toast.type)"
+              [style.animation-duration.ms]="toast.duration"
+              style="animation-name: toast-progress; animation-timing-function: linear; animation-fill-mode: forwards;"
+            ></div>
           }
         </div>
       }
     </div>
   `,
+  /**
+   * Remaining structural CSS: top/left positioning uses --app-header-height (cross-component
+   * layout contract) and --sidebar-width (desktop content-area centering, same reasoning as
+   * app.ts's main-wrapper margin) - not color/branding. The three custom keyframes (enter,
+   * exit, progress-bar countdown) are genuine motion design with no Tailwind built-in
+   * equivalent, and the ::before accent stripe reads --toast-accent (functional per-instance
+   * variable, not a design token — see TOAST_ACCENT above).
+   */
   styles: [`
     .toast-container {
-      position: fixed;
-      top: calc(var(--app-header-height) + env(safe-area-inset-top, 0px) + var(--space-3));
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: var(--z-toast);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: calc(100% - 32px);
-      max-width: 360px;
-      pointer-events: none;
+      top: calc(var(--app-header-height) + env(safe-area-inset-top, 0px) + 0.75rem);
     }
-
-    /* On desktop the fixed sidebar (var(--sidebar-width) = 84px) offsets the
-       content area, so centering in the viewport puts toasts over the sidebar.
-       Shift left anchor right by half the sidebar width to centre in the content area. */
     @media (min-width: 1024px) {
-      .toast-container {
-        left: calc(50% + var(--sidebar-width) / 2);
-      }
+      .toast-container { left: calc(50% + var(--sidebar-width) / 2); }
     }
-
-    .toast {
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px 14px 18px;
-      border-radius: var(--radius-xl);
-      background-color: var(--color-card);
-      box-shadow: var(--shadow-xl);
-      border: 1px solid var(--color-border);
-      overflow: hidden;
-      animation: toast-enter 280ms cubic-bezier(0.16, 1, 0.3, 1);
-      pointer-events: auto;
-    }
-
-    .toast::before {
-      content: '';
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 3px;
-      background: var(--toast-accent);
-      border-radius: var(--radius-xl) 0 0 var(--radius-xl);
-    }
-
-    /* Exit animation must finish in TOAST_EXIT_MS (toast.service.ts) before removal. */
+    .toast::before { background: var(--toast-accent); }
+    .toast-icon-badge { background-color: color-mix(in srgb, var(--toast-accent) 14%, white); }
+    :host-context(.dark) .toast-icon-badge { background-color: color-mix(in srgb, var(--toast-accent) 20%, #171717); }
     .toast-leaving {
       animation: toast-exit 200ms ease-in forwards;
       pointer-events: none;
     }
-
     @keyframes toast-enter {
-      from {
-        opacity: 0;
-        transform: translateY(-12px) scale(0.96);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
+      from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
-
     @keyframes toast-exit {
-      from {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-      to {
-        opacity: 0;
-        transform: translateY(-8px) scale(0.96);
-      }
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(-8px) scale(0.96); }
     }
-    @media (prefers-reduced-motion: reduce) {
-      .toast, .toast-leaving { animation: none; }
-    }
-
-    /* ── Toast type variants ── */
-    .toast-success {
-      --toast-accent: var(--color-accent-500);
-    }
-
-    .toast-error {
-      --toast-accent: var(--color-error-500);
-    }
-
-    .toast-warning {
-      --toast-accent: var(--color-warning);
-    }
-
-    .toast-info {
-      --toast-accent: var(--color-primary-500);
-    }
-
-    /* ── Icon badge — tinted surface using --color-surface as blend base ── */
-    .toast-icon-badge {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: var(--radius-md);
-      background-color: color-mix(in srgb, var(--toast-accent) 14%, var(--color-surface));
-      color: var(--toast-accent);
-    }
-
-    /* ── Message ── */
-    .toast-body {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .toast-message {
-      font-size: var(--text-sm);
-      font-weight: 500;
-      line-height: var(--leading-normal);
-      color: var(--color-text);
-    }
-
-    /* ── Action buttons ── */
-    .toast-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    .toast-action {
-      padding: 4px 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--color-border);
-      background: transparent;
-      color: var(--color-text-secondary);
-      font-size: var(--text-xs);
-      font-weight: 600;
-      cursor: pointer;
-      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-    }
-
-    .toast-action:hover {
-      background-color: var(--color-neutral-100);
-      color: var(--color-text);
-      border-color: var(--color-neutral-300);
-    }
-
-    .toast-action-primary {
-      border-color: transparent;
-      background-color: var(--toast-accent);
-      color: var(--color-on-color);
-    }
-
-    .toast-action-primary:hover {
-      filter: brightness(0.9);
-      border-color: transparent;
-      color: var(--color-on-color);
-    }
-
-    /* ── Close button ── */
-    .toast-close {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 44px;
-      height: 44px;
-      border-radius: var(--radius-sm);
-      border: none;
-      background: transparent;
-      color: var(--color-text-muted);
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: background-color 0.15s ease, color 0.15s ease;
-    }
-
-    .toast-close:hover {
-      background-color: var(--color-neutral-100);
-      color: var(--color-text);
-    }
-
-    .toast-close:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: var(--focus-ring-offset);
-    }
-
-    /* ── Progress bar ── */
-    .toast-progress {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 2.5px;
-      background: var(--toast-accent);
-      opacity: 0.5;
-      transform-origin: left;
-      animation-name: toast-progress;
-      animation-timing-function: linear;
-      animation-fill-mode: forwards;
-    }
-
     @keyframes toast-progress {
       from { transform: scaleX(1); }
       to   { transform: scaleX(0); }
@@ -278,6 +134,10 @@ import { LucideX, LucideCheckCircle, LucideAlertCircle, LucideAlertTriangle, Luc
 })
 export class ToastContainerComponent {
   readonly toastService = inject(ToastService);
+
+  protected accentOf(type: Toast['type']): string {
+    return TOAST_ACCENT[type];
+  }
 
   onAction(toast: Toast, action: ToastAction): void {
     action.run();
