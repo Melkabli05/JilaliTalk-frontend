@@ -18,10 +18,19 @@ import { LucideChevronDown, LucideCheck, LucideTag } from '@lucide/angular';
   selector: 'app-category-select',
   imports: [OverlayModule, LucideChevronDown, LucideCheck, LucideTag],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
   template: `
     <button
       type="button"
-      class="select-trigger"
+      class="flex items-center gap-2 w-full h-10 px-3 rounded-lg text-left cursor-pointer
+             border-[1.5px] border-neutral-200 dark:border-neutral-600
+             bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm
+             transition-[border-color,box-shadow,background-color] duration-150
+             hover:border-blue-300 hover:bg-neutral-50
+             dark:hover:border-blue-400 dark:hover:bg-neutral-700
+             focus-visible:outline-none focus-visible:border-blue-500 focus-visible:shadow-[0_0_0_3px_rgb(59_130_246/15%)]
+             disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:hover:border-neutral-200
+             dark:disabled:bg-neutral-900"
       cdkOverlayOrigin
       #trigger="cdkOverlayOrigin"
       #triggerEl
@@ -32,14 +41,21 @@ import { LucideChevronDown, LucideCheck, LucideTag } from '@lucide/angular';
       aria-haspopup="listbox"
     >
       @if (selected(); as category) {
-        <span class="category-swatch" [style.background]="getSwatchColors(selectedIndex()).bg" [style.color]="getSwatchColors(selectedIndex()).color">
+        <span class="category-swatch inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-semibold leading-tight tracking-[0.01em] relative"
+              [style.background]="getSwatchColors(selectedIndex()).bg" [style.color]="getSwatchColors(selectedIndex()).color">
           <svg aria-hidden="true" lucideTag [size]="11" />
-          <span class="category-name">{{ category.name }}</span>
+          <span class="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{{ category.name }}</span>
         </span>
       } @else {
-        <span class="select-value placeholder">{{ categories().length === 0 ? 'Loading categories…' : 'Select a category' }}</span>
+        <span class="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-neutral-500">{{ categories().length === 0 ? 'Loading categories…' : 'Select a category' }}</span>
       }
-      <svg aria-hidden="true" lucideChevronDown [size]="14" class="chevron" [class.rotated]="isOpen()" />
+      <svg
+        aria-hidden="true"
+        lucideChevronDown
+        [size]="14"
+        class="text-neutral-500 transition-transform duration-[250ms] ease-[cubic-bezier(0.4,0,0.2,1)] shrink-0 ml-auto"
+        [class.rotate-180]="isOpen()"
+      />
     </button>
 
     <ng-template
@@ -54,26 +70,39 @@ import { LucideChevronDown, LucideCheck, LucideTag } from '@lucide/angular';
       (detach)="close()"
       (overlayKeydown)="onOverlayKeydown($event)"
     >
-      <div class="category-dropdown" role="listbox" [attr.aria-label]="'Category'">
-        <div class="dropdown-header">
-          <span class="dropdown-label">Category</span>
+      <div
+        class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden
+               animate-[dropdownFadeIn_0.2s_cubic-bezier(0.16,1,0.3,1)] origin-top motion-reduce:animate-none"
+        role="listbox"
+        [attr.aria-label]="'Category'"
+      >
+        <div class="py-2 px-3 pb-2 border-b border-neutral-200 dark:border-neutral-700">
+          <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Category</span>
         </div>
-        <div class="dropdown-list">
+        <div class="p-1 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto">
           @for (category of categories(); track category.id) {
             <button
               type="button"
-              class="category-option"
-              [class.selected]="value() === category.id"
+              class="flex items-center justify-between gap-3 w-full py-2 px-2 rounded-md border-0 bg-transparent cursor-pointer
+                     transition-[background-color,transform] duration-150
+                     hover:bg-blue-50 hover:translate-x-0.5
+                     focus-visible:outline-none focus-visible:bg-blue-50
+                     dark:hover:bg-neutral-700 dark:focus-visible:bg-neutral-700
+                     max-lg:py-3 max-lg:px-2 max-lg:min-h-11"
+              [class]="value() === category.id
+                ? 'bg-blue-100/60 hover:bg-blue-100 dark:bg-blue-900/50 dark:hover:bg-blue-900'
+                : ''"
               role="option"
               [attr.aria-selected]="value() === category.id"
               (click)="select(category.id)"
             >
-              <span class="category-swatch" [style.background]="getSwatchColors($index).bg" [style.color]="getSwatchColors($index).color">
+              <span class="category-swatch inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-semibold leading-tight tracking-[0.01em] relative"
+                    [style.background]="getSwatchColors($index).bg" [style.color]="getSwatchColors($index).color">
                 <svg aria-hidden="true" lucideTag [size]="11" />
-                <span class="category-name">{{ category.name }}</span>
+                <span class="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{{ category.name }}</span>
               </span>
               @if (value() === category.id) {
-                <svg aria-hidden="true" lucideCheck [size]="14" class="check-icon" />
+                <svg aria-hidden="true" lucideCheck [size]="14" class="shrink-0 text-blue-600 dark:text-blue-300 animate-[checkPop_0.2s_cubic-bezier(0.34,1.56,0.64,1)]" />
               }
             </button>
           }
@@ -81,85 +110,16 @@ import { LucideChevronDown, LucideCheck, LucideTag } from '@lucide/angular';
       </div>
     </ng-template>
   `,
+  /**
+   * Remaining scoped CSS: the .category-swatch embossed sheen (::before gradient overlay
+   * and inset shadows) has no Tailwind utility equivalent, and the two entrance keyframes
+   * (dropdown fade-in, check-mark pop) are genuine motion design.
+   */
   styles: [`
-    :host { display: block; }
-
-    .select-trigger {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      width: 100%;
-      height: 40px;
-      padding: 0 var(--space-3);
-      border: 1.5px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      background-color: var(--color-card);
-      color: var(--color-text);
-      font-size: var(--text-sm);
-      text-align: left;
-      cursor: pointer;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.15s ease;
-    }
-    .select-trigger:hover {
-      border-color: var(--color-primary-300);
-      background-color: var(--color-neutral-50);
-    }
-    .select-trigger:focus-visible {
-      outline: none;
-      border-color: var(--color-primary-500);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 15%, transparent);
-    }
-    .select-trigger:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      background-color: var(--color-neutral-100);
-    }
-    .select-trigger:disabled:hover {
-      border-color: var(--color-border);
-    }
-    :host-context(.dark) .select-trigger {
-      background-color: var(--color-neutral-800);
-      border-color: var(--color-neutral-600);
-    }
-    :host-context(.dark) .select-trigger:hover {
-      border-color: var(--color-primary-400);
-      background-color: var(--color-neutral-700);
-    }
-    :host-context(.dark) .select-trigger:disabled {
-      background-color: var(--color-neutral-900);
-    }
-
-    .select-value {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .select-value.placeholder { color: var(--color-text-muted); }
-
-    .chevron {
-      color: var(--color-text-muted);
-      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      flex-shrink: 0;
-      margin-left: auto;
-    }
-    .chevron.rotated { transform: rotate(180deg); }
-
     .category-swatch {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: var(--radius-full);
-      font-size: var(--text-xs);
-      font-weight: 600;
-      line-height: 1.2;
-      letter-spacing: 0.01em;
       box-shadow:
         inset 0 0 0 1px rgba(0, 0, 0, 0.06),
         inset 0 1px 2px rgba(255, 255, 255, 0.4);
-      position: relative;
     }
     .category-swatch::before {
       content: '';
@@ -177,93 +137,13 @@ import { LucideChevronDown, LucideCheck, LucideTag } from '@lucide/angular';
     :host-context(.dark) .category-swatch::before {
       background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
     }
-
-    .category-dropdown {
-      background-color: var(--color-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-dropdown);
-      overflow: hidden;
-      animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      transform-origin: top center;
+    @keyframes dropdownFadeIn {
+      from { opacity: 0; transform: scale(0.98) translateY(-4px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
-
-    .dropdown-header {
-      padding: var(--space-3) var(--space-3) var(--space-2);
-      border-bottom: 1px solid var(--color-border);
-    }
-    .dropdown-label {
-      font-size: var(--text-xs);
-      font-weight: 600;
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .dropdown-list {
-      padding: var(--space-1);
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      max-height: 280px;
-      overflow-y: auto;
-    }
-
-    .category-option {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--space-3);
-      width: 100%;
-      padding: var(--space-2) var(--space-2);
-      border: none;
-      border-radius: var(--radius-md);
-      background: transparent;
-      cursor: pointer;
-      transition: background-color 0.15s ease, transform 0.1s ease;
-    }
-    .category-option:hover {
-      background-color: var(--color-primary-50);
-      transform: translateX(2px);
-    }
-    .category-option:focus-visible {
-      outline: none;
-      background-color: var(--color-primary-50);
-    }
-    .category-option.selected {
-      background-color: color-mix(in srgb, var(--color-primary-100) 60%, transparent);
-    }
-    .category-option.selected:hover {
-      background-color: var(--color-primary-100);
-    }
-
-    :host-context(.dark) .category-option:hover {
-      background-color: var(--color-neutral-700);
-    }
-    :host-context(.dark) .category-option:focus-visible {
-      background-color: var(--color-neutral-700);
-    }
-    :host-context(.dark) .category-option.selected {
-      background-color: color-mix(in srgb, var(--color-primary-900) 50%, transparent);
-    }
-    :host-context(.dark) .category-option.selected:hover {
-      background-color: var(--color-primary-900);
-    }
-
-    .check-icon {
-      color: var(--color-primary-text);
-      flex-shrink: 0;
-      animation: checkPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    :host-context(.dark) .check-icon { color: var(--color-primary-300); }
-
-    /* Mobile: 44px rows are closer to a comfortably tappable target than the
-       desktop-density padding gives on its own. */
-    @media (max-width: 1023.98px) {
-      .category-option {
-        padding: var(--space-3) var(--space-2);
-        min-height: 44px;
-      }
+    @keyframes checkPop {
+      from { transform: scale(0); }
+      to { transform: scale(1); }
     }
   `],
 })
@@ -281,13 +161,14 @@ export class CategorySelectComponent implements FormValueControl<number | null> 
   readonly selected = computed(() => this.categories().find((c) => c.id === this.value()) ?? null);
   readonly selectedIndex = computed(() => this.categories().findIndex((c) => c.id === this.value()));
 
+  /** Tailwind's built-in default palette (blue/emerald/red/amber), cycled per category index. */
   private static readonly PALETTES = [
-    { bg: 'var(--color-primary-100)', color: 'var(--color-primary-700)' },
-    { bg: 'var(--color-accent-100)', color: 'var(--color-accent-700)' },
-    { bg: 'var(--color-warm-100)', color: 'var(--color-warm-700)' },
-    { bg: 'var(--color-gold-100)', color: 'var(--color-gold-700)' },
-    { bg: 'var(--color-primary-50)', color: 'var(--color-primary-600)' },
-    { bg: 'var(--color-accent-50)', color: 'var(--color-accent-600)' },
+    { bg: '#dbeafe', color: '#1d4ed8' }, // blue-100 / blue-700
+    { bg: '#d1fae5', color: '#047857' }, // emerald-100 / emerald-700
+    { bg: '#fee2e2', color: '#b91c1c' }, // red-100 / red-700
+    { bg: '#fef3c7', color: '#b45309' }, // amber-100 / amber-700
+    { bg: '#eff6ff', color: '#2563eb' }, // blue-50 / blue-600
+    { bg: '#ecfdf5', color: '#059669' }, // emerald-50 / emerald-600
   ] as const;
 
   getSwatchColors(categoryIndex: number): { bg: string; color: string } {
