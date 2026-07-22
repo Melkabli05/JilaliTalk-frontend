@@ -7,26 +7,19 @@ import { LucideAlertCircle } from '@lucide/angular';
   imports: [LucideAlertCircle],
   template: `
     @if (message()) {
-      <div class="error-banner" role="alert" aria-live="assertive">
+      <div
+        class="flex items-center gap-2 p-3 rounded-md text-xs
+               bg-red-50 border border-red-200 text-red-700
+               dark:bg-red-900 dark:border-red-700 dark:text-red-200"
+        role="alert"
+        aria-live="assertive"
+      >
         <svg aria-hidden="true" lucideAlertCircle [size]="14"></svg>
         {{ message() }}
       </div>
     }
   `,
-  styles: [`
-    :host { display: contents; }
-    .error-banner {
-      display: flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-3); background: var(--color-error-50);
-      border: 1px solid var(--color-error-200); border-radius: var(--radius-md);
-      font-size: var(--text-xs); color: var(--color-error-700);
-    }
-    :host-context(.dark) .error-banner {
-      background: var(--color-error-900);
-      border-color: var(--color-error-700);
-      color: var(--color-error-200);
-    }
-  `],
+  styles: [`:host { display: contents; }`],
 })
 export class ErrorBannerComponent {
   readonly message = input<string | null>(null);

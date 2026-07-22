@@ -8,7 +8,7 @@ import type { AppNotification } from './notification.model';
   imports: [NotificationItemComponent],
   template: `
     <section class="day-group" [attr.aria-label]="label()">
-      <h3 class="day-group-label">{{ label() }}</h3>
+      <h3 class="mx-1 mt-2 mb-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">{{ label() }}</h3>
       @for (item of items(); track item.id) {
         <app-notification-item
           [notification]="item"
@@ -18,16 +18,6 @@ import type { AppNotification } from './notification.model';
       }
     </section>
   `,
-  styles: [`
-    .day-group-label {
-      margin: var(--space-2) var(--space-1) 4px;
-      font-size: 11px;
-      font-weight: var(--font-semibold);
-      text-transform: uppercase;
-      letter-spacing: var(--letter-spacing-wide);
-      color: var(--color-text-tertiary);
-    }
-  `],
 })
 export class NotificationDayGroupComponent {
   readonly label = input.required<string>();

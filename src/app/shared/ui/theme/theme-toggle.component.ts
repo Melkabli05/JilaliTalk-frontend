@@ -12,7 +12,10 @@ import { ThemeService } from '@core/services/theme.service';
     <button
       type="button"
       (click)="themeService.toggle()"
-      class="theme-toggle"
+      class="inline-flex items-center justify-center size-9 rounded-md border-0 bg-transparent
+             text-neutral-900 dark:text-neutral-100 cursor-pointer transition-colors duration-150
+             hover:bg-neutral-100 dark:hover:bg-neutral-700
+             focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
       [attr.aria-label]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
     >
       @if (themeService.isDark()) {
@@ -22,34 +25,6 @@ import { ThemeService } from '@core/services/theme.service';
       }
     </button>
   `,
-  styles: [`
-    .theme-toggle {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: var(--space-9);
-      height: var(--space-9);
-      border-radius: var(--radius-md);
-      border: none;
-      background: transparent;
-      color: var(--color-text);
-      cursor: pointer;
-      transition: background-color 0.15s ease;
-    }
-
-    .theme-toggle:hover {
-      background-color: var(--color-neutral-100);
-    }
-
-    .dark .theme-toggle:hover {
-      background-color: var(--color-neutral-700);
-    }
-
-    .theme-toggle:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: var(--focus-ring-offset);
-    }
-  `]
 })
 export class ThemeToggleComponent {
   themeService = inject(ThemeService);
