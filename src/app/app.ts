@@ -30,6 +30,9 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'fullsc
       [class.immersive]="immersive()"
       [class.fullscreen]="fullscreen()"
     >
+      <!-- Sidenav's own mobile-folding logic lives inside app-sidenav.component.*;
+           the shell only suppresses it on fullscreen routes (login/signup are
+           chromeless) and immersive routes on mobile. -->
       <app-sidenav [hidden]="hideSidenav() || fullscreen()" />
       <div class="main-wrapper relative block min-h-0 overflow-hidden">
         <app-header [hidden]="fullscreen()" />
@@ -40,7 +43,8 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'fullsc
         >
           <router-outlet />
         </main>
-        <app-mobile-nav [hidden]="hideSidenav() || fullscreen()" />
+        <!-- Mobile-nav: hidden on lg+ (sidenav takes over) and on fullscreen routes. -->
+        <app-mobile-nav class="block lg:hidden" [hidden]="fullscreen()" />
       </div>
     </div>
     <app-toast-container />
@@ -76,10 +80,6 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'fullsc
         }
       }
 
-      /* Fullscreen routes (login/signup — chromeless auth pages) drop every
-         piece of shell chrome on every viewport, and collapse the insets to
-         zero so the page itself owns the full 100svh/100dvh and is responsible
-         for its own safe-area padding. */
       /* Fullscreen routes (login/signup — chromeless auth pages) drop every
          piece of shell chrome on every viewport, and collapse the insets to
          zero so the page itself owns the full 100svh/100dvh and is responsible
