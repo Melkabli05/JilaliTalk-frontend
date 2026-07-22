@@ -25,11 +25,10 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
   imports: [LucideBell, LucideCheck, LucideTrash2, NotificationFilterTabsComponent, NotificationDayGroupComponent, EmptyStateComponent],
   template: `
     @if (store.isOpen()) {
-      <div class="notification-overlay" [class.sheet]="isMobile()" (click)="onOverlayClick()" role="presentation"></div>
+      <div [class]="overlayClass()" (click)="onOverlayClick()" role="presentation"></div>
       <div
         #panelRoot
-        class="notification-panel rtl:right-auto rtl:left-[var(--space-4)]"
-        [class.sheet]="isMobile()"
+        [class]="panelClass()"
         role="dialog"
         aria-modal="true"
         aria-label="Notifications"
@@ -40,34 +39,58 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
       >
         @if (isMobile()) {
           <div
-            class="sheet-handle"
+            class="sheet-handle flex items-center justify-center w-full h-6 -mt-2 shrink-0 [touch-action:none]
+                   after:content-[''] after:w-10 after:h-1 after:rounded-sm after:bg-neutral-300 dark:after:bg-neutral-600"
             aria-hidden="true"
             (touchstart)="onSheetTouchStart($event)"
             (touchmove)="onSheetTouchMove($event)"
             (touchend)="onSheetTouchEnd($event)"
           ></div>
         }
-        <header class="panel-header">
-          <div class="header-title">
-            <svg aria-hidden="true" lucideBell [size]="16" class="header-icon"></svg>
-            <span class="header-text">Notifications</span>
+        <header class="flex items-center justify-between gap-2 py-3 px-4 border-b border-neutral-200 dark:border-neutral-700">
+          <div class="flex items-center gap-2">
+            <svg aria-hidden="true" lucideBell [size]="16" class="text-neutral-600 dark:text-neutral-300"></svg>
+            <span class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Notifications</span>
             @if (store.unreadCount() > 0) {
-              <span class="unread-badge" aria-label="{{ store.unreadCount() }} unread">
+              <span
+                class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold leading-none"
+                aria-label="{{ store.unreadCount() }} unread"
+              >
                 {{ store.unreadCount() }}
               </span>
             }
           </div>
-          <div class="header-actions">
+          <div class="flex items-center gap-1">
             @if (store.unreadCount() > 0) {
-              <button type="button" class="action-btn" (click)="store.markAllRead()" aria-label="Mark all notifications as read">
-                <svg aria-hidden="true" lucideCheck [size]="14" class="action-icon"></svg>
-                <span class="action-text">Mark all read</span>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 py-1.5 px-2.5 rounded-md text-xs font-medium
+                       text-neutral-600 dark:text-neutral-300 bg-transparent border-0 cursor-pointer
+                       transition-colors duration-150
+                       hover:bg-neutral-100 hover:text-neutral-900
+                       dark:hover:bg-neutral-700 dark:hover:text-neutral-100
+                       focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                (click)="store.markAllRead()"
+                aria-label="Mark all notifications as read"
+              >
+                <svg aria-hidden="true" lucideCheck [size]="14" class="shrink-0"></svg>
+                <span>Mark all read</span>
               </button>
             }
             @if (store.hasNotifications()) {
-              <button type="button" class="action-btn danger" (click)="store.clear()" aria-label="Clear all notifications">
-                <svg aria-hidden="true" lucideTrash2 [size]="14" class="action-icon"></svg>
-                <span class="action-text">Clear all</span>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 py-1.5 px-2.5 rounded-md text-xs font-medium
+                       text-neutral-600 dark:text-neutral-300 bg-transparent border-0 cursor-pointer
+                       transition-colors duration-150
+                       hover:bg-red-500/10 hover:text-red-600
+                       dark:hover:bg-red-500/15 dark:hover:text-red-400
+                       focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                (click)="store.clear()"
+                aria-label="Clear all notifications"
+              >
+                <svg aria-hidden="true" lucideTrash2 [size]="14" class="shrink-0"></svg>
+                <span>Clear all</span>
               </button>
             }
           </div>
@@ -79,7 +102,17 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
           (filterChange)="store.setFilter($event)"
         />
 
-        <main id="notification-list" class="panel-content" role="list" aria-label="Notification list" aria-live="polite" aria-atomic="false">
+        <main
+          id="notification-list"
+          class="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-2
+                 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent
+                 [&::-webkit-scrollbar-thumb]:bg-neutral-300 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-600
+                 [&::-webkit-scrollbar-thumb]:rounded-sm"
+          role="list"
+          aria-label="Notification list"
+          aria-live="polite"
+          aria-atomic="false"
+        >
           @if (store.groupedItems().length === 0) {
             <app-empty-state role="status" [title]="emptyTitle()" body="We'll notify you when something happens" [iconSize]="32">
               <svg empty-state-icon aria-hidden="true" lucideBell [size]="32"></svg>
@@ -98,122 +131,23 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
       </div>
     }
   `,
+  /**
+   * Remaining structural/motion CSS: z-index vars (--z-notification-backdrop/-panel, shared
+   * stacking coordination), --app-header-height (cross-component layout contract), and the
+   * genuine entrance keyframes (no Tailwind built-in for this fade/slide-in shape).
+   */
   styles: [`
-    .notification-overlay { position: fixed; inset: 0; z-index: var(--z-notification-backdrop); background: transparent; }
-    /* Mobile only: tint and blur the page behind the sheet so it visibly recedes and
-       reads as a modal layer. Desktop panel uses the same transparent overlay because
-       a full-screen blur behind a 380px dropdown looks heavy. */
-    .notification-overlay.sheet {
-      background: color-mix(in srgb, var(--color-surface) 35%, transparent);
-      backdrop-filter: blur(8px) saturate(140%);
-      -webkit-backdrop-filter: blur(8px) saturate(140%);
-      animation: sheetFadeIn 0.2s ease-out;
-    }
-    @keyframes sheetFadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .notification-panel {
-      position: fixed;
-      top: var(--app-header-height);
-      right: var(--space-4);
-      z-index: var(--z-notification-panel);
-      width: 380px;
-      max-height: 520px;
-      background: var(--color-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-elevation-3);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      overscroll-behavior: contain;
-      animation: slideIn 0.2s ease-out;
-    }
+    .notification-overlay { z-index: var(--z-notification-backdrop); }
+    .notification-panel { top: var(--app-header-height); z-index: var(--z-notification-panel); }
+    @keyframes sheetFadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideIn {
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
-    }
-    /* RTL positioning moved to template utility (rtl:right-auto rtl:left-[var(--space-4)]). */
-
-    .notification-panel.sheet {
-      top: auto;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      width: 100%;
-      max-height: 70dvh;
-      border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
-      padding-bottom: env(safe-area-inset-bottom);
-      animation: sheetIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     @keyframes sheetIn {
       from { opacity: 0; transform: translateY(24px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    @media (prefers-reduced-motion: reduce) {
-      .notification-overlay, .notification-panel { animation: none; }
-    }
-    /* Drag-to-close only engages on this handle (not the whole sheet), so the
-       scrollable list below and the horizontally-scrolling filter tabs are
-       never fought over by the two gestures. */
-    .sheet-handle {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: var(--space-6);
-      margin-top: calc(var(--space-2) * -1);
-      flex-shrink: 0;
-      touch-action: none;
-    }
-    .sheet-handle::after {
-      content: '';
-      width: 40px;
-      height: 4px;
-      border-radius: 2px;
-      background: var(--color-neutral-300);
-    }
-    :host-context(.dark) .sheet-handle::after { background: var(--color-neutral-600); }
-
-    .panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: var(--space-3) var(--space-4);
-      border-bottom: 1px solid var(--color-border);
-      gap: var(--space-2);
-    }
-    .header-title { display: flex; align-items: center; gap: var(--space-2); }
-    .header-icon { color: var(--color-text-secondary); }
-    .header-text { font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--color-text); }
-    .unread-badge {
-      display: inline-flex; align-items: center; justify-content: center;
-      min-width: 20px; height: 20px; padding: 0 6px;
-      border-radius: var(--radius-full); background: var(--color-warm-500); color: var(--color-on-color);
-      font-size: 11px; font-weight: var(--font-bold); line-height: 1;
-    }
-    .header-actions { display: flex; align-items: center; gap: var(--space-1); }
-    .action-btn {
-      display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px;
-      border-radius: var(--radius-md); font-size: var(--text-xs); font-weight: var(--font-medium);
-      color: var(--color-text-secondary); background: transparent; border: none; cursor: pointer;
-      transition: background-color 0.15s ease, color 0.15s ease;
-    }
-    .action-btn:hover { background: var(--color-neutral-100); color: var(--color-text); }
-    .action-btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    .action-btn.danger:hover { background: color-mix(in srgb, var(--color-warm-500) 10%, transparent); color: var(--color-warm-600); }
-    :host-context(.dark) .action-btn:hover { background: var(--color-neutral-700); }
-    :host-context(.dark) .action-btn.danger:hover { background: color-mix(in srgb, var(--color-warm-500) 15%, transparent); color: var(--color-warm-400); }
-    .action-icon { flex-shrink: 0; }
-
-    .panel-content { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding: var(--space-2); }
-    .panel-content::-webkit-scrollbar { width: 6px; }
-    .panel-content::-webkit-scrollbar-track { background: transparent; }
-    .panel-content::-webkit-scrollbar-thumb { background: var(--color-neutral-300); border-radius: 3px; }
-    :host-context(.dark) .panel-content::-webkit-scrollbar-thumb { background: var(--color-neutral-600); }
-
   `],
 })
 export class NotificationPanelComponent {
@@ -236,6 +170,26 @@ export class NotificationPanelComponent {
     if (filter === 'all') return 'No notifications yet';
     if (filter === 'unread') return 'No unread notifications';
     return `No ${filter} notifications`;
+  });
+
+  /** Mobile only: tint and blur the page behind the sheet so it visibly recedes and reads
+   *  as a modal layer. Desktop panel uses a transparent overlay because a full-screen blur
+   *  behind a 380px dropdown looks heavy. */
+  protected readonly overlayClass = computed(() =>
+    this.isMobile()
+      ? 'notification-overlay fixed inset-0 bg-neutral-500/35 backdrop-blur-[8px] backdrop-saturate-[140%] animate-[sheetFadeIn_0.2s_ease-out] motion-reduce:animate-none'
+      : 'notification-overlay fixed inset-0 bg-transparent',
+  );
+
+  protected readonly panelClass = computed(() => {
+    const base =
+      'notification-panel fixed flex flex-col overflow-hidden overscroll-contain ' +
+      'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-2xl ' +
+      'rtl:right-auto rtl:left-4';
+    if (this.isMobile()) {
+      return `${base} inset-x-0 bottom-0 w-full max-h-[70dvh] rounded-t-2xl pb-[env(safe-area-inset-bottom)] animate-[sheetIn_0.25s_cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:animate-none`;
+    }
+    return `${base} right-4 w-[380px] max-h-[520px] rounded-xl animate-[slideIn_0.2s_ease-out] motion-reduce:animate-none`;
   });
 
   constructor() {
