@@ -5,6 +5,56 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'muted'
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 type IconPosition = 'start' | 'end';
 
+const BASE_CLASSES =
+  'inline-flex items-center justify-center gap-2 font-medium rounded-md border border-transparent ' +
+  'cursor-pointer transition-colors duration-150 text-sm no-underline w-full ' +
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ' +
+  'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none ' +
+  'aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none ' +
+  'motion-reduce:transition-none';
+
+/** height/padding/font-size per size step. Icon-only swaps padding for a matching width. */
+const SIZE_CLASSES: Record<ButtonSize, string> = {
+  xs: 'h-7 px-2 text-xs',
+  sm: 'h-8 px-3 text-xs',
+  md: 'h-9 px-4 text-sm',
+  // 44px, not 40: Apple HIG and WCAG 2.5.5 both put the minimum comfortable touch target
+  // at 44x44pt — lg is the size primary/submit CTAs use, so it's the one worth holding to
+  // that floor.
+  lg: 'h-11 px-6 text-base',
+};
+const ICON_ONLY_SIZE_CLASSES: Record<ButtonSize, string> = {
+  xs: 'w-7 p-0',
+  sm: 'w-8 p-0',
+  md: 'w-9 p-0',
+  lg: 'w-11 p-0',
+};
+
+/** Color/background per variant, light + dark. Tailwind's built-in default palette
+ *  replaces this project's --color-primary/accent/warm/gold/neutral design tokens. */
+const VARIANT_CLASSES: Record<ButtonVariant, string> = {
+  primary: 'bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500',
+  secondary:
+    'bg-neutral-100 text-neutral-900 border-neutral-200 hover:bg-neutral-200 ' +
+    'dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-700 dark:hover:bg-neutral-700',
+  ghost:
+    'bg-transparent text-neutral-900 hover:bg-neutral-100 ' +
+    'dark:text-neutral-200 dark:hover:bg-neutral-700',
+  destructive: 'bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500',
+  muted:
+    'bg-neutral-100 text-neutral-600 border-neutral-200 hover:bg-neutral-200 ' +
+    'dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700 dark:hover:bg-neutral-700',
+  gold: 'bg-amber-500 text-neutral-800 hover:bg-amber-600 dark:bg-amber-600 dark:text-neutral-900 dark:hover:bg-amber-500',
+  'soft-primary': 'bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800',
+  'soft-accent': 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900 dark:text-emerald-200 dark:hover:bg-emerald-800',
+  'soft-warm': 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800',
+  'soft-gold': 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-200 dark:hover:bg-amber-800',
+  'soft-neutral': 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700',
+  'soft-invisible':
+    'bg-neutral-500/12 text-neutral-700 border-neutral-200 hover:bg-neutral-500/20 ' +
+    'dark:bg-neutral-400/18 dark:text-neutral-200 dark:border-neutral-700 dark:hover:bg-neutral-400/28',
+};
+
 @Component({
   selector: 'app-button',
 
@@ -19,104 +69,16 @@ type IconPosition = 'start' | 'end';
       [attr.aria-busy]="loading() ? 'true' : null"
     >
       @if (loading()) {
-        <svg aria-hidden="true" lucideLoader2 [size]="iconSize()" class="btn-spinner"></svg>
+        <svg aria-hidden="true" lucideLoader2 [size]="iconSize()" class="animate-spin motion-reduce:animate-none"></svg>
       }
       <ng-content />
     </button>
   `,
-  styles: [`
-    :host {
-      display: inline-flex;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--space-2);
-      font-weight: var(--font-medium);
-      border-radius: var(--radius-md);
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
-      font-size: var(--text-sm);
-      text-decoration: none;
-      width: 100%;
-      background-color: var(--btn-bg, var(--color-primary-500));
-      color: var(--btn-color, white);
-      border-color: var(--btn-border, transparent);
-    }
-
-    .btn:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: var(--focus-ring-offset);
-    }
-
-    .btn:hover:not([aria-disabled="true"]) {
-      background-color: var(--btn-hover-bg, var(--color-primary-600));
-    }
-
-    /* Sizes */
-    .btn-xs  { height: 28px; padding: 0 var(--space-2); font-size: var(--text-xs); }
-    .btn-sm  { height: 32px; padding: 0 var(--space-3); font-size: var(--text-xs); }
-    .btn-md  { height: 36px; padding: 0 var(--space-4); font-size: var(--text-sm); }
-    /* 44px, not 40: Apple HIG and WCAG 2.5.5 both put the minimum comfortable touch target
-       at 44x44pt — lg is the size primary/submit CTAs use, so it's the one worth holding to
-       that floor. */
-    .btn-lg  { height: 44px; padding: 0 var(--space-6); font-size: var(--text-base); }
-
-    /* Icon only */
-    .btn-icon-only.btn-xs { width: 28px; padding: 0; }
-    .btn-icon-only.btn-sm { width: 32px; padding: 0; }
-    .btn-icon-only.btn-md { width: 36px; padding: 0; }
-    .btn-icon-only.btn-lg { width: 44px; padding: 0; }
-
-    /* Pill */
-    .btn-pill { border-radius: var(--radius-full); }
-
-    /* Spinner */
-    .btn-spinner { animation: spin 1s linear infinite; }
-
-    .btn-primary   { --btn-bg: var(--color-primary-500); --btn-color: var(--color-on-color); --btn-hover-bg: var(--color-primary-600); }
-    .btn-secondary { --btn-bg: var(--color-neutral-100); --btn-color: var(--color-text); --btn-border: var(--color-border); --btn-hover-bg: var(--color-neutral-200); }
-    .btn-ghost     { --btn-bg: transparent; --btn-color: var(--color-text); --btn-border: transparent; --btn-hover-bg: var(--color-neutral-100); }
-    .btn-muted     { --btn-bg: var(--color-neutral-100); --btn-color: var(--color-text-secondary); --btn-border: var(--color-border); --btn-hover-bg: var(--color-neutral-200); }
-    .btn-destructive { --btn-bg: var(--color-warm-500); --btn-color: var(--color-on-color); --btn-hover-bg: var(--color-warm-600); }
-    .btn-gold      { --btn-bg: var(--color-gold-500); --btn-color: var(--color-neutral-800); --btn-hover-bg: var(--color-gold-600); }
-    .btn-soft-primary { --btn-bg: var(--color-primary-50); --btn-color: var(--color-primary-700); --btn-hover-bg: var(--color-primary-100); }
-    .btn-soft-accent  { --btn-bg: var(--color-accent-50); --btn-color: var(--color-accent-700); --btn-hover-bg: var(--color-accent-100); }
-    .btn-soft-warm    { --btn-bg: var(--color-warm-50); --btn-color: var(--color-warm-700); --btn-hover-bg: var(--color-warm-100); }
-    .btn-soft-gold    { --btn-bg: var(--color-gold-50); --btn-color: var(--color-gold-700); --btn-hover-bg: var(--color-gold-100); }
-    .btn-soft-neutral { --btn-bg: var(--color-neutral-100); --btn-color: var(--color-neutral-600); --btn-hover-bg: var(--color-neutral-200); }
-    .btn-soft-invisible { --btn-bg: color-mix(in srgb, var(--color-neutral-500) 12%, var(--color-card)); --btn-color: var(--color-neutral-700); --btn-border: var(--color-neutral-200); --btn-hover-bg: color-mix(in srgb, var(--color-neutral-500) 20%, var(--color-card)); }
-
-    :host-context(.dark) {
-      .btn-primary   { --btn-bg: var(--color-primary-600); --btn-hover-bg: var(--color-primary-500); }
-      .btn-secondary { --btn-bg: var(--color-neutral-800); --btn-color: var(--color-neutral-200); --btn-border: var(--color-neutral-700); --btn-hover-bg: var(--color-neutral-700); }
-      .btn-ghost     { --btn-color: var(--color-neutral-200); --btn-hover-bg: var(--color-neutral-700); }
-      .btn-muted     { --btn-bg: var(--color-neutral-800); --btn-color: var(--color-neutral-300); --btn-border: var(--color-neutral-700); --btn-hover-bg: var(--color-neutral-700); }
-      .btn-destructive { --btn-bg: var(--color-warm-600); --btn-hover-bg: var(--color-warm-500); }
-      .btn-gold      { --btn-bg: var(--color-gold-600); --btn-color: var(--color-neutral-900); --btn-hover-bg: var(--color-gold-500); }
-      .btn-soft-primary { --btn-bg: var(--color-primary-900); --btn-color: var(--color-primary-200); --btn-hover-bg: var(--color-primary-800); }
-      .btn-soft-accent  { --btn-bg: var(--color-accent-900); --btn-color: var(--color-accent-200); --btn-hover-bg: var(--color-accent-800); }
-      .btn-soft-warm    { --btn-bg: var(--color-warm-900); --btn-color: var(--color-warm-200); --btn-hover-bg: var(--color-warm-800); }
-      .btn-soft-gold    { --btn-bg: var(--color-gold-900); --btn-color: var(--color-gold-200); --btn-hover-bg: var(--color-gold-800); }
-      .btn-soft-neutral { --btn-bg: var(--color-neutral-800); --btn-color: var(--color-neutral-200); --btn-hover-bg: var(--color-neutral-700); }
-      .btn-soft-invisible { --btn-bg: color-mix(in srgb, var(--color-neutral-400) 18%, var(--color-neutral-800)); --btn-color: var(--color-neutral-200); --btn-border: var(--color-neutral-700); --btn-hover-bg: color-mix(in srgb, var(--color-neutral-400) 28%, var(--color-neutral-800)); }
-    }
-
-    /* Disabled */
-    .btn[aria-disabled="true"],
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .btn, .btn-spinner { transition: none; animation: none; }
-    }
-  `]
+  /** :host { display: inline-flex } is the only remaining non-utility rule — Angular's
+   *  Emulated encapsulation has no way to put a class="" attribute on the host tag from
+   *  within its own template. Everything else (sizing, color, radius, spacing, the spinner
+   *  animation) is computed as a Tailwind utility class string in buttonClasses() below. */
+  styles: [`:host { display: inline-flex; }`],
 })
 export class ButtonComponent {
   variant = input<ButtonVariant>('primary');
@@ -128,9 +90,9 @@ export class ButtonComponent {
   type = input<'button' | 'submit' | 'reset'>('button');
 
   buttonClasses = computed(() => {
-    const classes = ['btn', `btn-${this.variant()}`, `btn-${this.size()}`];
-    if (this.iconOnly()) classes.push('btn-icon-only');
-    if (this.pill()) classes.push('btn-pill');
+    const classes = [BASE_CLASSES, VARIANT_CLASSES[this.variant()]];
+    classes.push(this.iconOnly() ? ICON_ONLY_SIZE_CLASSES[this.size()] : SIZE_CLASSES[this.size()]);
+    if (this.pill()) classes.push('rounded-full');
     return classes.join(' ');
   });
 

@@ -5,51 +5,32 @@ import {
   computed,
 } from '@angular/core';
 
+const SIZE_CLASSES: Record<'sm' | 'md', string> = {
+  sm: 'h-5 px-2 text-[10px]',
+  md: 'h-6 px-3 text-xs',
+};
+
+/** Tailwind's built-in default palette replaces this project's
+ *  --color-primary/accent/warm/gold design tokens. */
+const VARIANT_CLASSES: Record<'default' | 'primary' | 'accent' | 'warm' | 'gold', string> = {
+  default: 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-200',
+  primary: 'bg-blue-500 text-white dark:bg-blue-400',
+  accent: 'bg-emerald-500 text-white dark:bg-emerald-400',
+  warm: 'bg-red-500 text-white dark:bg-red-400',
+  gold: 'bg-amber-500 text-white dark:bg-amber-400',
+};
+
 @Component({
   selector: 'app-badge',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    'class': 'badge',
+    'class': 'inline-flex items-center font-medium rounded-full whitespace-nowrap ' +
+      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500',
     '[class]': 'modifierClasses()',
     '[attr.role]': 'role() || null',
     '[attr.aria-label]': 'ariaLabel() || null',
   },
   template: `<ng-content />`,
-  styles: [`
-    :host {
-      display: inline-flex;
-      align-items: center;
-      font-weight: var(--font-medium);
-      border-radius: var(--radius-full);
-      white-space: nowrap;
-    }
-    :host(:focus-visible) {
-      outline: var(--focus-ring);
-      outline-offset: var(--focus-ring-offset);
-    }
-    :host(.badge-sm) { height: 20px; padding: 0 var(--space-2); font-size: 10px; }
-    :host(.badge-md) { height: 24px; padding: 0 var(--space-3); font-size: var(--text-xs); }
-
-    :host(.badge-default) {
-      background-color: var(--color-neutral-100);
-      color: var(--color-text);
-    }
-    :host-context(.dark) .badge-default {
-      background-color: var(--color-neutral-800);
-      color: var(--color-neutral-200);
-    }
-
-    :host(.badge-primary) { background-color: var(--color-primary-500); color: var(--color-on-color); }
-    :host(.badge-accent)  { background-color: var(--color-accent-500);  color: var(--color-on-color); }
-    :host(.badge-warm)    { background-color: var(--color-warm-500);    color: var(--color-on-color); }
-    :host(.badge-gold)    { background-color: var(--color-gold-500);    color: var(--color-on-color); }
-    :host-context(.dark) {
-      :host(.badge-primary) { background-color: var(--color-primary-400); }
-      :host(.badge-accent)  { background-color: var(--color-accent-400);  }
-      :host(.badge-warm)     { background-color: var(--color-warm-400);     }
-      :host(.badge-gold)    { background-color: var(--color-gold-400);    }
-    }
-  `],
 })
 export class BadgeComponent {
   readonly variant = input<'default' | 'primary' | 'accent' | 'warm' | 'gold'>('default');
@@ -58,6 +39,6 @@ export class BadgeComponent {
   readonly ariaLabel = input<string>('');
 
   protected readonly modifierClasses = computed(
-    () => `badge-${this.variant()} badge-${this.size()}`
+    () => `${VARIANT_CLASSES[this.variant()]} ${SIZE_CLASSES[this.size()]}`
   );
 }
