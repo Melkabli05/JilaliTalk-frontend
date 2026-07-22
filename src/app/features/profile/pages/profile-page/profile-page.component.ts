@@ -9,6 +9,7 @@ import { SkeletonLineComponent } from '@shared/ui/skeleton-line/skeleton-line.co
 import { SkeletonRowComponent } from '@shared/ui/skeleton-row/skeleton-row.component';
 import { BlockedListComponent } from '../../ui/blocked-list';
 import { ButtonComponent } from '@shared/ui/button/button.component';
+import { LucideShieldOff } from '@lucide/angular';
 import {
   UserInfoModalComponent,
   UserInfoModalData,
@@ -31,6 +32,7 @@ type ProfileTab = 'followers' | 'following' | 'visitors' | 'blocked';
     ButtonComponent,
     SkeletonLineComponent,
     SkeletonRowComponent,
+    LucideShieldOff,
   ],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.scss',
