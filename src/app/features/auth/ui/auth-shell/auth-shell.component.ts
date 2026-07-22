@@ -10,6 +10,15 @@ interface ShowcaseRoom {
   readonly count: string;
 }
 
+const HUE_CLASS: Record<ShowcaseRoom['hues'][number], string> = {
+  primary: 'bg-blue-400',
+  accent: 'bg-emerald-400',
+  warm: 'bg-red-400',
+  gold: 'bg-amber-400',
+  social: 'bg-sky-400',
+  berry: 'bg-pink-400',
+};
+
 /**
  * Shared chrome for the two fullscreen, chromeless auth routes (/login, /signup — see
  * app.routes.ts's `fullscreen: true` data flag, which strips the global header/sidenav/
@@ -29,25 +38,33 @@ interface ShowcaseRoom {
   selector: 'app-auth-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
+  host: { class: 'contents' },
   template: `
-    <div class="auth-shell" [style.--kb-inset.px]="keyboardInsetPx()">
-      <aside class="showcase" aria-hidden="true">
-        <div class="showcase-content">
-          <p class="showcase-eyebrow">JilaliTalk</p>
-          <h2 class="showcase-headline">Real conversations,<br />with real people, live.</h2>
-          <ul class="room-list">
+    <div
+      class="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] min-h-[100dvh] bg-neutral-50 dark:bg-neutral-950"
+      [style.--kb-inset.px]="keyboardInsetPx()"
+    >
+      <aside class="hidden lg:flex items-center bg-blue-900 py-10 px-10" aria-hidden="true">
+        <div class="max-w-[420px] mx-auto flex flex-col gap-8">
+          <p class="m-0 text-xs font-bold tracking-[0.08em] uppercase text-blue-200/80">JilaliTalk</p>
+          <h2 class="m-0 text-[30px] leading-[1.2] font-bold tracking-[-0.01em] text-white [text-wrap:balance]">Real conversations,<br />with real people, live.</h2>
+          <ul class="list-none m-0 p-0 flex flex-col gap-3">
             @for (room of rooms; track room.title) {
-              <li class="room-chip">
-                <span class="room-avatars">
+              <li class="flex items-center gap-3 py-3 px-4 rounded-lg bg-white/6 border border-white/10">
+                <span class="flex shrink-0">
                   @for (initial of room.initials; track $index) {
-                    <span class="room-avatar" [class]="'hue-' + room.hues[$index]">{{ initial }}</span>
+                    <span
+                      class="w-[30px] h-[30px] rounded-full flex items-center justify-center text-xs font-bold text-white
+                             border-2 border-blue-900 -ml-2 first:ml-0"
+                      [class]="hueClass(room, $index)"
+                    >{{ initial }}</span>
                   }
                 </span>
-                <span class="room-info">
-                  <span class="room-title">{{ room.title }}</span>
-                  <span class="room-meta">
+                <span class="flex flex-col gap-0.5 min-w-0">
+                  <span class="text-sm font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">{{ room.title }}</span>
+                  <span class="flex items-center gap-1 text-xs text-white/60">
                     @if (room.live) {
-                      <span class="live-dot"></span>
+                      <span class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
                     }
                     {{ room.count }}
                   </span>
@@ -58,273 +75,61 @@ interface ShowcaseRoom {
         </div>
       </aside>
 
-      <main class="auth-main" id="main-content" tabindex="-1">
-        <a routerLink="/rooms" class="brand-mark" aria-label="JilaliTalk home">
+      <main
+        class="flex flex-col min-w-0 min-h-[100dvh] box-border
+               [padding:max(1.25rem,env(safe-area-inset-top))_max(1.25rem,env(safe-area-inset-right))_max(1.5rem,env(safe-area-inset-bottom))_max(1.25rem,env(safe-area-inset-left))]"
+        id="main-content"
+        tabindex="-1"
+      >
+        <a
+          routerLink="/rooms"
+          class="inline-flex self-start items-center gap-2 no-underline rounded-md lg:hidden
+                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          aria-label="JilaliTalk home"
+        >
           <svg aria-hidden="true" width="24" height="24" viewBox="0 0 32 32" fill="none">
             <defs>
               <linearGradient id="authBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="var(--color-primary-500)"/>
-                <stop offset="100%" stop-color="var(--color-accent-500)"/>
+                <stop offset="0%" stop-color="#3b82f6"/>
+                <stop offset="100%" stop-color="#10b981"/>
               </linearGradient>
             </defs>
             <path d="M16 4L4 10v12l12 6 12-6V10L16 4z" fill="url(#authBrandGrad)"/>
             <path d="M16 8l-8 4v8l8 4 8-4v-8l-8-4z" fill="white" fill-opacity="0.25"/>
             <path d="M12 16l4-4 4 4-4 4-4-4z" fill="white"/>
           </svg>
-          <span class="brand-name">JilaliTalk</span>
+          <span class="text-base font-bold tracking-[-0.02em] text-neutral-900 dark:text-neutral-100">JilaliTalk</span>
         </a>
 
-        <div class="form-wrap" role="region" [attr.aria-labelledby]="titleId">
-          <header class="form-header">
-            <span class="form-icon" aria-hidden="true">
+        <div
+          class="flex-1 min-w-0 flex flex-col justify-start pt-8 lg:justify-center lg:pt-0 w-full max-w-[400px] mx-auto gap-5 box-border
+                 [padding-block-end:calc(1.5rem_+_var(--kb-inset,0px))]"
+          role="region"
+          [attr.aria-labelledby]="titleId"
+        >
+          <header class="flex flex-col gap-3 items-center">
+            <span
+              class="w-12 h-12 rounded-full inline-flex items-center justify-center lg:hidden [&>svg]:w-6 [&>svg]:h-6
+                     bg-blue-50 text-blue-700 dark:bg-blue-600/25 dark:text-blue-300"
+              aria-hidden="true"
+            >
               <ng-content select="[auth-icon]" />
             </span>
-            <h1 class="form-title" [id]="titleId">{{ title() }}</h1>
-            <p class="form-sub">
+            <h1 class="text-[26px] font-bold tracking-[-0.02em] text-neutral-900 dark:text-neutral-100 m-0" [id]="titleId">{{ title() }}</h1>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400 m-0 [&>strong]:text-neutral-900 [&>strong]:font-medium dark:[&>strong]:text-neutral-100">
               <ng-content select="[auth-subtitle]" />
             </p>
           </header>
 
           <ng-content />
 
-          <p class="alt">
+          <p class="text-sm text-neutral-500 dark:text-neutral-400 m-0">
             <ng-content select="[auth-footer]" />
           </p>
         </div>
       </main>
     </div>
   `,
-  styles: [`
-    :host { display: contents; }
-
-    .auth-shell {
-      display: grid;
-      /* minmax(0, 1fr), not a bare 1fr: grid items default to min-width:auto, which floors
-         their shrink at the content's min-content size — on a narrow phone that content
-         (the "Send verification code" button, the email input) is wider than the viewport,
-         so without the explicit 0 floor the whole page overflows horizontally instead of
-         the form wrapping/shrinking to fit. Same reasoning on .auth-main/.form-wrap below. */
-      grid-template-columns: minmax(0, 1fr);
-      min-height: 100dvh;
-      background: var(--color-bg);
-    }
-    @media (min-width: 1024px) {
-      .auth-shell { grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); }
-    }
-
-    /* ── Showcase panel (desktop only) ── */
-    .showcase {
-      display: none;
-      background: var(--color-primary-900);
-      padding: var(--space-10) var(--space-10);
-      align-items: center;
-    }
-    @media (min-width: 1024px) {
-      .showcase { display: flex; }
-    }
-    .showcase-content {
-      max-width: 420px;
-      margin-inline: auto;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-8);
-    }
-    .showcase-eyebrow {
-      margin: 0;
-      font-size: var(--text-xs);
-      font-weight: var(--font-bold);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: color-mix(in srgb, var(--color-primary-200) 80%, transparent);
-    }
-    .showcase-headline {
-      margin: 0;
-      font-size: 30px;
-      line-height: 1.2;
-      font-weight: var(--font-bold);
-      letter-spacing: -0.01em;
-      color: white;
-      text-wrap: balance;
-    }
-
-    .room-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
-    .room-chip {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      padding: var(--space-3) var(--space-4);
-      border-radius: var(--radius-lg);
-      background: color-mix(in srgb, white 6%, transparent);
-      border: 1px solid color-mix(in srgb, white 10%, transparent);
-    }
-    .room-avatars {
-      display: flex;
-      flex-shrink: 0;
-    }
-    .room-avatar {
-      width: 30px;
-      height: 30px;
-      border-radius: var(--radius-full);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: var(--font-bold);
-      color: white;
-      border: 2px solid var(--color-primary-900);
-      margin-left: -8px;
-    }
-    .room-avatar:first-child { margin-left: 0; }
-    .hue-primary { background: var(--color-primary-400); }
-    .hue-accent  { background: var(--color-accent-400); }
-    .hue-warm    { background: var(--color-warm-400); }
-    .hue-gold    { background: var(--color-gold-400); }
-    .hue-social  { background: var(--color-social-400); }
-    .hue-berry   { background: var(--color-berry-400); }
-
-    .room-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-    }
-    .room-title {
-      font-size: var(--text-sm);
-      font-weight: var(--font-semibold);
-      color: white;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .room-meta {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-      font-size: var(--text-xs);
-      color: color-mix(in srgb, white 60%, transparent);
-    }
-    .live-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--color-live);
-      flex-shrink: 0;
-    }
-
-    /* ── Form panel ── */
-    .auth-main {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      min-height: 100dvh;
-      padding: max(var(--space-5), env(safe-area-inset-top)) max(var(--space-5), env(safe-area-inset-right)) max(var(--space-6), env(safe-area-inset-bottom)) max(var(--space-5), env(safe-area-inset-left));
-      box-sizing: border-box;
-    }
-
-    .brand-mark {
-      display: inline-flex;
-      align-self: flex-start;
-      align-items: center;
-      gap: var(--space-2);
-      text-decoration: none;
-      border-radius: var(--radius-md);
-    }
-    .brand-mark:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: var(--focus-ring-offset);
-    }
-    .brand-name {
-      font-size: var(--text-base);
-      font-weight: var(--font-bold);
-      letter-spacing: -0.02em;
-      color: var(--color-text);
-    }
-    @media (min-width: 1024px) {
-      .brand-mark { display: none; }
-    }
-
-    .form-wrap {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      /* Top-aligned on mobile, not vertically centered: centering left the icon/title
-         floating in the middle of a mostly-empty screen with the form itself pushed down
-         near the bottom half — the more familiar pattern (Duolingo, most iOS sign-in
-         screens) starts the form a fixed distance from the top so it's the first thing in
-         view, with no keyboard-driven jump when a field gets focus. The desktop form panel
-         is paired with a same-height showcase panel, where vertical centering reads as
-         intentional balance rather than empty space, so only mobile changes. */
-      justify-content: flex-start;
-      padding-top: var(--space-8);
-      width: 100%;
-      max-width: 400px;
-      margin-inline: auto;
-      gap: var(--space-5);
-      padding-block-end: calc(var(--space-6) + var(--kb-inset, 0px));
-      box-sizing: border-box;
-    }
-    @media (min-width: 1024px) {
-      .form-wrap {
-        justify-content: center;
-        padding-top: 0;
-      }
-    }
-
-    .form-header {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-      align-items: center;
-    }
-    .form-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--color-primary-50);
-      color: var(--color-primary-text);
-    }
-    .form-icon svg {
-      width: 24px;
-      height: 24px;
-    }
-    .dark .form-icon {
-      background: color-mix(in srgb, var(--color-primary-600) 25%, transparent);
-      color: var(--color-primary-300);
-    }
-    @media (min-width: 1024px) {
-      .form-icon { display: none; }
-    }
-    .form-title {
-      font-size: 26px;
-      font-weight: var(--font-bold);
-      letter-spacing: -0.02em;
-      color: var(--color-text);
-      margin: 0;
-    }
-    .form-sub {
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-      margin: 0;
-    }
-    .form-sub strong { color: var(--color-text); font-weight: var(--font-medium); }
-
-    .alt {
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-      margin: 0;
-    }
-  `],
 })
 export class AuthShellComponent {
   readonly title = input.required<string>();
@@ -338,4 +143,8 @@ export class AuthShellComponent {
     { title: '日本語 Practice Circle', initials: ['K', 'Y'], hues: ['berry', 'social'], live: true, count: '7 in the room' },
     { title: 'Learn French Together', initials: ['S', 'R', 'N'], hues: ['warm', 'primary', 'accent'], count: 'Starts in 10 min' },
   ];
+
+  protected hueClass(room: ShowcaseRoom, index: number): string {
+    return HUE_CLASS[room.hues[index] ?? 'primary'];
+  }
 }
