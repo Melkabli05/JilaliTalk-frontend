@@ -14,14 +14,26 @@ import { FormValueControl } from '@angular/forms/signals';
 import { LANGUAGES, getLanguageById } from '@shared/data/languages';
 import { LucideChevronDown, LucideSearch, LucideCheck, LucideX } from '@lucide/angular';
 
+const OPTION_BASE =
+  'flex items-center gap-2 w-full py-2 px-3 border-0 bg-transparent text-neutral-600 dark:text-neutral-300 ' +
+  'text-xs text-left cursor-pointer transition-colors duration-100 ' +
+  'max-lg:py-3 max-lg:px-3 max-lg:text-sm max-lg:min-h-11';
+
 @Component({
   selector: 'app-language-select',
   imports: [OverlayModule, LucideChevronDown, LucideSearch, LucideCheck, LucideX],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
   template: `
     <button
       type="button"
-      class="select-trigger"
+      class="flex items-center gap-2 w-full h-9 px-3 rounded-md text-left cursor-pointer
+             border border-neutral-200 dark:border-neutral-700
+             bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm
+             transition-[border-color,box-shadow] duration-150
+             hover:border-neutral-300 dark:hover:border-neutral-600
+             focus-visible:outline-none focus-visible:border-blue-500 focus-visible:shadow-[0_0_0_3px_rgb(59_130_246/10%)]
+             disabled:opacity-50 disabled:cursor-not-allowed"
       cdkOverlayOrigin
       #trigger="cdkOverlayOrigin"
       #triggerEl
@@ -32,12 +44,18 @@ import { LucideChevronDown, LucideSearch, LucideCheck, LucideX } from '@lucide/a
       aria-haspopup="listbox"
     >
       @if (selected(); as lang) {
-        <img class="flag-icon" [src]="'https://flagcdn.com/w20/' + lang.countryCode + '.png'" [alt]="''" loading="lazy" />
-        <span class="select-value">{{ lang.name }}</span>
+        <img class="w-[18px] h-[13px] rounded-sm object-cover shrink-0" [src]="'https://flagcdn.com/w20/' + lang.countryCode + '.png'" [alt]="''" loading="lazy" />
+        <span class="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{{ lang.name }}</span>
       } @else {
-        <span class="select-value placeholder">Select a language</span>
+        <span class="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-neutral-500">Select a language</span>
       }
-      <svg aria-hidden="true" lucideChevronDown [size]="14" class="chevron" [class.rotated]="isOpen()" />
+      <svg
+        aria-hidden="true"
+        lucideChevronDown
+        [size]="14"
+        class="text-neutral-500 transition-transform duration-200 shrink-0"
+        [class.rotate-180]="isOpen()"
+      />
     </button>
 
     <ng-template
@@ -52,9 +70,9 @@ import { LucideChevronDown, LucideSearch, LucideCheck, LucideX } from '@lucide/a
       (detach)="close()"
       (overlayKeydown)="onOverlayKeydown($event)"
     >
-      <div class="lang-dropdown">
-        <div class="lang-search">
-          <svg aria-hidden="true" lucideSearch [size]="11" class="search-icon" />
+      <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden animate-[langSelectFadeIn_0.15s_ease] motion-reduce:animate-none">
+        <div class="relative p-2 border-b border-neutral-200 dark:border-neutral-700">
+          <svg aria-hidden="true" lucideSearch [size]="11" class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
           <input
             type="search"
             inputmode="search"
@@ -62,7 +80,12 @@ import { LucideChevronDown, LucideSearch, LucideCheck, LucideX } from '@lucide/a
             autocapitalize="off"
             autocorrect="off"
             spellcheck="false"
-            class="lang-search-input"
+            class="w-full h-9 max-lg:h-11 pr-2 pl-[26px] border-0 rounded-md box-border outline-none
+                   bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200
+                   text-xs max-lg:text-base
+                   placeholder:text-neutral-500
+                   focus:shadow-[0_0_0_1px_#93c5fd]
+                   [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
             role="combobox"
             aria-autocomplete="list"
             aria-controls="lang-select-listbox"
@@ -78,33 +101,46 @@ import { LucideChevronDown, LucideSearch, LucideCheck, LucideX } from '@lucide/a
             aria-label="Search languages"
           />
           @if (query()) {
-            <button type="button" class="search-clear" aria-label="Clear search" (click)="clearSearch($event)">
+            <button
+              type="button"
+              class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 max-lg:w-8 max-lg:h-8 p-0
+                     border-0 rounded-sm bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-300 cursor-pointer
+                     transition-colors duration-100
+                     hover:bg-neutral-300 hover:text-neutral-900
+                     dark:hover:bg-neutral-600"
+              aria-label="Clear search"
+              (click)="clearSearch($event)"
+            >
               <svg aria-hidden="true" lucideX [size]="10" />
             </button>
           }
         </div>
 
         @if (query() && filtered().length === 0) {
-          <p class="lang-empty">No languages match "{{ query() }}"</p>
+          <p class="py-4 px-3 text-center text-neutral-500 text-xs">No languages match "{{ query() }}"</p>
         } @else {
-          <div class="lang-options" id="lang-select-listbox" role="listbox" aria-label="Language">
+          <div
+            class="max-h-52 overflow-y-auto py-1 [scrollbar-width:thin] [scrollbar-color:#d4d4d4_transparent]
+                   [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-neutral-300 [&::-webkit-scrollbar-thumb]:rounded-sm"
+            id="lang-select-listbox"
+            role="listbox"
+            aria-label="Language"
+          >
             @for (lang of filtered(); track lang.id; let i = $index) {
               <button
                 type="button"
                 [id]="'lang-select-opt-' + i"
-                class="lang-option"
-                [class.selected]="value() === lang.id"
-                [class.focused]="focusedIndex() === i"
+                [class]="optionClass(lang.id, i)"
                 role="option"
                 [attr.aria-selected]="value() === lang.id"
                 (click)="select(lang.id)"
                 (mouseenter)="focusedIndex.set(i)"
                 #option
               >
-                <img class="flag-icon-sm" [src]="'https://flagcdn.com/w20/' + lang.countryCode + '.png'" [alt]="''" loading="lazy" />
-                <span class="lang-option-name">{{ lang.name }}</span>
+                <img class="w-5 h-3.5 rounded-sm object-cover shrink-0" [src]="'https://flagcdn.com/w20/' + lang.countryCode + '.png'" [alt]="''" loading="lazy" />
+                <span class="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{{ lang.name }}</span>
                 @if (value() === lang.id) {
-                  <svg aria-hidden="true" lucideCheck [size]="14" class="check-icon" />
+                  <svg aria-hidden="true" lucideCheck [size]="14" class="shrink-0 text-blue-600 dark:text-blue-300" />
                 }
               </button>
             }
@@ -113,166 +149,12 @@ import { LucideChevronDown, LucideSearch, LucideCheck, LucideX } from '@lucide/a
       </div>
     </ng-template>
   `,
+  /** The two entrance/selection keyframes are genuine motion design, no Tailwind built-in
+   *  equivalent for this specific fade-in-from-scale-98 dropdown animation. */
   styles: [`
-    :host { display: block; }
-
-    .select-trigger {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      width: 100%;
-      height: 36px;
-      padding: 0 var(--space-3);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      background-color: var(--color-card);
-      color: var(--color-text);
-      font-size: var(--text-sm);
-      text-align: left;
-      cursor: pointer;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .select-trigger:hover { border-color: var(--color-neutral-300); }
-    .select-trigger:focus-visible {
-      outline: none;
-      border-color: var(--color-primary-500);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 10%, transparent);
-    }
-    .select-trigger:disabled { opacity: 0.5; cursor: not-allowed; }
-    :host-context(.dark) .select-trigger:hover { border-color: var(--color-neutral-600); }
-
-    .select-value {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .select-value.placeholder { color: var(--color-text-muted); }
-
-    .flag-icon { width: 18px; height: 13px; border-radius: 2px; object-fit: cover; flex-shrink: 0; }
-    .chevron { color: var(--color-text-muted); transition: transform 0.2s ease; flex-shrink: 0; }
-    .chevron.rotated { transform: rotate(180deg); }
-
-    .lang-dropdown {
-      background-color: var(--color-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-dropdown);
-      overflow: hidden;
-      animation: langSelectFadeIn 0.15s ease;
-    }
-
-    .lang-search { position: relative; padding: var(--space-2); border-bottom: 1px solid var(--color-border); }
-    .search-icon {
-      position: absolute;
-      left: calc(var(--space-2) + var(--space-2));
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--color-text-muted);
-      pointer-events: none;
-    }
-    .lang-search-input {
-      width: 100%;
-      height: 36px;
-      padding: 0 var(--space-2) 0 calc(var(--space-2) + 18px);
-      border: none;
-      border-radius: var(--radius-md);
-      background-color: var(--color-neutral-100);
-      color: var(--color-text);
-      font-size: var(--text-xs);
-      outline: none;
-      box-sizing: border-box;
-    }
-    .lang-search-input::placeholder { color: var(--color-text-muted); }
-    .lang-search-input:focus { box-shadow: 0 0 0 1px var(--color-primary-300); }
-    .lang-search-input::-webkit-search-cancel-button,
-    .lang-search-input::-webkit-search-decoration { display: none; }
-    :host-context(.dark) .lang-search-input { background-color: var(--color-neutral-800); color: var(--color-neutral-200); }
-    :host-context(.dark) .lang-search-input::placeholder { color: var(--color-neutral-500); }
-
-    .search-clear {
-      position: absolute;
-      right: var(--space-2);
-      top: 50%;
-      transform: translateY(-50%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 20px;
-      height: 20px;
-      border: none;
-      border-radius: var(--radius-sm);
-      background-color: var(--color-neutral-200);
-      color: var(--color-text-muted);
-      cursor: pointer;
-      padding: 0;
-      transition: background-color 0.1s ease, color 0.1s ease;
-    }
-    .search-clear:hover { background-color: var(--color-neutral-300); color: var(--color-text); }
-    :host-context(.dark) .search-clear { background-color: var(--color-neutral-700); color: var(--color-neutral-300); }
-    :host-context(.dark) .search-clear:hover { background-color: var(--color-neutral-600); }
-
-    .lang-options {
-      max-height: 208px;
-      overflow-y: auto;
-      padding: var(--space-1) 0;
-      scrollbar-width: thin;
-      scrollbar-color: var(--color-neutral-300) transparent;
-    }
-    .lang-options::-webkit-scrollbar { width: 4px; }
-    .lang-options::-webkit-scrollbar-thumb { background-color: var(--color-neutral-300); border-radius: 2px; }
-
-    .lang-option {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      width: 100%;
-      padding: var(--space-2) var(--space-3);
-      border: none;
-      background: transparent;
-      color: var(--color-text-secondary);
-      font-size: var(--text-xs);
-      text-align: left;
-      cursor: pointer;
-      transition: background-color 0.1s ease, color 0.1s ease;
-    }
-    .lang-option:hover { background-color: var(--color-neutral-50); color: var(--color-text); }
-    .lang-option:focus-visible { outline: none; background-color: var(--color-neutral-50); }
-    .lang-option.selected { color: var(--color-primary-text); background-color: var(--color-primary-50); font-weight: var(--font-medium); }
-    .lang-option.focused { background-color: var(--color-neutral-50); }
-    .lang-option.selected.focused { background-color: var(--color-primary-50); }
-    :host-context(.dark) .lang-option { color: var(--color-neutral-300); }
-    :host-context(.dark) .lang-option:hover { background-color: var(--color-neutral-800); color: var(--color-neutral-100); }
-    :host-context(.dark) .lang-option.selected { background-color: var(--color-primary-900); color: var(--color-primary-300); }
-    :host-context(.dark) .lang-option.focused { background-color: var(--color-neutral-800); }
-
-    .lang-option-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .check-icon { color: var(--color-primary-text); flex-shrink: 0; }
-    :host-context(.dark) .check-icon { color: var(--color-primary-300); }
-
-    .flag-icon-sm { width: 20px; height: 14px; border-radius: 2px; object-fit: cover; flex-shrink: 0; }
-    .lang-empty { padding: var(--space-4) var(--space-3); text-align: center; color: var(--color-text-muted); font-size: var(--text-xs); }
-
-    /* Mobile: 16px stops iOS Safari auto-zooming the page on focus (it zooms
-       whenever a focused input's computed font-size is under 16px); larger
-       search-clear and option rows are closer to a comfortably tappable target. */
-    @media (max-width: 1023.98px) {
-      .lang-search-input {
-        font-size: var(--text-base);
-        height: 44px;
-      }
-
-      .search-clear {
-        width: 32px;
-        height: 32px;
-      }
-
-      .lang-option {
-        padding: var(--space-3);
-        font-size: var(--text-sm);
-        min-height: 44px;
-      }
+    @keyframes langSelectFadeIn {
+      from { opacity: 0; transform: scale(0.98) translateY(-4px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
   `],
 })
@@ -300,6 +182,25 @@ export class LanguageSelectComponent implements FormValueControl<number> {
   readonly activeDescendantId = computed(() =>
     this.focusedIndex() >= 0 ? `lang-select-opt-${this.focusedIndex()}` : undefined,
   );
+
+  /** Combines the OPTION_BASE utility string with the selected/focused state classes —
+   *  a computed function since Tailwind can't express "selected AND focused" as a static
+   *  template class list without knowing both booleans at once. */
+  protected optionClass(langId: number, index: number): string {
+    const selected = this.value() === langId;
+    const focused = this.focusedIndex() === index;
+    const classes = [OPTION_BASE];
+    if (selected && focused) {
+      classes.push('text-blue-700 bg-blue-50 font-medium dark:bg-blue-900 dark:text-blue-300');
+    } else if (selected) {
+      classes.push('text-blue-700 bg-blue-50 font-medium dark:bg-blue-900 dark:text-blue-300');
+    } else if (focused) {
+      classes.push('bg-neutral-50 dark:bg-neutral-800');
+    } else {
+      classes.push('hover:bg-neutral-50 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100');
+    }
+    return classes.join(' ');
+  }
 
   toggle(): void {
     if (this.disabled()) return;
