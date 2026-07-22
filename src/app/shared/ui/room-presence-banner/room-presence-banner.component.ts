@@ -5,16 +5,15 @@ import { CountryFlagComponent } from '@shared/ui/host-flag/country-flag';
 import type { UserPresence, UserInfo } from '@core/services/user-info.service';
 
 /**
- * Avatar ring color for the host avatar. Same accent token as the banner's accent
- * strip so the avatar reads as a connected accent surface. The token already
- * resolves to its dark-mode variant via the avatar's own `:host-context(.dark)`
- * cascade, so a single literal is enough.
+ * Avatar ring color for the host avatar — Tailwind's emerald-500, the same accent
+ * used for the banner's accent strip so the avatar reads as a connected accent
+ * surface.
  *
  * Exposed as a class field too (not just module-scope const) because Angular
  * templates can only bind to component-instance members — module-level
  * constants get TS2339 at template-compile time.
  */
-const HOST_AVATAR_RING = 'var(--color-accent-500)';
+const HOST_AVATAR_RING = '#10b981';
 
 @Component({
   selector: 'app-room-presence-banner',
@@ -24,21 +23,26 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
     @if (presence(); as p) {
       @if (shouldShow()) {
         <section
-          class="presence-banner"
-          [class.hosting]="isHosting()"
+          class="relative flex items-stretch gap-0 mx-4 max-md:mx-3 rounded-lg max-md:rounded-md
+                 border border-neutral-200 dark:border-neutral-700 shadow-sm overflow-hidden
+                 bg-[color-mix(in_srgb,#10b981_4%,white)]
+                 dark:bg-[color-mix(in_srgb,#10b981_8%,#262626)]
+                 dark:shadow-[0_1px_0_0_rgb(16_185_129/12%)_inset]"
           aria-label="Currently in a room"
         >
-          <div class="accent-strip" aria-hidden="true"></div>
-          <div class="banner-body" [class.compact]="isCompactViewport()">
-            <header class="banner-header">
-              <span class="live-dot" aria-hidden="true"></span>
-              <span class="header-label">{{ headerLabel() }}</span>
+          <div [class]="accentStripClass()" aria-hidden="true"></div>
+          <div class="flex-1 flex flex-col gap-2 max-md:gap-0.5 py-3 px-4 max-md:py-2 max-md:px-3 min-w-0">
+            <header class="flex items-center gap-2">
+              <span [class]="liveDotClass()" aria-hidden="true"></span>
+              <span
+                [class]="isCompactViewport() ? 'sr-only' : 'text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-[0.06em] max-md:tracking-[0.04em]'"
+              >{{ headerLabel() }}</span>
             </header>
 
-            <div class="room-name" [title]="p.cname">{{ roomNameLabel() }}</div>
+            <div class="text-base max-md:text-sm font-bold text-neutral-900 dark:text-neutral-50 overflow-hidden text-ellipsis whitespace-nowrap leading-tight" [title]="p.cname">{{ roomNameLabel() }}</div>
 
             @if (hostRowVisible()) {
-              <div class="host-row">
+              <div class="flex items-center gap-2 max-md:gap-1.5 py-1 max-md:py-0">
                 <app-avatar
                   [src]="hostAvatarSrc()"
                   [alt]="hostName() ?? 'Host'"
@@ -46,9 +50,9 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
                   [size]="isCompactViewport() ? 'sm' : 'md'"
                   [ringColor]="hostAvatarRing"
                 />
-                <div class="host-meta">
-                  <span class="host-prefix">Hosted by</span>
-                  <span class="host-name">{{ hostName() }}</span>
+                <div class="flex items-center gap-1 max-[340px]:flex-col max-[340px]:items-start max-[340px]:gap-0 min-w-0 flex-1 flex-wrap">
+                  <span class="text-xs max-[340px]:text-[10px] text-neutral-500 dark:text-neutral-400">Hosted by</span>
+                  <span class="text-xs font-semibold text-neutral-600 dark:text-neutral-200 overflow-hidden text-ellipsis whitespace-nowrap max-w-full">{{ hostName() }}</span>
                   <!-- Live indicator: presence.statusType === 2 means the user is
                        currently a guest in this room, so the host IS in the room
                        right now. For statusType === 1 (modal-target hosts their own
@@ -57,8 +61,12 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
                        dot in the banner header already signals "active" so the
                        chip is dropped to save space. -->
                   @if (isHostInRoom() && !isCompactViewport()) {
-                    <span class="host-live" aria-label="Host is in the room now">
-                      <span class="host-live-dot" aria-hidden="true"></span>
+                    <span
+                      class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300
+                             py-px px-1.5 rounded-full bg-emerald-500/14 dark:bg-emerald-500/22"
+                      aria-label="Host is in the room now"
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" aria-hidden="true"></span>
                       Live
                     </span>
                   }
@@ -70,12 +78,17 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
             }
 
             @if (viewerInRoom()) {
-              <div class="in-room-notice" role="status">
-                <span class="in-room-dot" aria-hidden="true"></span>
+              <div
+                class="flex items-center justify-center gap-1.5 h-8 max-md:h-7 mt-2 max-md:mt-1 py-0 px-3 rounded-md
+                       text-xs max-md:text-[10px] font-semibold text-neutral-600 dark:text-neutral-300
+                       bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700"
+                role="status"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" aria-hidden="true"></span>
                 You're in this room
               </div>
             } @else {
-              <div class="actions">
+              <div class="actions flex gap-2 mt-2 max-md:gap-1 max-md:mt-1 max-[340px]:flex-col [&>app-button]:flex-1 max-[340px]:[&>app-button]:w-full">
                 <app-button variant="primary" size="sm" (click)="onJoin(true)"
                   >Join visible</app-button
                 >
@@ -89,324 +102,24 @@ const HOST_AVATAR_RING = 'var(--color-accent-500)';
       }
     }
   `,
+  /** Remaining irreducible CSS: the pulsing "live" dot's box-shadow keyframe (no
+   *  Tailwind built-in animation shape matches this specific expand-and-fade ring),
+   *  and the ::ng-deep override of ButtonComponent's internal .btn-sm sizing at
+   *  mobile widths — a deliberate deep-pierce into a child component's rendered
+   *  DOM, which can't be expressed as a template class on this component's own
+   *  elements. */
   styles: [
     `
-      /* -------- Container -------- */
-      .presence-banner {
-        position: relative;
-        display: flex;
-        align-items: stretch;
-        gap: 0;
-        margin: 0 var(--space-4);
-        background: color-mix(in srgb, var(--color-accent-500) 4%, var(--color-card));
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-elevation-1);
-        overflow: hidden;
-      }
-      :host-context(.dark) .presence-banner {
-        background: color-mix(in srgb, var(--color-accent-500) 8%, var(--color-neutral-800));
-        border-color: var(--color-neutral-700);
-        box-shadow: 0 1px 0 0 color-mix(in srgb, var(--color-accent-500) 12%, transparent) inset;
-      }
-
-      /* -------- Accent strip --------
-       Vertical bar on the leading edge — soft gradient that's brighter in dark mode
-       (via inner glow). When the user is hosting their own room, swap to gold so
-       the visual language signals the role, not just the activity state. */
-      .accent-strip {
-        flex: 0 0 4px;
-        background: linear-gradient(180deg, var(--color-accent-400), var(--color-accent-600));
-      }
-      :host-context(.dark) .accent-strip {
-        background: linear-gradient(180deg, var(--color-accent-500), var(--color-accent-700));
-        box-shadow: 0 0 8px 0 color-mix(in srgb, var(--color-accent-500) 35%, transparent);
-      }
-      .presence-banner.hosting .accent-strip {
-        background: linear-gradient(180deg, var(--color-gold-300), var(--color-gold-500));
-      }
-      :host-context(.dark) .presence-banner.hosting .accent-strip {
-        background: linear-gradient(180deg, var(--color-gold-500), var(--color-gold-700));
-      }
-
-      /* -------- Inner content (strip is the sibling, not the parent) -------- */
-      .banner-body {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-        padding: var(--space-3) var(--space-4);
-        min-width: 0;
-      }
-
-      /* -------- Header row: live dot + label -------- */
-      .banner-header {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-      }
-      /* Pulsing live dot — universal "currently active" signal. The pulse keyframe
-       uses the dot's own background color via currentColor, so a single keyframe
-       block works for all role + theme combinations (set per-combo on the dot
-       itself). */
-      .live-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--color-accent-500);
-        color: var(--color-accent-500);
-        box-shadow: 0 0 0 0 currentColor;
-        animation: live-pulse 1.8s ease-out infinite;
-        flex-shrink: 0;
-      }
-      :host-context(.dark) .live-dot {
-        background: var(--color-accent-400);
-        color: var(--color-accent-400);
-      }
-      .presence-banner.hosting .live-dot {
-        background: var(--color-gold-500);
-        color: var(--color-gold-500);
-      }
-      :host-context(.dark) .presence-banner.hosting .live-dot {
-        background: var(--color-gold-400);
-        color: var(--color-gold-400);
-      }
       @keyframes live-pulse {
-        0% {
-          box-shadow: 0 0 0 0 currentColor;
-        }
-        70% {
-          box-shadow: 0 0 0 6px transparent;
-        }
-        100% {
-          box-shadow: 0 0 0 0 currentColor;
-        }
+        0% { box-shadow: 0 0 0 0 currentColor; }
+        70% { box-shadow: 0 0 0 6px transparent; }
+        100% { box-shadow: 0 0 0 0 currentColor; }
       }
-
-      .header-label {
-        font-size: var(--text-2xs);
-        font-weight: var(--font-bold);
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-      }
-      :host-context(.dark) .header-label {
-        color: var(--color-neutral-400);
-      }
-
-      /* -------- Room name -------- */
-      .room-name {
-        font-size: var(--text-base);
-        font-weight: var(--font-bold);
-        color: var(--color-text);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        line-height: 1.2;
-      }
-      :host-context(.dark) .room-name {
-        color: var(--color-neutral-50);
-      }
-
-      /* -------- Host row (statusType=2 only) -------- */
-      .host-row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-1) 0;
-      }
-      .host-meta {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1);
-        min-width: 0;
-        flex: 1;
-        flex-wrap: wrap;
-      }
-      .host-prefix {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-      }
-      :host-context(.dark) .host-prefix {
-        color: var(--color-neutral-400);
-      }
-      .host-name {
-        font-size: var(--text-xs);
-        font-weight: var(--font-semibold);
-        color: var(--color-text-secondary);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 100%;
-      }
-      :host-context(.dark) .host-name {
-        color: var(--color-neutral-200);
-      }
-      /* Live indicator — answers "is the host in the room right now?". Static
-         green dot+label is scannable without competing with the header's
-         pulsing dot. Shows for statusType=2 (guest in someone else's room),
-         where the host's actual presence is the meaningful question; statusType=1
-         self-hosts the room so the banner header itself implies "here now". */
-      .host-live {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: var(--text-2xs);
-        font-weight: var(--font-semibold);
-        color: var(--color-accent-700);
-        padding: 1px 6px;
-        border-radius: var(--radius-full);
-        background: color-mix(in srgb, var(--color-accent-500) 14%, transparent);
-      }
-      :host-context(.dark) .host-live {
-        color: var(--color-accent-300);
-        background: color-mix(in srgb, var(--color-accent-500) 22%, transparent);
-      }
-      .host-live-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--color-accent-500);
-        flex-shrink: 0;
-      }
-      :host-context(.dark) .host-live-dot { background: var(--color-accent-400); }
-
-      /* -------- Actions -------- */
-      .actions {
-        display: flex;
-        gap: var(--space-2);
-        margin-top: var(--space-2);
-      }
-      .actions app-button {
-        flex: 1;
-      }
-
-      /* "You're in this room" — shown in place of the join buttons when the
-         viewer is already in the same room the banner describes. Muted
-         neutral background with a static (non-pulsing) dot to keep the
-         "you're here" state visually distinct from the action row. */
-      .in-room-notice {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        height: 32px;
-        margin-top: var(--space-2);
-        padding: 0 var(--space-3);
-        border-radius: var(--radius-md);
-        font-size: var(--text-xs);
-        font-weight: var(--font-semibold);
-        color: var(--color-text-secondary);
-        background: var(--color-neutral-100);
-        border: 1px solid var(--color-border);
-      }
-      :host-context(.dark) .in-room-notice {
-        color: var(--color-neutral-300);
-        background: var(--color-neutral-800);
-        border-color: var(--color-neutral-700);
-      }
-      .in-room-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--color-accent-500);
-        flex-shrink: 0;
-      }
-      :host-context(.dark) .in-room-dot { background: var(--color-accent-400); }
-
-      /* -------- Responsive --------
-        The modal itself is 340px on desktop and ~100vw on phones, so the
-        banner can shrink its outer margin + inner padding at narrow widths. */
       @media (max-width: 768px) {
-        .presence-banner {
-          margin: 0 var(--space-3);
-          border-radius: var(--radius-md);
-        }
-        .banner-body {
-          padding: var(--space-2) var(--space-3);
-          gap: 2px;
-        }
-        .room-name {
-          font-size: var(--text-sm);
-        }
-        .host-row {
-          padding: 0;
-          gap: var(--space-1);
-        }
-        .header-label {
-          letter-spacing: 0.04em;
-        }
-        .actions {
-          margin-top: var(--space-1);
-          gap: var(--space-1);
-        }
-        .in-room-notice {
-          margin-top: var(--space-1);
-          height: 28px;
-          font-size: var(--text-2xs);
-        }
-        /* Override sm button sizes to be compact (xs) on mobile so they fit side-by-side */
         .actions ::ng-deep .btn-sm {
-          padding: 0 var(--space-2) !important;
-          font-size: var(--text-2xs) !important;
+          padding: 0 8px !important;
+          font-size: 10px !important;
           height: 28px !important;
-        }
-      }
-
-      /* Compact mode — the JS-driven .compact class (set by the
-         isCompactViewport signal at <=768px) drops three things to keep
-         the banner from eating too much vertical space on phones:
-         (1) the "HOSTING" / "IN ROOM" header label — the live dot alone
-         signals activity, and the gold/green accent strip already tells
-         you who's hosting, (2) the inline "Live" chip next to the host
-         name — the live dot is still there so the signal is preserved,
-         (3) a tighter gap between the host row's prefix/name/chip. */
-      .banner-body.compact .header-label {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-      }
-      .banner-body.compact .banner-header {
-        height: 6px;
-        margin-bottom: 0;
-      }
-      .banner-body.compact .live-dot {
-        width: 6px;
-        height: 6px;
-      }
-      .banner-body.compact .host-meta {
-        gap: 4px;
-      }
-      .banner-body.compact .host-row {
-        gap: 6px;
-      }
-      @media (max-width: 340px) {
-        .actions {
-          flex-direction: column;
-        }
-        .actions app-button {
-          width: 100%;
-        }
-        .host-meta {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 0;
-        }
-        .host-prefix {
-          font-size: var(--text-2xs);
-        }
-      }
-
-      /* -------- Reduced motion: keep the visual, drop the pulse -------- */
-      @media (prefers-reduced-motion: reduce) {
-        .live-dot {
-          animation: none;
         }
       }
     `,
@@ -466,6 +179,23 @@ export class RoomPresenceBannerComponent {
     ? window.matchMedia('(max-width: 768px)')
     : null;
   readonly isCompactViewport = signal(this.compactMql?.matches ?? false);
+
+  /** Accent strip color: emerald while just present in a room, amber ("gold")
+   *  while hosting one — the role signal, distinct from the activity pulse. */
+  protected readonly accentStripClass = computed(() => {
+    const base = 'flex-none w-1';
+    return this.isHosting()
+      ? `${base} bg-linear-to-b from-amber-300 to-amber-500 dark:from-amber-500 dark:to-amber-700`
+      : `${base} bg-linear-to-b from-emerald-400 to-emerald-600 dark:from-emerald-500 dark:to-emerald-700 dark:shadow-[0_0_8px_0_rgb(16_185_129/35%)]`;
+  });
+
+  protected readonly liveDotClass = computed(() => {
+    const size = this.isCompactViewport() ? 'w-1.5 h-1.5' : 'w-2 h-2';
+    const base = `${size} rounded-full shadow-[0_0_0_0_currentColor] shrink-0 animate-[live-pulse_1.8s_ease-out_infinite] motion-reduce:animate-none`;
+    return this.isHosting()
+      ? `${base} bg-amber-500 text-amber-500 dark:bg-amber-400 dark:text-amber-400`
+      : `${base} bg-emerald-500 text-emerald-500 dark:bg-emerald-400 dark:text-emerald-400`;
+  });
 
   constructor() {
     if (this.compactMql) {
