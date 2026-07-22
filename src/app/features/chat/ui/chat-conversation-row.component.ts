@@ -10,7 +10,7 @@ import { lastMessagePreview } from '../utils/chat-preview.util';
   template: `
     <button
       type="button"
-      class="row"
+      class="row rtl:[direction:rtl]"
       [class.active]="active()"
       [class.unread]="unread()"
       (click)="select.emit()"
@@ -65,7 +65,6 @@ import { lastMessagePreview } from '../utils/chat-preview.util';
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .unread .row-name { font-weight: var(--font-bold); }
-    :host-context([dir='rtl']) .row { direction: rtl; }
     .row-ts { font-size: var(--text-2xs); color: var(--color-text-muted); }
     .unread .row-ts { color: var(--color-accent-600); font-weight: var(--font-medium); }
     .row-preview {

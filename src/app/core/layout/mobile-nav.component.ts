@@ -28,7 +28,7 @@ function mobileLabel(full: string): string {
   encapsulation: ViewEncapsulation.None,
   imports: [RouterLink, RouterLinkActive, LucideGlobe, LucideTv, LucideMessageCircle, LucideUser],
   template: `
-    <nav class="mobile-nav" aria-label="Main navigation" [class.immersive]="immersive">
+    <nav class="mobile-nav" aria-label="Main navigation" [class.immersive]="immersive()">
       <div class="mobile-nav-inner">
         @for (item of navItems; track item.id) {
           <a

@@ -31,7 +31,7 @@ import { AuthService } from '@core/auth/auth.service';
     NotificationPanelComponent,
   ],
   template: `
-    <header role="banner" class="app-header lg:px-6 lg:left-[var(--sidebar-width)] rtl:lg:left-auto rtl:lg:right-[var(--sidebar-width)]" id="main-content" tabindex="-1" [class.immersive]="immersive">
+    <header role="banner" class="app-header lg:px-6 lg:left-[var(--sidebar-width)] rtl:lg:left-auto rtl:lg:right-[var(--sidebar-width)]" id="main-content" tabindex="-1" [class.immersive]="immersive()">
       <div class="brand">
         <svg aria-hidden="true" class="brand-icon" width="26" height="26" viewBox="0 0 32 32" fill="none">
           <defs>

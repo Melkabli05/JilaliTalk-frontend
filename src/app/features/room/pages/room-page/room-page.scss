@@ -58,6 +58,11 @@
 }
 
 /* ── Desktop: two-column sidebar layout ─────────────────────────────────
+   IRREDUCIBLE CASE: Tailwind v4 has utilities for grid-cols/rows but NOT for
+   grid-template-areas, which carries named-line reorderings that utilities
+   can't express without arbitrary-value ugliness. Both LTR and RTL grid
+   definitions live in this SCSS block — leaving it as the only remaining
+   :host-context([dir='rtl']) rule in the codebase.
    Gate on both width AND height — landscape phones have enough width
    but not enough height for the sidebar to be useful (comments would
    be squished to ~82px). */

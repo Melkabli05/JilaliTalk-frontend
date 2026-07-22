@@ -181,7 +181,7 @@ const FOLLOWERS_LIMIT = 50;
 
               @switch (msg.type) {
                 @case ('text') {
-                  <div class="msg-row" [class.is-outbound]="!!msg.delivery" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
+                  <div [class]="!!msg.delivery ? 'msg-row self-end rtl:self-start' : 'msg-row self-start rtl:self-end'" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-text-bubble [text]="msg.text" [isOutbound]="!!msg.delivery" />
                     <span class="msg-meta">
                       <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
@@ -201,7 +201,7 @@ const FOLLOWERS_LIMIT = 50;
                   </div>
                 }
                 @case ('image') {
-                  <div class="msg-row" [class.is-outbound]="!!msg.delivery" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
+                  <div [class]="!!msg.delivery ? 'msg-row self-end rtl:self-start' : 'msg-row self-start rtl:self-end'" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-image-bubble [url]="msg.imageUrl" [alt]="(msg.fromNickname || conv.nickname) + ' sent a photo'" />
                     <span class="msg-meta">
                       <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
@@ -221,7 +221,7 @@ const FOLLOWERS_LIMIT = 50;
                   </div>
                 }
                 @case ('gift') {
-                  <div class="msg-row" [class.is-outbound]="!!msg.delivery" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
+                  <div [class]="!!msg.delivery ? 'msg-row self-end rtl:self-start' : 'msg-row self-start rtl:self-end'" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-gift-bubble [count]="msg.count" [isOutbound]="!!msg.delivery" />
                     <span class="msg-meta">
                       <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
@@ -241,7 +241,7 @@ const FOLLOWERS_LIMIT = 50;
                   </div>
                 }
                 @case ('introduction') {
-                  <div class="msg-row" [class.is-outbound]="!!msg.delivery" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
+                  <div [class]="!!msg.delivery ? 'msg-row self-end rtl:self-start' : 'msg-row self-start rtl:self-end'" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-introduction-bubble
                       [target]="msg.target"
                       [context]="(msg.fromNickname || conv.nickname) + ' shared a profile'"
@@ -448,8 +448,9 @@ const FOLLOWERS_LIMIT = 50;
     }
     .msg-row.is-outbound { align-self: flex-end; flex-direction: row; }
     .msg-row:not(.is-outbound) { align-self: flex-start; }
-    :host-context([dir='rtl']) .msg-row.is-outbound { align-self: flex-start; }
-    :host-context([dir='rtl']) .msg-row:not(.is-outbound) { align-self: flex-end; }
+    /* msg-row align-self is set in the template via [class]="... self-start|self-end rtl:self-end|rtl:self-start",
+       so the rule below only applies to msg-row ancestor styling that doesn't depend on inbound/outbound state. */
+    .msg-row:not(.is-outbound) { align-self: flex-start; }
     .msg-meta {
       display: inline-flex; align-items: center; gap: 4px;
       padding: 0 6px 2px;

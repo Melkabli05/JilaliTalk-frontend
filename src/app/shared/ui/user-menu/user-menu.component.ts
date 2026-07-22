@@ -39,7 +39,7 @@ import type { AuthUser } from '@core/auth/auth.store';
       </button>
 
       @if (open()) {
-        <div class="dropdown" role="menu" [attr.aria-label]="'Account: ' + displayName()">
+        <div class="dropdown rtl:right-auto rtl:left-0" role="menu" [attr.aria-label]="'Account: ' + displayName()">
           <div class="dropdown-header">
             <app-avatar [src]="user().headUrl ?? ''" [alt]="displayName()" size="md" />
             <div class="identity">
@@ -133,7 +133,7 @@ import type { AuthUser } from '@core/auth/auth.store';
       from { opacity: 0; transform: translateY(-4px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    :host-context([dir='rtl']) .dropdown { right: auto; left: 0; }
+    /* RTL positioning moved to template utility (rtl:right-auto rtl:left-0); see .dropdown. */
     @media (prefers-reduced-motion: reduce) {
       .dropdown { animation: none; }
     }

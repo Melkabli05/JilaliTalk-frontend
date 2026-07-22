@@ -28,7 +28,7 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
       <div class="notification-overlay" [class.sheet]="isMobile()" (click)="onOverlayClick()" role="presentation"></div>
       <div
         #panelRoot
-        class="notification-panel"
+        class="notification-panel rtl:right-auto rtl:left-[var(--space-4)]"
         [class.sheet]="isMobile()"
         role="dialog"
         aria-modal="true"
@@ -135,9 +135,7 @@ const SHEET_BREAKPOINT_QUERY = '(max-width: 768px)';
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    :host-context([dir='rtl']) .notification-panel {
-      right: auto; left: var(--space-4);
-    }
+    /* RTL positioning moved to template utility (rtl:right-auto rtl:left-[var(--space-4)]). */
 
     .notification-panel.sheet {
       top: auto;

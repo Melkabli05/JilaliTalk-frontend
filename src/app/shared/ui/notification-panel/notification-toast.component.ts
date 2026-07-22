@@ -11,7 +11,7 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
     @if (store.pendingToast(); as n) {
       <button
         type="button"
-        class="notification-toast"
+        class="notification-toast rtl:right-auto rtl:left-[max(var(--space-4),env(safe-area-inset-left,0px))]"
         [class]="'toast-' + n.type"
         (click)="store.dismissToast()"
         aria-live="polite"
@@ -67,9 +67,8 @@ import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
       animation: toast-preview-enter 0.2s ease-out;
     }
     .notification-toast:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    :host-context([dir='rtl']) .notification-toast {
-      right: auto; left: max(var(--space-4), env(safe-area-inset-left, 0px));
-    }
+    /* RTL positioning moved to template utility (rtl:right-auto rtl:left-[max(...)]);
+       see .notification-toast. */
     @keyframes toast-preview-enter {
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
