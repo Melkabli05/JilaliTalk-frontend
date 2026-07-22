@@ -38,6 +38,9 @@ export interface UserInfoModalData {
   readonly roomContext?: { readonly cname: string; readonly busiType: number } | null;
 }
 
+const CHIP_BASE =
+  'inline-flex items-center gap-[3px] text-[10px] font-semibold py-0.5 px-1.5 rounded-full whitespace-nowrap';
+
 /**
  * Read-only profile viewer: identity card, stats, and a detail list.
  * Opens via CDK Dialog from anywhere in the app. Fetches enriched profile
@@ -61,52 +64,79 @@ export interface UserInfoModalData {
     LucideMessageCircle,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class:
+      'flex flex-col w-[340px] max-w-[calc(100vw-2rem)] max-h-[85dvh] shadow-2xl ' +
+      'animate-[slideUp_0.2s_ease-out] motion-reduce:animate-none',
+  },
   template: `
     <app-modal [noPadding]="true">
-      <button type="button" class="close-btn" (click)="ref.close()" aria-label="Close">
+      <button
+        type="button"
+        class="absolute top-3 right-3 w-11 h-11 rounded-full border-0 bg-neutral-100 dark:bg-neutral-700
+               text-neutral-500 dark:text-neutral-300 cursor-pointer [touch-action:manipulation]
+               [-webkit-tap-highlight-color:transparent] flex items-center justify-center z-[1]
+               transition-[background-color,transform] duration-150
+               hover:bg-neutral-200 hover:text-neutral-900 hover:rotate-90
+               dark:hover:bg-neutral-600 dark:hover:text-neutral-100
+               focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+        (click)="ref.close()"
+        aria-label="Close"
+      >
         <svg aria-hidden="true" lucideX [size]="14"></svg>
       </button>
 
-      <div class="modal-scroll">
-        <div class="identity-wrapper">
+      <div
+        class="flex flex-col max-h-[46dvh] overflow-y-auto [overscroll-behavior:contain] [scroll-padding-top:0.5rem]
+               [mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]
+               [-webkit-mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]"
+      >
+        <div
+          class="pt-[calc(26px+0.75rem)] bg-white dark:bg-neutral-800 rounded-t-lg shrink-0
+                 animate-[itemIn_0.25s_ease-out_backwards] motion-reduce:animate-none"
+        >
           <app-user-identity-card
             [avatarUrl]="avatarUrl()"
             [initials]="initials()"
             [displayName]="displayName()"
             [username]="username()"
             [signature]="signature()"
-            [ringColor]="vipType() === 100 ? 'var(--color-gold-300)' : 'var(--color-primary-300)'"
+            [ringColor]="vipType() === 100 ? '#fcd34d' : '#93c5fd'"
             [vip]="vipType() === 100"
           >
             @if (sex() === 'male') {
-              <span nameBadge class="sex-badge sex-male">
+              <span nameBadge class="inline-flex items-center justify-center w-4 h-4 rounded-full shrink-0
+                                     bg-[hsl(230_28%_90%)] text-[hsl(230_28%_45%)]
+                                     dark:bg-[hsl(230_20%_25%)] dark:text-[hsl(230_20%_60%)]">
                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="14.5" r="5.5"/><path d="M19.5 8 12 15.5M19.5 8l-5.5 0"/></svg>
               </span>
             } @else if (sex() === 'female') {
-              <span nameBadge class="sex-badge sex-female">
+              <span nameBadge class="inline-flex items-center justify-center w-4 h-4 rounded-full shrink-0
+                                     bg-[hsl(10_32%_90%)] text-[hsl(10_32%_45%)]
+                                     dark:bg-[hsl(10_20%_25%)] dark:text-[hsl(10_20%_60%)]">
                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="14.5" cy="8" r="5.5"/><path d="M14.5 8 12 5.5M14.5 8h-5M12 5.5v8"/></svg>
               </span>
             }
             <ng-container metaChips>
               @if (vipType() === 100) {
-                <span class="chip chip-gold"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+                <span class="{{ CHIP_BASE }} bg-amber-50 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
               } @else if (vipType() > 0 && vipType() < 100) {
-                <span class="chip chip-primary"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
+                <span class="{{ CHIP_BASE }} bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300"><svg aria-hidden="true" lucideCrown [size]="9"></svg>VIP</span>
               }
               @if (isMutual()) {
-                <span class="chip chip-partner"><svg aria-hidden="true" lucideHeartHandshake [size]="9"></svg>Partner</span>
+                <span class="{{ CHIP_BASE }} bg-pink-50 text-pink-600 dark:bg-pink-500/20 dark:text-pink-300"><svg aria-hidden="true" lucideHeartHandshake [size]="9"></svg>Partner</span>
               }
               @if (onlineStatus(); as status) {
-                <span class="chip" [class]="onlineChipClass()">{{ status }}</span>
+                <span [class]="onlineChipClass()">{{ status }}</span>
               }
               @if (liveStatus()) {
-                <span class="chip chip-live">LIVE</span>
+                <span class="{{ CHIP_BASE }} bg-red-50 text-red-600 dark:bg-red-900 dark:text-red-300">LIVE</span>
               }
               @if (presenceLabel(); as label) {
-                <span class="chip chip-presence">{{ label }}</span>
+                <span class="{{ CHIP_BASE }} bg-emerald-50 text-emerald-700 dark:bg-emerald-500/18 dark:text-emerald-300">{{ label }}</span>
               }
               @if (streakDays(); as streak) {
-                <span class="chip chip-streak">{{ streak }}-day streak</span>
+                <span class="{{ CHIP_BASE }} bg-amber-50 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300">{{ streak }}-day streak</span>
               }
             </ng-container>
           </app-user-identity-card>
@@ -120,10 +150,15 @@ export interface UserInfoModalData {
         />
 
         @if (canFollow()) {
-          <div class="action-row">
+          <div class="flex items-center gap-2 pt-2 px-4 animate-[itemIn_0.2s_ease-out_0.1s_backwards] motion-reduce:animate-none">
             <button
               type="button"
-              class="message-btn"
+              class="inline-flex items-center gap-[5px] py-1.5 px-3.5 rounded-full border-[1.5px] border-blue-500
+                     bg-blue-500 text-white text-xs font-semibold cursor-pointer
+                     transition-[background-color,opacity,border-color] duration-150
+                     not-disabled:hover:bg-blue-600 not-disabled:hover:border-blue-600
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500
+                     disabled:opacity-60 disabled:cursor-not-allowed"
               (click)="sendMessage()"
               aria-label="Send message to {{ displayName() }}"
             >
@@ -132,14 +167,13 @@ export interface UserInfoModalData {
             </button>
             <button
               type="button"
-              class="follow-btn"
-              [class.follow-btn--following]="isFollowing()"
+              [class]="followBtnClass()"
               [disabled]="isTogglingFollow()"
               (click)="toggleFollow()"
               [attr.aria-label]="followBtnLabel()"
             >
               @if (isTogglingFollow()) {
-                <svg aria-hidden="true" lucideLoader [size]="13" class="spin"></svg>
+                <svg aria-hidden="true" lucideLoader [size]="13" class="animate-spin motion-reduce:animate-none"></svg>
               } @else if (isFollowing()) {
                 <svg aria-hidden="true" lucideUserCheck [size]="13"></svg>
               } @else {
@@ -151,75 +185,83 @@ export interface UserInfoModalData {
         }
 
         @if (relationStats(); as stats) {
-          <div class="stats-row">
-            <div class="stat-item">
-              <span class="stat-val">{{ stats.followers }}</span>
-              <span class="stat-lbl">Followers</span>
+          <div class="flex items-center mt-3 mx-4 pb-2 border-b border-neutral-200 dark:border-neutral-700">
+            <div class="flex flex-col items-center flex-1 gap-px">
+              <span class="text-sm font-bold text-neutral-900 dark:text-neutral-100">{{ stats.followers }}</span>
+              <span class="text-[10px] text-neutral-500 dark:text-neutral-400">Followers</span>
             </div>
-            <div class="stat-item">
-              <span class="stat-val">{{ stats.following }}</span>
-              <span class="stat-lbl">Following</span>
+            <div class="flex flex-col items-center flex-1 gap-px">
+              <span class="text-sm font-bold text-neutral-900 dark:text-neutral-100">{{ stats.following }}</span>
+              <span class="text-[10px] text-neutral-500 dark:text-neutral-400">Following</span>
             </div>
-            <div class="stat-item">
-              <span class="stat-val">{{ stats.moments }}</span>
-              <span class="stat-lbl">Moments</span>
+            <div class="flex flex-col items-center flex-1 gap-px">
+              <span class="text-sm font-bold text-neutral-900 dark:text-neutral-100">{{ stats.moments }}</span>
+              <span class="text-[10px] text-neutral-500 dark:text-neutral-400">Moments</span>
             </div>
-            <div class="stat-item">
-              <span class="stat-val">{{ stats.likes }}</span>
-              <span class="stat-lbl">Likes</span>
+            <div class="flex flex-col items-center flex-1 gap-px">
+              <span class="text-sm font-bold text-neutral-900 dark:text-neutral-100">{{ stats.likes }}</span>
+              <span class="text-[10px] text-neutral-500 dark:text-neutral-400">Likes</span>
             </div>
           </div>
         }
       </div>
 
-      <div class="modal-body">
+      <div class="pt-3 px-4 pb-4 flex flex-col gap-3">
         @if (isLoading()) {
-          <div class="loading-state">
-            <div class="skeleton-row">
-              <div class="skeleton-chip"></div>
-              <div class="skeleton-chip skeleton-chip--lg"></div>
+          <div class="flex flex-col gap-2">
+            <div class="flex gap-2">
+              <div class="h-[22px] w-16 rounded-full bg-linear-to-r from-neutral-200 via-neutral-100 to-neutral-200
+                          dark:from-neutral-700 dark:via-neutral-600 dark:to-neutral-700
+                          [background-size:200%_100%] animate-[shimmer_1.4s_infinite] motion-reduce:animate-none"></div>
+              <div class="h-[22px] w-25 rounded-full bg-linear-to-r from-neutral-200 via-neutral-100 to-neutral-200
+                          dark:from-neutral-700 dark:via-neutral-600 dark:to-neutral-700
+                          [background-size:200%_100%] animate-[shimmer_1.4s_infinite] motion-reduce:animate-none"></div>
             </div>
-            <div class="skeleton-row">
-              <div class="skeleton-chip"></div>
-              <div class="skeleton-chip"></div>
+            <div class="flex gap-2">
+              <div class="h-[22px] w-16 rounded-full bg-linear-to-r from-neutral-200 via-neutral-100 to-neutral-200
+                          dark:from-neutral-700 dark:via-neutral-600 dark:to-neutral-700
+                          [background-size:200%_100%] animate-[shimmer_1.4s_infinite] motion-reduce:animate-none"></div>
+              <div class="h-[22px] w-16 rounded-full bg-linear-to-r from-neutral-200 via-neutral-100 to-neutral-200
+                          dark:from-neutral-700 dark:via-neutral-600 dark:to-neutral-700
+                          [background-size:200%_100%] animate-[shimmer_1.4s_infinite] motion-reduce:animate-none"></div>
             </div>
           </div>
         } @else {
           @if (hasLocationMeta() || nativeLang() || learnLangs().length) {
-            <div class="detail-group">
+            <div class="flex flex-col gap-2">
               @if (hasLocationMeta()) {
-                <div class="detail-row">
-                  <div class="detail-icon">
+                <div class="flex items-center gap-2 animate-[itemIn_0.2s_ease-out_backwards] motion-reduce:animate-none">
+                  <div class="flex items-center justify-center w-[26px] h-[26px] rounded-md bg-neutral-100 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   </div>
-                  <div class="detail-content">
+                  <div class="flex flex-wrap items-center gap-[5px] text-xs">
                     @if (nationality()) {
                       <app-country-flag [code]="nationality()" />
                     }
                     @if (location(); as loc) {
-                      <span class="detail-text">{{ loc }}</span>
+                      <span class="text-neutral-900 dark:text-neutral-100">{{ loc }}</span>
                     }
                     @if (age(); as a) {
-                      <span class="detail-text muted">{{ a }} yrs old</span>
+                      <span class="text-neutral-500 dark:text-neutral-400 text-[10px]">{{ a }} yrs old</span>
                     }
                     @if (regDays() != null) {
-                      <span class="detail-text muted">Member for {{ regDays() }}d</span>
+                      <span class="text-neutral-500 dark:text-neutral-400 text-[10px]">Member for {{ regDays() }}d</span>
                     }
                   </div>
                 </div>
               }
 
               @if (nativeLang() || learnLangs().length) {
-                <div class="detail-row">
-                  <div class="detail-icon">
+                <div class="flex items-center gap-2 animate-[itemIn_0.2s_ease-out_backwards] motion-reduce:animate-none">
+                  <div class="flex items-center justify-center w-[26px] h-[26px] rounded-md bg-neutral-100 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                   </div>
-                  <div class="detail-content">
+                  <div class="flex flex-wrap items-center gap-[5px] text-xs">
                     @if (nativeLang(); as lang) {
                       <app-language-tag [langId]="lang" />
                     }
                     @if (learnLangs().length) {
-                      <span class="detail-text muted">also learning</span>
+                      <span class="text-neutral-500 dark:text-neutral-400 text-[10px]">also learning</span>
                       @for (lang of learnLangs(); track lang.langId) {
                         <app-language-tag [langId]="lang.langId" />
                       }
@@ -231,36 +273,45 @@ export interface UserInfoModalData {
           }
 
           @if (tagChips().length) {
-            <div class="tags-row">
+            <div class="flex flex-wrap gap-1 animate-[itemIn_0.2s_ease-out_0.05s_backwards] motion-reduce:animate-none">
               @for (chip of tagChips(); track $index) {
-                <span class="tag">{{ chip }}</span>
+                <span class="inline-flex items-center text-[11px] py-0.5 px-2 rounded-full
+                             bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300
+                             border border-neutral-200 dark:border-neutral-600">{{ chip }}</span>
               }
             </div>
           }
 
           @if (giftLevel() || pointsSummary()) {
-            <div class="detail-row">
-              <div class="detail-icon gold-icon">
+            <div class="flex items-center gap-2">
+              <div class="flex items-center justify-center w-[26px] h-[26px] rounded-md shrink-0
+                          bg-amber-50 text-amber-600 dark:bg-amber-800/50 dark:text-amber-400">
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               </div>
-              <div class="detail-content">
+              <div class="flex flex-wrap items-center gap-[5px] text-xs">
                 @if (giftLevel(); as level) {
-                  <span class="chip chip-gold">Gift {{ level }}</span>
+                  <span class="{{ CHIP_BASE }} bg-amber-50 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300">Gift {{ level }}</span>
                 }
                 @if (pointsSummary(); as pts) {
-                  <span class="detail-text muted">{{ pts }} points</span>
+                  <span class="text-neutral-500 dark:text-neutral-400 text-[10px]">{{ pts }} points</span>
                 }
               </div>
             </div>
           }
 
           @if (remarkName() || profileUrl()) {
-            <div class="links-row">
+            <div class="flex items-center gap-2 pt-1 animate-[itemIn_0.2s_ease-out_0.1s_backwards] motion-reduce:animate-none">
               @if (remarkName(); as remark) {
-                <span class="remark-chip">&#64;{{ remark }}</span>
+                <span class="text-xs text-neutral-500 dark:text-neutral-400 italic">&#64;{{ remark }}</span>
               }
               @if (profileUrl(); as url) {
-                <a class="profile-link" [href]="url" target="_blank" rel="noopener">
+                <a
+                  class="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-300 no-underline font-medium
+                         hover:text-blue-700 hover:underline dark:hover:text-blue-200"
+                  [href]="url"
+                  target="_blank"
+                  rel="noopener"
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                   View profile
                 </a>
@@ -278,468 +329,32 @@ export interface UserInfoModalData {
             !remarkName() &&
             !profileUrl()
           ) {
-            <div class="empty-state">
-              <p class="empty-text">No details yet</p>
+            <div class="flex items-center justify-center py-4">
+              <p class="text-xs text-neutral-500 dark:text-neutral-400 m-0 italic">No details yet</p>
             </div>
           }
         }
       </div>
     </app-modal>
   `,
+  /** Remaining irreducible CSS: the two bespoke entrance keyframes (no Tailwind
+   *  built-in matches these specific slide/scale-in shapes) — kept local rather
+   *  than relying on another component's identically-named `@keyframes itemIn`
+   *  happening to be in the same bundle. `--_modal-radius` is ModalComponent's
+   *  own consumer-override hook (a literal value here, not a design token). */
   styles: [
     `
       :host {
-        display: flex;
-        flex-direction: column;
-        width: 340px;
-        max-width: calc(100vw - var(--space-8));
-        /* Cap the modal so a long bio + many tags can't push it off-screen. */
-        max-height: 85dvh;
-        --_modal-radius: var(--radius-xl);
-        box-shadow: var(--shadow-modal);
-        animation: slideUp 0.2s ease-out;
+        --_modal-radius: 0.75rem;
       }
       @keyframes slideUp {
         from { opacity: 0; transform: translateY(10px) scale(0.98); }
         to   { opacity: 1; transform: translateY(0) scale(1); }
       }
-      @media (prefers-reduced-motion: reduce) {
-        :host { animation: none; }
+      @keyframes itemIn {
+        from { opacity: 0; transform: translateY(4px) scale(0.95); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
       }
-
-      .modal-scroll {
-        /* Scrollable shell so the top section (identity card, banner, stats) can grow
-           without pushing the modal off-screen. The sticky identity-wrapper header
-           stays visible while detail content scrolls below. */
-        display: flex;
-        flex-direction: column;
-        max-height: 46dvh;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        scroll-padding-top: var(--space-2);
-        /* Progressively fade the bottom edge so the boundary between the scroll
-           container and the modal-body feels natural rather than abrupt. */
-        mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-        -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-      }
-
-      .identity-wrapper {
-        padding-top: calc(26px + var(--space-3));
-        background: var(--color-card);
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-        animation: itemIn 0.25s ease-out backwards;
-        flex-shrink: 0;
-      }
-      :host-context(.dark) .identity-wrapper {
-        background: var(--color-neutral-800);
-      }
-
-      .close-btn {
-        position: absolute;
-        top: var(--space-3);
-        right: var(--space-3);
-        width: 44px;
-        height: 44px;
-        border-radius: var(--radius-full);
-        border: none;
-        background: var(--color-neutral-100);
-        color: var(--color-text-muted);
-        cursor: pointer;
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.15s, transform 0.15s;
-        z-index: 1;
-      }
-      .close-btn:hover {
-        background: var(--color-neutral-200);
-        color: var(--color-text);
-        transform: rotate(90deg);
-      }
-      .close-btn:focus-visible {
-        outline: var(--focus-ring);
-        outline-offset: 2px;
-      }
-      :host-context(.dark) .close-btn {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-300);
-      }
-      :host-context(.dark) .close-btn:hover {
-        background: var(--color-neutral-600);
-        color: var(--color-neutral-100);
-      }
-
-      .sex-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 16px;
-        height: 16px;
-        border-radius: var(--radius-full);
-        flex-shrink: 0;
-      }
-      .sex-male {
-        background: hsl(230deg 28% 90%);
-        color: hsl(230deg 28% 45%);
-      }
-      .sex-female {
-        background: hsl(10deg 32% 90%);
-        color: hsl(10deg 32% 45%);
-      }
-      :host-context(.dark) .sex-male {
-        background: hsl(230deg 20% 25%);
-        color: hsl(230deg 20% 60%);
-      }
-      :host-context(.dark) .sex-female {
-        background: hsl(10deg 20% 25%);
-        color: hsl(10deg 20% 60%);
-      }
-
-      .stats-row {
-        display: flex;
-        align-items: center;
-        margin: var(--space-3) var(--space-4) 0;
-        padding-bottom: var(--space-2);
-        border-bottom: 1px solid var(--color-border);
-      }
-      :host-context(.dark) .stats-row {
-        border-bottom-color: var(--color-neutral-700);
-      }
-
-      .stat-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        flex: 1;
-        gap: 1px;
-      }
-
-      .stat-val {
-        font-size: var(--text-sm);
-        font-weight: var(--font-bold);
-        color: var(--color-text);
-      }
-      :host-context(.dark) .stat-val { color: var(--color-neutral-100); }
-
-      .stat-lbl {
-        font-size: 10px;
-        color: var(--color-text-muted);
-      }
-      :host-context(.dark) .stat-lbl { color: var(--color-neutral-400); }
-
-      .chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        font-size: var(--text-2xs);
-        font-weight: var(--font-semibold);
-        padding: 2px 6px;
-        border-radius: var(--radius-full);
-        white-space: nowrap;
-      }
-      .chip-neutral {
-        background: var(--color-neutral-100);
-        color: var(--color-text-secondary);
-      }
-      .chip-primary {
-        background: var(--color-primary-50);
-        color: var(--color-primary-text);
-      }
-      .chip-gold {
-        background: var(--color-gold-50);
-        color: var(--color-gold-600);
-      }
-      .chip-online {
-        background: var(--color-accent-50);
-        color: var(--color-accent-600);
-      }
-      .chip-offline {
-        background: var(--color-neutral-100);
-        color: var(--color-text-muted);
-      }
-      .chip-live {
-        background: var(--color-error-50);
-        color: var(--color-error-600);
-      }
-      .chip-presence {
-        background: var(--color-accent-50);
-        color: var(--color-accent-700);
-      }
-      .chip-streak {
-        background: var(--color-gold-50);
-        color: var(--color-gold-600);
-      }
-      .chip-partner {
-        background: var(--color-berry-50);
-        color: var(--color-berry-600);
-      }
-      :host-context(.dark) .chip-partner {
-        background: color-mix(in srgb, var(--color-berry-500) 20%, transparent);
-        color: var(--color-berry-300);
-      }
-      :host-context(.dark) .chip-offline {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-300);
-      }
-      :host-context(.dark) .chip-live {
-        background: var(--color-error-900);
-        color: var(--color-error-300);
-      }
-      :host-context(.dark) .chip-presence {
-        background: color-mix(in srgb, var(--color-accent-500) 18%, transparent);
-        color: var(--color-accent-300);
-      }
-      :host-context(.dark) .chip-neutral {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-200);
-      }
-      :host-context(.dark) .chip-primary {
-        background: var(--color-primary-900);
-        color: var(--color-primary-300);
-      }
-      :host-context(.dark) .chip-gold {
-        background: color-mix(in srgb, var(--color-gold-500) 20%, transparent);
-        color: var(--color-gold-300);
-      }
-      :host-context(.dark) .chip-streak {
-        background: color-mix(in srgb, var(--color-gold-500) 20%, transparent);
-        color: var(--color-gold-300);
-      }
-      :host-context(.dark) .chip-online {
-        background: var(--color-accent-900);
-        color: var(--color-accent-300);
-      }
-
-      .modal-body {
-        padding: var(--space-3) var(--space-4) var(--space-4);
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3);
-        /* modal-body is always visible and compact — detail content is short by nature
-           (language tags, location, links). If it ever overflows the 85dvh host cap,
-           it scrolls within its own space, independent of the identity section above. */
-      }
-
-      .detail-group {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-      }
-
-      .detail-row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        animation: itemIn 0.2s ease-out backwards;
-      }
-
-      .detail-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 26px;
-        height: 26px;
-        border-radius: var(--radius-md);
-        background: var(--color-neutral-100);
-        color: var(--color-neutral-500);
-        flex-shrink: 0;
-      }
-      .detail-icon.gold-icon {
-        background: var(--color-gold-50);
-        color: var(--color-gold-600);
-      }
-      :host-context(.dark) .detail-icon {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-400);
-      }
-      :host-context(.dark) .detail-icon.gold-icon {
-        background: color-mix(in srgb, var(--color-gold-800) 50%, transparent);
-        color: var(--color-gold-400);
-      }
-
-      .detail-content {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 5px;
-        font-size: var(--text-xs);
-      }
-
-      .detail-text {
-        color: var(--color-text);
-      }
-      .detail-text.muted {
-        color: var(--color-text-muted);
-        font-size: var(--text-2xs);
-      }
-      :host-context(.dark) .detail-text { color: var(--color-neutral-100); }
-      :host-context(.dark) .detail-text.muted { color: var(--color-neutral-400); }
-
-      .tags-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-1);
-        animation: itemIn 0.2s ease-out 0.05s backwards;
-      }
-
-      .tag {
-        display: inline-flex;
-        align-items: center;
-        font-size: 11px;
-        padding: 2px 8px;
-        border-radius: var(--radius-full);
-        background: var(--color-neutral-100);
-        color: var(--color-text-secondary);
-        border: 1px solid var(--color-neutral-200);
-      }
-      :host-context(.dark) .tag {
-        background: var(--color-neutral-700);
-        color: var(--color-neutral-300);
-        border-color: var(--color-neutral-600);
-      }
-
-      .links-row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding-top: var(--space-1);
-        animation: itemIn 0.2s ease-out 0.1s backwards;
-      }
-
-      .remark-chip {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        font-style: italic;
-      }
-
-      .profile-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: var(--text-xs);
-        color: var(--color-primary-text);
-        text-decoration: none;
-        font-weight: var(--font-medium);
-      }
-      .profile-link:hover {
-        color: var(--color-primary-700);
-        text-decoration: underline;
-      }
-      :host-context(.dark) .profile-link { color: var(--color-primary-300); }
-      :host-context(.dark) .profile-link:hover { color: var(--color-primary-200); }
-
-      .empty-state {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: var(--space-4) 0;
-      }
-      .empty-text {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        margin: 0;
-        font-style: italic;
-      }
-      :host-context(.dark) .empty-text { color: var(--color-neutral-400); }
-
-      .loading-state {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-      }
-      .skeleton-row {
-        display: flex;
-        gap: var(--space-2);
-      }
-      .skeleton-chip {
-        height: 22px;
-        width: 64px;
-        border-radius: var(--radius-full);
-        background: linear-gradient(90deg, var(--color-neutral-200) 25%, var(--color-neutral-100) 50%, var(--color-neutral-200) 75%);
-        background-size: 200% 100%;
-        animation: shimmer 1.4s infinite;
-      }
-      .skeleton-chip--lg { width: 100px; }
-      :host-context(.dark) .skeleton-chip {
-        background: linear-gradient(90deg, var(--color-neutral-700) 25%, var(--color-neutral-600) 50%, var(--color-neutral-700) 75%);
-        background-size: 200% 100%;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .skeleton-chip { animation: none; }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .detail-row, .tags-row, .links-row { animation: none; }
-      }
-
-      .action-row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-2) var(--space-4) 0;
-        animation: itemIn 0.2s ease-out 0.1s backwards;
-      }
-
-      .message-btn,
-      .follow-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 6px 14px;
-        border-radius: var(--radius-full);
-        border: 1.5px solid var(--color-primary, #4F46E5);
-        background: var(--color-primary, #4F46E5);
-        color: #fff;
-        font-size: var(--text-xs);
-        font-weight: var(--font-semibold);
-        cursor: pointer;
-        transition: background 0.15s, opacity 0.15s, border-color 0.15s;
-      }
-      /* The Message button is the primary CTA — filled. The Follow button
-         toggles to a transparent "Following" state when active (see
-         .follow-btn--following below), so we deliberately give them a
-         shared base and let .follow-btn--following override the fill. */
-      .message-btn:hover:not(:disabled) {
-        background: var(--color-primary-700, #4338ca);
-        border-color: var(--color-primary-700, #4338ca);
-      }
-      .message-btn:focus-visible,
-      .follow-btn:focus-visible {
-        outline: var(--focus-ring);
-        outline-offset: 2px;
-      }
-      .message-btn:disabled,
-      .follow-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-      .follow-btn:hover:not(:disabled) {
-        background: var(--color-primary-700, #4338ca);
-        border-color: var(--color-primary-700, #4338ca);
-      }
-      .follow-btn:focus-visible {
-        outline: var(--focus-ring);
-        outline-offset: 2px;
-      }
-      .follow-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-      .follow-btn--following {
-        background: transparent;
-        color: var(--color-primary, #4F46E5);
-      }
-      .follow-btn--following:hover:not(:disabled) {
-        background: var(--color-primary-50);
-        border-color: var(--color-primary, #4F46E5);
-      }
-
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      .spin { animation: spin 0.8s linear infinite; }
     `,
   ],
 })
@@ -751,6 +366,8 @@ export class UserInfoModalComponent {
   private readonly toast = inject(ToastService);
   private readonly authStore = inject(AuthStore);
   private readonly activeCallStore = inject(ActiveCallStore);
+
+  protected readonly CHIP_BASE = CHIP_BASE;
 
   constructor() {
     this.userInfoService.ensureFresh(this.data.userId);
@@ -888,7 +505,9 @@ export class UserInfoModalComponent {
     return null;
   });
   readonly onlineChipClass = computed(() =>
-    this.onlineStatus() === 'Online' ? 'chip-online' : 'chip-offline',
+    this.onlineStatus() === 'Online'
+      ? `${CHIP_BASE} bg-emerald-50 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-300`
+      : `${CHIP_BASE} bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300`,
   );
 
   readonly liveStatus = computed(() => {
@@ -956,6 +575,24 @@ export class UserInfoModalComponent {
   readonly followBtnLabel = computed(() => {
     if (this.isTogglingFollow()) return '…';
     return this.isFollowing() ? 'Following' : 'Follow';
+  });
+
+  /** The Message button is the primary CTA — always filled. This button toggles
+   *  to a transparent "Following" state when active, so its full class string is
+   *  computed per-state rather than layered with conditional utilities — two
+   *  Tailwind classes for the same CSS property (e.g. `bg-blue-500` vs
+   *  `bg-transparent`) don't reliably override each other via DOM class order,
+   *  only via generated-stylesheet order, so each state needs its own complete
+   *  string. */
+  protected readonly followBtnClass = computed(() => {
+    const base =
+      'inline-flex items-center gap-[5px] py-1.5 px-3.5 rounded-full border-[1.5px] text-xs font-semibold ' +
+      'cursor-pointer transition-[background-color,opacity,border-color] duration-150 ' +
+      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ' +
+      'disabled:opacity-60 disabled:cursor-not-allowed';
+    return this.isFollowing()
+      ? `${base} bg-transparent border-blue-500 text-blue-600 not-disabled:hover:bg-blue-50`
+      : `${base} bg-blue-500 border-blue-500 text-white not-disabled:hover:bg-blue-600 not-disabled:hover:border-blue-600`;
   });
 
   async toggleFollow(): Promise<void> {
