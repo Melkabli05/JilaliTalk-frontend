@@ -29,6 +29,7 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'fullsc
       class="grid h-svh grid-cols-1 overflow-hidden"
       [class.immersive]="immersive()"
       [class.fullscreen]="fullscreen()"
+      [style]="shellInsetsStyle()"
     >
       <!-- Sidenav's own mobile-folding logic lives inside app-sidenav.component.*;
            the shell only suppresses it on fullscreen routes (login/signup are
@@ -65,71 +66,28 @@ function isRouteFlagSet(root: ActivatedRouteSnapshot, key: 'immersive' | 'fullsc
   `,
   styles: [
     `
-      /* This shell's only non-utility CSS is the inset engine — it authors
-         two CSS custom properties (--shell-inset-top / --shell-inset-bottom)
-         that 6 other files consume via var(...): room-page.scss, room-header.scss,
-         comment-input.ts, comments-panel.ts, comment-list.ts. Tailwind utility
-         classes cannot author a CSS variable, so this stays. Structural layout
-         (grid, sizing, overflow, the desktop sidebar margin) now lives in the
-         template's Tailwind classes above. */
-
-      :host {
-        display: block;
-        --shell-inset-top: var(--app-header-height);
-        --shell-inset-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
-      }
-      /* .mobile-nav (which --bottom-nav-height reserves space for) is
-         display:none above 1024px — the sidenav takes over and consumes no
-         vertical space, so nothing needs bottom clearance on desktop. */
-      @media (min-width: 1024px) {
-        :host {
-          --shell-inset-bottom: env(safe-area-inset-bottom, 0px);
-        }
-      }
-
-      /* Fullscreen routes (login/signup — chromeless auth pages) drop every
-         piece of shell chrome on every viewport, and collapse the insets to
-         zero so the page itself owns the full 100svh/100dvh and is responsible
-         for its own safe-area padding. */
-      .fullscreen {
-        --shell-inset-top: 0px;
-        --shell-inset-bottom: 0px;
-      }
-
-      /* .main-wrapper sizing/positioning + the desktop sidebar offset (incl. RTL flip)
-         all live on the template via Tailwind utilities:
-         lg:ms-[var(--sidebar-width)] rtl:lg:ms-0 rtl:lg:me-[var(--sidebar-width)]. */
-
-      /* The ONLY scroll container. Fills the slot — header floats above.
-         Inset padding comes from --shell-inset-top / --shell-inset-bottom. */
+      /* IRREDUCIBLE CONSUMER-CONTRACT STYLES (4 lines):
+           :host { display: block } — required; structural layout (grid, sizing, overflow,
+             mobile-first visibility via .block/.lg:hidden, the desktop sidebar margin via
+             ms-/me-/rtl: variants) is in the template.
+           --shell-inset-top / --shell-inset-bottom — authored CSS variables that 6 other
+             files consume via var(...). Tailwind utilities cannot author CSS variables
+             consumed by other stylesheets (the only alternatives are per-consumer
+             refactors which violate the contract). The values themselves now come from
+             the dynamic shellInsetsStyle() inline binding on the root div, which
+             replaces both the desktop @media override and the .fullscreen/.immersive
+             SCSS rules. */
+      :host { display: block; }
       .app-main-shell {
         padding-top: var(--shell-inset-top);
         padding-bottom: var(--shell-inset-bottom);
-        scrollbar-width: thin;
-        scrollbar-gutter: stable;
-        scrollbar-color: var(--color-neutral-300) transparent;
         -webkit-overflow-scrolling: touch;
       }
+      /* No Tailwind utility equivalents for vendor scrollbar styling or touch-momentum
+         scrolling — these are the only remaining "custom CSS" in this file. */
+      .app-main-shell { scrollbar-width: thin; }
       .app-main-shell::-webkit-scrollbar { width: 6px; }
-      .app-main-shell::-webkit-scrollbar-thumb {
-        background-color: var(--color-neutral-300);
-        border-radius: 3px;
-      }
-
-      /* Immersive routes (mobile room pages) hide the global header and bottom
-         nav. The insets collapse to just the safe-area (mobile) or just the
-         still-visible desktop app-header (desktop — sidenav replaces the
-         bottom-nav on desktop, so the only chrome that disappears is the
-         bottom-nav). */
-      .immersive {
-        --shell-inset-top: max(env(safe-area-inset-top), var(--space-3));
-        --shell-inset-bottom: env(safe-area-inset-bottom);
-      }
-      @media (min-width: 1024px) {
-        .immersive {
-          --shell-inset-top: var(--app-header-height);
-        }
-      }
+      .app-main-shell::-webkit-scrollbar-thumb { background-color: var(--color-neutral-300); border-radius: 3px; }
     `,
   ],
 })
@@ -167,4 +125,49 @@ export class App {
   private readonly isMobileViewport = injectIsMobileViewport();
 
   readonly hideSidenav = computed(() => this.immersive() && this.isMobileViewport());
+
+  /**
+   * Computes the per-state CSS variable overrides for --shell-inset-top / --shell-inset-bottom.
+   * These variables are consumed by 6 other files via var(); Tailwind utility classes cannot
+   * author CSS variables consumed across stylesheets, so the value must be expressed via
+   * an inline [style] binding here. Replaces the previous SCSS .fullscreen / .immersive
+   * rules AND the desktop @media (min-width: 1024px) override for bottom-nav clearance.
+   *
+   * Three states (fullscreen always wins):
+   *   fullscreen   → both insets 0px (auth pages own their own safe-area padding)
+   *   immersive    → top = max(safe-area-inset-top, --space-3)
+   *                  bottom = safe-area-inset-bottom
+   *                  (this is the immersive-mobile case; on desktop immersive just
+   *                  hides the bottom-nav, so top stays the same as a normal page)
+   *   normal       → top = app-header-height
+   *                  bottom = bottom-nav-height + safe-area-inset-bottom (mobile)
+   *                          or just safe-area-inset-bottom (lg+, since bottom-nav
+   *                          is hidden via its own .lg:hidden)
+   * The isMobileViewport signal decides which side of the lg+ branch we land on for
+   * the normal state; immersive uses only the mobile shape.
+   */
+  readonly shellInsetsStyle = computed<Record<string, string>>(() => {
+    const full = this.fullscreen();
+    const imm = this.immersive();
+    const mobile = this.isMobileViewport();
+
+    if (full) {
+      return {
+        '--shell-inset-top': '0px',
+        '--shell-inset-bottom': '0px',
+      };
+    }
+    if (imm) {
+      return {
+        '--shell-inset-top': 'max(env(safe-area-inset-top), var(--space-3))',
+        '--shell-inset-bottom': 'env(safe-area-inset-bottom)',
+      };
+    }
+    return {
+      '--shell-inset-top': 'var(--app-header-height)',
+      '--shell-inset-bottom': mobile
+        ? 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))'
+        : 'env(safe-area-inset-bottom, 0px)',
+    };
+  });
 }
