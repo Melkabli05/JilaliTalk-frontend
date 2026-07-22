@@ -36,6 +36,10 @@ const STEPS = ['account', 'code'] as const;
   selector: 'app-signup-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, FormField, InputComponent, ButtonComponent, ErrorBannerComponent, AuthShellComponent, AutofocusDirective, LucideUserPlus, LucideCheck, LucideChevronLeft],
+  /* See login-page.component.ts's identical rule for why this matters: without it, this
+     route-level component defaults to display:inline and the auth-shell grid inside it
+     overflows narrow viewports instead of being constrained by the page width. */
+  host: { class: 'block' },
   template: `
     <app-auth-shell title="Create your JilaliTalk account">
       <svg auth-icon aria-hidden="true" lucideUserPlus [size]="24"></svg>
@@ -47,21 +51,25 @@ const STEPS = ['account', 'code'] as const;
         }
       </span>
 
-      <div class="step-progress" role="group" aria-label="Sign-up steps">
-        <div class="step-item" [class.step-item--done]="step() === 'code'">
-          <span class="step-circle" [class.step-circle--active]="step() === 'account'">
+      <div class="flex items-start justify-center gap-0 -mt-2" role="group" aria-label="Sign-up steps">
+        <div class="flex flex-col items-center gap-1">
+          <span [class]="stepCircleClass(step() === 'account', step() === 'code')">
             @if (step() === 'code') {
               <svg aria-hidden="true" lucideCheck [size]="11" [strokeWidth]="3"></svg>
             } @else {
               1
             }
           </span>
-          <span class="step-label">Account</span>
+          <span class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">Account</span>
         </div>
-        <span class="step-line" [class.step-line--done]="step() === 'code'" aria-hidden="true"></span>
-        <div class="step-item">
-          <span class="step-circle" [class.step-circle--active]="step() === 'code'">2</span>
-          <span class="step-label">Verify</span>
+        <span
+          class="w-10 h-0.5 mt-[11px] mx-2 shrink-0 transition-colors duration-200"
+          [class]="step() === 'code' ? 'bg-blue-500' : 'bg-neutral-200 dark:bg-neutral-700'"
+          aria-hidden="true"
+        ></span>
+        <div class="flex flex-col items-center gap-1">
+          <span [class]="stepCircleClass(step() === 'code', false)">2</span>
+          <span class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">Verify</span>
         </div>
       </div>
       <p class="sr-only" aria-live="polite">
@@ -69,7 +77,7 @@ const STEPS = ['account', 'code'] as const;
       </p>
 
       @if (step() === 'account') {
-        <form (submit)="onAccountSubmit($event)" novalidate>
+        <form class="flex flex-col gap-3" (submit)="onAccountSubmit($event)" novalidate>
           <app-input
             label="Email"
             type="email"
@@ -98,7 +106,7 @@ const STEPS = ['account', 'code'] as const;
             type="submit"
             variant="primary"
             size="lg"
-            class="submit-btn"
+            class="mt-2 w-full"
             [loading]="submitting()"
             [disabled]="!canSubmitAccount()"
           >
@@ -106,8 +114,8 @@ const STEPS = ['account', 'code'] as const;
           </app-button>
         </form>
       } @else {
-        <form (submit)="onCodeSubmit($event)" novalidate>
-          <div class="code-field">
+        <form class="flex flex-col gap-3" (submit)="onCodeSubmit($event)" novalidate>
+          <div class="flex flex-col gap-1">
             <label for="signup-code" class="sr-only">Verification code</label>
             <input
               id="signup-code"
@@ -115,7 +123,12 @@ const STEPS = ['account', 'code'] as const;
               inputmode="numeric"
               pattern="[0-9]*"
               [attr.maxlength]="codeLength"
-              class="code-input"
+              class="w-full h-14 px-4 border border-neutral-200 dark:border-neutral-700 rounded-md box-border
+                     bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100
+                     text-[28px] font-bold tracking-[16px] indent-[16px] text-center outline-none font-[inherit]
+                     transition-[border-color,box-shadow] duration-150
+                     placeholder:text-neutral-300 placeholder:tracking-[8px] placeholder:font-normal placeholder:text-xl
+                     focus:border-blue-500 focus:shadow-[0_0_0_3px_rgb(59_130_246/10%)]"
               placeholder="0000"
               autocomplete="one-time-code"
               autocapitalize="off"
@@ -132,19 +145,37 @@ const STEPS = ['account', 'code'] as const;
             type="submit"
             variant="primary"
             size="lg"
-            class="submit-btn"
+            class="mt-2 w-full"
             [loading]="submitting()"
             [disabled]="code().length !== codeLength || submitting()"
           >
             Create account
           </app-button>
 
-          <div class="step-actions">
-            <button type="button" class="text-link" [disabled]="submitting()" (click)="backToAccount()">
+          <div class="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              class="inline-flex items-center gap-0.5 border-0 bg-transparent text-neutral-500 dark:text-neutral-400
+                     text-xs font-medium cursor-pointer p-2 transition-colors duration-150
+                     hover:text-neutral-900 dark:hover:text-neutral-100
+                     disabled:opacity-50 disabled:cursor-default
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 focus-visible:rounded-sm"
+              [disabled]="submitting()"
+              (click)="backToAccount()"
+            >
               <svg aria-hidden="true" lucideChevronLeft [size]="13"></svg>
               Change email
             </button>
-            <button type="button" class="text-link" [disabled]="submitting()" (click)="resendCode()">
+            <button
+              type="button"
+              class="inline-flex items-center gap-0.5 border-0 bg-transparent text-neutral-500 dark:text-neutral-400
+                     text-xs font-medium cursor-pointer p-2 transition-colors duration-150
+                     hover:text-neutral-900 dark:hover:text-neutral-100
+                     disabled:opacity-50 disabled:cursor-default
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 focus-visible:rounded-sm"
+              [disabled]="submitting()"
+              (click)="resendCode()"
+            >
               Resend code
             </button>
           </div>
@@ -153,127 +184,13 @@ const STEPS = ['account', 'code'] as const;
 
       <ng-container auth-footer>
         Already have an account?
-        <a routerLink="/login" class="alt-link">Sign in</a>
+        <a
+          routerLink="/login"
+          class="text-blue-600 dark:text-blue-400 no-underline font-medium hover:underline"
+        >Sign in</a>
       </ng-container>
     </app-auth-shell>
   `,
-  styles: [`
-    /* See login-page.component.ts's identical rule for why this matters: without it, this
-       route-level component defaults to display:inline and the auth-shell grid inside it
-       overflows narrow viewports instead of being constrained by the page width. */
-    :host { display: block; }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
-    .submit-btn {
-      margin-top: var(--space-2);
-      width: 100%;
-    }
-    .sr-only {
-      position: absolute; width: 1px; height: 1px; padding: 0;
-      margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0);
-      white-space: nowrap; border: 0;
-    }
-
-    /* ── Step progress ── */
-    .step-progress {
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      gap: 0;
-      margin-top: calc(-1 * var(--space-2));
-    }
-    .step-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: var(--space-1);
-    }
-    .step-circle {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 2px solid var(--color-border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: var(--font-semibold);
-      color: var(--color-text-muted);
-      background: var(--color-card);
-      transition: background 0.2s, border-color 0.2s, color 0.2s;
-      flex-shrink: 0;
-    }
-    .step-circle--active {
-      border-color: var(--color-primary-500);
-      color: var(--color-primary-text);
-    }
-    .dark .step-circle--active { color: var(--color-primary-300); }
-    .step-item--done .step-circle {
-      border-color: var(--color-primary-500);
-      background: var(--color-primary-500);
-      color: var(--color-on-color);
-    }
-    .step-label {
-      font-size: 11px;
-      font-weight: var(--font-medium);
-      color: var(--color-text-muted);
-    }
-    .step-line {
-      width: 40px;
-      height: 2px;
-      background: var(--color-border);
-      margin: 11px var(--space-2) 0;
-      flex-shrink: 0;
-      transition: background 0.2s;
-    }
-    .step-line--done { background: var(--color-primary-500); }
-
-    .code-field { display: flex; flex-direction: column; gap: var(--space-1); }
-    .code-input {
-      width: 100%; height: 56px; padding: 0 var(--space-4);
-      border: 1px solid var(--color-border); border-radius: var(--radius-md);
-      background: var(--color-card); color: var(--color-text);
-      font-size: 28px; font-weight: var(--font-bold); letter-spacing: 16px;
-      text-indent: 16px;
-      text-align: center; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
-      box-sizing: border-box; font-family: inherit;
-    }
-    .dark .code-input { background: var(--color-neutral-800); color: var(--color-neutral-100); }
-    .code-input::placeholder { color: var(--color-neutral-300); letter-spacing: 8px; font-weight: var(--font-normal); font-size: 20px; }
-    .code-input:focus {
-      border-color: var(--color-primary-500);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 10%, transparent);
-    }
-
-    .step-actions {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--space-2);
-    }
-    .text-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 2px;
-      border: none; background: transparent;
-      color: var(--color-text-muted); font-size: var(--text-xs); font-weight: var(--font-medium);
-      cursor: pointer; padding: var(--space-2); transition: color 0.15s;
-    }
-    .text-link:hover { color: var(--color-text); }
-    .text-link:disabled { opacity: 0.5; cursor: default; }
-    .text-link:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); border-radius: var(--radius-sm); }
-    .alt-link {
-      color: var(--color-primary-text);
-      text-decoration: none;
-      font-weight: var(--font-medium);
-    }
-    .alt-link:hover { text-decoration: underline; }
-    .dark .alt-link { color: var(--color-primary-400); }
-  `],
 })
 export class SignupPageComponent {
   private readonly authService = inject(AuthService);
@@ -300,6 +217,17 @@ export class SignupPageComponent {
   readonly canSubmitAccount = computed(() => this.accountForm().valid() && !this.submitting());
 
   protected readonly firstError = firstError;
+
+  /** Full class string per step-circle state — "done" (checkmark, filled blue) takes
+   *  priority over "active" (outlined blue) since a step can be both only transiently. */
+  protected stepCircleClass(active: boolean, done: boolean): string {
+    const base =
+      'w-6 h-6 rounded-full border-2 flex items-center justify-center text-[11px] font-semibold ' +
+      'transition-[background-color,border-color,color] duration-200 shrink-0';
+    if (done) return `${base} border-blue-500 bg-blue-500 text-white`;
+    if (active) return `${base} border-blue-500 text-blue-700 dark:text-blue-300 bg-white dark:bg-neutral-900`;
+    return `${base} border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 bg-white dark:bg-neutral-900`;
+  }
 
   onCodeInput(event: Event): void {
     const raw = (event.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, CODE_LENGTH);

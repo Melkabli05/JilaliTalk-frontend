@@ -18,12 +18,18 @@ import { AuthShellComponent } from '../../ui/auth-shell/auth-shell.component';
   selector: 'app-login-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, FormField, InputComponent, ButtonComponent, ErrorBannerComponent, AuthShellComponent, LucideLogIn],
+  /* Route-level component with no explicit display defaults to CSS's inline for unknown
+     elements — AuthShellComponent's own :host is display:contents, so without this the
+     whole chain down to .auth-shell (display:grid) never gets a proper block-level
+     ancestor, and the grid is free to size to its content's max-content width instead of
+     the viewport. That's what caused the page to overflow horizontally on narrow phones. */
+  host: { class: 'block' },
   template: `
     <app-auth-shell title="Sign in to JilaliTalk">
       <svg auth-icon aria-hidden="true" lucideLogIn [size]="24"></svg>
       <span auth-subtitle>Use your HelloTalk email and password.</span>
 
-      <form (submit)="onSubmit($event)" novalidate>
+      <form class="flex flex-col gap-3" (submit)="onSubmit($event)" novalidate>
         <app-input
           label="Email"
           type="email"
@@ -51,7 +57,7 @@ import { AuthShellComponent } from '../../ui/auth-shell/auth-shell.component';
           type="submit"
           variant="primary"
           size="lg"
-          class="submit-btn"
+          class="mt-2 w-full"
           [loading]="submitting()"
           [disabled]="!canSubmit()"
         >
@@ -61,35 +67,13 @@ import { AuthShellComponent } from '../../ui/auth-shell/auth-shell.component';
 
       <ng-container auth-footer>
         No account?
-        <a routerLink="/signup" class="alt-link">Create one</a>
+        <a
+          routerLink="/signup"
+          class="text-blue-600 dark:text-blue-400 no-underline font-medium hover:underline"
+        >Create one</a>
       </ng-container>
     </app-auth-shell>
   `,
-  styles: [`
-    /* Route-level component with no explicit display defaults to CSS's inline for unknown
-       elements — AuthShellComponent's own :host is display:contents, so without this the
-       whole chain down to .auth-shell (display:grid) never gets a proper block-level
-       ancestor, and the grid free to size to its content's max-content width instead of the
-       viewport. That's what caused the page to overflow horizontally on narrow phones. */
-    :host { display: block; }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
-    .submit-btn {
-      margin-top: var(--space-2);
-      width: 100%;
-    }
-    .alt-link {
-      color: var(--color-primary-text);
-      text-decoration: none;
-      font-weight: var(--font-medium);
-    }
-    .alt-link:hover { text-decoration: underline; }
-    .dark .alt-link { color: var(--color-primary-400); }
-  `],
 })
 export class LoginPageComponent {
   private readonly authService = inject(AuthService);
