@@ -12,21 +12,28 @@ import { LucideEye, LucideEyeOff } from '@lucide/angular';
 
 let nextId = 0;
 
+const SIZE_CLASSES: Record<'sm' | 'md' | 'lg', string> = {
+  sm: 'h-9 px-3 text-[max(16px,0.75rem)]',
+  md: 'h-11 px-4 text-[max(16px,0.875rem)]',
+  lg: 'h-12 px-4 text-base',
+};
+
 @Component({
   selector: 'app-input',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideEye, LucideEyeOff],
+  host: { class: 'block' },
   template: `
-    <div class="input-wrapper">
+    <div class="flex flex-col gap-1">
       @if (label()) {
-        <label [for]="inputId" class="input-label">
+        <label [for]="inputId" class="text-sm font-medium text-neutral-900 dark:text-neutral-200">
           {{ label() }}
           @if (required()) {
-            <span class="required-mark" aria-hidden="true">*</span>
+            <span class="text-red-500 ml-0.5" aria-hidden="true">*</span>
           }
         </label>
       }
-      <div class="input-inner">
+      <div class="relative flex items-center">
         <input
           [id]="inputId"
           [type]="effectiveType()"
@@ -34,8 +41,7 @@ let nextId = 0;
           [disabled]="disabled()"
           [readonly]="readonly()"
           [required]="required()"
-          [class]="sizeClass()"
-          [class.input-has-toggle]="type() === 'password'"
+          [class]="inputClasses()"
           [value]="value()"
           [attr.inputmode]="inputmode() || null"
           [attr.enterkeyhint]="enterkeyhint() || null"
@@ -50,7 +56,11 @@ let nextId = 0;
         @if (type() === 'password') {
           <button
             type="button"
-            class="password-toggle"
+            class="absolute right-0.5 top-1/2 -translate-y-1/2 w-10 h-10 inline-flex items-center justify-center
+                   border-0 bg-transparent rounded-md text-neutral-500 cursor-pointer
+                   transition-colors duration-150
+                   hover:text-neutral-900 dark:hover:text-neutral-100
+                   focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-500"
             [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
             [attr.aria-pressed]="showPassword()"
             (click)="togglePasswordVisibility()"
@@ -65,115 +75,10 @@ let nextId = 0;
         <ng-content />
       </div>
       @if (showError()) {
-        <span [id]="errorId" class="input-error" role="alert">{{ errorText() }}</span>
+        <span [id]="errorId" class="text-xs text-red-500 dark:text-red-400 flex items-center gap-1" role="alert">{{ errorText() }}</span>
       }
     </div>
   `,
-  styles: [`
-    :host { display: block; }
-
-    input {
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .input-wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-1);
-    }
-    .input-label {
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      color: var(--color-text);
-    }
-    :host-context(.dark) .input-label {
-      color: var(--color-neutral-200);
-    }
-    .required-mark {
-      color: var(--color-warm-500);
-      margin-left: 2px;
-    }
-
-    .input-inner {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-
-    .input {
-      width: 100%;
-      appearance: none;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      background-color: var(--color-card);
-      color: var(--color-text);
-      font-size: max(16px, var(--text-sm));
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .input::placeholder {
-      color: var(--color-text-muted);
-    }
-    .input:focus {
-      outline: none;
-      border-color: var(--color-primary-500);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 10%, transparent);
-    }
-    .input:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: var(--focus-ring-offset);
-    }
-    :host([aria-invalid='true']) .input {
-      border-color: var(--color-warm-500);
-    }
-    :host([aria-invalid='true']) .input:focus {
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warm-500) 10%, transparent);
-    }
-    .input:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .input-sm { height: 36px; padding: 0 var(--space-3); font-size: max(16px, var(--text-xs)); }
-    .input-md { height: 44px; padding: 0 var(--space-4); font-size: max(16px, var(--text-sm)); }
-    .input-lg { height: 48px; padding: 0 var(--space-4); font-size: var(--text-base); }
-    .input-has-toggle { padding-right: 44px; }
-
-    .password-toggle {
-      position: absolute;
-      right: 2px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 40px;
-      height: 40px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      background: transparent;
-      border-radius: var(--radius-md);
-      color: var(--color-text-muted);
-      cursor: pointer;
-      transition: color 0.15s ease;
-    }
-    .password-toggle:hover { color: var(--color-text); }
-    .password-toggle:focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: -2px;
-    }
-    :host-context(.dark) .password-toggle:hover { color: var(--color-neutral-100); }
-
-    .input-error {
-      font-size: var(--text-xs);
-      color: var(--color-warm-500);
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-    }
-    :host-context(.dark) .input-error {
-      color: var(--color-warm-400);
-    }
-  `],
 })
 export class InputComponent implements FormValueControl<string> {
   readonly value = model<string>('');
@@ -205,7 +110,31 @@ export class InputComponent implements FormValueControl<string> {
   protected readonly inputId = `app-input-${nextId++}`;
   protected readonly errorId = `${this.inputId}-error`;
 
-  protected readonly sizeClass = computed(() => `input input-${this.size()}`);
+  /**
+   * Base classes + size + the invalid-state border/ring. Previously the invalid styling was
+   * a `:host([aria-invalid='true'])` CSS selector — but `aria-invalid` was only ever set on
+   * the inner `<input>`, never the host, so that rule never actually matched anything. Wiring
+   * it here (driven by the same `ariaInvalid()` signal already used for the attribute) is a
+   * direct byproduct of moving this to a computed class list, not a scope change.
+   */
+  protected readonly inputClasses = computed(() => {
+    const classes = [
+      'w-full appearance-none rounded-md border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100',
+      'transition-[border-color,box-shadow] duration-150',
+      'placeholder:text-neutral-500',
+      'focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500',
+      'disabled:opacity-50 disabled:cursor-not-allowed',
+      '[touch-action:manipulation] [-webkit-tap-highlight-color:transparent]',
+      SIZE_CLASSES[this.size()],
+    ];
+    if (this.type() === 'password') classes.push('pr-11');
+    if (this.ariaInvalid()) {
+      classes.push('border-red-500 focus:border-red-500 focus:shadow-[0_0_0_3px_rgb(239_68_68/10%)]');
+    } else {
+      classes.push('border-neutral-200 dark:border-neutral-700 focus:border-blue-500 focus:shadow-[0_0_0_3px_rgb(59_130_246/10%)]');
+    }
+    return classes.join(' ');
+  });
 
   /** Only `type="password"` fields get a reveal toggle — for every other type this is just
    *  `type()` unchanged, so the toggle button and its state never appear on e.g. email/text
