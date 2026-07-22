@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
 import { LucideX } from '@lucide/angular';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { relativeTime } from '@shared/utils/relative-time.util';
@@ -7,14 +7,23 @@ import type { AppNotification } from './notification.model';
 const SWIPE_THRESHOLD_PX = 72;
 const SWIPE_SLOP_PX = 10;
 
+const INDICATOR_COLOR: Record<string, string> = {
+  info: 'bg-blue-500',
+  success: 'bg-emerald-500',
+  warning: 'bg-amber-500',
+  error: 'bg-red-500',
+};
+
 @Component({
   selector: 'app-notification-item',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideX, AvatarComponent],
   template: `
     <article
-      class="notification-item"
-      [class.unread]="!notification().read"
+      class="group flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors duration-150 relative [touch-action:pan-y]
+             hover:bg-neutral-50 dark:hover:bg-neutral-800
+             focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-500"
+      [class]="!notification().read ? 'bg-blue-500/6 hover:bg-blue-500/10 dark:bg-blue-500/12 dark:hover:bg-blue-500/18' : ''"
       [attr.data-type]="notification().type"
       role="listitem"
       tabindex="0"
@@ -34,88 +43,38 @@ const SWIPE_SLOP_PX = 10;
           [initials]="notification().nickname ? notification().nickname!.slice(0, 2) : null"
           size="sm"
           shape="circle"
-          class="notification-avatar"
+          class="shrink-0 self-start mt-0.5"
         />
       } @else {
-        <div class="notification-indicator" [attr.data-type]="notification().type" aria-hidden="true"></div>
+        <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" [class]="indicatorClass()" aria-hidden="true"></div>
       }
-      <div class="notification-content">
-        <p class="notification-title">{{ notification().title }}</p>
+      <div class="flex-1 min-w-0">
+        <p
+          class="text-sm text-neutral-900 dark:text-neutral-100 m-0 leading-snug"
+          [class]="!notification().read ? 'font-semibold' : 'font-medium'"
+        >{{ notification().title }}</p>
         @if (notification().message) {
-          <p class="notification-message">{{ notification().message }}</p>
+          <p class="text-xs text-neutral-600 dark:text-neutral-300 mt-0.5 mb-0 leading-normal">{{ notification().message }}</p>
         }
-        <time class="notification-time" [attr.datetime]="isoTimestamp(notification().timestamp)">
+        <time class="block text-[11px] text-neutral-400 mt-1" [attr.datetime]="isoTimestamp(notification().timestamp)">
           {{ relativeTime(notification().timestamp) }}
         </time>
       </div>
       <button
         type="button"
-        class="remove-btn"
+        class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-transparent border-0 cursor-pointer
+               text-neutral-400 opacity-0 shrink-0
+               transition-[opacity,background-color,color] duration-150
+               group-hover:opacity-100
+               hover:bg-neutral-200 hover:text-neutral-600
+               dark:hover:bg-neutral-600"
         (click)="onRemoveClick($event)"
         [attr.aria-label]="'Remove notification: ' + notification().title"
       >
-        <svg aria-hidden="true" lucideX [size]="12" class="remove-icon"></svg>
+        <svg aria-hidden="true" lucideX [size]="12"></svg>
       </button>
     </article>
   `,
-  styles: [`
-    .notification-item {
-      display: flex;
-      align-items: flex-start;
-      gap: var(--space-3);
-      padding: var(--space-3);
-      border-radius: var(--radius-lg);
-      cursor: pointer;
-      transition: background-color 0.15s ease;
-      position: relative;
-      touch-action: pan-y;
-    }
-    .notification-item:hover { background: var(--color-neutral-50); }
-    .notification-item:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
-    .notification-item.unread { background: color-mix(in srgb, var(--color-primary-500) 6%, transparent); }
-    .notification-item.unread:hover { background: color-mix(in srgb, var(--color-primary-500) 10%, transparent); }
-    :host-context(.dark) .notification-item:hover { background: var(--color-neutral-800); }
-    :host-context(.dark) .notification-item.unread { background: color-mix(in srgb, var(--color-primary-500) 12%, transparent); }
-    :host-context(.dark) .notification-item.unread:hover { background: color-mix(in srgb, var(--color-primary-500) 18%, transparent); }
-
-    .notification-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      margin-top: 6px;
-    }
-    .notification-indicator[data-type="info"] { background: var(--color-primary-500); }
-    .notification-indicator[data-type="success"] { background: var(--color-accent-500); }
-    .notification-indicator[data-type="warning"] { background: var(--color-gold-500); }
-    .notification-indicator[data-type="error"] { background: var(--color-warm-500); }
-
-    .notification-content { flex: 1; min-width: 0; }
-    .notification-title { font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--color-text); margin: 0; line-height: 1.4; }
-    .notification-item.unread .notification-title { font-weight: var(--font-semibold); }
-    .notification-message { font-size: var(--text-xs); color: var(--color-text-secondary); margin: 2px 0 0; line-height: 1.5; }
-    .notification-time { display: block; font-size: 11px; color: var(--color-text-tertiary); margin-top: 4px; }
-    .notification-avatar { flex-shrink: 0; align-self: flex-start; margin-top: 2px; }
-
-    .remove-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
-      border-radius: var(--radius-md);
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: var(--color-text-tertiary);
-      opacity: 0;
-      transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-      flex-shrink: 0;
-    }
-    .notification-item:hover .remove-btn { opacity: 1; }
-    .remove-btn:hover { background: var(--color-neutral-200); color: var(--color-text-secondary); }
-    :host-context(.dark) .remove-btn:hover { background: var(--color-neutral-600); }
-  `],
 })
 export class NotificationItemComponent {
   readonly notification = input.required<AppNotification>();
@@ -125,6 +84,8 @@ export class NotificationItemComponent {
   readonly relativeTime = relativeTime;
   readonly dragX = signal(0);
   readonly dragging = signal(false);
+
+  readonly indicatorClass = computed(() => INDICATOR_COLOR[this.notification().type] ?? INDICATOR_COLOR['info']);
 
   private touchStartX = 0;
   private touchStartY = 0;
