@@ -26,17 +26,23 @@ const PICKER_TABS: ReadonlyArray<{ readonly id: UserPickerTab; readonly label: s
   imports: [A11yModule, UserListItemComponent, LucideSearch, LucideX],
   host: {
     '(keydown.escape)': 'onEscape()',
+    class: 'contents',
   },
   template: `
     <div
-      class="backdrop"
-      [class.open]="open()"
+      class="fixed inset-0 z-[var(--z-modal-backdrop)] bg-black/50 transition-[opacity,background-color] duration-[220ms]
+             motion-reduce:!duration-[0.001ms]"
+      [class]="open() ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none bg-transparent'"
       (click)="onBackdropClick($event)"
       role="presentation"
     ></div>
     <div
-      class="sheet"
-      [class.open]="open()"
+      class="sheet fixed left-0 right-0 bottom-0 top-auto z-[var(--z-modal)]
+             bg-white dark:bg-neutral-900 rounded-t-[14px] shadow-[0_-12px_24px_rgb(0_0_0/10%)]
+             flex flex-col overflow-hidden pb-[env(safe-area-inset-bottom,0px)]
+             transition-[transform,opacity] duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)]
+             motion-reduce:!duration-[0.001ms]"
+      [class]="open() ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'"
       role="dialog"
       aria-modal="true"
       [attr.aria-label]="title()"
@@ -44,19 +50,36 @@ const PICKER_TABS: ReadonlyArray<{ readonly id: UserPickerTab; readonly label: s
       cdkTrapFocusAutoCapture
       tabindex="-1"
     >
-      <header class="sheet-header">
-        <span class="sheet-title">{{ title() }}</span>
-        <button type="button" class="sheet-close" (click)="close.emit()" aria-label="Close">
+      <header class="flex items-center justify-between py-3 px-4 border-b border-neutral-200 dark:border-neutral-700 shrink-0">
+        <span class="text-base font-semibold text-neutral-900 dark:text-neutral-100">{{ title() }}</span>
+        <button
+          type="button"
+          class="w-11 h-11 inline-flex items-center justify-center border-0 bg-transparent text-neutral-500 rounded-full cursor-pointer
+                 [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]
+                 transition-colors duration-150
+                 hover:bg-neutral-100 hover:text-neutral-900
+                 dark:hover:bg-neutral-700 dark:hover:text-neutral-100
+                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          (click)="close.emit()"
+          aria-label="Close"
+        >
           <svg aria-hidden="true" lucideX [size]="16"></svg>
         </button>
       </header>
-      <nav class="tabs" role="tablist">
+      <nav
+        class="flex gap-1 py-2 px-4 border-b border-neutral-200 dark:border-neutral-700 shrink-0 overflow-x-auto
+               [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="tablist"
+      >
         @for (t of tabs; track t.id) {
           <button
             type="button"
             role="tab"
-            class="tab"
-            [class.tab--active]="tab() === t.id"
+            class="min-h-11 py-1.5 px-3 rounded-full border-0 bg-transparent cursor-pointer text-sm font-medium
+                   text-neutral-500 shrink-0
+                   [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]
+                   focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+            [class]="tab() === t.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : ''"
             [attr.aria-selected]="tab() === t.id"
             (click)="tabChange.emit(t.id)"
           >{{ t.label }}</button>
@@ -64,29 +87,49 @@ const PICKER_TABS: ReadonlyArray<{ readonly id: UserPickerTab; readonly label: s
       </nav>
       @switch (tab()) {
         @case ('byId') {
-          <form class="byid-form" (submit)="$event.preventDefault(); submitById.emit()">
-            <svg aria-hidden="true" lucideSearch [size]="14" class="byid-icon"></svg>
+          <form
+            class="flex items-center gap-2 my-2 mx-3 py-2 px-3 border border-neutral-200 dark:border-neutral-700 rounded-lg
+                   bg-white dark:bg-neutral-900 shrink-0
+                   focus-within:border-blue-400 focus-within:shadow-[0_0_0_3px_rgb(59_130_246/14%)]"
+            (submit)="$event.preventDefault(); submitById.emit()"
+          >
+            <svg aria-hidden="true" lucideSearch [size]="14" class="text-neutral-500 shrink-0"></svg>
             <input
               type="text"
               inputmode="numeric"
               pattern="[0-9]*"
-              class="byid-field"
+              class="flex-1 min-w-0 border-0 bg-transparent outline-none font-[inherit] text-[max(16px,0.875rem)] text-neutral-900 dark:text-neutral-100"
               placeholder="Enter user ID"
               [value]="byIdQuery()"
               (input)="byIdQueryChange.emit($any($event.target).value)"
               aria-label="User ID"
             />
-            <button type="submit" class="byid-submit" [disabled]="!byIdValid()">Find</button>
+            <button
+              type="submit"
+              class="min-h-11 py-1 px-3 rounded-full border-0 cursor-pointer text-xs font-semibold
+                     [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500
+                     disabled:bg-neutral-200 disabled:text-neutral-500 disabled:cursor-not-allowed
+                     dark:disabled:bg-neutral-700"
+              [class]="byIdValid() ? 'bg-blue-500 text-white' : ''"
+              [disabled]="!byIdValid()"
+            >Find</button>
           </form>
         }
       }
-      <div class="list" role="tabpanel">
+      <div class="overflow-y-auto p-2 flex-1 min-h-0" role="tabpanel">
         @if (loading()) {
-          <p class="status">Loading…</p>
+          <p class="m-4 text-sm text-neutral-500 text-center">Loading…</p>
         } @else if (error()) {
-          <p class="status status--error">{{ error() }}</p>
+          <p class="m-4 text-sm text-red-500 text-center">{{ error() }}</p>
         } @else if (byIdView(); as view) {
-          <button type="button" class="byid-result" (click)="onByIdPicked(view)">
+          <button
+            type="button"
+            class="w-full min-h-11 text-left bg-transparent border-0 p-0 font-[inherit] text-inherit cursor-pointer
+                   [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]
+                   focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+            (click)="onByIdPicked(view)"
+          >
             <app-user-list-item
               [userId]="asUserId(view.userId)"
               [name]="view.nickname"
@@ -96,7 +139,7 @@ const PICKER_TABS: ReadonlyArray<{ readonly id: UserPickerTab; readonly label: s
             />
           </button>
         } @else if (users().length === 0) {
-          <p class="status">{{ emptyCopy() }}</p>
+          <p class="m-4 text-sm text-neutral-500 text-center">{{ emptyCopy() }}</p>
         } @else {
           @for (u of users(); track u.userId) {
             <app-user-list-item
@@ -113,99 +156,13 @@ const PICKER_TABS: ReadonlyArray<{ readonly id: UserPickerTab; readonly label: s
       </div>
     </div>
   `,
+  /** Remaining structural CSS: the sheet's height/max-height is a calc() coordinating
+   *  --app-header-height, --bottom-nav-height, and safe-area insets — the same shell-inset
+   *  contract app.ts's :host authors, not a color/style choice. */
   styles: [`
-    :host { display: contents; }
-    .backdrop {
-      position: fixed; inset: 0; z-index: var(--z-modal-backdrop);
-      background: transparent; opacity: 0; pointer-events: none;
-      transition: opacity 220ms ease, background-color 220ms ease;
-    }
-    .backdrop.open { background: hsl(0deg 0% 0% / 50%); opacity: 1; pointer-events: auto; }
     .sheet {
-      position: fixed; left: 0; right: 0; bottom: 0; top: auto;
       max-height: calc(100dvh - var(--app-header-height, 0px) - var(--bottom-nav-height, 0px) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
       height: min(85dvh, calc(100dvh - var(--app-header-height, 0px) - var(--bottom-nav-height, 0px) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
-      z-index: var(--z-modal);
-      background: var(--color-card);
-      border-top-left-radius: 14px; border-top-right-radius: 14px;
-      box-shadow: 0 -12px 24px hsl(0deg 0% 0% / 10%);
-      display: flex; flex-direction: column; overflow: hidden;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      transform: translateY(100%); opacity: 0;
-      transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease;
-    }
-    .sheet.open { transform: translateY(0); opacity: 1; }
-    .sheet-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: var(--space-3) var(--space-4);
-      border-bottom: 1px solid var(--color-border); flex-shrink: 0;
-    }
-    .sheet-title { font-size: var(--text-base); font-weight: var(--font-semibold); }
-    .sheet-close {
-      width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center;
-      border: 0; background: transparent; color: var(--color-text-muted);
-      border-radius: var(--radius-full); cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: background-color 150ms ease, color 150ms ease;
-    }
-    .sheet-close:hover { background: var(--color-neutral-100); color: var(--color-text); }
-    .sheet-close:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    .tabs {
-      display: flex; gap: 4px; padding: var(--space-2) var(--space-4);
-      border-bottom: 1px solid var(--color-border); flex-shrink: 0;
-      overflow-x: auto; scrollbar-width: none;
-    }
-    .tabs::-webkit-scrollbar { display: none; }
-    .tab {
-      min-height: 44px; padding: 6px 12px; border-radius: var(--radius-full);
-      border: 0; background: transparent; cursor: pointer;
-      font-size: var(--text-sm); font-weight: var(--font-medium);
-      color: var(--color-text-muted); flex-shrink: 0;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .tab.tab--active { background: var(--color-primary-50); color: var(--color-primary-700); }
-    .tab:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    :host-context(.dark) .tab.tab--active { background: var(--color-primary-900); color: var(--color-primary-200); }
-    .byid-form {
-      display: flex; align-items: center; gap: var(--space-2);
-      margin: var(--space-2) var(--space-3); padding: var(--space-2) var(--space-3);
-      border: 1px solid var(--color-border); border-radius: var(--radius-lg);
-      background: var(--color-card); flex-shrink: 0;
-    }
-    .byid-form:has(.byid-field:focus-visible) { border-color: var(--color-primary-400); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 14%, transparent); }
-    .byid-icon { color: var(--color-text-muted); flex-shrink: 0; }
-    .byid-field {
-      flex: 1; min-width: 0; border: 0; background: transparent; outline: 0;
-      font: inherit; font-size: max(16px, var(--text-sm)); color: var(--color-text);
-    }
-    .byid-submit {
-      min-height: 44px; padding: 4px var(--space-3); border-radius: var(--radius-full);
-      background: var(--color-primary-500); color: var(--color-on-color);
-      border: 0; font-size: var(--text-xs); font-weight: var(--font-semibold);
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .byid-submit:disabled { background: var(--color-neutral-200); color: var(--color-text-muted); cursor: not-allowed; }
-    .byid-submit:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    :host-context(.dark) .byid-submit:disabled { background: var(--color-neutral-700); }
-    .byid-result {
-      width: 100%; min-height: 44px; text-align: left; background: transparent;
-      border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .byid-result:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    .list { overflow-y: auto; padding: var(--space-2); flex: 1; min-height: 0; }
-    .status {
-      margin: var(--space-4); font-size: var(--text-sm);
-      color: var(--color-text-muted); text-align: center;
-    }
-    .status--error { color: var(--color-error-500); }
-    @media (prefers-reduced-motion: reduce) {
-      .backdrop, .sheet { transition-duration: 0.001ms; }
     }
   `],
 })
