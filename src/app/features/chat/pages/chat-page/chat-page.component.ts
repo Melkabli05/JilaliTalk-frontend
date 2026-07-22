@@ -56,11 +56,20 @@ const AUTOSCROLL_THRESHOLD_PX = 80;
 const FOLLOWING_LIMIT = 50;
 const FOLLOWERS_LIMIT = 50;
 
+const TOUCH = '[touch-action:manipulation] [-webkit-tap-highlight-color:transparent]';
+/** Both panels share the same slide transition; whichever panel is currently hidden also
+ *  gets a `visibility` delay so it stops intercepting clicks/focus only once the slide-out
+ *  animation finishes, not the instant the transform starts. */
+const PANEL_TRANSITION_PLAIN = "max-md:[transition:transform_280ms_cubic-bezier(0.32,0.72,0,1)]";
+const PANEL_TRANSITION_DELAYED_VISIBILITY =
+  "max-md:[transition:transform_280ms_cubic-bezier(0.32,0.72,0,1),visibility_0ms_280ms]";
+
 @Component({
   selector: 'app-chat-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [ChatStore],
   host: {
+    class: 'block h-full',
     '[style.--kb-inset.px]': 'keyboardInsetPx()',
   },
   imports: [
@@ -82,15 +91,21 @@ const FOLLOWERS_LIMIT = 50;
     LucideX,
   ],
   template: `
-    <div class="chat-shell" [inert]="pickerOpen() !== null">
-      <aside class="sidebar" [class.hidden]="store.selectedConversation()">
-        <header class="sidebar-header">
-          <h1 class="sidebar-title">Chat</h1>
-          <div class="sidebar-actions">
+    <div class="flex h-[calc(100%-var(--kb-inset,0px))] overflow-hidden relative" [inert]="pickerOpen() !== null">
+      <aside [class]="sidebarClass()">
+        <header
+          class="flex items-center justify-between p-4 shrink-0 border-b border-neutral-200 dark:border-neutral-700
+                 sticky top-0 z-[2] bg-white/92 dark:bg-neutral-900/92 backdrop-blur-md backdrop-saturate-[1.8]"
+        >
+          <h1 class="m-0 text-xl font-bold text-neutral-900 dark:text-neutral-100">Chat</h1>
+          <div class="inline-flex items-center gap-2">
             <app-chat-connection-pill [status]="store.connectionStatus()" (retry)="onRetry()" />
             <button
               type="button"
-              class="icon-btn"
+              class="w-8 h-8 max-md:w-11 max-md:h-11 inline-flex items-center justify-center border-0
+                     bg-blue-500 text-white rounded-full cursor-pointer {{ TOUCH }}
+                     hover:bg-blue-600
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
               (click)="togglePicker('newConversation')"
               [attr.aria-label]="pickerOpen() === 'newConversation' ? 'Close new chat panel' : 'New chat'"
               [attr.aria-expanded]="pickerOpen() === 'newConversation'"
@@ -101,19 +116,29 @@ const FOLLOWERS_LIMIT = 50;
           </div>
         </header>
 
-        <div class="search-wrap">
-          <svg aria-hidden="true" lucideSearch [size]="14" class="search-icon"></svg>
+        <div class="relative py-2 px-3 shrink-0">
+          <svg aria-hidden="true" lucideSearch [size]="14" class="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"></svg>
           <input
             #searchInput
             type="search"
-            class="search-input"
+            class="w-full h-9 max-md:h-11 px-9 border border-neutral-200 dark:border-neutral-700 rounded-full
+                   bg-neutral-100 dark:bg-neutral-800 text-[max(16px,0.875rem)] text-neutral-900 dark:text-neutral-100 outline-none
+                   focus:bg-white dark:focus:bg-neutral-900 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgb(59_130_246/12%)]"
             placeholder="Search conversations"
             aria-label="Search conversations"
             [value]="searchQuery()"
             (input)="searchQuery.set($any($event.target).value)"
           />
           @if (searchQuery()) {
-            <button type="button" class="search-clear" aria-label="Clear search" (click)="clearSearch(searchInput)">
+            <button
+              type="button"
+              class="absolute right-4 max-md:right-2 top-1/2 -translate-y-1/2 w-7 h-7 max-md:w-11 max-md:h-11
+                     inline-flex items-center justify-center border-0 bg-transparent text-neutral-500 rounded-full cursor-pointer {{ TOUCH }}
+                     hover:bg-neutral-200 hover:text-neutral-900
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+              aria-label="Clear search"
+              (click)="clearSearch(searchInput)"
+            >
               <svg aria-hidden="true" lucideX [size]="14"></svg>
             </button>
           }
@@ -126,14 +151,14 @@ const FOLLOWERS_LIMIT = 50;
           />
         } @else {
           <ul
-            class="conversations"
+            class="flex-1 overflow-y-auto list-none m-0 pt-1 px-2 pb-2"
             role="listbox"
             aria-label="Conversations"
             (keydown)="onConversationsKeydown($event)"
             tabindex="0"
           >
             @for (conv of filteredConversations(); track conv.peerUserId) {
-              <li role="option" [attr.aria-selected]="store.selectedPeerId() === conv.peerUserId">
+              <li class="mb-0.5 {{ TOUCH }}" role="option" [attr.aria-selected]="store.selectedPeerId() === conv.peerUserId">
                 <app-chat-conversation-row
                   [conversation]="conv"
                   [active]="store.selectedPeerId() === conv.peerUserId"
@@ -147,12 +172,18 @@ const FOLLOWERS_LIMIT = 50;
         }
       </aside>
 
-      <main class="thread" [class.open]="store.selectedConversation()">
+      <main [class]="threadClass()">
         @if (store.selectedConversation(); as conv) {
-          <header class="thread-bar">
+          <header
+            class="flex items-center gap-2 py-2 px-3 shrink-0 border-b border-neutral-200 dark:border-neutral-700
+                   bg-white/92 dark:bg-neutral-900/92 backdrop-blur-md backdrop-saturate-[1.8]"
+          >
             <button
               type="button"
-              class="back-btn"
+              class="w-8 h-8 max-md:w-11 max-md:h-11 inline-flex items-center justify-center border-0 bg-transparent
+                     text-blue-500 rounded-md cursor-pointer shrink-0 {{ TOUCH }}
+                     hover:bg-neutral-100 dark:hover:bg-neutral-800
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
               (click)="store.deselect()"
               aria-label="Back to conversations"
             >
@@ -160,35 +191,46 @@ const FOLLOWERS_LIMIT = 50;
             </button>
             <button
               type="button"
-              class="thread-identity"
+              class="inline-flex items-center gap-2 border-0 bg-transparent cursor-pointer flex-1 max-md:min-h-11
+                     text-left py-1 px-1.5 rounded-md text-neutral-900 dark:text-neutral-100 min-w-0 {{ TOUCH }}
+                     hover:bg-neutral-100 dark:hover:bg-neutral-800
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
               (click)="onViewProfile(conv.peerUserId, conv.nickname, conv.headUrl)"
               [attr.aria-label]="'View ' + conv.nickname + '’s profile'"
             >
               <app-avatar [src]="conv.headUrl ?? ''" [initials]="conv.nickname.slice(0, 2)" [alt]="conv.nickname" size="sm" />
-              <span class="thread-name">{{ conv.nickname }}</span>
+              <span class="font-semibold text-sm whitespace-nowrap overflow-hidden text-ellipsis">{{ conv.nickname }}</span>
             </button>
             @if (conv.isTyping) {
-              <span class="typing-label" aria-label="typing">typing…</span>
+              <span class="text-xs text-blue-500 italic pr-2" aria-label="typing">typing…</span>
             }
           </header>
 
-          <div class="feed" #feed role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation messages">
+          <div class="flex-1 overflow-y-auto p-4 pb-6 flex flex-col gap-1 [overscroll-behavior-y:contain]" #feed role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation messages">
             @for (msg of conv.messages; track msg.id; let i = $index) {
               @let label = formatDay(conv.messages, i);
               @if (label) {
-                <div class="date-pill" role="separator">{{ label }}</div>
+                <div
+                  class="self-center py-[3px] px-3 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700
+                         rounded-full text-[10px] font-medium text-neutral-500 dark:text-neutral-400"
+                  role="separator"
+                >{{ label }}</div>
               }
 
               @switch (msg.type) {
                 @case ('text') {
-                  <div [class]="!!msg.delivery ? 'msg-row self-end rtl:self-start' : 'msg-row self-start rtl:self-end'" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
+                  <div [class]="msgRowClass(!!msg.delivery)" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-text-bubble [text]="msg.text" [isOutbound]="!!msg.delivery" />
-                    <span class="msg-meta">
-                      <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
+                    <span [class]="msgMetaClass(!!msg.delivery)">
+                      <time class="tabular-nums" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
                       @if (msg.delivery === 'failed') {
                         <button
                           type="button"
-                          class="msg-retry"
+                          class="border-0 py-0.5 px-2 rounded-full bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200
+                                 font-[inherit] text-[10px] font-semibold cursor-pointer {{ TOUCH }}
+                                 transition-[background-color,transform] duration-150
+                                 hover:bg-red-200 dark:hover:bg-red-800 active:scale-[0.97]
+                                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                           (click)="store.retrySend(msg.id)"
                           [attr.aria-label]="'Failed to send — tap to retry'"
                         >
@@ -201,14 +243,18 @@ const FOLLOWERS_LIMIT = 50;
                   </div>
                 }
                 @case ('image') {
-                  <div [class]="!!msg.delivery ? 'msg-row self-end rtl:self-start' : 'msg-row self-start rtl:self-end'" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
+                  <div [class]="msgRowClass(!!msg.delivery)" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-image-bubble [url]="msg.imageUrl" [alt]="(msg.fromNickname || conv.nickname) + ' sent a photo'" />
-                    <span class="msg-meta">
-                      <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
+                    <span [class]="msgMetaClass(!!msg.delivery)">
+                      <time class="tabular-nums" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
                       @if (msg.delivery === 'failed') {
                         <button
                           type="button"
-                          class="msg-retry"
+                          class="border-0 py-0.5 px-2 rounded-full bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200
+                                 font-[inherit] text-[10px] font-semibold cursor-pointer {{ TOUCH }}
+                                 transition-[background-color,transform] duration-150
+                                 hover:bg-red-200 dark:hover:bg-red-800 active:scale-[0.97]
+                                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                           (click)="store.retrySend(msg.id)"
                           [attr.aria-label]="'Failed to send — tap to retry'"
                         >
@@ -221,14 +267,18 @@ const FOLLOWERS_LIMIT = 50;
                   </div>
                 }
                 @case ('gift') {
-                  <div [class]="!!msg.delivery ? 'msg-row self-end rtl:self-start' : 'msg-row self-start rtl:self-end'" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
+                  <div [class]="msgRowClass(!!msg.delivery)" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-gift-bubble [count]="msg.count" [isOutbound]="!!msg.delivery" />
-                    <span class="msg-meta">
-                      <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
+                    <span [class]="msgMetaClass(!!msg.delivery)">
+                      <time class="tabular-nums" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
                       @if (msg.delivery === 'failed') {
                         <button
                           type="button"
-                          class="msg-retry"
+                          class="border-0 py-0.5 px-2 rounded-full bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200
+                                 font-[inherit] text-[10px] font-semibold cursor-pointer {{ TOUCH }}
+                                 transition-[background-color,transform] duration-150
+                                 hover:bg-red-200 dark:hover:bg-red-800 active:scale-[0.97]
+                                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                           (click)="store.retrySend(msg.id)"
                           [attr.aria-label]="'Failed to send — tap to retry'"
                         >
@@ -241,19 +291,23 @@ const FOLLOWERS_LIMIT = 50;
                   </div>
                 }
                 @case ('introduction') {
-                  <div [class]="!!msg.delivery ? 'msg-row self-end rtl:self-start' : 'msg-row self-start rtl:self-end'" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
+                  <div [class]="msgRowClass(!!msg.delivery)" role="group" [attr.aria-label]="messageAriaLabel(msg, conv)">
                     <app-chat-introduction-bubble
                       [target]="msg.target"
                       [context]="(msg.fromNickname || conv.nickname) + ' shared a profile'"
                       [isOutbound]="!!msg.delivery"
                       (viewProfile)="onViewProfile(msg.target.userId, msg.target.nickname, msg.target.headUrl ?? null)"
                     />
-                    <span class="msg-meta">
-                      <time class="msg-time" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
+                    <span [class]="msgMetaClass(!!msg.delivery)">
+                      <time class="tabular-nums" [attr.datetime]="msg.ts">{{ formatTime(msg.ts) }}</time>
                       @if (msg.delivery === 'failed') {
                         <button
                           type="button"
-                          class="msg-retry"
+                          class="border-0 py-0.5 px-2 rounded-full bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200
+                                 font-[inherit] text-[10px] font-semibold cursor-pointer {{ TOUCH }}
+                                 transition-[background-color,transform] duration-150
+                                 hover:bg-red-200 dark:hover:bg-red-800 active:scale-[0.97]
+                                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                           (click)="store.retrySend(msg.id)"
                           [attr.aria-label]="'Failed to send — tap to retry'"
                         >
@@ -292,15 +346,17 @@ const FOLLOWERS_LIMIT = 50;
             }
 
             @if (conv.isTyping) {
-              <div class="msg-row typing-row" aria-label="typing">
+              <div class="flex items-end gap-2 max-w-[min(75%,420px)] animate-[msgIn_220ms_cubic-bezier(0.2,0.8,0.2,1)_both] motion-reduce:animate-none" aria-label="typing">
                 <app-avatar
                   [alt]="conv.nickname"
                   [src]="conv.headUrl ?? ''"
                   [initials]="conv.nickname.slice(0, 2)"
                   size="xs"
                 />
-                <span class="typing-dots">
-                  <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                <span class="inline-flex items-center gap-[3px] py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-full">
+                  <span class="w-1.5 h-1.5 rounded-full bg-neutral-500 dark:bg-neutral-400 animate-[typingPulse_1.2s_infinite] motion-reduce:animate-none"></span>
+                  <span class="w-1.5 h-1.5 rounded-full bg-neutral-500 dark:bg-neutral-400 animate-[typingPulse_1.2s_infinite] motion-reduce:animate-none [animation-delay:0.2s]"></span>
+                  <span class="w-1.5 h-1.5 rounded-full bg-neutral-500 dark:bg-neutral-400 animate-[typingPulse_1.2s_infinite] motion-reduce:animate-none [animation-delay:0.4s]"></span>
                 </span>
               </div>
             }
@@ -345,173 +401,16 @@ const FOLLOWERS_LIMIT = 50;
       (byIdQueryChange)="pickerByIdQuery.set($event)"
     />
   `,
+  /** Two bespoke keyframes: the message entrance (slide+scale-in) and the typing-dots
+   *  pulse have no Tailwind built-in equivalent shape. */
   styles: [`
-    :host { display: block; height: 100%; }
-    .chat-shell {
-      display: flex;
-      height: calc(100% - var(--kb-inset, 0px));
-      overflow: hidden; position: relative;
-    }
-    .chat-shell button, .chat-shell [role="option"], .chat-shell [role="tab"] {
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .sidebar {
-      width: 320px; flex-shrink: 0; display: flex;
-      flex-direction: column; background: var(--color-card);
-      border-right: 1px solid var(--color-border);
-      overflow: hidden; position: relative;
-    }
-    .sidebar-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: var(--space-4); flex-shrink: 0;
-      border-bottom: 1px solid var(--color-border);
-      position: sticky; top: 0; z-index: 2;
-      background: color-mix(in srgb, var(--color-card) 92%, transparent);
-      backdrop-filter: blur(12px) saturate(180%);
-      -webkit-backdrop-filter: blur(12px) saturate(180%);
-    }
-    .sidebar-title {
-      margin: 0; font-size: var(--text-xl); font-weight: var(--font-bold);
-      color: var(--color-text);
-    }
-    .sidebar-actions { display: inline-flex; align-items: center; gap: var(--space-2); }
-    .icon-btn {
-      width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
-      border: 0; background: var(--color-primary-500); color: var(--color-card);
-      border-radius: var(--radius-full); cursor: pointer;
-    }
-    .icon-btn:hover { background: var(--color-primary-600); }
-    .icon-btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    .search-wrap {
-      position: relative; padding: var(--space-2) var(--space-3); flex-shrink: 0;
-    }
-    .search-icon {
-      position: absolute; left: var(--space-5); top: 50%;
-      transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none;
-    }
-    .search-input {
-      width: 100%; height: 36px;
-      padding: 0 36px;
-      border: 1px solid var(--color-border); border-radius: var(--radius-full);
-      background: var(--color-neutral-100);
-      font-size: max(16px, var(--text-sm)); color: var(--color-text);
-      outline: none;
-    }
-    .search-input:focus { background: var(--color-card); border-color: var(--color-primary-400); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 12%, transparent); }
-    .search-clear {
-      position: absolute; right: var(--space-4); top: 50%;
-      transform: translateY(-50%);
-      width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
-      border: 0; background: transparent; color: var(--color-text-muted);
-      border-radius: var(--radius-full); cursor: pointer;
-    }
-    .search-clear:hover { background: var(--color-neutral-200); color: var(--color-text); }
-    .search-clear:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    .conversations {
-      flex: 1; overflow-y: auto; list-style: none; margin: 0;
-      padding: var(--space-1) var(--space-2) var(--space-2);
-    }
-    .conversations li { margin-bottom: 2px; }
-
-    .thread { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--color-bg); min-height: 0; }
-    .thread-bar {
-      display: flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-2) var(--space-3);
-      background: color-mix(in srgb, var(--color-card) 92%, transparent);
-      border-bottom: 1px solid var(--color-border);
-      flex-shrink: 0;
-      backdrop-filter: blur(12px) saturate(180%);
-      -webkit-backdrop-filter: blur(12px) saturate(180%);
-    }
-    .back-btn {
-      width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
-      border: 0; background: transparent; color: var(--color-primary-500);
-      border-radius: var(--radius-md); cursor: pointer; flex-shrink: 0;
-    }
-    .back-btn:hover { background: var(--color-neutral-100); }
-    .back-btn:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    .thread-identity {
-      display: inline-flex; align-items: center; gap: var(--space-2);
-      border: 0; background: transparent; cursor: pointer; flex: 1;
-      text-align: left; padding: 4px 6px; border-radius: var(--radius-md);
-      color: var(--color-text); min-width: 0;
-    }
-    .thread-identity:hover { background: var(--color-neutral-100); }
-    .thread-identity:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    .thread-name { font-weight: var(--font-semibold); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .typing-label { font-size: var(--text-xs); color: var(--color-primary-500); font-style: italic; padding-right: var(--space-2); }
-    .feed { flex: 1; overflow-y: auto; padding: var(--space-4) var(--space-4) var(--space-6); display: flex; flex-direction: column; gap: var(--space-1); overscroll-behavior-y: contain; }
-    .msg-row {
-      display: flex; align-items: flex-end; gap: 6px; max-width: min(75%, 420px);
-      animation: msgIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    }
-    .msg-row.is-outbound { align-self: flex-end; flex-direction: row; }
-    .msg-row:not(.is-outbound) { align-self: flex-start; }
-    /* msg-row align-self is set in the template via [class]="... self-start|self-end rtl:self-end|rtl:self-start",
-       so the rule below only applies to msg-row ancestor styling that doesn't depend on inbound/outbound state. */
-    .msg-row:not(.is-outbound) { align-self: flex-start; }
-    .msg-meta {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 0 6px 2px;
-      align-self: center;
-      color: var(--color-text-muted);
-      font-size: var(--text-2xs);
-      line-height: 1;
-    }
-    .msg-row.is-outbound .msg-meta { padding-right: 2px; padding-left: 6px; }
-    .msg-row:not(.is-outbound) .msg-meta { padding-left: 2px; padding-right: 6px; }
-    .msg-time { font-variant-numeric: tabular-nums; }
-    .msg-retry {
-      border: 0; padding: 2px 8px; border-radius: var(--radius-full);
-      background: var(--color-error-100); color: var(--color-error-700);
-      font-family: inherit; font-size: var(--text-2xs); font-weight: var(--font-semibold);
-      cursor: pointer; touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: background-color 150ms ease, transform 100ms ease;
-    }
-    .msg-retry:hover { background: var(--color-error-200); }
-    .msg-retry:active { transform: scale(0.97); }
-    .msg-retry:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    :host-context(.dark) .msg-retry { background: var(--color-error-900); color: var(--color-error-200); }
-    :host-context(.dark) .msg-retry:hover { background: var(--color-error-800); }
     @keyframes msgIn {
       from { opacity: 0; transform: translateY(6px) scale(0.98); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .date-pill { align-self: center; padding: 3px var(--space-3); background: var(--color-neutral-100); border: 1px solid var(--color-border); border-radius: var(--radius-full); font-size: var(--text-2xs); font-weight: var(--font-medium); color: var(--color-text-muted); }
-    :host-context(.dark) .date-pill { background: var(--color-neutral-800); }
-    .typing-row { gap: var(--space-2); }
-    .typing-dots { display: inline-flex; align-items: center; gap: 3px; padding: 8px 12px; background: var(--color-neutral-100); border-radius: var(--radius-full); }
-    .typing-dots .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-muted); animation: typingPulse 1.2s infinite; }
-    .typing-dots .dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dots .dot:nth-child(3) { animation-delay: 0.4s; }
     @keyframes typingPulse {
       0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
       30% { opacity: 1; transform: translateY(-2px); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .typing-dots .dot { animation: none; }
-      .msg-row { animation: none; }
-      .sidebar, .thread { transition: none; }
-    }
-
-    @media (max-width: 767.98px) {
-      .sidebar {
-        position: absolute; inset: 0;
-        width: 100%; z-index: 1;
-        border-right: none;
-      }
-      .sidebar, .thread { transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1); }
-      .sidebar.hidden { transform: translateX(-100%); visibility: hidden; pointer-events: none; transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0ms 280ms; }
-      .thread { position: absolute; inset: 0; transform: translateX(100%); visibility: hidden; pointer-events: none; }
-      .thread.open { transform: translateX(0); visibility: visible; pointer-events: auto; }
-      .thread:not(.open) { transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0ms 280ms; }
-      .search-input { height: 44px; }
-      .icon-btn { width: 44px; height: 44px; }
-      .search-clear { width: 44px; height: 44px; right: var(--space-2); }
-      .back-btn { width: 44px; height: 44px; }
-      .thread-identity { min-height: 44px; }
     }
   `],
 })
@@ -524,6 +423,8 @@ export class ChatPageComponent {
   private readonly profileDirectory: ChatProfileDirectory = inject(CHAT_PROFILE_DIRECTORY);
   private readonly keyboardInset = inject(KeyboardInsetService);
   protected readonly keyboardInsetPx = this.keyboardInset.keyboardInsetPx;
+
+  protected readonly TOUCH = TOUCH;
 
   /** Bound from chat.routes.ts's ':userId' segment via withComponentInputBinding — the
    *  router always delivers a raw route-param string (or undefined on the parameterless
@@ -617,6 +518,38 @@ export class ChatPageComponent {
   protected readonly formatDay = (messages: readonly ChatMessage[], index: number): string => dayLabel(messages, index);
   protected readonly messageAriaLabel = (msg: ChatMessage, conv: ChatConversation): string =>
     chatMessageAriaLabel(msg, msg.delivery ? 'You' : conv.nickname, this.formatTime);
+
+  /** Full class string per panel, computed rather than toggled with `[class.x]`: the
+   *  mobile slide transition needs a different `visibility` delay depending on whether
+   *  this panel is the one currently hiding (see PANEL_TRANSITION_* above), which isn't a
+   *  single-property toggle. */
+  protected readonly sidebarClass = computed(() => {
+    const base =
+      'flex flex-col w-80 shrink-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-700 ' +
+      'overflow-hidden relative max-md:absolute max-md:inset-0 max-md:w-full max-md:z-[1] max-md:border-r-0 motion-reduce:transition-none';
+    return this.store.selectedConversation()
+      ? `${base} max-md:-translate-x-full max-md:invisible max-md:pointer-events-none ${PANEL_TRANSITION_DELAYED_VISIBILITY}`
+      : `${base} ${PANEL_TRANSITION_PLAIN}`;
+  });
+
+  protected readonly threadClass = computed(() => {
+    const base =
+      'flex-1 flex flex-col overflow-hidden bg-neutral-50 dark:bg-neutral-950 min-h-0 ' +
+      'max-md:absolute max-md:inset-0 motion-reduce:transition-none';
+    return this.store.selectedConversation()
+      ? `${base} max-md:translate-x-0 max-md:visible max-md:pointer-events-auto ${PANEL_TRANSITION_PLAIN}`
+      : `${base} max-md:translate-x-full max-md:invisible max-md:pointer-events-none ${PANEL_TRANSITION_DELAYED_VISIBILITY}`;
+  });
+
+  protected msgRowClass(isOutbound: boolean): string {
+    const base = 'flex items-end gap-1.5 max-w-[min(75%,420px)] animate-[msgIn_220ms_cubic-bezier(0.2,0.8,0.2,1)_both] motion-reduce:animate-none';
+    return isOutbound ? `${base} self-end rtl:self-start` : `${base} self-start rtl:self-end`;
+  }
+
+  protected msgMetaClass(isOutbound: boolean): string {
+    const base = 'inline-flex items-center gap-1 pb-0.5 self-center text-neutral-500 dark:text-neutral-400 text-[10px] leading-none';
+    return isOutbound ? `${base} pr-0.5 pl-1.5` : `${base} pl-0.5 pr-1.5`;
+  }
 
   constructor() {
     effect(() => {
