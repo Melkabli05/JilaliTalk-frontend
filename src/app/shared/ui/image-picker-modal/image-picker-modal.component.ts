@@ -30,15 +30,20 @@ type PreviewState = 'idle' | 'loading' | 'loaded' | 'error';
   selector: 'app-image-picker-modal',
   imports: [ModalComponent, ButtonComponent, A11yModule, LucideImage, LucideImageOff, LucideLoader2],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block w-90 max-w-[calc(100vw-1.5rem)]' },
   template: `
     <app-modal title="Send a photo">
-      <label class="url-label" for="image-url-input">Image URL</label>
-      <div class="url-row">
+      <label class="block text-xs font-medium text-neutral-500 mb-1" for="image-url-input">Image URL</label>
+      <div class="mb-3">
         <input
           id="image-url-input"
           type="url"
           inputmode="url"
-          class="url-field"
+          class="w-full box-border py-2 px-2.5 border border-neutral-200 dark:border-neutral-700 rounded-md
+                 bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100
+                 font-[inherit] text-[max(16px,0.875rem)] outline-none
+                 transition-[border-color,box-shadow] duration-150
+                 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgb(59_130_246/14%)]"
           placeholder="https://example.com/photo.jpg"
           autocomplete="off"
           cdkFocusInitial
@@ -47,25 +52,28 @@ type PreviewState = 'idle' | 'loading' | 'loaded' | 'error';
         />
       </div>
 
-      <div class="preview" [class.preview--empty]="state() !== 'loaded'">
+      <div
+        class="relative flex flex-col items-center justify-center gap-2 min-h-[180px] rounded-lg overflow-hidden mb-4"
+        [class]="state() !== 'loaded' ? 'bg-neutral-100 dark:bg-neutral-800' : ''"
+      >
         @if (state() === 'idle') {
-          <svg aria-hidden="true" lucideImage [size]="28" class="preview-icon"></svg>
-          <span class="preview-hint">Paste a link to preview it here</span>
+          <svg aria-hidden="true" lucideImage [size]="28" class="text-neutral-500"></svg>
+          <span class="text-xs text-neutral-500">Paste a link to preview it here</span>
         }
         @if (state() === 'loading') {
-          <svg aria-hidden="true" lucideLoader2 [size]="24" class="preview-spinner"></svg>
+          <svg aria-hidden="true" lucideLoader2 [size]="24" class="text-blue-500 animate-spin motion-reduce:animate-none"></svg>
         }
         @if (state() === 'error') {
-          <svg aria-hidden="true" lucideImageOff [size]="28" class="preview-icon preview-icon--error"></svg>
-          <span class="preview-hint preview-hint--error">Couldn't load that image</span>
+          <svg aria-hidden="true" lucideImageOff [size]="28" class="text-red-500"></svg>
+          <span class="text-xs text-red-500">Couldn't load that image</span>
         }
         <!-- Always rendered once loading has started (not just once loaded) — its own
              (load)/(error) events are what drive the loading -> loaded/error transition
              above, so it can't be gated behind the state it's responsible for reaching. -->
         @if (state() === 'loading' || state() === 'loaded') {
           <img
-            class="preview-img"
-            [class.preview-img--hidden]="state() !== 'loaded'"
+            class="w-full max-h-[260px] object-contain block"
+            [class]="state() !== 'loaded' ? 'absolute opacity-0 pointer-events-none !max-h-none h-px' : ''"
             [src]="trimmedUrl()"
             alt="Preview"
             (load)="onImageLoad($event)"
@@ -74,7 +82,7 @@ type PreviewState = 'idle' | 'loading' | 'loaded' | 'error';
         }
       </div>
 
-      <div class="footer">
+      <div class="flex justify-end items-center gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
         <app-button type="button" variant="ghost" size="md" (click)="onCancel()">Cancel</app-button>
         <app-button type="button" variant="primary" size="md" [disabled]="state() !== 'loaded'" (click)="onSend()">
           Send
@@ -82,44 +90,6 @@ type PreviewState = 'idle' | 'loading' | 'loaded' | 'error';
       </div>
     </app-modal>
   `,
-  styles: [`
-    :host { display: block; width: 360px; max-width: calc(100vw - var(--space-6)); }
-    .url-label { display: block; font-size: var(--text-xs); font-weight: var(--font-medium); color: var(--color-text-muted); margin-bottom: var(--space-1); }
-    .url-row { margin-bottom: var(--space-3); }
-    .url-field {
-      width: 100%; box-sizing: border-box;
-      padding: 8px 10px; border: 1px solid var(--color-border);
-      border-radius: var(--radius-md); background: var(--color-bg);
-      font: inherit; font-size: max(16px, var(--text-sm)); color: var(--color-text);
-      outline: none;
-      transition: border-color 150ms ease, box-shadow 150ms ease;
-    }
-    .url-field:focus { border-color: var(--color-primary-400); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 14%, transparent); }
-    .preview {
-      position: relative;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2);
-      min-height: 180px; border-radius: var(--radius-lg);
-      overflow: hidden;
-      margin-bottom: var(--space-4);
-    }
-    .preview--empty { background: var(--color-neutral-100); }
-    :host-context(.dark) .preview--empty { background: var(--color-neutral-800); }
-    .preview-icon { color: var(--color-text-muted); }
-    .preview-icon--error { color: var(--color-error-500); }
-    .preview-hint { font-size: var(--text-xs); color: var(--color-text-muted); }
-    .preview-hint--error { color: var(--color-error-500); }
-    .preview-spinner { color: var(--color-primary-500); animation: spin 0.9s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .preview-img { width: 100%; max-height: 260px; object-fit: contain; display: block; }
-    .preview-img--hidden { position: absolute; opacity: 0; pointer-events: none; max-height: none; height: 1px; }
-    .footer {
-      display: flex; justify-content: flex-end; align-items: center; gap: var(--space-2);
-      padding-top: var(--space-4); border-top: 1px solid var(--color-border);
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .preview-spinner { animation: none; }
-    }
-  `],
 })
 export class ImagePickerModalComponent {
   private readonly ref = inject(DialogRef<ImagePickerResult | null>);
