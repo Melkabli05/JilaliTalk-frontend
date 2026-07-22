@@ -16,17 +16,22 @@ export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 
   selector: 'app-chat-composer',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AvatarComponent, TooltipDirective, LucideSend, LucidePlus, LucideX, LucideImage, LucideUserPlus],
+  host: { class: 'flex flex-col shrink-0' },
   template: `
     @if (stagedIntroduction(); as intro) {
-      <div class="composer-staged">
+      <div class="flex items-center gap-2 py-1.5 px-2.5 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 rounded-[10px] mb-2">
         <app-avatar [src]="intro.headUrl ?? ''" [initials]="intro.nickname.slice(0, 2)" [alt]="intro.nickname" size="xs" />
-        <span class="composer-staged-meta">
-          <span class="composer-staged-label">Sharing</span>
-          <span class="composer-staged-name">{{ intro.nickname }}</span>
+        <span class="flex flex-col flex-1">
+          <span class="text-[10px] text-neutral-500 dark:text-neutral-400">Sharing</span>
+          <span class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ intro.nickname }}</span>
         </span>
         <button
           type="button"
-          class="composer-staged-remove"
+          class="w-8 h-8 max-md:w-11 max-md:h-11 inline-flex items-center justify-center bg-transparent border-0
+                 text-neutral-500 dark:text-neutral-400 rounded-full cursor-pointer {{ TOUCH }} shrink-0
+                 transition-colors duration-150
+                 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100
+                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           (click)="removeStaged.emit()"
           [attr.aria-label]="'Remove shared profile of ' + intro.nickname"
         >
@@ -34,14 +39,22 @@ export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 
         </button>
       </div>
     }
-    <form class="composer" (submit)="$event.preventDefault(); send.emit()">
+    <form
+      class="flex items-end gap-1.5 py-2 px-2.5 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900"
+      (submit)="$event.preventDefault(); send.emit()"
+    >
       @if (attachMenuOpen()) {
-        <div class="composer-attach-backdrop" (click)="closeAttachMenu()"></div>
+        <div class="fixed inset-0 z-[9] bg-transparent" (click)="closeAttachMenu()"></div>
       }
-      <div class="composer-attach-group">
+      <div class="relative">
         <button
           type="button"
-          class="composer-attach"
+          class="w-9 h-9 max-md:w-11 max-md:h-11 shrink-0 inline-flex items-center justify-center rounded-full border-0
+                 cursor-pointer bg-transparent text-blue-600 dark:text-blue-300 {{ TOUCH }}
+                 transition-[transform,background-color,box-shadow] duration-150
+                 hover:bg-neutral-100 dark:hover:bg-neutral-800
+                 active:scale-90 motion-reduce:active:scale-100
+                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           (click)="toggleAttachMenu()"
           [attr.aria-label]="attachMenuOpen() ? 'Close attach menu' : 'Attach a photo or share a profile'"
           [attr.aria-expanded]="attachMenuOpen()"
@@ -51,12 +64,35 @@ export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 
           <svg aria-hidden="true" lucidePlus [size]="18"></svg>
         </button>
         @if (attachMenuOpen()) {
-          <div class="composer-attach-menu" role="menu">
-            <button type="button" class="composer-attach-item" role="menuitem" (click)="onAction('shareProfile')">
+          <div
+            class="absolute bottom-[calc(100%+6px)] left-0 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700
+                   rounded-md shadow-md p-1 min-w-[160px] flex flex-col z-10
+                   animate-[composerMenuIn_140ms_cubic-bezier(0.2,0.8,0.2,1)_both] motion-reduce:animate-none"
+            role="menu"
+          >
+            <button
+              type="button"
+              class="flex items-center gap-2 py-2 px-2.5 bg-transparent border-0 text-neutral-900 dark:text-neutral-100
+                     font-[inherit] text-sm text-start cursor-pointer rounded-sm {{ TOUCH }}
+                     transition-colors duration-100
+                     hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none
+                     dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800"
+              role="menuitem"
+              (click)="onAction('shareProfile')"
+            >
               <svg aria-hidden="true" lucideUserPlus [size]="16"></svg>
               <span>Share profile</span>
             </button>
-            <button type="button" class="composer-attach-item" role="menuitem" (click)="onAction('image')">
+            <button
+              type="button"
+              class="flex items-center gap-2 py-2 px-2.5 bg-transparent border-0 text-neutral-900 dark:text-neutral-100
+                     font-[inherit] text-sm text-start cursor-pointer rounded-sm {{ TOUCH }}
+                     transition-colors duration-100
+                     hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none
+                     dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800"
+              role="menuitem"
+              (click)="onAction('image')"
+            >
               <svg aria-hidden="true" lucideImage [size]="16"></svg>
               <span>Photo</span>
             </button>
@@ -66,7 +102,10 @@ export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 
         }
       </div>
       <textarea
-        class="composer-field"
+        class="flex-1 min-h-9 max-h-[120px] resize-none py-2 px-2.5 border border-neutral-200 dark:border-neutral-700
+               rounded-md bg-neutral-50 dark:bg-neutral-950 font-[inherit] text-[max(16px,0.875rem)] text-neutral-900 dark:text-neutral-100
+               outline-none transition-[border-color,box-shadow] duration-150
+               focus:border-blue-400 focus:shadow-[0_0_0_3px_rgb(59_130_246/14%)]"
         rows="1"
         autocomplete="off"
         autocapitalize="sentences"
@@ -82,7 +121,13 @@ export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 
       ></textarea>
       <button
         type="submit"
-        class="composer-send"
+        class="w-9 h-9 max-md:w-11 max-md:h-11 shrink-0 inline-flex items-center justify-center rounded-full border-0
+               cursor-pointer bg-blue-500 text-white {{ TOUCH }}
+               shadow-[0_4px_12px_-4px_rgb(59_130_246/35%)] dark:shadow-[0_4px_12px_-4px_rgb(59_130_246/45%)]
+               transition-[transform,background-color,box-shadow] duration-150
+               not-disabled:active:scale-90 motion-reduce:active:scale-100
+               disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none
+               focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
         [disabled]="!canSend()"
         [attr.aria-label]="canSend() ? (stagedIntroduction() ? 'Send introduction' : 'Send message') : 'Type a message or pick an attach option to send'"
         [title]="stagedIntroduction() ? 'Send introduction' : 'Send'"
@@ -91,103 +136,17 @@ export type ComposerAction = 'shareProfile' | 'image' | 'gift' | 'voice_room' | 
       </button>
     </form>
   `,
+  /** The attach-menu pop-in has no Tailwind built-in animation shape. */
   styles: [`
-    :host { display: flex; flex-direction: column; flex-shrink: 0; }
-    .composer-staged {
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 10px; background: var(--color-primary-50);
-      border: 1px solid var(--color-primary-200);
-      border-radius: 10px; margin-bottom: 8px;
-    }
-    .composer-staged-meta { display: flex; flex-direction: column; flex: 1; }
-    .composer-staged-label { font-size: var(--text-2xs); color: var(--color-text-muted); }
-    .composer-staged-name { font-size: var(--text-sm); font-weight: var(--font-medium); }
-    .composer-staged-remove {
-      width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
-      background: transparent; border: 0; color: var(--color-text-muted);
-      border-radius: var(--radius-full); cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      flex-shrink: 0;
-      transition: background-color 150ms ease, color 150ms ease;
-    }
-    .composer-staged-remove:hover { background: var(--color-neutral-100); color: var(--color-text); }
-    .composer-staged-remove:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    @media (max-width: 767.98px) {
-      .composer-staged-remove { width: 44px; height: 44px; }
-    }
-    .composer {
-      display: flex; align-items: flex-end; gap: 6px;
-      padding: 8px 10px;
-      border-top: 1px solid var(--color-border);
-      background: var(--color-card);
-    }
-    .composer-attach, .composer-send {
-      width: 36px; height: 36px; flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 50%; border: 0; cursor: pointer; background: transparent;
-      color: var(--color-primary-text);
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: transform 100ms ease, background-color 150ms ease, box-shadow 150ms ease;
-    }
-    .composer-attach:focus-visible, .composer-send:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-    .composer-attach:active, .composer-send:not(:disabled):active { transform: scale(0.9); }
-    .composer-send { background: var(--color-primary-500); color: var(--color-on-color); box-shadow: var(--shadow-primary-sm); }
-    .composer-send:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
-    .composer-attach:hover { background: var(--color-neutral-100); }
-    .composer-attach-group { position: relative; }
-    .composer-attach-backdrop { position: fixed; inset: 0; z-index: 9; background: transparent; }
-    .composer-attach-menu {
-      position: absolute; bottom: calc(100% + 6px); left: 0;
-      background: var(--color-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-md);
-      padding: 4px; min-width: 160px;
-      display: flex; flex-direction: column;
-      animation: composerMenuIn 140ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-      z-index: 10;
-    }
     @keyframes composerMenuIn {
       from { opacity: 0; transform: translateY(4px) scale(0.96); }
       to   { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .composer-attach-item {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 10px; background: transparent; border: 0;
-      color: var(--color-text); font-family: inherit; font-size: var(--text-sm);
-      text-align: start; cursor: pointer; border-radius: var(--radius-sm);
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: background-color 120ms ease;
-    }
-    .composer-attach-item:hover, .composer-attach-item:focus-visible {
-      background: var(--color-neutral-100);
-      outline: none;
-    }
-    :host-context(.dark) .composer-attach-item:hover, :host-context(.dark) .composer-attach-item:focus-visible {
-      background: var(--color-neutral-800);
-    }
-    .composer-field {
-      flex: 1; min-height: 36px; max-height: 120px; resize: none;
-      padding: 8px 10px; border: 1px solid var(--color-border);
-      border-radius: var(--radius-md); background: var(--color-bg);
-      font-family: inherit; font-size: max(16px, var(--text-sm)); color: var(--color-text);
-      outline: none;
-      transition: border-color 150ms ease, box-shadow 150ms ease;
-    }
-    .composer-field:focus { border-color: var(--color-primary-400); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 14%, transparent); }
-    @media (max-width: 767.98px) {
-      .composer-attach, .composer-send { width: 44px; height: 44px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .composer-attach, .composer-send { transition: none; }
-      .composer-attach:active, .composer-send:active { transform: none; }
-    }
   `],
 })
 export class ChatComposerComponent {
+  protected readonly TOUCH = '[touch-action:manipulation] [-webkit-tap-highlight-color:transparent]';
+
   readonly draft = input<string>('');
   readonly stagedIntroduction = input<IntroductionPayload | null>(null);
   readonly canSend = input<boolean>(false);
