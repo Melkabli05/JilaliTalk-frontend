@@ -4,7 +4,7 @@ import { UserRole } from '@core/models/user-role';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { getLanguageById } from '@shared/data/languages';
 import { initialsFrom } from '@shared/utils';
-import { LucideArrowUpToLine, LucideGhost, LucideMic, LucideMicOff, LucideRefreshCw } from '@lucide/angular';
+import { LucideArrowUpToLine, LucideGhost, LucideHand, LucideMic, LucideMicOff, LucideRefreshCw } from '@lucide/angular';
 import {
   audienceAriaLabel,
   audienceLanguageRingColor,
@@ -17,7 +17,7 @@ export type AudienceUserDisplay = 'grid' | 'list';
 @Component({
   selector: 'app-audience-user',
 
-  imports: [AvatarComponent, LucideArrowUpToLine, LucideGhost, LucideMic, LucideMicOff, LucideRefreshCw],
+  imports: [AvatarComponent, LucideArrowUpToLine, LucideGhost, LucideHand, LucideMic, LucideMicOff, LucideRefreshCw],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[attr.role]': "display() === 'grid' ? 'listitem' : null",
@@ -56,7 +56,9 @@ export type AudienceUserDisplay = 'grid' | 'list';
         </button>
 
         @if (user().isRaiseHand) {
-          <div class="hand-indicator" aria-hidden="true">✋</div>
+          <div class="hand-indicator" aria-hidden="true">
+            <svg lucideHand [size]="10"></svg>
+          </div>
         }
 
         @if (canInvite() && !isGhost()) {
@@ -142,7 +144,9 @@ export type AudienceUserDisplay = 'grid' | 'list';
 
         <div class="action-col">
           @if (user().isRaiseHand) {
-            <div class="raise-hand-indicator" aria-hidden="true">✋</div>
+            <div class="raise-hand-indicator" aria-hidden="true">
+              <svg lucideHand [size]="14"></svg>
+            </div>
           }
           @if (isSelf()) {
             <button
