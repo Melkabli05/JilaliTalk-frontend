@@ -5,6 +5,7 @@ import { RoomStore } from '../store/room-store';
 import { RoomRosterStore } from '../roster/roster-store';
 import { RoomConnectionService } from '@core/realtime/room-connection.service';
 import { ToastService } from '@core/services/toast.service';
+import { logRealtime } from '@core/realtime/dev-log.util';
 
 /**
  * Toggle speaking for a user who is in the audience (visible or invisible). Mirrors
@@ -47,6 +48,7 @@ export async function toggleSpeakFromAudience(deps: SpeakFromAudienceDeps): Prom
     const cname = deps.roomStore.cname();
     const busiType = deps.roomStore.busiType();
     const isSpeaking = deps.rcs.agora.isPublishing();
+    logRealtime('toggleSpeakFromAudience() called', { isSpeaking, cname, busiType });
 
     if (isSpeaking) {
       await deps.rcs.setMicEnabled(false);
@@ -57,10 +59,14 @@ export async function toggleSpeakFromAudience(deps: SpeakFromAudienceDeps): Prom
       // track is gone, but upstream still considers us a room member until
       // leaveRoom fires a user_quit event.
       if (cname) {
-        await firstValueFrom(deps.api.leaveRoom(cname, busiType)).catch(() => {});
+        logRealtime('toggleSpeakFromAudience() demote → api.leaveRoom', { cname });
+        await firstValueFrom(deps.api.leaveRoom(cname, busiType)).catch((err) =>
+          logRealtime('toggleSpeakFromAudience() api.leaveRoom FAILED', { err: String(err) }),
+        );
       }
       deps.roomStore.setMicOn(false);
       deps.rosterStore.updateUserMicStatus(deps.roomStore.userId(), false);
+      logRealtime('toggleSpeakFromAudience() demote done');
       return;
     }
 
@@ -73,13 +79,18 @@ export async function toggleSpeakFromAudience(deps: SpeakFromAudienceDeps): Prom
     // doesn't roll back the publish — the user can still see their own mic
     // indicator; only the audience fan-out is missing.
     if (cname) {
-      await firstValueFrom(deps.api.joinRoom(cname, busiType)).catch(() => {});
+      logRealtime('toggleSpeakFromAudience() promote → api.joinRoom', { cname });
+      await firstValueFrom(deps.api.joinRoom(cname, busiType)).catch((err) =>
+        logRealtime('toggleSpeakFromAudience() api.joinRoom FAILED', { err: String(err) }),
+      );
     }
     await deps.rcs.startAudio(null);
     if (deps.destroying()) return;
     deps.roomStore.setMicOn(true);
     deps.rosterStore.updateUserMicStatus(deps.roomStore.userId(), true);
-  } catch {
+    logRealtime('toggleSpeakFromAudience() promote done');
+  } catch (err) {
+    logRealtime('toggleSpeakFromAudience() FAILED', { err: String(err) });
     deps.toast.error('Failed to start microphone');
   } finally {
     deps.speakBusy.set(false);

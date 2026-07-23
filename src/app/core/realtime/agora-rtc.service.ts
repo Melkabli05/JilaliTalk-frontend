@@ -8,6 +8,7 @@ import AgoraRTC, {
 import type { RtcConnectionState, RealtimeLifecycle } from './realtime-events';
 import { AgoraDenoiserController } from './agora-denoiser-controller';
 import { AutoplayAudioRecovery } from './autoplay-audio-recovery';
+import { logRealtime } from './dev-log.util';
 import {
   clearRemoteUserMedia,
   removeRemoteUser,
@@ -71,6 +72,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
     appId: string,
     isGhostMode = false,
   ): Promise<void> {
+    logRealtime('connect() called', { channel, uid, hasToken: token != null, isGhostMode });
     if (this.client) await this.disconnect();
 
     this.isGhostMode = isGhostMode;
@@ -101,12 +103,14 @@ export class AgoraRtcService implements RealtimeLifecycle {
 
     await client.join(appId, channel, token, uid === 0 ? null : uid);
     this._state.set('connected');
+    logRealtime('connect() joined', { channel, uid, mode: isGhostMode ? 'rtc' : 'live', role: isGhostMode ? 'audience (implicit)' : 'host' });
     // After a fresh join the user has not yet enabled mic publishing — mirror the
     // role state into the publishing signal so callers see a consistent 'muted'.
     this._publishing.set(false);
   }
 
   async enablePublishing(enabled: boolean): Promise<void> {
+    logRealtime('enablePublishing() called', { enabled, wasGhost: this.isGhostMode, wasPublishing: this._publishing() });
     if (!this.client || !this.connectedChannel || this.connectedUid === null || !this.connectedAppId) return;
     const targetRole: 'host' | 'audience' = enabled ? 'host' : 'audience';
 
@@ -125,9 +129,11 @@ export class AgoraRtcService implements RealtimeLifecycle {
     if (!this.isGhostMode) {
       try {
         await this.client.setClientRole(targetRole);
-      } catch {
+        logRealtime('enablePublishing() setClientRole', { mode: 'live', targetRole });
+      } catch (err) {
         // Role transitions can race with publish/unpublish; the next start/stop
         // call reconciles. Don't block on the error.
+        logRealtime('enablePublishing() setClientRole FAILED', { mode: 'live', targetRole, err: String(err) });
       }
       this._publishing.set(enabled);
       return;
@@ -135,8 +141,11 @@ export class AgoraRtcService implements RealtimeLifecycle {
 
     // Already in the target state? Mirror the signal but skip the reconnect churn.
     if (this._publishing() === enabled) {
+      logRealtime('enablePublishing() no-op (already in target state)', { mode: 'rtc', targetState: enabled });
       return;
     }
+
+    logRealtime('enablePublishing() tearing down for reconnect', { mode: 'rtc', targetRole });
 
     // Stop any in-flight mic track before reconnecting — otherwise the reconnect
     // races against the unpublish and the SDK throws on duplicate-track errors.
@@ -155,7 +164,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
     // for invisible users DO NOT need a fresh publisher token — they get a normal
     // token from the join bundle; publisher tokens are only required when joining
     // explicitly via the on-stage publisher-token endpoint).
-    await this.client?.leave().catch(() => {});
+    await this.client?.leave().catch((err) => logRealtime('enablePublishing() leave FAILED', { err: String(err) }));
     this.client = null;
     this._remoteUsers.set([]);
     this._speakingUids.set([]);
@@ -167,8 +176,10 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this.isGhostMode = !enabled;
     this._state.set('connecting');
 
+    const targetMode: 'live' | 'rtc' = enabled ? 'live' : 'rtc';
+    logRealtime('enablePublishing() reconnecting', { fromMode: 'rtc', toMode: targetMode, targetRole });
     const client = AgoraRTC.createClient({
-      mode: enabled ? 'live' : 'rtc',
+      mode: targetMode,
       codec: 'vp8',
     });
     this.client = client;
@@ -185,11 +196,14 @@ export class AgoraRtcService implements RealtimeLifecycle {
     );
     this._state.set('connected');
     this._publishing.set(enabled);
+    logRealtime('enablePublishing() reconnected', { mode: targetMode, publishing: enabled });
   }
 
   async startAudio(publisherToken?: string | null): Promise<void> {
     const client = this.client;
     if (!client) throw new Error('Not connected');
+
+    logRealtime('startAudio() called', { hasPublisherToken: publisherToken != null });
 
     // Caller is responsible for enablePublishing(true) if the session was started as
     // audience (invisible or off-stage understage). startAudio no longer flips the role
@@ -203,6 +217,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this.micTrack = track;
     this._localAudioTrack.set(track);
     this._publishing.set(true);
+    logRealtime('startAudio() mic track published');
   }
 
   async startVideo(publisherToken?: string | null): Promise<void> {
@@ -217,8 +232,9 @@ export class AgoraRtcService implements RealtimeLifecycle {
 
   async stopAudio(): Promise<void> {
     if (!this.micTrack) return;
+    logRealtime('stopAudio() tearing down mic track');
     await this.denoiser.detach();
-    await this.client?.unpublish(this.micTrack).catch(() => {});
+    await this.client?.unpublish(this.micTrack).catch((err) => logRealtime('stopAudio() unpublish FAILED', { err: String(err) }));
     this.micTrack.stop();
     this.micTrack.close();
     this.micTrack = null;
@@ -227,6 +243,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
     // 'live' → 'rtc' for invisible users) should call enablePublishing(false),
     // which performs the full disconnect/reconnect cycle. stopAudio alone only
     // tears down the local track — the RTC role state is unchanged.
+    logRealtime('stopAudio() mic track torn down');
   }
 
   /** Optional callback the room UI can hook to surface a "mic degraded — AI denoiser offline"
@@ -286,6 +303,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
   }
 
   async disconnect(): Promise<void> {
+    logRealtime('disconnect() called', { channel: this.connectedChannel, uid: this.connectedUid });
     try {
       if (this.micTrack) {
         await this.denoiser.detach();
@@ -298,7 +316,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
         this.videoTrack.stop();
         this.videoTrack.close();
       }
-      await this.client?.leave().catch(() => {});
+      await this.client?.leave().catch((err) => logRealtime('disconnect() leave FAILED', { err: String(err) }));
     } finally {
       this.client = null;
       this.micTrack = null;
@@ -314,11 +332,13 @@ export class AgoraRtcService implements RealtimeLifecycle {
       this.connectedUid = null;
       this.connectedAppId = null;
     }
+    logRealtime('disconnect() done');
   }
 
   private wireCallbacks(client: IAgoraRTCClient): void {
-    client.on('connection-state-change', (cur: ConnectionState, _prev: string, reason: string) => {
+    client.on('connection-state-change', (cur: ConnectionState, prev: string, reason: string) => {
       this._state.set(mapState(cur));
+      logRealtime('connection-state-change', { from: prev, to: cur, reason });
       if (cur === 'DISCONNECTED') {
         const reject = ['SERVER_REJECTED', 'CHANNEL_EXPIRED', 'IP_BANNED', 'UID_BANNED'];
         if (reject.includes(reason)) this._roomClosed.set({ reason });
