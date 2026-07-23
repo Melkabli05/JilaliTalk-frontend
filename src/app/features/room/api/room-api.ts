@@ -71,6 +71,27 @@ export class RoomApi {
       .post<void>(`${this.baseUrl}/users/rooms/${cname}/join?busiType=${busiType}`, null);
   }
 
+  /** Start publishing audio while staying invisible in the audience roster. The BFF
+   *  tracks this state locally and re-emits a stage_join WS event with `isGhost: true`
+   *  to receivers (whose clients subscribe for audio but render the user with the
+   *  ghost-styled stage badge, mirroring the audience self-row treatment).
+   *
+   *  NOTE: real upstream ghost-publisher support depends on HelloTalk's livehub
+   *  accepting an isGhost flag on stage_user events; the BFF mediator forwards
+   *  this in the meantime, but the audio fan-out from an off-stage publisher is
+   *  best-effort until upstream cooperation lands. See jilalibff task #38. */
+  startGhostPublish(cname: string, busiType: number): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/users/rooms/${cname}/ghost-publish?busiType=${busiType}`, null);
+  }
+
+  /** Mirror of startGhostPublish — restores the user's prior audience/ghost state by
+   *  stopping the publish flag and demoting the local Agora role back to audience. */
+  stopGhostPublish(cname: string, busiType: number): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/users/rooms/${cname}/ghost-publish/stop?busiType=${busiType}`, null);
+  }
+
   claimVipTrial(): Observable<boolean> {
     return this.http
       .post<{ claimed: boolean }>(`${this.baseUrl}/vip-experience-card/claim-trial`, null)

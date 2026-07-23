@@ -8,27 +8,26 @@ import { ToastService } from '@core/services/toast.service';
 import { logRealtime } from '@core/realtime/dev-log.util';
 
 /**
- * Toggle speaking for a user who is in the audience (visible or invisible). Mirrors
- * the on-stage half of toggleMic — promotes the local client to publisher via
- * enablePublishing(true), creates a fresh mic track and publishes it, then later
- * demotes back to audience on stop.
+ * Toggle speaking for a user who is in the audience (visible or invisible).
  *
  * Two callers reuse this command:
- *  - the visible understage mic button (Feature 1): the user is in the audience list,
+ *  - the visible understage mic button: the user is in the audience list,
  *    can speak without joining the stage roster.
- *  - the invisible ghost-mic button (Feature 2): the user is invisible (no roster
- *    entry at all), but can still publish audio via Agora. The mic publish is the
- *    same wire-level event; only the visibility of "who's speaking" differs, and
- *    that is already handled by the absence of a roster entry.
+ *  - the invisible ghost-mic button: the user is invisible (no roster entry
+ *    at all), but can still publish audio via Agora.
  *
  * The Agora client joined in 'live' mode for visible users and 'rtc' mode for
  * invisible users. enablePublishing() flips role/reconnects accordingly. Critically,
- * the BFF must be told we're an active room participant around the flip — otherwise
+ * the BFF must be told we're an active publisher around the flip — otherwise
  * upstream never delivers a user_published event to other clients and nobody
- * hears the audio even though Agora technically published it. So this command
- * mirrors what makeInvisible/makeVisible already do: api.leaveRoom on demote,
- * api.joinRoom on promote. Errors here are best-effort swallowed because the
- * primary action (publishing) already succeeded.
+ * hears the audio even though Agora technically published it.
+ *
+ * Visible users go through the standard `joinRoom` / `leaveRoom` pair (the same
+ * path `makeVisible` / `makeInvisible` already use). Invisible users go through
+ * a dedicated `startGhostPublish` / `stopGhostPublish` pair that the BFF mediator
+ * handles by tagging the stage_join WS push with `isGhost: true` so receivers
+ * subscribe for audio but keep the speaker out of their audience/stage roster.
+ * Both paths are best-effort: a failed BFF call doesn't roll back the publish.
  */
 export interface SpeakFromAudienceDeps {
   roomStore: RoomStore;
@@ -48,21 +47,26 @@ export async function toggleSpeakFromAudience(deps: SpeakFromAudienceDeps): Prom
     const cname = deps.roomStore.cname();
     const busiType = deps.roomStore.busiType();
     const isSpeaking = deps.rcs.agora.isPublishing();
-    logRealtime('toggleSpeakFromAudience() called', { isSpeaking, cname, busiType });
+    const isInvisible = !deps.roomStore.isVisible();
+    logRealtime('toggleSpeakFromAudience() called', { isSpeaking, cname, busiType, isInvisible });
 
     if (isSpeaking) {
       await deps.rcs.setMicEnabled(false);
       await deps.rcs.stopAudio();
       await deps.rcs.agora.enablePublishing(false);
       if (deps.destroying()) return;
-      // Mirror makeInvisible: tell the BFF we've left the active roster. The mic
-      // track is gone, but upstream still considers us a room member until
-      // leaveRoom fires a user_quit event.
       if (cname) {
-        logRealtime('toggleSpeakFromAudience() demote → api.leaveRoom', { cname });
-        await firstValueFrom(deps.api.leaveRoom(cname, busiType)).catch((err) =>
-          logRealtime('toggleSpeakFromAudience() api.leaveRoom FAILED', { err: String(err) }),
-        );
+        if (isInvisible) {
+          logRealtime('toggleSpeakFromAudience() demote → api.stopGhostPublish', { cname });
+          await firstValueFrom(deps.api.stopGhostPublish(cname, busiType)).catch((err) =>
+            logRealtime('toggleSpeakFromAudience() api.stopGhostPublish FAILED', { err: String(err) }),
+          );
+        } else {
+          logRealtime('toggleSpeakFromAudience() demote → api.leaveRoom', { cname });
+          await firstValueFrom(deps.api.leaveRoom(cname, busiType)).catch((err) =>
+            logRealtime('toggleSpeakFromAudience() api.leaveRoom FAILED', { err: String(err) }),
+          );
+        }
       }
       deps.roomStore.setMicOn(false);
       deps.rosterStore.updateUserMicStatus(deps.roomStore.userId(), false);
@@ -75,14 +79,18 @@ export async function toggleSpeakFromAudience(deps: SpeakFromAudienceDeps): Prom
     // reconnect in 'live' mode as host.
     await deps.rcs.agora.enablePublishing(true);
     if (deps.destroying()) return;
-    // Tell the BFF we're an active publisher. Best-effort: a failed joinRoom
-    // doesn't roll back the publish — the user can still see their own mic
-    // indicator; only the audience fan-out is missing.
     if (cname) {
-      logRealtime('toggleSpeakFromAudience() promote → api.joinRoom', { cname });
-      await firstValueFrom(deps.api.joinRoom(cname, busiType)).catch((err) =>
-        logRealtime('toggleSpeakFromAudience() api.joinRoom FAILED', { err: String(err) }),
-      );
+      if (isInvisible) {
+        logRealtime('toggleSpeakFromAudience() promote → api.startGhostPublish', { cname });
+        await firstValueFrom(deps.api.startGhostPublish(cname, busiType)).catch((err) =>
+          logRealtime('toggleSpeakFromAudience() api.startGhostPublish FAILED', { err: String(err) }),
+        );
+      } else {
+        logRealtime('toggleSpeakFromAudience() promote → api.joinRoom', { cname });
+        await firstValueFrom(deps.api.joinRoom(cname, busiType)).catch((err) =>
+          logRealtime('toggleSpeakFromAudience() api.joinRoom FAILED', { err: String(err) }),
+        );
+      }
     }
     await deps.rcs.startAudio(null);
     if (deps.destroying()) return;
