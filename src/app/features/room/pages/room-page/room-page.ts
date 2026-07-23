@@ -224,21 +224,26 @@ export class RoomPageComponent {
 
 
   onMediaToggle(): void {
-    if (!this.roomStore.isVisible()) {
-      this.toast.info('You are invisible — rejoin visibly to speak');
+    // Routing: on-stage uses the legacy mic command (publisher-token path); off-stage
+    // uses the audience-speak command (works for visible understage AND invisible ghost).
+    // No more 'go visible to speak' guard — both paths support invisible callers.
+    const uid = this.roomStore.userId();
+    const onStage = this.rosterStore.isOnStage(uid);
+    if (onStage) {
+      if (this.facade.mediaToggleBusy()) return;
+      this.facade.mediaToggleBusy.set(true);
+      toggleMic(
+        this.roomStore,
+        this.rosterStore,
+        this.rcs,
+        this.api,
+        this.destroyRef,
+        () => this.facade.destroying(),
+        this.toast,
+      ).finally(() => this.facade.mediaToggleBusy.set(false));
       return;
     }
-    if (this.facade.mediaToggleBusy()) return;
-    this.facade.mediaToggleBusy.set(true);
-    toggleMic(
-      this.roomStore,
-      this.rosterStore,
-      this.rcs,
-      this.api,
-      this.destroyRef,
-      () => this.facade.destroying(),
-      this.toast,
-    ).finally(() => this.facade.mediaToggleBusy.set(false));
+    void this.facade.toggleSpeakFromAudience();
   }
 
   onToggleCamOrShare(): void {

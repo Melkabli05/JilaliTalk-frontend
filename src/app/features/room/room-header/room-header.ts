@@ -34,6 +34,7 @@ import {
   LucideEllipsisVertical,
   LucideX,
   LucideMinimize2,
+  LucideMic,
 } from '@lucide/angular';
 import { TooltipDirective } from '@shared/directives/tooltip.directive';
 import { RoomsPreferencesStore } from '@store/rooms-preferences.store';
@@ -69,6 +70,7 @@ import { handIcon as resolveHandIcon, handTooltip as resolveHandTooltip, wsStatu
     LucideCaptionsOff,
     LucideEllipsisVertical,
     LucideX,
+    LucideMic,
     LucideMinimize2,
   ],
   host: {
@@ -398,10 +400,18 @@ import { handIcon as resolveHandIcon, handTooltip as resolveHandTooltip, wsStatu
           </button>
         </div>
 
-        <!-- Section 4: Media — hidden when invisible (mic/cam/pitch = broadcasting only) -->
-        @if (!invisible()) {
-          <div class="overflow-divider"></div>
-          <div class="overflow-list">
+        <!-- Mic + mic-settings are available even when invisible — invisible users can
+             still publish audio (ghost mic, see speak-from-audience.command.ts). Camera
+             and screen-share stay gated because they reveal identity / position. -->
+        <div class="overflow-divider"></div>
+        <div class="overflow-list">
+          @if (isMicOn() !== false) {
+            <button class="overflow-row" (click)="onToggleMic()">
+              <svg aria-hidden="true" lucideMic [size]="20"></svg>
+              <span class="row-label">{{ isMicOn() ? 'Stop mic' : 'Start mic' }}</span>
+            </button>
+          }
+          @if (!invisible()) {
             @if (isCamOn() !== false) {
               <button class="overflow-row" (click)="onToggleCam()">
                 <svg aria-hidden="true" lucideVideoOff [size]="20"></svg>
@@ -416,10 +426,10 @@ import { handIcon as resolveHandIcon, handTooltip as resolveHandTooltip, wsStatu
               <svg aria-hidden="true" lucideSettings [size]="20"></svg>
               <span class="row-label">Mic settings</span>
             </button>
-          </div>
-          @if (showSettings()) {
-            <app-av-settings variant="inline" (onClose)="showSettings.set(false)" />
           }
+        </div>
+        @if (showSettings()) {
+          <app-av-settings variant="inline" (onClose)="showSettings.set(false)" />
         }
 
         <div class="overflow-divider"></div>
