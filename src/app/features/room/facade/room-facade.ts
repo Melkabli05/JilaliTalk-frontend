@@ -25,6 +25,7 @@ import { resolveRoomEntry as resolveRoomEntryCommand } from '../commands/resolve
 import { makeInvisible as makeInvisibleCommand } from '../commands/make-invisible.command';
 import { raiseOrLowerHand as raiseOrLowerHandCommand } from '../commands/raise-or-lower-hand.command';
 import { inviteToStage as inviteToStageCommand } from '../commands/invite-to-stage.command';
+import { toggleSpeakFromAudience as toggleSpeakFromAudienceCommand } from '../commands/speak-from-audience.command';
 import { minimizeRoom } from '../commands/minimize-room.command';
 import { NOTIFICATION_REPORTER } from '@core/tokens/notification-reporter.token';
 import { UserActionModalData } from '../moderation/user-action-modal';
@@ -84,10 +85,26 @@ export class RoomFacade {
     this.rcs.speakingUids().includes(this.roomStore.userId()),
   );
 
+  /** Whether the local user is currently publishing audio (in either capacity — on-stage,
+   *  visible understage, or invisible ghost). Mirrors AgoraRtcService.isPublishing. */
+  readonly selfIsPublishing = computed(() => this.rcs.agora.isPublishing());
+
+  /** Whether the local user is a candidate for the audience-row mic button:
+   *  in the audience (not on stage), and either visible OR invisible-but-wanting-to-speak.
+   *  Invisible users see a smaller "ghost mic" affordance — same code path, different UI. */
+  readonly selfCanSpeakFromAudience = computed(() => {
+    const uid = this.roomStore.userId();
+    if (!uid) return false;
+    if (this.rosterStore.isOnStage(uid)) return false;
+    if (this.roomStore.isHost() || this.roomStore.isModerator()) return true;
+    return true;
+  });
+
   readonly reqUserId = signal(0);
 
   readonly mediaToggleBusy = signal(false);
   readonly handToggleBusy = signal(false);
+  readonly speakFromAudienceBusy = signal(false);
   /** Prevents concurrent visibility toggle calls (double-click guard). */
   readonly togglingVisibility = signal(false);
   readonly inviteBusy = signal<number | null>(null);
@@ -494,6 +511,24 @@ export class RoomFacade {
   async leave(): Promise<void> {
     this.destroying.set(true);
     await leaveRoom(this.rcs, this.roomStore, this.bffWs, this.activeCallStore);
+  }
+
+  /** Toggle publishing for the local user when they're sitting in the audience — visible
+   *  understage or invisible ghost. Used by the mic button rendered on the local user's
+   *  own audience-list row. */
+  async toggleSpeakFromAudience(): Promise<void> {
+    await toggleSpeakFromAudienceCommand(
+      {
+        roomStore: this.roomStore,
+        rosterStore: this.rosterStore,
+        rcs: this.rcs,
+        api: this.api,
+        toast: this.toast,
+        destroyRef: this.destroyRef,
+        destroying: () => this.destroying(),
+        speakBusy: this.speakFromAudienceBusy,
+      },
+    );
   }
 
   minimize(): void {

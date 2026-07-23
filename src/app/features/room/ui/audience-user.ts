@@ -4,7 +4,7 @@ import { UserRole } from '@core/models/user-role';
 import { AvatarComponent } from '@shared/ui/avatar/avatar.component';
 import { getLanguageById } from '@shared/data/languages';
 import { initialsFrom } from '@shared/utils';
-import { LucideArrowUpToLine, LucideGhost, LucideRefreshCw } from '@lucide/angular';
+import { LucideArrowUpToLine, LucideGhost, LucideMic, LucideMicOff, LucideRefreshCw } from '@lucide/angular';
 import {
   audienceAriaLabel,
   audienceLanguageRingColor,
@@ -17,7 +17,7 @@ export type AudienceUserDisplay = 'grid' | 'list';
 @Component({
   selector: 'app-audience-user',
 
-  imports: [AvatarComponent, LucideArrowUpToLine, LucideGhost, LucideRefreshCw],
+  imports: [AvatarComponent, LucideArrowUpToLine, LucideGhost, LucideMic, LucideMicOff, LucideRefreshCw],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[attr.role]': "display() === 'grid' ? 'listitem' : null",
@@ -75,6 +75,28 @@ export type AudienceUserDisplay = 'grid' | 'list';
             }
           </button>
         }
+
+        @if (isSelf()) {
+          <button
+            type="button"
+            class="self-mic-btn"
+            [class.on]="isMicOn()"
+            [class.ghost]="isGhost()"
+            [disabled]="speakBusy()"
+            (click)="emitSpeak($event)"
+            [attr.aria-label]="isMicOn() ? 'Stop speaking from audience' : 'Speak from audience'"
+            [attr.aria-pressed]="isMicOn()"
+            [title]="isMicOn() ? 'Stop speaking' : isGhost() ? 'Speak invisibly (ghost mic)' : 'Speak from audience'"
+          >
+            @if (speakBusy()) {
+              <svg aria-hidden="true" lucideRefreshCw [size]="10" class="spinning"></svg>
+            } @else if (isMicOn()) {
+              <svg aria-hidden="true" lucideMic [size]="10"></svg>
+            } @else {
+              <svg aria-hidden="true" lucideMicOff [size]="10"></svg>
+            }
+          </button>
+        }
       </div>
     } @else {
       <div class="audience-user list">
@@ -121,6 +143,27 @@ export type AudienceUserDisplay = 'grid' | 'list';
         <div class="action-col">
           @if (user().isRaiseHand) {
             <div class="raise-hand-indicator" aria-hidden="true">✋</div>
+          }
+          @if (isSelf()) {
+            <button
+              type="button"
+              class="self-mic-btn list"
+              [class.on]="isMicOn()"
+              [class.ghost]="isGhost()"
+              [disabled]="speakBusy()"
+              (click)="emitSpeak($event)"
+              [attr.aria-label]="isMicOn() ? 'Stop speaking from audience' : 'Speak from audience'"
+              [attr.aria-pressed]="isMicOn()"
+              [title]="isMicOn() ? 'Stop speaking' : isGhost() ? 'Speak invisibly (ghost mic)' : 'Speak from audience'"
+            >
+              @if (speakBusy()) {
+                <svg aria-hidden="true" lucideRefreshCw [size]="12" class="spinning"></svg>
+              } @else if (isMicOn()) {
+                <svg aria-hidden="true" lucideMic [size]="12"></svg>
+              } @else {
+                <svg aria-hidden="true" lucideMicOff [size]="12"></svg>
+              }
+            </button>
           }
           @if (canInvite() && !isGhost()) {
             <button
@@ -297,6 +340,32 @@ export type AudienceUserDisplay = 'grid' | 'list';
     .invite-btn:hover { background: var(--au-invite-hover-bg); }
     .invite-btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .invite-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+
+    /* "Speak from audience" mic — rendered on the local user's own row only. Sits at the
+       same anchor as the invite-overlay-btn (top-right of the avatar) so the two never
+       collide (host sees invite, self sees mic). Grid variant is small + circular and
+       lights up primary when active. List variant mirrors the invite-btn style. */
+    .self-mic-btn {
+      position: absolute; top: 0; right: 0;
+      width: 20px; height: 20px; border-radius: var(--radius-md);
+      background: var(--au-invite-bg); color: var(--au-invite-fg);
+      border: none; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background 0.15s, color 0.15s;
+    }
+    .self-mic-btn.on { background: var(--au-invite-overlay-bg); color: var(--color-on-color); }
+    /* Invisible ('ghost') local-user row — use the ghost-muted palette so the affordance
+       reads as 'invisible mic', distinct from the visible audience mic. */
+    .self-mic-btn.ghost { background: var(--au-ghost-bg); color: var(--au-ghost-fg); border: 1px dashed var(--au-ghost-border); }
+    .self-mic-btn.ghost.on { background: var(--au-invite-overlay-bg); color: var(--color-on-color); border-style: solid; }
+    .self-mic-btn:hover { background: var(--au-invite-hover-bg); }
+    .self-mic-btn.ghost:hover { background: var(--au-ghost-bg); opacity: 0.85; }
+    .self-mic-btn.on:hover { background: var(--au-invite-overlay-bg); opacity: 0.9; }
+    .self-mic-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .self-mic-btn:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
+
+    .self-mic-btn.list {
+      position: static; width: 32px; height: 32px; border-radius: var(--radius-lg);
+    }
   `],
 })
 export class AudienceUserComponent {
@@ -308,9 +377,15 @@ export class AudienceUserComponent {
   readonly inviteBusy = input<boolean>(false);
   readonly speaking = input<boolean>(false);
   readonly currentUserId = input<number>(0);
+  /** True when the local user is currently publishing audio from the audience row. */
+  readonly isMicOn = input<boolean>(false);
+  /** True while the local mic-toggle request is in flight. */
+  readonly speakBusy = input<boolean>(false);
 
   readonly invite = output<AudienceUser>();
   readonly userClick = output<AudienceUser>();
+  /** Emitted when the local user taps their own audience-row mic button. */
+  readonly speak = output<void>();
 
   readonly displayName = computed(() => this.user().base?.nickname ?? 'User');
   readonly initials = computed(() => initialsFrom(this.displayName()));
@@ -336,6 +411,11 @@ export class AudienceUserComponent {
   emitInvite(event: Event): void {
     event.stopPropagation();
     this.invite.emit(this.user());
+  }
+
+  emitSpeak(event: Event): void {
+    event.stopPropagation();
+    this.speak.emit();
   }
 
   onGridClick(): void {

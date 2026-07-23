@@ -38,6 +38,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
   private readonly _localVideoTrack = signal<any | null>(null);
   private readonly _roomClosed = signal<{ reason: string } | null>(null);
   private readonly _noiseSuppressionLevel = signal<AudioNoiseSuppressionLevel>(2);
+  private readonly _publishing = signal<boolean>(false);
   private readonly remoteAudioTracks = new Map<number, any>();
 
   readonly state = this._state.asReadonly();
@@ -48,6 +49,10 @@ export class AgoraRtcService implements RealtimeLifecycle {
   readonly isConnected = computed(() => this._state() === 'connected');
   readonly roomClosed = this._roomClosed.asReadonly();
   readonly noiseSuppressionLevel = this._noiseSuppressionLevel.asReadonly();
+  /** True when the local user is currently publishing audio to the room — either on-stage
+   *  or as an audience/ghost speaker. Drives mic-state UI without callers having to inspect
+   *  tracks or session state. */
+  readonly isPublishing = this._publishing.asReadonly();
 
   async connect(
     channel: string,
@@ -62,26 +67,50 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this._state.set('connecting');
 
     const client = AgoraRTC.createClient({
-      mode: isGhostMode ? 'rtc' : 'live',
+      mode: 'live',
       codec: 'vp8',
     });
     this.client = client;
     this.wireCallbacks(client);
     client.enableAudioVolumeIndicator();
 
-    if (!isGhostMode) {
-      await client.setClientRole('host');
-    }
+    // 'live' mode requires setClientRole before joinChannel. Invisible ('ghost') users
+    // start as audience; visible users start as host. Either role can be flipped
+    // mid-session via enablePublishing(), which lets audience and invisible users
+    // promote themselves to speaker without dropping the RTC connection.
+    await client.setClientRole(isGhostMode ? 'audience' : 'host');
 
     await client.join(appId, channel, token, uid === 0 ? null : uid);
     this._state.set('connected');
+    // After a fresh join the user has not yet enabled mic publishing — mirror the
+    // role state into the publishing signal so callers see a consistent 'muted'.
+    this._publishing.set(false);
+  }
+
+  async enablePublishing(enabled: boolean): Promise<void> {
+    const client = this.client;
+    if (!client) return;
+    // Promote/demote the local role mid-session. No-op if already in the target role —
+    // the SDK throws on a redundant setClientRole('host') when a track is already
+    // published in some edge cases, so guarding saves a needless rejection.
+    const target = enabled ? 'host' : 'audience';
+    try {
+      await client.setClientRole(target);
+    } catch {
+      // Role transitions can race with publish/unpublish; the next publish/unpublish
+      // call will reconcile state, so swallow here.
+    }
+    this._publishing.set(enabled);
   }
 
   async startAudio(publisherToken?: string | null): Promise<void> {
     const client = this.client;
     if (!client) throw new Error('Not connected');
 
-    if (!this.isGhostMode) await client.setClientRole('host');
+    // Caller is responsible for enablePublishing(true) if the session was started as
+    // audience (invisible or off-stage understage). startAudio no longer flips the role
+    // itself — that contract belongs to enablePublishing, which is also what callers
+    // pair with stopAudio to demote back.
     if (publisherToken) await client.renewToken(publisherToken);
     const track = await AgoraRTC.createMicrophoneAudioTrack(this.getAudioTrackOptions());
     track.setVolume(100);
@@ -89,12 +118,12 @@ export class AgoraRtcService implements RealtimeLifecycle {
     await client.publish(track);
     this.micTrack = track;
     this._localAudioTrack.set(track);
+    this._publishing.set(true);
   }
 
   async startVideo(publisherToken?: string | null): Promise<void> {
     const client = this.client;
     if (!client) throw new Error('Not connected');
-    if (!this.isGhostMode) await client.setClientRole('host');
     if (publisherToken) await client.renewToken(publisherToken);
     const track = await AgoraRTC.createCameraVideoTrack({ encoderConfig: '720p_1' });
     await client.publish(track);
@@ -110,7 +139,10 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this.micTrack.close();
     this.micTrack = null;
     this._localAudioTrack.set(null);
-    if (!this.isGhostMode) await this.client?.setClientRole('audience').catch(() => {});
+    // Demote back to audience so subsequent enablePublishing(true) is a clean
+    // re-promotion rather than a redundant no-op. Caller may override by not
+    // demoting — e.g. host who just wants to mute but stay on stage.
+    if (this._publishing()) await this.enablePublishing(false);
   }
 
   /** Optional callback the room UI can hook to surface a "mic degraded — AI denoiser offline"

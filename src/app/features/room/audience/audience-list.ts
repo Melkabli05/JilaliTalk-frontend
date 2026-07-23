@@ -45,8 +45,11 @@ import { ViewMode, LanguageGroup, groupUsersByLanguage } from './audience-list-s
             [inviteBusy]="inviteBusy()"
             [currentUserId]="currentUserId()"
             [searchQuery]="searchQuery()"
+            [selfIsPublishing]="selfIsPublishing()"
+            [selfSpeakBusy]="selfSpeakBusy()"
             (userClick)="onUserClick($event)"
             (inviteToStage)="onInviteToStage($event)"
+            (speakToggle)="onSpeakToggle()"
             (clearSearch)="clearSearch()"
           />
         </div>
@@ -111,9 +114,12 @@ export class AudienceListComponent {
   readonly currentUserId = input<number>(0);
   readonly canInviteToStage = input<boolean>(false);
   readonly inviteBusy = input<number | null>(null);
+  readonly selfIsPublishing = input<boolean>(false);
+  readonly selfSpeakBusy = input<boolean>(false);
 
   readonly userClick = output<AudienceUser>();
   readonly inviteToStage = output<AudienceUser>();
+  readonly speakToggle = output<void>();
 
   readonly viewMode = signal<ViewMode>('grid');
   readonly showSearch = signal(false);
@@ -194,5 +200,9 @@ export class AudienceListComponent {
 
   onInviteToStage(user: AudienceUser): void {
     this.inviteToStage.emit(user);
+  }
+
+  onSpeakToggle(): void {
+    this.speakToggle.emit();
   }
 }

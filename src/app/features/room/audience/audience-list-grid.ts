@@ -26,8 +26,11 @@ import { ViewMode, LanguageGroup } from './audience-list-shared';
               [canInvite]="canInviteToStage()"
               [inviteBusy]="inviteBusy() === user.userId"
               [currentUserId]="currentUserId()"
+              [isMicOn]="selfIsPublishing() && user.userId === currentUserId()"
+              [speakBusy]="selfSpeakBusy()"
               (userClick)="userClick.emit($event)"
               (invite)="inviteToStage.emit($event)"
+              (speak)="speakToggle.emit()"
             />
           }
         </div>
@@ -48,7 +51,10 @@ import { ViewMode, LanguageGroup } from './audience-list-shared';
                   [canInvite]="canInviteToStage()"
                   [inviteBusy]="inviteBusy() === user.userId"
                   [currentUserId]="currentUserId()"
+                  [isMicOn]="selfIsPublishing() && user.userId === currentUserId()"
+                  [speakBusy]="selfSpeakBusy()"
                   (invite)="inviteToStage.emit($event)"
+                  (speak)="speakToggle.emit()"
                 />
               }
             </div>
@@ -220,8 +226,11 @@ export class AudienceListGridComponent {
   readonly inviteBusy = input.required<number | null>();
   readonly currentUserId = input.required<number>();
   readonly searchQuery = input.required<string>();
+  readonly selfIsPublishing = input<boolean>(false);
+  readonly selfSpeakBusy = input<boolean>(false);
 
   readonly userClick = output<AudienceUser>();
   readonly inviteToStage = output<AudienceUser>();
   readonly clearSearch = output<void>();
+  readonly speakToggle = output<void>();
 }

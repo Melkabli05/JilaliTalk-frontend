@@ -39,8 +39,11 @@
       [currentUserId]="roomStore.userId()"
       [canInviteToStage]="roomStore.isHost()"
       [inviteBusy]="facade.inviteBusy()"
+      [selfIsPublishing]="facade.selfIsPublishing()"
+      [selfSpeakBusy]="facade.speakFromAudienceBusy()"
       (userClick)="facade.onAudienceUserClick($event)"
       (inviteToStage)="facade.onInviteToStage($event)"
+      (speakToggle)="facade.toggleSpeakFromAudience()"
     />
   </section>
 
