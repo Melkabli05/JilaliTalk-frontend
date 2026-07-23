@@ -211,7 +211,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
     const client = this.client;
     if (!client) throw new Error('Not connected');
 
-    logRealtime('startAudio() called', { hasPublisherToken: publisherToken != null });
+    logRealtime('startAudio() called', { hasPublisherToken: publisherToken != null, uid: this.connectedUid });
 
     // Caller is responsible for enablePublishing(true) if the session was started as
     // audience (invisible or off-stage understage). startAudio no longer flips the role
@@ -225,7 +225,10 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this.micTrack = track;
     this._localAudioTrack.set(track);
     this._publishing.set(true);
-    logRealtime('startAudio() mic track published');
+    logRealtime('startAudio() mic track published', {
+      trackId: track.getTrackId?.(),
+      publishUid: this.connectedUid,
+    });
   }
 
   async startVideo(publisherToken?: string | null): Promise<void> {
@@ -355,6 +358,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
     });
 
     client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
+      logRealtime('user-published received', { uid: user.uid, mediaType });
       try {
         await client.subscribe(user, mediaType);
       } catch {
