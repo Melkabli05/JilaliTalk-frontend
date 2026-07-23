@@ -35,6 +35,13 @@ export class AgoraRtcService implements RealtimeLifecycle {
   private connectedChannel: string | null = null;
   private connectedUid: number | null = null;
   private connectedAppId: string | null = null;
+  /** Captured at connect() so the rtc-mode reconnect inside enablePublishing() can
+   *  re-authenticate against Agora's gateway. Passing null on the second join()
+   *  causes CAN_NOT_GET_GATEWAY_SERVER ("dynamic use static key") because the
+   *  appId requires a token. The original token is reused — it has the same role
+   *  privileges as the first join and the gateway accepts it on the second
+   *  connection. */
+  private connectedToken: string | null = null;
   private readonly denoiser = new AgoraDenoiserController();
   private readonly autoplayRecovery = new AutoplayAudioRecovery(() => this.remoteAudioTracks.values());
 
@@ -79,6 +86,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
     this.connectedChannel = channel;
     this.connectedUid = uid;
     this.connectedAppId = appId;
+    this.connectedToken = token;
     this._state.set('connecting');
 
     const client = AgoraRTC.createClient({
@@ -191,7 +199,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
     await client.join(
       this.connectedAppId,
       this.connectedChannel,
-      null,
+      this.connectedToken,
       this.connectedUid === 0 ? null : this.connectedUid,
     );
     this._state.set('connected');
@@ -331,6 +339,7 @@ export class AgoraRtcService implements RealtimeLifecycle {
       this.connectedChannel = null;
       this.connectedUid = null;
       this.connectedAppId = null;
+      this.connectedToken = null;
     }
     logRealtime('disconnect() done');
   }
